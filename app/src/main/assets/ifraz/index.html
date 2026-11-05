@@ -363,13 +363,18 @@ const G = (() => {
     const ringSegs = rings => rings.flatMap(r => r.map((q, i) => [q, r[(i + 1) % r.length]]));
     const rdText = rd => (FR > 0 && PC ? ' عند التقاء الطريق بالشارع منحنيات نصف قطرها ' + FR + ' م.' : '') + (rd.through ? ' الطريق يصل إلى الطريق الخارجي في الطرف الآخر.' : rd.turn ? ' وينتهي بدوار نصف قطره ' + RT + ' م لأنه لا يتصل بطريق آخر.' : '');
     /* الطرق المعتمدة من البلدية (بوليلاين أحمر): تُخصم أولاً وتُحسب ضمن الاقتطاع */
-    let appr = [], frag = [];
+    let appr = [], frag = [], bigFrag = [];
     if (cfg.approved && cfg.approved.length && PC) {
       try {
         const U = PC.union(...cfg.approved.map(r => [snap(r)]));
         const ai = mpRings(PC.intersection([snap(Rg)], U));
         const rest = mpRings(PC.difference([snap(Rg)], U)).sort((a, b) => area(b) - area(a));
-        if (ai.length && rest.length) { appr = ai; Rg = rest[0]; frag = rest.slice(1); W += [...appr, ...frag].reduce((t, g) => t + area(g), 0); ringSegs(appr).forEach(sg => segsL.push(sg)); }
+        if (ai.length && rest.length) {
+          appr = ai; Rg = rest[0]; frag = rest.slice(1);
+          // الأجزاء الكبيرة التي يفصلها الطريق المعتمد تُفرز أيضاً، والصغيرة فقط تُعتبر فضلات طرق
+          bigFrag = frag.filter(g => area(g) > T * 0.03); frag = frag.filter(g => area(g) <= T * 0.03);
+          W += [...appr, ...frag].reduce((t, g) => t + area(g), 0); ringSegs(appr).forEach(sg => segsL.push(sg));
+        }
       } catch (e) { appr = []; frag = []; }
     }
     const apprArea = appr.reduce((t, g) => t + area(g), 0), fragArea = frag.reduce((t, g) => t + area(g), 0);
@@ -527,21 +532,103 @@ const G = (() => {
         props.push({ key: first ? 'r1' : 'r2', title: 'طريق جانبي ' + (first ? '(أ)' : '(ب)'), desc: 'طريق بعرض ' + w + ' م على طرف الأرض، والقطع مصفوفة عليه من الشارع للداخل. قسيمة البلدية في العمق.' + rdText(rd), d, roadArea: Ra, parcels: res.parcels, roadSegs: ringSegs(rings), widthAx: 0 });
       }
     }
+    /* ---- الأرض مقسومة بطرق معتمدة إلى عدة أجزاء: نفرز كل جزء على حدة بالتسلسل ---- */
+    if (bigFrag.length) {
+      props.length = 0;
+      const pieces = [Rg, ...bigFrag];
+      const access = [...ringSegs(appr), ...segsL, [[-1e7, s], [1e7, s]]];
+      // لكل جزء: أطول ضلع يقع على طريق (معتمد أو خارجي أو الشارع الرئيسي) هو واجهة الجزء
+      const info = pieces.map(P => {
+        let best = null, bestAcc = null;
+        for (let i = 0; i < P.length; i++) {
+          const a = P[i], b = P[(i + 1) % P.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          if (len < 0.5) continue;
+          const onRoad = onLen([a, b], access) > 0.01 || onLen([a, b, [(a[0] + b[0]) / 2 + 1e-3, (a[1] + b[1]) / 2]], access) > 0.01;
+          if (!best || len > best.len) best = { a, b, len };
+          if (onRoad && (!bestAcc || len > bestAcc.len)) bestAcc = { a, b, len };
+        }
+        const e = bestAcc || best, ux = (e.b[0] - e.a[0]) / e.len, uy = (e.b[1] - e.a[1]) / e.len;
+        let nx = -uy, ny = ux; const c = centroid(P);
+        if ((c[0] - e.a[0]) * nx + (c[1] - e.a[1]) * ny < 0) { nx = -nx; ny = -ny; }
+        const to = q => [(q[0] - e.a[0]) * ux + (q[1] - e.a[1]) * uy, (q[0] - e.a[0]) * nx + (q[1] - e.a[1]) * ny];
+        const from = q => [e.a[0] + q[0] * ux + q[1] * nx, e.a[1] + q[0] * uy + q[1] * ny];
+        return { P, A: area(P), loc: P.map(to), from, touchesStreet: edgeOn(P, 1, s, 1e-4) > 0.5, cy: c[1] };
+      }).sort((x, y) => (y.touchesStreet - x.touchesStreet) || (x.cy - y.cy));
+      const d = ded(0), tot2 = owners.reduce((t, o) => t + o.frac, 0) || 1;
+      const mkProp = (rev, whole) => {
+        const items = owners.map(o => ({ o, a: d.ownersTotal * o.frac / tot2 }));
+        const alloc = info.map(() => []);
+        let k = 0, cap = info[0].A, muniLeft = d.M;
+        if (whole) {
+          // كل مالك في جزء واحد: ما يتبقى في آخر كل جزء يصير من قسيمة البلدية (إن كفت نسبة الاقتطاع)
+          const queue = items.slice();
+          for (k = 0; k < info.length - 1 && queue.length; k++) {
+            cap = info[k].A;
+            while (queue.length && queue[0].a <= cap + 1e-6) { const it = queue.shift(); alloc[k].push({ it, t: it.a }); cap -= it.a; }
+            if (cap > 1e-6) {
+              if (cap <= muniLeft + 1e-6) { alloc[k].push({ it: { muni: true, a: cap }, t: cap }); muniLeft -= cap; }
+              else if (queue.length) { const it = queue[0]; alloc[k].push({ it, t: cap }); it.a -= cap; it.splitFrom = true; }
+            }
+          }
+          queue.forEach(it => alloc[info.length - 1].push({ it, t: it.a }));
+          if (muniLeft > 1e-6) alloc[info.length - 1].push({ it: { muni: true, a: muniLeft }, t: muniLeft });
+          items.forEach(it => { it.a = d.ownersTotal * it.o.frac / tot2; });
+        } else {
+        if (d.M > 1e-6) items.push({ muni: true, a: d.M });
+        // توزيع متسلسل على الأجزاء: إن امتلأ الجزء قبل انتهاء حصة مالك، يكمل باقي حصته في الجزء التالي
+        for (const it of items) {
+          let a = it.a;
+          while (a > 1e-6) {
+            if (k === info.length - 1) { alloc[k].push({ it, t: a }); a = 0; break; }
+            const t = Math.min(a, cap);
+            if (t > 1e-6) alloc[k].push({ it, t });
+            a -= t; cap -= t;
+            if (cap <= 1e-6) { k++; cap = info[k].A; }
+          }
+        }
+        }
+        const parcels = [];
+        info.forEach((pi, j) => {
+          const list = alloc[j]; if (!list.length) return;
+          const bb = bbox(pi.loc); let st = rev ? bb[2] : bb[0];
+          list.forEach((x, i) => {
+            const last = i === list.length - 1;
+            let c;
+            if (!rev) { c = last ? bb[2] : findCut(pi.loc, 0, st, bb[2], x.t, area); }
+            else { c = last ? bb[0] : findRev(pi.loc, 0, bb[0], st, x.t, area); }
+            const lp = rev ? slab(pi.loc, 0, c, st) : slab(pi.loc, 0, st, c); st = c;
+            if (!lp.length) return;
+            const pc = { kind: x.it.muni ? 'muni' : 'owner', poly: lp.map(pi.from), widthPre: minChord(lp, 1) };
+            if (!x.it.muni) { pc.o = x.it.o; pc.part = x.t < x.it.a - 0.05; pc.partDue = x.t; }
+            parcels.push(pc);
+          });
+        });
+        appr.forEach((g, i) => parcels.push({ kind: 'widen', sub: 'appr', poly: g, nolabel: i > 0 }));
+        frag.forEach(g => parcels.push({ kind: 'widen', sub: 'frag', poly: g }));
+        if (widen.length) parcels.push({ kind: 'widen', poly: widen });
+        return { key: (whole ? 'mpW' : 'mpS') + (rev ? 'B' : 'A'), title: (whole ? 'أجزاء الطرق: كل مالك قطعة واحدة ' : 'أجزاء الطرق: تسلسل متصل ') + (rev ? '(ب)' : '(أ)'),
+          desc: `الطرق المعتمدة تقسم الأرض إلى ${info.length} أجزاء، وكل جزء مفروز بشرائح متعامدة على أطول ضلع له على طريق، بالتسلسل من الجزء الملاصق للشارع الرئيسي. ` + (whole ? 'كل مالك قطعته في جزء واحد، والمتبقي في آخر كل جزء يصير من قسيمة البلدية.' : 'التسلسل متصل بين الأجزاء، فمن تُكمل حصته في الجزء التالي تكون له قطعتان.') + (rev ? ' الشرائح تبدأ من الطرف الآخر لكل جزء.' : ''),
+          d, roadArea: 0, parcels, roadSegs: ringSegs(appr), widthAx: 1, multi: true };
+      };
+      const opts = (d.M > 1e-6 ? [[false, true], [true, true]] : []).concat([[false, false], [true, false]]);
+      for (const [rv, wh] of opts) { const key = (wh ? 'mpW' : 'mpS') + (rv ? 'B' : 'A'); if (!cfg.only || cfg.only === key) props.push(mkProp(rv, wh)); }
+    }
     for (const pr of props) {
-      if (widen.length) pr.parcels.push({ kind: 'widen', poly: widen });
-      appr.forEach((g, i) => pr.parcels.push({ kind: 'widen', sub: 'appr', poly: g, nolabel: i > 0 }));
-      frag.forEach(g => pr.parcels.push({ kind: 'widen', sub: 'frag', poly: g }));
+      if (pr.multi) { pr.parcels.forEach(pc => { if (pc.kind === 'owner') pc.multiDue = pc.partDue; }); }
+      if (!pr.multi && widen.length) pr.parcels.push({ kind: 'widen', poly: widen });
+      if (!pr.multi) appr.forEach((g, i) => pr.parcels.push({ kind: 'widen', sub: 'appr', poly: g, nolabel: i > 0 }));
+      if (!pr.multi) frag.forEach(g => pr.parcels.push({ kind: 'widen', sub: 'frag', poly: g }));
       let issues = 0, rect = 0, nOwn = 0;
       for (const pc of pr.parcels) {
         pc.area = area(pc.poly); pc.label = pc.nolabel ? null : labelPt(pc.poly);
         if (pc.kind !== 'owner') continue;
         nOwn++;
-        pc.due = pr.d.ownersTotal * pc.o.frac / tot;
+        pc.due = pc.multiDue != null ? pc.multiDue : pr.d.ownersTotal * pc.o.frac / tot;
         pc.value = vOn ? meas(pc.poly) : null;
         pc.fMain = pc.poly.length ? edgeOn(pc.poly, 1, s) : 0;
         pc.fRoad = pc.poly.length ? onLen(pc.poly, [...(pr.roadSegs || []), ...segsL]) : 0;
         pc.front = Math.max(pc.fMain, pc.fRoad);
-        pc.width = minChord(pc.poly, pc.wax != null ? pc.wax : pr.widthAx);
+        pc.width = pc.widthPre != null ? pc.widthPre : minChord(pc.poly, pc.wax != null ? pc.wax : pr.widthAx);
         pc.issues = [];
         if (pc.area < 0.01) pc.issues.push('لم تتسع لها الأرض');
         else {
@@ -558,7 +645,8 @@ const G = (() => {
       pr.issues = issues; pr.rect = nOwn ? rect / nOwn : 0;
       pr.muniArea = pr.parcels.filter(x => x.kind === 'muni').reduce((a, x) => a + x.area, 0);
     }
-    props.sort((a, b) => a.issues - b.issues || b.rect - a.rect);
+    props.forEach(pr => { pr.splits = pr.parcels.filter(x => x.kind === 'owner' && x.part).length; });
+    props.sort((a, b) => a.issues - b.issues || a.splits - b.splits || b.rect - a.rect);
     return { T, W, widen, proposals: props, vOn, apprArea, fragArea, roadsOnly: !!cfg.roadsOnly };
   }
   // تقسيم يدوي: الضلع على محور u من 0 إلى len، والخطوط عمودية عليه
@@ -1058,7 +1146,7 @@ function compute() {
   const FAIL = /واجهة أقل|عرض أقل|مساحة أقل|لم تتسع/;
   if (S.autoMerge && (minP > 0 || +S.minWidth > 0 || +S.minFront > 0) && owners.length > 1) {
     const out = []; let meta = null;
-    for (const key of ['sA', 'sB', 'c', 'r1', 'r2', 'ce']) {
+    for (const key of ['sA', 'sB', 'c', 'r1', 'r2', 'ce', 'mpWA', 'mpWB', 'mpSA', 'mpSB']) {
       let us = owners.slice(), r = doPlan(us, key), pr = r.proposals[0], n = 0;
       meta = meta || r;
       for (let it = 0; pr && it < 15 && us.length > 1; it++) {
@@ -1186,6 +1274,8 @@ function renderResult() {
   const muniRow = muni.length ? `<tr><td class="n">ب</td><td><span class="sw" style="background:color-mix(in srgb,var(--muni) 45%,transparent)"></span>قسيمة البلدية</td><td></td><td class="n">${fmt(d.M)}</td><td class="n">${fmt(p.muniArea)}</td>${vOn ? '<td></td>' : ''}<td></td><td></td><td></td></tr>` : '';
   const notes = [];
   const grp = owners.filter(it => it.o.members.length > 1);
+  const split = [...new Set(owners.filter(it => it.part).map(it => it.o.tag))];
+  if (split.length) notes.push(`${split.length === 1 ? 'المالك' : 'الملاك'} ${split.join('، ')} ${split.length === 1 ? 'له' : 'لكل منهم'} قطعتان في جزأين مختلفين، لأن حصته لم تتسع في جزء واحد. مجموع القطعتين يساوي حصته.`);
   if (grp.length) notes.push(`الحصص الصغيرة أو الضيقة (أقل من ${fmt(+S.minParcel, 0)} م²${+S.minWidth > 0 ? ' أو عرض ' + fmt(+S.minWidth, 0) + ' م' : ''}) جُمعت في ${grp.length === 1 ? 'قسيمة مشتركة' : grp.length + ' قسائم مشتركة'}: ${grp.map(g => g.tag).join(' ، ')}. حصة كل مالك داخلها مبينة تحتها في الجدول.`);
   if (p.roadArea > 0 && !window.polygonClipping && (+S.fr > 0 || +S.rt > 0)) notes.push('<span class="warn">لم تُحمَّل مكتبة المنحنيات، فالطريق مرسوم بدون منحنيات ودوار.</span>');
   if (S.dmode !== 'out' && +S.pin !== 30) notes.push(`<span class="warn">نسبة الاقتطاع المستخدمة ${fmt(+S.pin, 1)}% وليست 30% القانونية (عدّلتها يدوياً).</span>`);

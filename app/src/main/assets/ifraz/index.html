@@ -97,7 +97,9 @@ tr:last-child td{border-bottom:0}
 .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-inline-end:6px;border:1px solid var(--ink)}
 .bad{color:var(--bad)} .warn{color:var(--warn)}
 .notes{display:flex;flex-direction:column;gap:4px;font-size:14px}
-.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:10px 16px;border-radius:8px;max-width:min(92vw,520px);z-index:20;font-size:14px}
+.fab{position:fixed;z-index:19;bottom:calc(14px + env(safe-area-inset-bottom,0px));inset-inline-end:max(14px,env(safe-area-inset-left,0px));box-shadow:0 8px 18px -6px rgba(0,0,0,.45);border-radius:999px;padding:11px 18px;font-weight:700}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.toast{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:10px 16px;border-radius:8px;max-width:min(92vw,520px);z-index:20;font-size:14px}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
 @media (max-width:620px){.orow{grid-template-columns:22px minmax(0,1fr) 84px auto}.orow .pct{display:none}.orow select{grid-column:2 / -1;grid-row:2}.orow.ohead .poshd{display:none}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
@@ -227,11 +229,15 @@ tr:last-child td{border-bottom:0}
 </section>
 
 <section class="panel">
-  <h2><span class="step">4</span>الاقتراحات</h2>
+  <div class="row" style="justify-content:space-between">
+    <h2><span class="step">4</span>الاقتراحات</h2>
+    <button class="primary" id="redoBtn" type="button">↻ إعادة إفراز القطعة</button>
+  </div>
   <div id="proposals"></div>
   <div id="result"></div>
 </section>
 </div>
+<button class="primary fab" id="redoFab" type="button" hidden>↻ إعادة الإفراز</button>
 <div class="toast" id="toast" hidden></div>
 
 <script id="geo">
@@ -1510,12 +1516,34 @@ async function exportPDF(p) {
 
 /* ---------- loop ---------- */
 let tmr = null;
+/* إعادة الإفراز: يقرأ كل الخانات من جديد، يحسب كل الاقتراحات، ويختار الأنسب ويعرضه */
+function redo() {
+  NUMF.forEach(k => { const v = parseFloat($(k).value); if (!isNaN(v)) S[k] = v; else if ($(k).value === '') S[k] = 0; });
+  VF.forEach(k => { const v = parseFloat($(k).value); if (!isNaN(v)) S.value[k] = v; });
+  S.landTitle = $('landTitle').value; S.surveyor = $('surveyor').value;
+  document.querySelectorAll('#owners .orow[data-id]').forEach(r => { const o = S.owners.find(x => x.id == r.dataset.id); if (!o) return; o.name = r.querySelector('[data-f=name]').value; o.area = parseFloat(r.querySelector('[data-f=area]').value) || 0; const ps = r.querySelector('[data-f=pos]'); if (ps) o.pos = ps.value; });
+  S.sel = null;
+  ['redoBtn', 'redoFab'].forEach(id => { $(id).disabled = true; $(id).textContent = 'جاري الإفراز…'; });
+  setTimeout(() => {
+    try {
+      clearTimeout(tmr); save(); renderLand(); renderOwners(); compute(); renderProposals();
+      const n = R ? R.proposals.length : 0;
+      toast(n ? `تمت إعادة الإفراز: ${n} اقتراحات، والمعروض هو الأنسب.` : 'لا توجد اقتراحات. تأكد من حدود الأرض وحصص الملاك.');
+      if (n) $('proposals').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } finally {
+      $('redoBtn').disabled = false; $('redoBtn').textContent = '↻ إعادة إفراز القطعة';
+      $('redoFab').disabled = false; $('redoFab').textContent = '↻ إعادة الإفراز';
+    }
+  }, 30);
+}
+$('redoBtn').addEventListener('click', redo);
+$('redoFab').addEventListener('click', redo);
 function changed(full) {
   save();
   $('sampleBanner').hidden = !S.sample;
   if (full) { renderLand(); renderOwners(); }
   clearTimeout(tmr);
-  tmr = setTimeout(() => { if (!full) renderLand(); compute(); renderProposals(); }, full ? 0 : 300);
+  tmr = setTimeout(() => { if (!full) renderLand(); compute(); renderProposals(); $('redoFab').hidden = !(S.boundary.length > 2); }, full ? 0 : 300);
 }
 fillSettings();
 changed(true);

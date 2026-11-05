@@ -1,0 +1,93 @@
+/* هوية «المساح إسلام» داخل الأدوات: أخضر داكن + ذهبي + عاجي، مطابقة للشاشة الرئيسية.
+   يُحمَّل بعد أنماط كل أداة، ويغيّر ألوانها فقط دون المساس بالوظائف. */
+html[data-tool]{
+  --am-green-900:#082a1b; --am-green-800:#0c3b26; --am-green-700:#114d32; --am-green-600:#17613f;
+  --am-gold-300:#f3dc93; --am-gold-400:#e6c35f; --am-gold-500:#c99a2e; --am-gold-700:#8a6514;
+  --am-ivory:#f8f2e2; --am-ivory-2:#efe5cb; --am-card:#fffcf3; --am-line:#e2cf98;
+  --am-ink:#1d2a22; --am-muted:#5d6458; --am-navy:#16306e; --am-brown:#7a4512;
+  --am-title:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --am-gold-grad:linear-gradient(180deg,#fff1b8 0%,#f0cf6a 40%,#c99a2e 75%,#f3dc93 100%);
+  --am-btn:linear-gradient(180deg,#1b7049 0%,#114d32 55%,#0c3b26 100%);
+  color-scheme:light;
+}
+
+/* ---------- الشريط العلوي ---------- */
+.am-bar{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;gap:10px;direction:rtl;
+  padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));
+  background:linear-gradient(180deg,#155a3a 0%,#0c3b26 100%);border-bottom:2px solid var(--am-gold-500);box-shadow:0 6px 18px -6px rgba(8,42,27,.55);
+  font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
+.am-title{display:flex;align-items:center;gap:10px;min-width:0}
+.am-title img{width:40px;height:40px;border-radius:10px;object-fit:cover;box-shadow:0 0 0 2px var(--am-gold-400),0 3px 8px rgba(0,0,0,.35);flex:none}
+.am-title b{font:700 20px/1.2 var(--am-title);background:var(--am-gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;filter:drop-shadow(0 1px 0 rgba(60,40,0,.6))}
+.am-home{margin-inline-start:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:var(--am-gold-grad);
+  color:#4a2e00;font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;text-decoration:none;box-shadow:inset 0 1px 0 #fff8d8,0 3px 8px rgba(0,0,0,.4);flex:none}
+.am-home:active{transform:scale(.96)}
+.am-home svg{width:18px;height:18px}
+.am-spacer{height:calc(58px + env(safe-area-inset-top,0px))}
+
+/* ---------- خلفية الصفحة ---------- */
+html[data-tool] body{background:radial-gradient(120% 50% at 50% 0%,#fbf6e8 0%,var(--am-ivory) 50%,var(--am-ivory-2) 100%) fixed!important;color:var(--am-ink)}
+
+/* =================== حاسب الكواشين =================== */
+html[data-tool="hisas"][data-tool],html[data-tool="hisas"][data-tool]:not([data-theme="light"]){
+  --bg:var(--am-ivory); --card:var(--am-card); --ink:var(--am-ink); --muted:var(--am-muted); --line:var(--am-line);
+  --stamp:var(--am-green-600); --stamp-soft:#e7efe1; --on-stamp:#fff; --ok:#1e6b4a; --ok-soft:#e3efe2; --warn:#8a5a10; --warn-soft:#f8ecd0;
+  --mourn:#3d4452; --mourn-soft:#ece6d6; --row-a:#fffaf0; --row-b:#f3ead2;
+  --head:var(--am-title);
+}
+html[data-tool="hisas"] main>h1{color:var(--am-navy);font-family:var(--am-title);font-weight:700}
+html[data-tool="hisas"] section{border:1.5px solid var(--am-line);border-radius:18px;box-shadow:0 10px 22px -16px rgba(8,42,27,.5),inset 0 1px 0 #fff}
+html[data-tool="hisas"] h2{color:var(--am-green-800)}
+html[data-tool="hisas"] h2 .n{border-color:var(--am-gold-500);color:var(--am-green-800);background:linear-gradient(180deg,#fff6d6,#f3dc93)}
+html[data-tool="hisas"] button.primary,html[data-tool="hisas"] .pick.primary{background:var(--am-btn);border-color:var(--am-gold-500);box-shadow:0 0 0 1px var(--am-gold-400),0 6px 12px -6px rgba(8,42,27,.6)}
+html[data-tool="hisas"] .pick.p-cam{background:var(--am-gold-grad);border-color:var(--am-gold-500);color:#4a2e00}
+html[data-tool="hisas"] .pick.p-img{background:var(--am-btn);border-color:var(--am-gold-500);color:#fff}
+html[data-tool="hisas"] .pick.p-pdf{background:linear-gradient(180deg,#9a5a1c,#7a4512);border-color:var(--am-gold-500);color:#fff}
+html[data-tool="hisas"] .pick{border-radius:999px;box-shadow:0 6px 12px -6px rgba(8,42,27,.55)}
+html[data-tool="hisas"] .drop{border-color:var(--am-gold-400);background:rgba(255,250,235,.6)}
+html[data-tool="hisas"] input,html[data-tool="hisas"] select,html[data-tool="hisas"] textarea{background:#fffdf6;border-color:var(--am-line)}
+
+/* =================== الإفراز =================== */
+html[data-tool="ifraz"][data-tool],html[data-tool="ifraz"][data-tool]:not([data-theme="light"]){
+  --paper:var(--am-ivory); --sheet:var(--am-card); --ink:var(--am-ink); --muted:var(--am-muted); --line:var(--am-line);
+  --accent:var(--am-green-600); --accent-ink:#fff; --warn:#8a5a10; --bad:#b3261e;
+  --f-display:var(--am-title);
+}
+html[data-tool="ifraz"] header h1{color:var(--am-green-800);font-family:var(--am-title)}
+html[data-tool="ifraz"] .panel{border:1.5px solid var(--am-line);border-radius:18px;box-shadow:0 10px 22px -16px rgba(8,42,27,.5),inset 0 1px 0 #fff}
+html[data-tool="ifraz"] .panel h2{color:var(--am-green-800)}
+html[data-tool="ifraz"] .panel h2 .step{border-color:var(--am-gold-500);color:var(--am-green-800);background:linear-gradient(180deg,#fff6d6,#f3dc93)}
+html[data-tool="ifraz"] button.primary,html[data-tool="ifraz"] .btn.primary{background:var(--am-btn);border-color:var(--am-gold-500);color:#fff;border-radius:999px;box-shadow:0 0 0 1px var(--am-gold-400),0 6px 12px -6px rgba(8,42,27,.6)}
+html[data-tool="ifraz"] button,html[data-tool="ifraz"] .btn{border-radius:999px}
+html[data-tool="ifraz"] .card{border-color:var(--am-line);background:#fffdf6}
+html[data-tool="ifraz"] .card[aria-pressed="true"]{border-color:var(--am-gold-500);box-shadow:0 0 0 2px var(--am-gold-500) inset,0 8px 16px -10px rgba(8,42,27,.5)}
+html[data-tool="ifraz"] .chip.best{background:var(--am-gold-grad);color:#4a2e00;border-color:var(--am-gold-500)}
+html[data-tool="ifraz"] .seg label:has(input:checked){background:var(--am-btn);color:#fff}
+html[data-tool="ifraz"] .guide,html[data-tool="ifraz"] .zones{border-color:var(--am-line);background:#fffaf0}
+html[data-tool="ifraz"] .banner{background:#fbf0d2;border-color:var(--am-gold-500)}
+html[data-tool="ifraz"] .plan{background:#fffaf0;border-color:var(--am-line)}
+html[data-tool="ifraz"] input,html[data-tool="ifraz"] select,html[data-tool="ifraz"] textarea{background:#fffdf6;border-color:var(--am-line)}
+html[data-tool="ifraz"] th{background:#f3ead2}
+
+/* =================== حاسبة الجرف =================== */
+html[data-tool="jarf"][data-tool],html[data-tool="jarf"][data-tool]:not([data-theme="light"]){
+  --bg:var(--am-ivory); --surface:var(--am-card); --ink:var(--am-ink); --muted:var(--am-muted); --line:var(--am-line); --soft:#f3ead2;
+  --btn:var(--am-green-800); --btn-ink:#fff6d6; --warn:#7a4e00; --warn-bg:#fbf0d2; --ok:#1e6b4a;
+}
+html[data-tool="jarf"] header h1{color:var(--am-brown);font-family:var(--am-title);font-weight:700}
+html[data-tool="jarf"] .tabs{border-color:var(--am-gold-400);border-radius:999px;box-shadow:0 4px 10px -6px rgba(8,42,27,.5)}
+html[data-tool="jarf"] .tab[aria-selected="true"],html[data-tool="jarf"] .mode[aria-pressed="true"]{background:var(--am-btn);color:#fff6d6;border-color:var(--am-gold-500)}
+html[data-tool="jarf"] .mode{border-radius:999px;border-color:var(--am-line)}
+html[data-tool="jarf"] section,html[data-tool="jarf"] .card,html[data-tool="jarf"] .slot,html[data-tool="jarf"] .panel{border-color:var(--am-line);border-radius:18px}
+html[data-tool="jarf"] button.run,html[data-tool="jarf"] .run,html[data-tool="jarf"] button.primary{background:var(--am-btn);color:#fff6d6;border-color:var(--am-gold-500);border-radius:999px;box-shadow:0 0 0 1px var(--am-gold-400),0 6px 12px -6px rgba(8,42,27,.6)}
+html[data-tool="jarf"] input,html[data-tool="jarf"] select{background:#fffdf6;border-color:var(--am-line)}
+html[data-tool="jarf"] .btn:not(.secondary){background:var(--am-btn);color:#fff6d6;border:1px solid var(--am-gold-500);border-radius:999px;box-shadow:0 0 0 1px var(--am-gold-400),0 6px 12px -6px rgba(8,42,27,.6)}
+html[data-tool="jarf"] .btn.secondary,html[data-tool="jarf"] .chip{border-radius:999px;border-color:var(--am-gold-400);background:#fffdf6;color:var(--am-green-800)}
+html[data-tool="jarf"] .slot{background:var(--am-card);box-shadow:0 10px 22px -16px rgba(8,42,27,.5)}
+html[data-tool="jarf"] .file-btn{border-color:var(--am-gold-500);color:var(--am-green-800);background:#fffaf0;border-radius:14px}
+html[data-tool="jarf"] .tile{border-color:var(--am-line);background:#fffdf6;border-radius:16px}
+html[data-tool="jarf"] .step{color:var(--am-gold-700)}
+html[data-tool="hisas"] button.smart{background:var(--am-gold-grad);border-color:var(--am-gold-500);color:#4a2e00;border-radius:999px;box-shadow:0 6px 12px -6px rgba(8,42,27,.55)}
+html[data-tool="hisas"] button.primary,html[data-tool="hisas"] button.smart{border-radius:999px}
+html[data-tool] :focus-visible{outline-color:var(--am-gold-500)!important}

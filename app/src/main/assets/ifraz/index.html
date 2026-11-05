@@ -868,7 +868,7 @@ function parseDXF(txt) {
   const out = [];
   for (const p of polys) {
     let pts = p.pts.filter(q => isFinite(q[0]) && isFinite(q[1]));
-    if (isRed(p) && pts.length >= 3) { const a = pts[0], b = pts[pts.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-4) pts.pop(); red.push(pts); continue; }
+    if (isRed(p)) { if (pts.length >= 3) { const a = pts[0], b = pts[pts.length - 1], sh = Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-3; if (sh) pts.pop(); if ((p.closed || sh) && pts.length >= 3) red.push(pts); } continue; }
     if (isBlue(p)) { for (let k = 0; k + 1 < pts.length; k++) blue.push([pts[k], pts[k + 1]]); if (p.closed && pts.length > 2) blue.push([pts[pts.length - 1], pts[0]]); continue; }
     if (pts.length > 2) { const a = pts[0], b = pts[pts.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-4) { pts.pop(); p.closed = true; } }
     if (pts.length >= 3) out.push({ pts, closed: p.closed, layer: p.layer, area: G.area(pts) });

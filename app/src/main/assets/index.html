@@ -1609,6 +1609,14 @@ async function readDeed(){
   const viaClaude = useClaude();
   ctl = new AbortController(); $("stopBtn").hidden = false; renderPages();
   const found = []; let header = {}; let failed = 0; usedLiteFlag = false;
+  // كل ضغطة جديدة تبدأ من جديد بالمزوّد الأساسي (Gemini افتراضياً)، ونوضّح إن لم يكن متاحاً ولماذا
+  exhausted.gemini = false; exhausted.groq = false;
+  if (!viaClaude){
+    const first = gem.primary === "groq" ? "Groq" : "Gemini";
+    if (first === "Gemini" && !gem.key) toast("لا يوجد مفتاح Gemini محفوظ في هذا التطبيق، لذلك القراءة بـ Groq. أضف مفتاح Gemini من «قراءة الصور بمفاتيح مجانية» أسفل الصفحة.");
+    else if (first === "Groq") toast("الإعداد الحالي «Groq أولاً». لتبدأ بـ Gemini غيّر «المزوّد الأساسي» أسفل الصفحة.");
+    else say(`<span class="spin"></span> القراءة بـ Gemini أولاً${gem.groqKey ? "، و Groq احتياط إذا تعذّر" : ""}…`, "info");
+  }
   for (let i = 0; i < pages.length; i++){
     if (ctl.signal.aborted) break;
     if (pages[i].done) continue;

@@ -91,3 +91,8 @@ html[data-tool="jarf"] .step{color:var(--am-gold-700)}
 html[data-tool="hisas"] button.smart{background:var(--am-gold-grad);border-color:var(--am-gold-500);color:#4a2e00;border-radius:999px;box-shadow:0 6px 12px -6px rgba(8,42,27,.55)}
 html[data-tool="hisas"] button.primary,html[data-tool="hisas"] button.smart{border-radius:999px}
 html[data-tool] :focus-visible{outline-color:var(--am-gold-500)!important}
+/* منع أي فيض أفقي من توسيع عرض الصفحة في WebView (كان يزيح الشريط العلوي لليسار) */
+html[data-tool]{overflow-x:hidden;max-width:100%}
+html[data-tool] body{overflow-x:clip;max-width:100%}
+.am-bar{width:100%;max-width:100vw;box-sizing:border-box;inset-inline:0}
+.am-title{flex:1 1 auto;min-width:0}

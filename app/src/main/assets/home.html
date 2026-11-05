@@ -4,194 +4,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0c3b26">
+<meta name="theme-color" content="#023a1a">
 <title>المساح إسلام</title>
 <link rel="stylesheet" href="ifraz/fonts.css">
 <style>
-/* هوية «المساح إسلام»: أخضر داكن + ذهبي + عاجي. رأس أخضر بصورة جهاز المساحة، بطاقات عاجية كبيرة بصور، شريط سفلي أخضر */
-:root{
-  --green-900:#082a1b; --green-800:#0c3b26; --green-700:#114d32; --green-600:#17613f;
-  --gold-300:#f3dc93; --gold-400:#e6c35f; --gold-500:#c99a2e; --gold-700:#8a6514;
-  --ivory:#f8f2e2; --ivory-2:#efe5cb; --ink:#1d2a22; --muted:#5d6458;
-  --navy:#16306e; --brown:#7a4512;
-  --f-title:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;
-  --f-body:"IBM Plex Sans Arabic",Tahoma,sans-serif;
-  --gold-grad:linear-gradient(180deg,#fff1b8 0%,#f0cf6a 38%,#c99a2e 70%,#f3dc93 100%);
-  --nav-h:72px;
-  color-scheme:light;
-}
+/* الواجهة هي التصميم المعتمد نفسه (صورة واحدة مصححة الكلمات)، وفوقها مناطق ضغط شفافة لكل زر وبطاقة */
+:root{--green:#023a1a;--green-2:#0c3b26;--gold:#c99a2e;--gold-2:#e6c35f;--ivory:#f8f2e2;--ink:#1d2a22;--muted:#5d6458;
+  --f-title:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;--f-body:"IBM Plex Sans Arabic",Tahoma,sans-serif;color-scheme:light}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--green-800)}
-body{margin:0;min-height:100vh;color:var(--ink);font:15px/1.6 var(--f-body);
-  background:
-    url(img/topo.svg) center 330px/120% 460px no-repeat,
-    radial-gradient(120% 60% at 50% 38%,#fbf6e8 0%,var(--ivory) 45%,var(--ivory-2) 100%);
-  padding-bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom,0px));
-  overflow-x:hidden}
-img{max-width:100%;display:block}
-
-/* ---------- الرأس ---------- */
-.hero{position:relative;min-height:228px;padding:calc(18px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) 46px max(18px,env(safe-area-inset-left,0px));
-  background:linear-gradient(270deg,var(--green-800) 0%,rgba(12,59,38,.92) 34%,rgba(12,59,38,.35) 62%,rgba(12,59,38,0) 82%),url(img/hero.jpg) left center/cover no-repeat,var(--green-800);
-  color:#fff;overflow:hidden;isolation:isolate}
-.hero::before{content:"";position:absolute;inset:0;background:url(img/topo.svg) center/160% 100% no-repeat;opacity:.5;z-index:-1;mix-blend-mode:screen}
-.hero::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-2px;height:70px;z-index:1;
-  background:radial-gradient(70% 120% at 60% 100%,var(--ivory) 58%,transparent 59%),
-             radial-gradient(70% 120% at 60% 100%,var(--gold-500) 61%,transparent 62%)}
-.brand{position:relative;z-index:2;max-width:62%;margin-inline-start:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
-.compass{width:34px;height:34px;align-self:flex-end;margin-bottom:-6px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
-.brand h1{margin:0;font:700 clamp(34px,10vw,46px)/1.15 var(--f-title);background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 0 rgba(70,45,0,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.35));letter-spacing:0}
-.swoosh{width:100%;height:12px;margin-top:-2px}
-.brand p{margin:2px 0 0;font-weight:500;font-size:15.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-
-.main{position:relative;z-index:3;max-width:620px;margin:-26px auto 0;padding-inline:max(14px,env(safe-area-inset-left,0px)) max(14px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
-
-/* ---------- الإجراءات السريعة ---------- */
-.quick{display:grid;grid-template-columns:repeat(4,1fr);background:linear-gradient(180deg,#fffaf0,var(--ivory));border:1.5px solid var(--gold-400);border-radius:999px;
-  box-shadow:0 10px 24px -12px rgba(8,42,27,.45),inset 0 1px 0 #fff;padding:8px 6px}
-.quick button{appearance:none;border:0;background:none;font:600 13px/1.3 var(--f-body);color:var(--green-800);display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 2px;cursor:pointer;position:relative;border-radius:16px;transition:background .2s}
-.quick button+button::before{content:"";position:absolute;inset-inline-start:0;top:16%;bottom:16%;width:1px;background:linear-gradient(transparent,var(--gold-500),transparent)}
-.quick button:active{background:rgba(201,154,46,.15)}
-.quick svg{width:26px;height:26px;color:var(--green-700)}
-
-/* ---------- بطاقات الأدوات ---------- */
-.tool{--c:var(--green-700);position:relative;display:grid;grid-template-columns:minmax(0,1fr) 44%;min-height:168px;text-decoration:none;color:inherit;
-  border-radius:22px;overflow:hidden;isolation:isolate;
-  background:linear-gradient(105deg,#fffdf6 0%,var(--ivory) 55%,#f1e6c8 100%);
-  border:2px solid transparent;background-clip:padding-box;
-  box-shadow:0 0 0 2px var(--gold-400),0 0 0 4px color-mix(in srgb,var(--c) 70%,transparent),0 16px 28px -14px rgba(8,42,27,.55);
-  margin:4px;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s;
-  animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
-.tool:nth-of-type(2){animation-delay:.07s}.tool:nth-of-type(3){animation-delay:.14s}
-@keyframes rise{from{transform:translateY(14px)}to{transform:none}}
-.tool:active{transform:scale(.975)}
-.tool:focus-visible{outline:3px solid var(--gold-500);outline-offset:4px}
-.tool .txt{padding:16px 16px 14px 8px;display:flex;flex-direction:column;gap:6px;min-width:0;position:relative}
-.tool .head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.tool h2{margin:4px 0 0;font:700 clamp(21px,6.2vw,28px)/1.2 var(--f-title);white-space:nowrap;color:var(--c);text-shadow:0 1px 0 #fff}
-.tool .rule{height:2px;width:72%;background:linear-gradient(90deg,transparent,var(--gold-500) 30%,var(--gold-500) 70%,transparent);margin-top:2px}
-.tool .ico{flex:0 0 auto;width:58px;height:58px;object-fit:contain;mix-blend-mode:multiply;border-radius:12px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.18))}
-.tool .foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
-.tool p{margin:0;font-size:14.5px;line-height:1.65;color:#2c3a31;font-weight:500}
-.tool .note{font-size:12.5px;line-height:1.5;color:var(--green-700);font-weight:600;background:rgba(23,97,63,.09);border-radius:10px;padding:4px 8px;align-self:flex-start}
-.tool .go{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;
-  background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--c) 60%,#fff) 0%,var(--c) 55%,color-mix(in srgb,var(--c) 70%,#000) 100%);
-  box-shadow:0 0 0 2px var(--gold-400),0 6px 12px -4px rgba(0,0,0,.45);transition:transform .2s}
-.tool:active .go{transform:translateX(-3px)}
-.tool .go svg{width:20px;height:20px}
-.tool .ph{position:relative;margin:-2px -2px -2px 0;overflow:hidden;
-  border-radius:0 50% 50% 0 / 0 50% 50% 0;
-  box-shadow:3px 0 0 0 var(--gold-400),7px 0 0 0 color-mix(in srgb,var(--c) 75%,transparent),10px 0 18px -6px rgba(0,0,0,.35)}
-.tool .ph img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
-.tool:active .ph img{transform:scale(1.04)}
-.t-hisas{--c:var(--navy)} .t-ifraz{--c:var(--green-600)} .t-jarf{--c:var(--brown)}
-
-/* ---------- الشعار السفلي ---------- */
-.tagline{position:relative;margin:6px -14px 0;height:92px;display:grid;place-items:end center;overflow:hidden}
-.sky{position:absolute;inset:auto 0 0 0;width:100%;height:70px}
-.sky .b{fill:#7d9a7c;opacity:.55} .sky .f{fill:var(--green-700)} .sky .win{fill:#f6e8b8;opacity:.7}
-.tagline span{position:relative;z-index:1;margin-bottom:12px;padding:3px 22px;font:italic 600 16px/1.6 var(--f-body);color:#fff;
-  background:linear-gradient(90deg,transparent,var(--green-800) 18%,var(--green-800) 82%,transparent);border-bottom:1.5px solid var(--gold-400)}
-footer{text-align:center;color:var(--muted);font-size:12.5px;padding:8px 0 0}
-
-/* ---------- الشريط السفلي ---------- */
-.nav{position:fixed;z-index:20;left:0;right:0;bottom:0;padding:8px max(10px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
-  background:linear-gradient(180deg,var(--green-700),var(--green-900));border-top:2px solid var(--gold-500);box-shadow:0 -8px 20px rgba(8,42,27,.35)}
-.nav .in{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;height:var(--nav-h)}
-.nav button{appearance:none;border:0;background:none;color:#f4ecd2;font:600 13.5px/1.2 var(--f-body);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:16px;cursor:pointer;transition:background .2s,color .2s}
-.nav button svg{width:26px;height:26px}
-.nav button[aria-current="page"]{color:#4a2e00;background:var(--gold-grad);box-shadow:inset 0 1px 0 #fff8d8,0 4px 12px -4px rgba(0,0,0,.5);font-weight:700}
-.nav button:active{background:rgba(255,255,255,.08)}
+html,body{margin:0;background:var(--green)}
+body{font:15px/1.6 var(--f-body);color:var(--ink);min-height:100vh}
+.screen{position:relative;max-width:560px;margin:0 auto;padding-top:env(safe-area-inset-top,0px);background:#0c3b26;min-height:100vh;display:flex;flex-direction:column}
+.fill{flex:1 1 0;min-height:0;background:#023a1a}
+.gap{flex:1 1 0;max-height:24px;background-size:100% 100%;background-repeat:no-repeat}
+.sky{display:block;width:100%;height:auto;pointer-events:none}
+.ui{position:relative}
+.ui img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.hit{position:absolute;display:block;border:0;padding:0;margin:0;background:transparent;border-radius:22px;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
+.hit:active{background:rgba(255,236,170,.18);box-shadow:inset 0 0 0 2px rgba(230,195,95,.8)}
+.hit:focus-visible{outline:3px solid var(--gold-2);outline-offset:-3px}
+.spacer{height:calc(var(--navh,110px) + env(safe-area-inset-bottom,0px))}
+.nav{position:fixed;z-index:20;left:0;right:0;bottom:0;background:var(--green);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav .ui{max-width:560px;margin:0 auto}
+body.leaving .screen{opacity:0;transition:opacity .18s}
 
 /* ---------- النوافذ المنبثقة ---------- */
 .sheet-bg{position:fixed;inset:0;z-index:30;background:rgba(5,25,15,.55);opacity:0;pointer-events:none;transition:opacity .25s}
-.sheet{position:fixed;z-index:31;left:0;right:0;bottom:0;max-height:82vh;overflow:auto;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);
-  background:linear-gradient(180deg,#fffaf0,var(--ivory));border-radius:24px 24px 0 0;border-top:3px solid var(--gold-500);
-  padding:10px max(18px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));box-shadow:0 -12px 30px rgba(0,0,0,.3)}
-.sheet .grab{width:44px;height:5px;border-radius:9px;background:var(--gold-400);margin:2px auto 10px}
-.sheet h3{margin:0 0 10px;font:700 24px/1.3 var(--f-title);color:var(--green-800)}
+.sheet{position:fixed;z-index:31;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;max-height:82vh;overflow:auto;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);
+  background:linear-gradient(180deg,#fffaf0,var(--ivory));border-radius:24px 24px 0 0;border-top:3px solid var(--gold);
+  padding:10px 18px calc(22px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 30px rgba(0,0,0,.3)}
+.sheet .grab{width:44px;height:5px;border-radius:9px;background:var(--gold-2);margin:2px auto 10px}
+.sheet h3{margin:0 0 10px;font:700 24px/1.3 var(--f-title);color:var(--green-2)}
+.sheet h4{margin:16px 0 6px;font:700 17px/1.4 var(--f-body);color:var(--green-2)}
 body.open .sheet-bg{opacity:1;pointer-events:auto}
 .sheet.on{transform:none}
-.proj{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1.5px solid var(--gold-400);border-radius:16px;background:#fffdf7;margin-bottom:10px}
-.proj img{width:48px;height:48px;border-radius:12px;object-fit:cover}
-.proj b{display:block;color:var(--green-800);font-size:15.5px}
+.proj{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1.5px solid var(--gold-2);border-radius:16px;background:#fffdf7;margin-bottom:10px}
+.proj img{width:52px;height:52px;border-radius:12px;object-fit:cover}
+.proj b{display:block;color:var(--green-2);font-size:15.5px}
 .proj small{color:var(--muted);font-size:13px;line-height:1.5;display:block}
-.btn{appearance:none;border:0;border-radius:999px;padding:8px 16px;font:700 14px var(--f-body);color:#fff;background:linear-gradient(180deg,var(--green-600),var(--green-800));box-shadow:0 0 0 1.5px var(--gold-400);cursor:pointer;text-decoration:none;white-space:nowrap}
-.empty{color:var(--muted);font-size:14px;padding:6px 2px 12px}
-.guide li{margin-bottom:10px;line-height:1.7}
-.guide .k{display:inline-block;width:26px;height:6px;border-radius:4px;vertical-align:middle;margin-inline-end:6px}
+.btn{appearance:none;border:0;border-radius:999px;padding:8px 16px;font:700 14px var(--f-body);color:#fff;background:linear-gradient(180deg,#17613f,#0c3b26);box-shadow:0 0 0 1.5px var(--gold-2);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.warn{background:linear-gradient(180deg,#b3412e,#7d2414)}
+.empty{color:var(--muted);font-size:14px;padding:6px 2px 12px;margin:0}
+.list li{margin-bottom:8px;line-height:1.7}
+.k{display:inline-block;width:26px;height:6px;border-radius:4px;vertical-align:middle;margin-inline-end:6px}
 .about{text-align:center;line-height:1.9}
-.about .phone{font:700 18px var(--f-body);color:var(--green-700);direction:ltr;display:inline-block;user-select:all}
-.close{position:absolute;top:12px;inset-inline-start:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gold-400);background:#fff;color:var(--green-800);font-size:18px;cursor:pointer}
-body.leaving .main,body.leaving .hero{opacity:.0;transform:translateY(-6px);transition:opacity .18s,transform .18s}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:370px){.tool{grid-template-columns:minmax(0,1fr) 38%}.tool .ico{width:48px;height:48px}.quick button{font-size:12px}}
+.phone{font:700 18px var(--f-body);color:#17613f;direction:ltr;display:inline-block;user-select:all}
+.close{position:absolute;top:12px;inset-inline-end:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gold-2);background:#fff;color:var(--green-2);font-size:18px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-
-<header class="hero">
-  <div class="brand">
-    <svg class="compass" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset="1" stop-color="#c99a2e"/></linearGradient></defs><text x="20" y="8" text-anchor="middle" font-size="8" font-weight="700" fill="#f3dc93" font-family="IBM Plex Sans Arabic,sans-serif">N</text><path d="M20 10l3 10-3 10-3-10zM10 20l10-3 10 3-10 3z" fill="url(#g)"/><circle cx="20" cy="20" r="1.6" fill="#0c3b26"/></svg>
-    <h1>المساح إسلام</h1>
-    <svg class="swoosh" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 9C60 2 140 2 200 7C140 5 70 6 0 11z" fill="#e6c35f"/></svg>
-    <p>أدوات المساحة في تطبيق واحد</p>
+<div class="screen">
+  <div class="ui"><img src="img/ui-p1.jpg" alt="المساح إسلام: أدوات المساحة في تطبيق واحد">
+    <button class="hit" type="button" data-sheet="projects" aria-label="مشاريعي" style="left:73.54%;top:75.89%;width:22.64%;height:19.29%"></button>
+    <button class="hit" type="button" data-sheet="files" aria-label="الملفات" style="left:49.52%;top:75.89%;width:23.38%;height:19.29%"></button>
+    <button class="hit" type="button" data-sheet="settings" aria-label="الإعدادات" style="left:27.21%;top:75.89%;width:21.47%;height:19.29%"></button>
+    <button class="hit" type="button" data-sheet="about" aria-label="حول التطبيق" style="left:3.83%;top:75.89%;width:22.74%;height:19.29%"></button>
   </div>
-</header>
-
-<main class="main">
-  <nav class="quick" aria-label="اختصارات">
-    <button type="button" data-sheet="projects"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2h8.4A1.5 1.5 0 0 1 21 8.5V9H3z" opacity=".75"/><path d="M2.4 10h19.2l-1.3 8.2a1.5 1.5 0 0 1-1.5 1.3H5.2a1.5 1.5 0 0 1-1.5-1.3z"/></svg>مشاريعي</button>
-    <button type="button" data-sheet="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2.5h8.5L19.5 7.5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z" fill="currentColor" fill-opacity=".12"/><path d="M14 2.5V8h5.5M8.5 12h7M8.5 15.5h7M8.5 19h4"/></svg>دليل الرسم</button>
-    <button type="button" data-sheet="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20 14.5 9.5M13 4l7 7M17 3.5l3.5 3.5-2.5 2.5L14.5 6z"/><path d="M5 9a4 4 0 0 1 5.5-5.2L8 6.3l.6 2.1 2.1.6L13.2 6.5A4 4 0 0 1 8 12z" fill="currentColor" fill-opacity=".12"/></svg>الأدوات</button>
-    <button type="button" data-sheet="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 10.5v6.5M12 7v.6" stroke="#fffaf0" stroke-width="2.4" stroke-linecap="round"/></svg>حول التطبيق</button>
-  </nav>
-
-  <a class="tool t-hisas" href="index.html">
-    <div class="txt">
-      <h2>حاسب الكواشين</h2>
-      <div class="rule"></div>
-      <p>يقرأ صور سند الملكية ويحوّل حصص كل مالك وورثته إلى متر مربع</p>
-      <div class="foot"><img class="ico" src="img/i-hisas.png" alt=""><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></span></div>
-    </div>
-    <div class="ph"><img src="img/c-hisas.jpg" alt="قطعة أرض محددة بالنقاط على صورة جوية"></div>
-  </a>
-
-  <a class="tool t-ifraz" href="ifraz/index.html">
-    <div class="txt">
-      <h2>الإفراز</h2>
-      <div class="rule"></div>
-      <p>يقسم القطعة بين الشركاء مع الطرق والاقتطاعات</p>
-      <span class="note" id="hisasNote" hidden></span>
-      <div class="foot"><img class="ico" src="img/i-ifraz.png" alt=""><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></span></div>
-    </div>
-    <div class="ph"><img src="img/c-ifraz.jpg" alt="قسائم مفرزة بجانب شارع"></div>
-  </a>
-
-  <a class="tool t-jarf" href="jarf/index.html">
-    <div class="txt">
-      <h2>حاسبة الجرف</h2>
-      <div class="rule"></div>
-      <p>احسب كميات الحفر والطمم من نقاط الرصد وملفات DXF</p>
-      <div class="foot"><img class="ico" src="img/i-jarf.png" alt=""><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></span></div>
-    </div>
-    <div class="ph"><img src="img/c-jarf.jpg" alt="جرافة تحفر"></div>
-  </a>
-
-  <div class="tagline">
-    <svg class="sky" viewBox="0 0 400 60" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g class="b"><rect x="0" y="28" width="5" height="32"/><path d="M-1 28l3.5-7 3.5 7z"/><rect x="-1.5" y="36" width="8" height="2"/><rect x="9" y="31" width="19" height="29"/><rect x="12" y="35" width="2.4" height="3" class="win"/><rect x="18" y="35" width="2.4" height="3" class="win"/><rect x="24" y="35" width="2.4" height="3" class="win"/><rect x="12" y="41" width="2.4" height="3" class="win"/><rect x="18" y="41" width="2.4" height="3" class="win"/><rect x="24" y="41" width="2.4" height="3" class="win"/><rect x="12" y="47" width="2.4" height="3" class="win"/><rect x="18" y="47" width="2.4" height="3" class="win"/><rect x="24" y="47" width="2.4" height="3" class="win"/><rect x="12" y="53" width="2.4" height="3" class="win"/><rect x="18" y="53" width="2.4" height="3" class="win"/><rect x="24" y="53" width="2.4" height="3" class="win"/><rect x="28" y="38" width="17" height="22"/><rect x="31" y="42" width="2.4" height="3" class="win"/><rect x="37" y="42" width="2.4" height="3" class="win"/><rect x="31" y="48" width="2.4" height="3" class="win"/><rect x="37" y="48" width="2.4" height="3" class="win"/><rect x="31" y="54" width="2.4" height="3" class="win"/><rect x="37" y="54" width="2.4" height="3" class="win"/><rect x="46" y="48" width="18" height="12"/><path d="M46 48a9 9 0 0 1 18 0z"/><rect x="65" y="34" width="17" height="26"/><rect x="68" y="38" width="2.4" height="3" class="win"/><rect x="74" y="38" width="2.4" height="3" class="win"/><rect x="68" y="44" width="2.4" height="3" class="win"/><rect x="74" y="44" width="2.4" height="3" class="win"/><rect x="68" y="50" width="2.4" height="3" class="win"/><rect x="74" y="50" width="2.4" height="3" class="win"/><rect x="68" y="56" width="2.4" height="3" class="win"/><rect x="74" y="56" width="2.4" height="3" class="win"/><rect x="83" y="22" width="5" height="38"/><path d="M82 22l3.5-7 3.5 7z"/><rect x="81.5" y="30" width="8" height="2"/><rect x="92" y="44" width="10" height="16"/><rect x="95" y="48" width="2.4" height="3" class="win"/><rect x="95" y="54" width="2.4" height="3" class="win"/><rect x="103" y="45" width="19" height="15"/><rect x="106" y="49" width="2.4" height="3" class="win"/><rect x="112" y="49" width="2.4" height="3" class="win"/><rect x="118" y="49" width="2.4" height="3" class="win"/><rect x="106" y="55" width="2.4" height="3" class="win"/><rect x="112" y="55" width="2.4" height="3" class="win"/><rect x="118" y="55" width="2.4" height="3" class="win"/><rect x="124" y="31" width="14" height="29"/><rect x="127" y="35" width="2.4" height="3" class="win"/><rect x="133" y="35" width="2.4" height="3" class="win"/><rect x="127" y="41" width="2.4" height="3" class="win"/><rect x="133" y="41" width="2.4" height="3" class="win"/><rect x="127" y="47" width="2.4" height="3" class="win"/><rect x="133" y="47" width="2.4" height="3" class="win"/><rect x="127" y="53" width="2.4" height="3" class="win"/><rect x="133" y="53" width="2.4" height="3" class="win"/><rect x="141" y="34" width="16" height="26"/><rect x="144" y="38" width="2.4" height="3" class="win"/><rect x="150" y="38" width="2.4" height="3" class="win"/><rect x="144" y="44" width="2.4" height="3" class="win"/><rect x="150" y="44" width="2.4" height="3" class="win"/><rect x="144" y="50" width="2.4" height="3" class="win"/><rect x="150" y="50" width="2.4" height="3" class="win"/><rect x="144" y="56" width="2.4" height="3" class="win"/><rect x="150" y="56" width="2.4" height="3" class="win"/><rect x="160" y="35" width="12" height="25"/><rect x="163" y="39" width="2.4" height="3" class="win"/><rect x="163" y="45" width="2.4" height="3" class="win"/><rect x="163" y="51" width="2.4" height="3" class="win"/><circle cx="178" cy="50" r="6"/><rect x="177" y="55" width="2" height="5"/><rect x="186" y="33" width="20" height="27"/><rect x="189" y="37" width="2.4" height="3" class="win"/><rect x="195" y="37" width="2.4" height="3" class="win"/><rect x="201" y="37" width="2.4" height="3" class="win"/><rect x="189" y="43" width="2.4" height="3" class="win"/><rect x="195" y="43" width="2.4" height="3" class="win"/><rect x="201" y="43" width="2.4" height="3" class="win"/><rect x="189" y="49" width="2.4" height="3" class="win"/><rect x="195" y="49" width="2.4" height="3" class="win"/><rect x="201" y="49" width="2.4" height="3" class="win"/><rect x="189" y="55" width="2.4" height="3" class="win"/><rect x="195" y="55" width="2.4" height="3" class="win"/><rect x="201" y="55" width="2.4" height="3" class="win"/><rect x="208" y="35" width="16" height="25"/><rect x="211" y="39" width="2.4" height="3" class="win"/><rect x="217" y="39" width="2.4" height="3" class="win"/><rect x="211" y="45" width="2.4" height="3" class="win"/><rect x="217" y="45" width="2.4" height="3" class="win"/><rect x="211" y="51" width="2.4" height="3" class="win"/><rect x="217" y="51" width="2.4" height="3" class="win"/><rect x="227" y="46" width="15" height="14"/><rect x="230" y="50" width="2.4" height="3" class="win"/><rect x="236" y="50" width="2.4" height="3" class="win"/><rect x="230" y="56" width="2.4" height="3" class="win"/><rect x="236" y="56" width="2.4" height="3" class="win"/><rect x="244" y="41" width="20" height="19"/><rect x="247" y="45" width="2.4" height="3" class="win"/><rect x="253" y="45" width="2.4" height="3" class="win"/><rect x="259" y="45" width="2.4" height="3" class="win"/><rect x="247" y="51" width="2.4" height="3" class="win"/><rect x="253" y="51" width="2.4" height="3" class="win"/><rect x="259" y="51" width="2.4" height="3" class="win"/><rect x="266" y="43" width="19" height="17"/><rect x="269" y="47" width="2.4" height="3" class="win"/><rect x="275" y="47" width="2.4" height="3" class="win"/><rect x="281" y="47" width="2.4" height="3" class="win"/><rect x="269" y="53" width="2.4" height="3" class="win"/><rect x="275" y="53" width="2.4" height="3" class="win"/><rect x="281" y="53" width="2.4" height="3" class="win"/><rect x="286" y="38" width="19" height="22"/><rect x="289" y="42" width="2.4" height="3" class="win"/><rect x="295" y="42" width="2.4" height="3" class="win"/><rect x="301" y="42" width="2.4" height="3" class="win"/><rect x="289" y="48" width="2.4" height="3" class="win"/><rect x="295" y="48" width="2.4" height="3" class="win"/><rect x="301" y="48" width="2.4" height="3" class="win"/><rect x="289" y="54" width="2.4" height="3" class="win"/><rect x="295" y="54" width="2.4" height="3" class="win"/><rect x="301" y="54" width="2.4" height="3" class="win"/><rect x="307" y="52" width="18" height="8"/><path d="M307 52a9 9 0 0 1 18 0z"/><rect x="326" y="33" width="11" height="27"/><rect x="329" y="37" width="2.4" height="3" class="win"/><rect x="329" y="43" width="2.4" height="3" class="win"/><rect x="329" y="49" width="2.4" height="3" class="win"/><rect x="329" y="55" width="2.4" height="3" class="win"/><circle cx="346" cy="48" r="8"/><rect x="345" y="55" width="2" height="5"/><rect x="356" y="45" width="10" height="15"/><rect x="359" y="49" width="2.4" height="3" class="win"/><rect x="359" y="55" width="2.4" height="3" class="win"/><rect x="369" y="38" width="15" height="22"/><rect x="372" y="42" width="2.4" height="3" class="win"/><rect x="378" y="42" width="2.4" height="3" class="win"/><rect x="372" y="48" width="2.4" height="3" class="win"/><rect x="378" y="48" width="2.4" height="3" class="win"/><rect x="372" y="54" width="2.4" height="3" class="win"/><rect x="378" y="54" width="2.4" height="3" class="win"/><rect x="385" y="46" width="14" height="14"/><rect x="388" y="50" width="2.4" height="3" class="win"/><rect x="394" y="50" width="2.4" height="3" class="win"/><rect x="388" y="56" width="2.4" height="3" class="win"/><rect x="394" y="56" width="2.4" height="3" class="win"/><circle cx="404" cy="51" r="5"/><rect x="403" y="55" width="2" height="5"/></g><g class="f"><rect x="0" y="40" width="18" height="20"/><rect x="3" y="44" width="2.4" height="3" class="win"/><rect x="9" y="44" width="2.4" height="3" class="win"/><rect x="3" y="50" width="2.4" height="3" class="win"/><rect x="9" y="50" width="2.4" height="3" class="win"/><rect x="3" y="56" width="2.4" height="3" class="win"/><rect x="9" y="56" width="2.4" height="3" class="win"/><rect x="21" y="49" width="19" height="11"/><rect x="24" y="53" width="2.4" height="3" class="win"/><rect x="30" y="53" width="2.4" height="3" class="win"/><rect x="36" y="53" width="2.4" height="3" class="win"/><rect x="41" y="42" width="17" height="18"/><rect x="44" y="46" width="2.4" height="3" class="win"/><rect x="50" y="46" width="2.4" height="3" class="win"/><rect x="44" y="52" width="2.4" height="3" class="win"/><rect x="50" y="52" width="2.4" height="3" class="win"/><circle cx="65" cy="50" r="6"/><rect x="64" y="55" width="2" height="5"/><circle cx="78" cy="51" r="5"/><rect x="77" y="55" width="2" height="5"/><rect x="85" y="45" width="16" height="15"/><rect x="88" y="49" width="2.4" height="3" class="win"/><rect x="94" y="49" width="2.4" height="3" class="win"/><rect x="88" y="55" width="2.4" height="3" class="win"/><rect x="94" y="55" width="2.4" height="3" class="win"/><rect x="102" y="51" width="18" height="9"/><rect x="105" y="55" width="2.4" height="3" class="win"/><rect x="111" y="55" width="2.4" height="3" class="win"/><circle cx="125" cy="51" r="5"/><rect x="124" y="55" width="2" height="5"/><rect x="132" y="45" width="15" height="15"/><rect x="135" y="49" width="2.4" height="3" class="win"/><rect x="141" y="49" width="2.4" height="3" class="win"/><rect x="135" y="55" width="2.4" height="3" class="win"/><rect x="141" y="55" width="2.4" height="3" class="win"/><rect x="148" y="48" width="20" height="12"/><rect x="151" y="52" width="2.4" height="3" class="win"/><rect x="157" y="52" width="2.4" height="3" class="win"/><rect x="163" y="52" width="2.4" height="3" class="win"/><circle cx="179" cy="48" r="8"/><rect x="178" y="55" width="2" height="5"/><rect x="189" y="44" width="16" height="16"/><rect x="192" y="48" width="2.4" height="3" class="win"/><rect x="198" y="48" width="2.4" height="3" class="win"/><rect x="192" y="54" width="2.4" height="3" class="win"/><rect x="198" y="54" width="2.4" height="3" class="win"/><rect x="205" y="40" width="15" height="20"/><rect x="208" y="44" width="2.4" height="3" class="win"/><rect x="214" y="44" width="2.4" height="3" class="win"/><rect x="208" y="50" width="2.4" height="3" class="win"/><rect x="214" y="50" width="2.4" height="3" class="win"/><rect x="208" y="56" width="2.4" height="3" class="win"/><rect x="214" y="56" width="2.4" height="3" class="win"/><rect x="221" y="51" width="10" height="9"/><rect x="224" y="55" width="2.4" height="3" class="win"/><rect x="231" y="46" width="14" height="14"/><rect x="234" y="50" width="2.4" height="3" class="win"/><rect x="240" y="50" width="2.4" height="3" class="win"/><rect x="234" y="56" width="2.4" height="3" class="win"/><rect x="240" y="56" width="2.4" height="3" class="win"/><rect x="245" y="52" width="20" height="8"/><rect x="248" y="56" width="2.4" height="3" class="win"/><rect x="254" y="56" width="2.4" height="3" class="win"/><rect x="260" y="56" width="2.4" height="3" class="win"/><rect x="266" y="23" width="5" height="37"/><path d="M265 23l3.5-7 3.5 7z"/><rect x="264.5" y="31" width="8" height="2"/><rect x="275" y="46" width="21" height="14"/><rect x="278" y="50" width="2.4" height="3" class="win"/><rect x="284" y="50" width="2.4" height="3" class="win"/><rect x="290" y="50" width="2.4" height="3" class="win"/><rect x="278" y="56" width="2.4" height="3" class="win"/><rect x="284" y="56" width="2.4" height="3" class="win"/><rect x="290" y="56" width="2.4" height="3" class="win"/><circle cx="305" cy="50" r="6"/><rect x="304" y="55" width="2" height="5"/><rect x="313" y="47" width="14" height="13"/><rect x="316" y="51" width="2.4" height="3" class="win"/><rect x="322" y="51" width="2.4" height="3" class="win"/><rect x="327" y="46" width="10" height="14"/><rect x="330" y="50" width="2.4" height="3" class="win"/><rect x="330" y="56" width="2.4" height="3" class="win"/><rect x="337" y="52" width="12" height="8"/><path d="M337 52a6 6 0 0 1 12 0z"/><circle cx="358" cy="48" r="8"/><rect x="357" y="55" width="2" height="5"/><rect x="368" y="49" width="14" height="11"/><path d="M368 49a7 7 0 0 1 14 0z"/><rect x="383" y="40" width="21" height="20"/><rect x="386" y="44" width="2.4" height="3" class="win"/><rect x="392" y="44" width="2.4" height="3" class="win"/><rect x="398" y="44" width="2.4" height="3" class="win"/><rect x="386" y="50" width="2.4" height="3" class="win"/><rect x="392" y="50" width="2.4" height="3" class="win"/><rect x="398" y="50" width="2.4" height="3" class="win"/><rect x="386" y="56" width="2.4" height="3" class="win"/><rect x="392" y="56" width="2.4" height="3" class="win"/><rect x="398" y="56" width="2.4" height="3" class="win"/></g></svg>
-    <span>دقة .. احترافية .. لنتائج أفضل</span>
+  <div class="gap" style="background-image:url(img/ui-g1.png)"></div>
+  <div class="ui"><img src="img/ui-p2.jpg" alt="">
+    <a class="hit" href="index.html" aria-label="حاسب الكواشين" style="left:3.19%;top:3.16%;width:94.05%;height:89.12%"></a>
   </div>
-  <footer>صنع وتطوير: إسلام دويكات · <span dir="ltr">© 2026 Islam Dweikat</span><span id="ver"></span></footer>
-</main>
+  <div class="gap" style="background-image:url(img/ui-g2.png)"></div>
+  <div class="ui"><img src="img/ui-p3.jpg" alt="">
+    <a class="hit" href="ifraz/index.html" aria-label="الإفراز" style="left:3.19%;top:2.09%;width:94.05%;height:90.59%"></a>
+  </div>
+  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
+  <div class="ui"><img src="img/ui-p4.jpg" alt="">
+    <a class="hit" href="jarf/index.html" aria-label="حاسبة الجرف" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
+  </div>
+  <img class="sky" src="img/ui-sky.jpg" alt="دقة .. احترافية .. لنتائج أفضل">
+  <div class="fill"></div>
+  <div class="spacer"></div>
+</div>
 
 <nav class="nav" aria-label="التنقل">
-  <div class="in">
-    <button type="button" data-nav="home" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</button>
-    <button type="button" data-sheet="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7l6-2.5 6 2.5 6-2.5v13L15 20l-6-2.5L3 20z"/><path d="M9 4.5v13M15 7v13"/><circle cx="15" cy="10" r="2.6" fill="currentColor" stroke="none"/></svg>مشاريعي</button>
-    <button type="button" data-sheet="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2.5h8.5L19.5 7.5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M14 2.5V8h5.5M8.5 12h7M8.5 15.5h7"/></svg>دليل الرسم</button>
-    <button type="button" data-sheet="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M12 10.5v6.5M12 7v.6" stroke-linecap="round" stroke-width="2.6"/></svg>حول</button>
+  <div class="ui">
+    <img src="img/ui-nav.jpg" alt="">
+    <button class="hit" type="button" data-nav="home" aria-label="الرئيسية" style="left:74.81%;top:3.19%;width:22.53%;height:75.53%"></button>
+    <button class="hit" type="button" data-sheet="projects" aria-label="مشاريعي" style="left:51.01%;top:3.19%;width:23.38%;height:75.53%"></button>
+    <button class="hit" type="button" data-sheet="files" aria-label="الملفات" style="left:26.57%;top:3.19%;width:24.02%;height:75.53%"></button>
+    <button class="hit" type="button" data-sheet="settings" aria-label="الإعدادات" style="left:1.70%;top:3.19%;width:24.44%;height:75.53%"></button>
   </div>
 </nav>
 
@@ -203,31 +96,40 @@ body.leaving .main,body.leaving .hero{opacity:.0;transform:translateY(-6px);tran
   <div id="projList"></div>
 </section>
 
-<section class="sheet" id="sh-tools" role="dialog" aria-modal="true" aria-labelledby="t-tools">
+<section class="sheet" id="sh-files" role="dialog" aria-modal="true" aria-labelledby="t-files">
   <div class="grab"></div><button class="close" type="button" aria-label="إغلاق">✕</button>
-  <h3 id="t-tools">الأدوات</h3>
-  <div class="proj"><img src="img/c-hisas.jpg" alt=""><div><b>حاسب الكواشين</b><small>قراءة صور السند أو PDF، الورثة، تصدير PDF وExcel وCSV، موقع القطعة على جيومولج.</small></div><a class="btn" href="index.html">افتح</a></div>
-  <div class="proj"><img src="img/c-ifraz.jpg" alt=""><div><b>الإفراز</b><small>حدود من DXF، اقتطاع البلدية، طرق داخلية بمنحنيات ودوار، اقتراحات وتصدير DXF وPDF.</small></div><a class="btn" href="ifraz/index.html">افتح</a></div>
-  <div class="proj"><img src="img/c-jarf.jpg" alt=""><div><b>حاسبة الجرف</b><small>الحفر والطمم من نقاط قبل الجرف وبعده، أو إلى منسوب مطلوب.</small></div><a class="btn" href="jarf/index.html">افتح</a></div>
+  <h3 id="t-files">الملفات</h3>
+  <p class="empty" style="color:var(--ink)">كل ملف تصدّره من التطبيق يُحفظ في مجلد <b>التنزيلات (Download)</b> على الهاتف، وتفتح معه نافذة المشاركة لترسله على واتساب أو Drive.</p>
+  <h4>ما تصدّره كل أداة</h4>
+  <ul class="list">
+    <li><b>حاسب الكواشين:</b> تقرير PDF، وجدول Excel، وملف CSV. ويستقبل صور السند وملفات PDF.</li>
+    <li><b>الإفراز:</b> ملف DXF للأوتوكاد، وتقرير PDF، وجدول CSV. ويقرأ حدود الأرض من DXF، والحصص من حاسب الكواشين أو من ملف PDF أو CSV.</li>
+    <li><b>حاسبة الجرف:</b> تقرأ نقاط الرصد وحدود المنطقة من ملفات DXF.</li>
+  </ul>
+  <h4>دليل الرسم في أوتوكاد</h4>
+  <ul class="list">
+    <li><span class="k" style="background:#1d2a22"></span><b>حدود القطعة:</b> بوليلاين مغلق بأي لون غير الأحمر والأزرق.</li>
+    <li><span class="k" style="background:#c0392b"></span><b>كل اقتطاع مسبق بالأحمر (رقم 1):</b> طريق معتمد، أو فضلات طرق، أو قسيمة تقترحها البلدية. بوليلاين مغلق، يُخصم أولاً ضمن نسبة الاقتطاع.</li>
+    <li><span class="k" style="background:#1f5fbf"></span><b>الطرق الخارجية بالأزرق (رقم 5):</b> خط فوق كل ضلع عليه طريق قائم، ومنه تنطلق الطرق الداخلية.</li>
+    <li>احفظ بصيغة DXF نصية (ASCII). اللون يُقرأ من الخط نفسه أو من لون الطبقة.</li>
+  </ul>
 </section>
 
-<section class="sheet" id="sh-guide" role="dialog" aria-modal="true" aria-labelledby="t-guide">
+<section class="sheet" id="sh-settings" role="dialog" aria-modal="true" aria-labelledby="t-set">
   <div class="grab"></div><button class="close" type="button" aria-label="إغلاق">✕</button>
-  <h3 id="t-guide">دليل الرسم في أوتوكاد</h3>
-  <ul class="guide">
-    <li><span class="k" style="background:#1d2a22"></span><b>حدود القطعة:</b> بوليلاين مغلق بأي لون غير الأحمر والأزرق.</li>
-    <li><span class="k" style="background:#c0392b"></span><b>كل اقتطاع مسبق باللون الأحمر (رقم 1):</b> بوليلاين مغلق لكل طريق معتمد أو فضلات طرق أو قسيمة اقترحتها البلدية. يُخصم أولاً ويُحسب ضمن نسبة الاقتطاع.</li>
-    <li><span class="k" style="background:#1f5fbf"></span><b>الطرق الخارجية باللون الأزرق (رقم 5):</b> خط فوق كل ضلع عليه طريق قائم، ومنه تنطلق الطرق الداخلية المقترحة.</li>
-    <li><b>حاسبة الجرف:</b> نقاط الرصد قبل الجرف وبعده في ملفين أو طبقتين، وحدود منطقة الحساب بوليلاين مغلق. الشرح الكامل في تبويب «دليل AutoCAD» داخل حاسبة الجرف.</li>
-    <li>احفظ الملف بصيغة DXF نصية (ASCII). اللون يُقرأ من الخط نفسه أو من لون الطبقة.</li>
-  </ul>
+  <h3 id="t-set">الإعدادات</h3>
+  <h4>البيانات المحفوظة على هذا الهاتف</h4>
+  <p class="empty">كل أداة تحفظ عملك تلقائياً. احذف ما لا تحتاجه لتبدأ من جديد. الحذف لا يمكن التراجع عنه.</p>
+  <div id="dataList"></div>
+  <h4>النسخة</h4>
+  <p class="empty" id="verSet">نسخة الويب</p>
 </section>
 
 <section class="sheet" id="sh-about" role="dialog" aria-modal="true" aria-labelledby="t-about">
   <div class="grab"></div><button class="close" type="button" aria-label="إغلاق">✕</button>
   <h3 id="t-about">حول التطبيق</h3>
   <div class="about">
-    <b style="font:700 22px var(--f-title);color:var(--green-800)">المساح إسلام</b><br>
+    <b style="font:700 22px var(--f-title);color:var(--green-2)">المساح إسلام</b><br>
     حاسب الكواشين · الإفراز · حاسبة الجرف<br>
     صاحب ومطور التطبيق: <b>إسلام إسماعيل دويكات</b><br>
     <span class="phone">0598161862</span><br>
@@ -240,61 +142,65 @@ body.leaving .main,body.leaving .hero{opacity:.0;transform:translateY(-6px);tran
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const read = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } };
+let ver = "نسخة الويب";
+try { if (window.AndroidBridge && AndroidBridge.appVersion) ver = "النسخة " + AndroidBridge.appVersion(); } catch (e) {}
+$("#ver2").textContent = ver; $("#verSet").textContent = ver;
 
-/* حصص جاهزة من حاسب الكواشين تظهر على بطاقة الإفراز */
-const hd = read("hisas-ifraz");
-if (hd && hd.owners && hd.owners.length) {
-  const n = $("#hisasNote");
-  n.textContent = "جاهز من حاسب الكواشين: " + [hd.h && hd.h.vil, hd.h && hd.h.parcel ? "قطعة " + hd.h.parcel : ""].filter(Boolean).join(" – ") + " (" + hd.owners.length + " مالك)";
-  n.hidden = false;
-}
-try { if (window.AndroidBridge && AndroidBridge.appVersion) { const v = AndroidBridge.appVersion(); $("#ver").textContent = " · النسخة " + v; $("#ver2").textContent = "النسخة " + v; } } catch (e) {}
+/* ارتفاع الشريط السفلي يتبع عرض الشاشة */
+const fitNav = () => { const h = document.querySelector(".nav .ui").getBoundingClientRect().height; document.documentElement.style.setProperty("--navh", h + "px"); };
+addEventListener("resize", fitNav); document.querySelector(".nav img").addEventListener("load", fitNav); fitNav();
 
-/* مشاريعي: العمل المحفوظ في كل أداة على هذا الهاتف */
 function area(p) { let s = 0; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s / 2); }
 const fmt = n => Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
-function renderProjects() {
+function projects() {
   const out = [];
   const deed = read("deed-shares-v4");
   if (deed && deed.owners && deed.owners.length) {
     const h = deed.h || {};
-    out.push(`<div class="proj"><img src="img/c-hisas.jpg" alt=""><div><b>كوشان ${esc([h.vil, h.parcel ? "قطعة " + h.parcel : ""].filter(Boolean).join(" – ") || "بدون اسم")}</b><small>حاسب الكواشين · ${deed.owners.length} مالك${h.basin ? " · حوض " + esc(h.basin) : ""}</small></div><a class="btn" href="index.html">افتح</a></div>`);
+    out.push({ key: "deed-shares-v4", img: "img/c-hisas.jpg", href: "index.html", title: "كوشان " + ([h.vil, h.parcel ? "قطعة " + h.parcel : ""].filter(Boolean).join(" – ") || "بدون اسم"), sub: "حاسب الكواشين · " + deed.owners.length + " مالك" + (h.basin ? " · حوض " + h.basin : "") });
   }
   const fz = read("ifraz-v1");
-  if (fz && Array.isArray(fz.boundary) && fz.boundary.length > 2 && !fz.sample) {
-    out.push(`<div class="proj"><img src="img/c-ifraz.jpg" alt=""><div><b>${esc(fz.landTitle || "قطعة للإفراز")}</b><small>الإفراز · ${fmt(area(fz.boundary))} م² · ${(fz.owners || []).length} مالك</small></div><a class="btn" href="ifraz/index.html">افتح</a></div>`);
-  }
-  $("#projList").innerHTML = out.length ? out.join("") + '<p class="empty">يُحفظ العمل تلقائياً في كل أداة، ويظهر هنا آخر عمل مفتوح فيها.</p>'
+  if (fz && Array.isArray(fz.boundary) && fz.boundary.length > 2 && !fz.sample)
+    out.push({ key: "ifraz-v1", img: "img/c-ifraz.jpg", href: "ifraz/index.html", title: fz.landTitle || "قطعة للإفراز", sub: "الإفراز · " + fmt(area(fz.boundary)) + " م² · " + (fz.owners || []).length + " مالك" });
+  return out;
+}
+function renderProjects() {
+  const ps = projects();
+  $("#projList").innerHTML = ps.length ? ps.map(p => `<div class="proj"><img src="${p.img}" alt=""><div><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></div><a class="btn" href="${p.href}">افتح</a></div>`).join("") + '<p class="empty">يُحفظ العمل تلقائياً في كل أداة، ويظهر هنا آخر عمل مفتوح فيها.</p>'
     : '<p class="empty">لا يوجد عمل محفوظ بعد. افتح حاسب الكواشين أو الإفراز وابدأ، ويظهر عملك هنا.</p>';
 }
+function renderData() {
+  const ps = projects();
+  $("#dataList").innerHTML = ps.length ? ps.map(p => `<div class="proj"><img src="${p.img}" alt=""><div><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></div><button class="btn warn" type="button" data-del="${p.key}">حذف</button></div>`).join("") : '<p class="empty">لا توجد بيانات محفوظة.</p>';
+  document.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.armed) { try { localStorage.removeItem(b.dataset.del); if (b.dataset.del === "deed-shares-v4") localStorage.removeItem("hisas-ifraz"); } catch (e) {} renderData(); return; }
+    b.dataset.armed = "1"; b.textContent = "تأكيد الحذف";
+    setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = "حذف"; } }, 4000);
+  }));
+}
 
-/* النوافذ المنبثقة + زر الرجوع في الهاتف */
 let cur = null;
 function openSheet(id) {
   if (id === "projects") renderProjects();
-  closeSheet(true);
+  if (id === "settings") renderData();
+  if (cur) cur.classList.remove("on");
   cur = document.getElementById("sh-" + id); if (!cur) return;
   document.body.classList.add("open"); cur.classList.add("on");
-  document.querySelectorAll(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.sheet === id ? "page" : "false"));
 }
-function closeSheet(quiet) {
-  if (cur) cur.classList.remove("on");
-  cur = null; document.body.classList.remove("open");
-  if (!quiet) document.querySelectorAll(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.nav === "home" ? "page" : "false"));
-}
+function closeSheet() { if (cur) cur.classList.remove("on"); cur = null; document.body.classList.remove("open"); }
 document.querySelectorAll("[data-sheet]").forEach(b => b.addEventListener("click", () => openSheet(b.dataset.sheet)));
-document.querySelector('[data-nav="home"]').addEventListener("click", () => { closeSheet(); window.scrollTo({ top: 0, behavior: "smooth" }); });
-document.querySelectorAll(".close").forEach(b => b.addEventListener("click", () => closeSheet()));
-$("#sheetBg").addEventListener("click", () => closeSheet());
+document.querySelector('[data-nav="home"]').addEventListener("click", () => { closeSheet(); scrollTo({ top: 0, behavior: "smooth" }); });
+document.querySelectorAll(".close").forEach(b => b.addEventListener("click", closeSheet));
+$("#sheetBg").addEventListener("click", closeSheet);
 window.__back = () => (cur ? (closeSheet(), 1) : 0);
 
-/* انتقال ناعم عند فتح أداة */
-document.querySelectorAll("a[href$='.html']").forEach(a => a.addEventListener("click", e => {
+document.querySelectorAll("a.hit, .proj a").forEach(a => a.addEventListener("click", e => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   e.preventDefault(); document.body.classList.add("leaving");
-  setTimeout(() => { location.href = a.getAttribute("href"); }, 170);
+  setTimeout(() => { location.href = a.getAttribute("href"); }, 160);
 }));
-window.addEventListener("pageshow", () => { document.body.classList.remove("leaving"); closeSheet(); });
+document.addEventListener("click", e => { const a = e.target.closest(".proj a"); if (a) { e.preventDefault(); location.href = a.getAttribute("href"); } });
+addEventListener("pageshow", () => { document.body.classList.remove("leaving"); closeSheet(); fitNav(); });
 </script>
 </body>
 </html>

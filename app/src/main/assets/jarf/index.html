@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>حاسبة الجرف</title>
+<link rel="stylesheet" href="fonts.css">
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}</style>
+<style>
+/* Layout: single-column field sheet. Three file slots, one run button, one result sheet with a plan map. Cut and fill are the only two hues. */
+:root{
+  --bg:#EDF1F2; --surface:#FFFFFF; --ink:#12212B; --muted:#586A75; --line:#CBD6DB; --soft:#E3EBEE;
+  --btn:#12212B; --btn-ink:#F4F8F9;
+  --cut:#C2442A; --fill:#2678B5;
+  --warn:#7A4E00; --warn-bg:#FBF1DA; --ok:#1E6B4A;
+  --font-ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,"Noto Sans Arabic",sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E181F; --surface:#15232C; --ink:#E6EEF1; --muted:#93A7B2; --line:#2A3B46; --soft:#1C2D38;
+    --btn:#E6EEF1; --btn-ink:#0E181F;
+    --cut:#EE7656; --fill:#62AEE3;
+    --warn:#F0C36B; --warn-bg:#2E2512; --ok:#6FCB9F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E181F; --surface:#15232C; --ink:#E6EEF1; --muted:#93A7B2; --line:#2A3B46; --soft:#1C2D38;
+  --btn:#E6EEF1; --btn-ink:#0E181F;
+  --cut:#EE7656; --fill:#62AEE3;
+  --warn:#F0C36B; --warn-bg:#2E2512; --ok:#6FCB9F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font-ui); font-size:15px; line-height:1.7;
+  padding-block:20px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:980px;margin-inline:auto;display:flex;flex-direction:column;gap:18px}
+.num{font-family:var(--font-num);direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+h1{font-size:26px;line-height:1.3;margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:18px;margin:0 0 8px;font-weight:600;text-wrap:balance}
+h3{font-size:15px;margin:0;font-weight:600}
+p{margin:0}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+header p{color:var(--muted);font-size:13px}
+.tabs{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
+.tab{font:inherit;font-size:14px;padding:8px 16px;min-height:40px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);font-weight:500}
+:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+.modes{display:flex;flex-wrap:wrap;gap:8px}
+.mode{font:inherit;font-size:14px;min-height:44px;padding:0 16px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.mode[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn);font-weight:500}
+.slot[hidden]{display:none}
+.banner{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:10px 14px;font-size:13.5px}
+.banner b{font-weight:600}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.slot-head{display:flex;flex-direction:column;gap:2px}
+.slot-head small{color:var(--muted);font-size:12.5px}
+.step{font-family:var(--font-num);font-size:12px;color:var(--muted);letter-spacing:.04em}
+.file-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px dashed var(--muted);border-radius:6px;cursor:pointer;font-size:14px;color:var(--ink);background:transparent}
+.file-btn:hover{background:var(--soft)}
+.file-btn:focus-within{outline:2px solid var(--fill);outline-offset:2px}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.fname{font-size:13px;word-break:break-all}
+.tag{font-size:11.5px;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:0 6px;color:var(--muted)}
+.stat{font-size:13px;color:var(--muted)}
+.stat.warn{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:12.5px;display:inline-flex;gap:6px;align-items:center;min-height:32px;padding:0 10px;border-radius:5px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12.5px;color:var(--muted)}
+.field input{font-family:var(--font-num);font-size:15px;min-height:44px;width:150px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);direction:ltr;text-align:left}
+.btn{font:inherit;font-weight:500;min-height:44px;padding:0 20px;border-radius:6px;border:1px solid var(--btn);background:var(--btn);color:var(--btn-ink);cursor:pointer}
+.btn.secondary{background:transparent;color:var(--ink);border-color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:default}
+.spacer{flex:1}
+#status{font-size:13.5px;color:var(--muted)}
+#results{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:4px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.tile .lab{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.sw{width:10px;height:10px;display:inline-block;border-radius:2px}
+.tile .val{font-family:var(--font-num);font-size:26px;font-weight:500;direction:ltr;text-align:right;font-variant-numeric:tabular-nums;line-height:1.3}
+.tile .unit{font-size:12.5px;color:var(--muted)}
+.cut-c{color:var(--cut)} .fill-c{color:var(--fill)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th{font-weight:500;color:var(--muted)}
+td.v{font-family:var(--font-num);direction:ltr;text-align:left;white-space:nowrap}
+.scroll-x{overflow-x:auto}
+.warnings{display:flex;flex-direction:column;gap:6px}
+.warnings p{background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:8px 12px;font-size:13.5px}
+.mapbox{display:flex;flex-direction:column;gap:8px}
+.mapbox canvas{display:block;max-width:100%;border:1px solid var(--line);border-radius:4px;background:var(--bg);touch-action:manipulation}
+.legend{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.bar{flex:1;min-width:140px;height:10px;border-radius:2px;background:linear-gradient(to right,var(--fill),var(--soft),var(--cut));border:1px solid var(--line)}
+.probe{font-size:13.5px;min-height:24px}
+.guide{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:22px}
+.guide section{display:flex;flex-direction:column;gap:8px;max-width:68ch}
+.guide ol,.guide ul{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:6px}
+.guide code{font-family:var(--font-num);direction:ltr;unicode-bidi:isolate;background:var(--soft);padding:0 5px;border-radius:3px;font-size:13px}
+.guide .scroll-x{max-width:100%}
+.note{background:var(--soft);border-radius:4px;padding:10px 12px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.tab,.chip,.btn{transition:background-color .15s,color .15s}}
+</style>
+</head>
+<body>
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <div>
+      <a href="../home.html" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;margin-bottom:8px;border:1px solid currentColor;border-radius:99px;font:600 13px inherit;color:inherit;opacity:.8;text-decoration:none">⌂ الرئيسية</a>
+      <h1>حاسبة الجرف</h1>
+      <p>الحفر والطمم من نقاط الرصد قبل الجرف وبعده (ملفات DXF)</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="الأقسام">
+      <button class="tab" role="tab" id="tab-calc" aria-selected="true" aria-controls="calc" data-tab="calc">الحساب</button>
+      <button class="tab" role="tab" id="tab-guide" aria-selected="false" aria-controls="guide" data-tab="guide">دليل AutoCAD</button>
+    </div>
+  </header>
+
+  <main id="calc" role="tabpanel" aria-labelledby="tab-calc" style="display:flex;flex-direction:column;gap:18px">
+    <div class="banner" id="demoBanner" hidden></div>
+
+    <div class="modes" role="group" aria-label="نوع الحساب">
+      <button type="button" class="mode" id="mode-two" aria-pressed="true">قبل الجرف وبعده</button>
+      <button type="button" class="mode" id="mode-level" aria-pressed="false">قبل الجرف + منسوب مطلوب</button>
+    </div>
+
+    <div class="slots">
+      <article class="slot" id="slot-before">
+        <div class="slot-head"><span class="step">1</span><h3>قبل الجرف</h3><small>نقاط الرصد وخطوط UP وDown</small></div>
+        <label class="file-btn">اختيار ملف DXF<input type="file" id="file-before"></label>
+        <div class="slot-body"></div>
+      </article>
+      <article class="slot" id="slot-after">
+        <div class="slot-head"><span class="step">2</span><h3>بعد الجرف</h3><small>نقاط الرصد وخطوط UP c وDown c</small></div>
+        <label class="file-btn">اختيار ملف DXF<input type="file" id="file-after"></label>
+        <div class="slot-body"></div>
+      </article>
+      <article class="slot" id="slot-level" hidden>
+        <div class="slot-head"><span class="step">2</span><h3>المنسوب المطلوب</h3><small>المنسوب الذي يعطيك إياه مهندس المشروع</small></div>
+        <div class="field">
+          <label for="level">المنسوب بالمتر</label>
+          <input id="level" type="number" inputmode="decimal" step="0.01" placeholder="مثال: 98.50">
+        </div>
+        <p class="stat">يحسب التطبيق الحفر والطمم اللازمين ليصبح كل سطح الأرض داخل JARF بهذا المنسوب.</p>
+      </article>
+      <article class="slot" id="slot-bound">
+        <div class="slot-head"><span class="step">3</span><h3>الحدود JARF</h3><small>لا تفعل شيئاً هنا إن رسمت JARF داخل ملف النقاط</small></div>
+        <label class="file-btn">اختيار ملف DXF<input type="file" id="file-bound"></label>
+        <div class="slot-body"></div>
+      </article>
+    </div>
+
+    <div class="controls">
+      <div class="field">
+        <label for="cell">حجم الخلية بالمتر. اتركه فارغاً ليختاره التطبيق</label>
+        <input id="cell" type="number" inputmode="decimal" min="0.02" step="0.01" placeholder="auto">
+      </div>
+      <button class="btn" id="run" type="button">احسب</button>
+      <button class="btn secondary" id="demoBtn" type="button">بيانات تجريبية</button>
+      <span class="spacer"></span>
+      <span id="status" role="status" aria-live="polite"></span>
+    </div>
+
+    <section id="results" aria-label="النتائج" hidden>
+      <div class="warnings" id="warnings"></div>
+      <div class="tiles">
+        <div class="tile"><span class="lab"><i class="sw" style="background:var(--cut)"></i>حفر</span><span class="val cut-c" id="t-cut">0</span><span class="unit">متر مكعب</span></div>
+        <div class="tile"><span class="lab"><i class="sw" style="background:var(--fill)"></i>طمم</span><span class="val fill-c" id="t-fill">0</span><span class="unit">متر مكعب</span></div>
+        <div class="tile"><span class="lab" id="t-net-lab">الصافي</span><span class="val" id="t-net">0</span><span class="unit">متر مكعب</span></div>
+      </div>
+      <div class="scroll-x"><table id="tbl"></table></div>
+      <div class="mapbox">
+        <h2>خريطة الفرق</h2>
+        <canvas id="map" role="img" aria-label="خريطة تظهر مناطق الحفر بالأحمر ومناطق الطمم بالأزرق داخل حدود الجرف"></canvas>
+        <div class="legend"><span>طمم <span class="num" id="lg-fill"></span></span><span class="bar"></span><span>حفر <span class="num" id="lg-cut"></span></span></div>
+        <p class="probe" id="probe">المس الخريطة لمعرفة الارتفاع قبل الجرف وبعده عند أي نقطة.</p>
+      </div>
+      <div><button class="btn secondary" id="copy" type="button">نسخ النتائج</button></div>
+    </section>
+  </main>
+
+  <div id="guide" class="guide" role="tabpanel" aria-labelledby="tab-guide" hidden>
+    <section>
+      <h2>أسماء الطبقات</h2>
+      <div class="scroll-x">
+      <table>
+        <tr><th>الطبقة</th><th>ماذا ترسم عليها</th><th>المرحلة</th></tr>
+        <tr><td><code>JARF</code></td><td>حدود الجرف المغلقة كاملة</td><td>للمرحلتين</td></tr>
+        <tr><td><code>UP</code></td><td>خط الحافة العليا للكسر</td><td>قبل الجرف</td></tr>
+        <tr><td><code>Down</code></td><td>خط الحافة السفلى للكسر</td><td>قبل الجرف</td></tr>
+        <tr><td><code>UP c</code> أو <code>UP_c</code></td><td>خط الحافة العليا للكسر</td><td>بعد الجرف</td></tr>
+        <tr><td><code>Down c</code> أو <code>Down_c</code></td><td>خط الحافة السفلى للكسر</td><td>بعد الجرف</td></tr>
+        <tr><td>أي طبقة</td><td>نقاط الرصد (كيانات POINT)</td><td>تختار طبقاتها من التطبيق</td></tr>
+      </table>
+      </div>
+      <ul>
+        <li>التطبيق لا يفرّق بين الأحرف الكبيرة والصغيرة، ويقبل المسافة أو الشرطة السفلية في الاسم.</li>
+        <li>لا تكتب اسماً فيه مسافة في سطر الأوامر، لأن المسافة تُحسب Enter. أنشئ الطبقة من نافذة <code>LAYER</code> ثم New Layer.</li>
+        <li>إن كانت نقاط قبل وبعد في ملف واحد، سمِّ طبقة نقاط ما بعد الجرف مثل طبقة ما قبل مع إضافة c، مثلاً <code>PTS</code> و<code>PTS c</code>، فيفرزها التطبيق وحده. وإلا فاختر الطبقات بيدك من الأزرار.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>رسم الحدود JARF</h2>
+      <ol>
+        <li>اجعل <code>JARF</code> الطبقة الحالية.</li>
+        <li>اكتب <code>PLINE</code> واضغط زوايا منطقة الجرف.</li>
+        <li>اكتب <code>C</code> ثم Enter لإغلاقها.</li>
+        <li>يجب أن تحيط بكل منطقة الجرف، وأن تكون Polyline واحدة وليس خطوط LINE منفصلة. إن كانت منفصلة فاستعمل <code>PEDIT</code> ثم Join.</li>
+      </ol>
+    </section>
+    <section>
+      <h2>رسم خطوط الكسر</h2>
+      <ol>
+        <li>اجعل الطبقة المناسبة حالية: <code>UP</code> أو <code>Down</code> قبل الجرف، و<code>UP c</code> أو <code>Down c</code> بعده.</li>
+        <li>اكتب <code>3DPOLY</code> إن أمكن، أو <code>PLINE</code>.</li>
+        <li>فعّل OSNAP بزر F3 واختر Node، حتى يلتصق الخط بنقطة الرصد نفسها ويأخذ ارتفاعها.</li>
+        <li>الخط يجوز أن يكون مفتوحاً أو مغلقاً. لا تجعل خطّين يتقاطعان.</li>
+      </ol>
+      <ul>
+        <li>ارسم الكسر فقط حيث توجد حافة حادة أو جدار. في الأرض اللطيفة لا حاجة له.</li>
+        <li>في الجدار شبه العمودي، افصل خط <code>UP</code> عن <code>Down</code> بضعة سنتيمترات في (X, Y).</li>
+        <li>إن رسمت الخط 2D بلا ارتفاع، يأخذ التطبيق ارتفاع كل رأس من أقرب نقطة رصد.</li>
+      </ul>
+      <p class="note">قطع طويل يعبر القطعة: خطان مفتوحان يكفيان، مدّهما حتى الحدود. حفرة في الوسط: خط مغلق حولها. حافة واحدة: خط واحد.</p>
+    </section>
+    <section>
+      <h2>قبل حفظ الملف</h2>
+      <ul>
+        <li>تأكد أن الإحداثيات بالمتر وبنفس النظام في ملفي قبل وبعد.</li>
+        <li>افحص نقطة واحدة بالأمر <code>LIST</code> للتأكد أن لها Z حقيقياً.</li>
+        <li>احفظ بالأمر <code>SAVEAS</code> بصيغة DXF من نوع ASCII. الملف الثنائي (Binary) غير مدعوم.</li>
+        <li>نقاط الرصد تُقرأ من كيانات POINT. وتُقرأ البلوكات (INSERT) أيضاً عبر نقطة إدراجها.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>ملف واحد أو ملفان</h2>
+      <ul>
+        <li><b>قبل الجرف وبعده:</b> ضع كل مرحلة في خانتها. يجوز أن تكون المرحلتان في ملف واحد بطبقات مختلفة، أو في ملفين.</li>
+        <li><b>قبل الجرف + منسوب مطلوب:</b> إذا أعطاك مهندس المشروع منسوباً تريد الوصول إليه قبل أن يبدأ الجرف، ارصد الأرض فقط، واكتب المنسوب. يحسب التطبيق كم نحفر (أو نطمّ) ليصبح كل سطح الأرض داخل JARF بهذا المنسوب.</li>
+        <li>في هذا الوضع يعرض التطبيق أيضاً متوسط منسوب الأرض الحالي. عند هذا المنسوب يتساوى الحفر والطمم، ويفيدك إن أراد المهندس تقليل نقل التراب.</li>
+        <li>حدود JARF تكون في ملف قبل الجرف أو في ملف مستقل تختاره في الخانة 3.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>كيف يحسب التطبيق</h2>
+      <ul>
+        <li>يبني سطحاً من مثلثات لكل مرحلة، ويكثّف النقاط على خطوط الكسر حتى يتبعها السطح.</li>
+        <li>يقسّم داخل JARF إلى خلايا صغيرة، ويقارن ارتفاع السطحين في مركز كل خلية. الفرق السالب حفر والموجب طمم.</li>
+        <li>الصافي = حفر − طمم.</li><li>حجم الخلية هو طول ضلع المربع الصغير الذي يقسّم به التطبيق الأرض. مثلاً 0.5 تعني مربعات 50 سم، و0.1 تعني مربعات 10 سم. الأصغر أدق وأبطأ قليلاً. الأفضل تركه فارغاً.</li>
+        <li>الأجزاء من الحدود التي لا تغطيها النقاط لا تُحسب، ويظهر لك تحذير بمساحتها.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script src="delaunator.min.js"></script>
+<script>
+/*CORE-START*/
+const Core=(function(){
+'use strict';
+const norm=s=>String(s).toLowerCase().replace(/[\s_\-]+/g,'');
+const RESERVED=new Set(['up','down','upc','downc','jarf']);
+const num=v=>{const f=parseFloat(v);return isFinite(f)?f:0;};
+
+function parseDXF(text){
+  if(/AutoCAD Binary DXF/.test(text.slice(0,40)))throw new Error('BINARY');
+  const L=text.split(/\r?\n/);
+  const points=[],lines=[],layers=new Map();
+  const lay=(n,k)=>{let o=layers.get(n);if(!o){o={name:n,points:0,lines:0};layers.set(n,o);}o[k]++;};
+  let section='',cur=null,poly=null,afterSection=false;
+  const getLayer=g=>{for(let i=0;i<g.length;i++)if(g[i][0]===8)return g[i][1];return '0';};
+  function pushPoly(){if(poly&&poly.pts.length>=2){lines.push({layer:poly.layer,pts:poly.pts,closed:poly.closed});lay(poly.layer,'lines');}poly=null;}
+  function finish(e){
+    if(!e)return;
+    const g=e.g,t=e.t;
+    if(t==='VERTEX'){
+      if(!poly)return;
+      let x=0,y=0,z=poly.elev,fl=0;
+      for(const [c,v] of g){if(c===10)x=num(v);else if(c===20)y=num(v);else if(c===30)z=num(v);else if(c===70)fl=parseInt(v,10)||0;}
+      if(!(fl&16))poly.pts.push([x,y,z]);
+      return;
+    }
+    if(t==='SEQEND'){pushPoly();return;}
+    if(poly)pushPoly();
+    const layer=getLayer(g);
+    if(t==='POINT'||t==='INSERT'){
+      let x=null,y=null,z=0;
+      for(const [c,v] of g){if(c===10&&x===null)x=num(v);else if(c===20&&y===null)y=num(v);else if(c===30)z=num(v);}
+      if(x!==null&&y!==null){points.push({x,y,z,l:layer});lay(layer,'points');}
+    }else if(t==='LINE'){
+      const a=[0,0,0],b=[0,0,0];
+      for(const [c,v] of g){
+        if(c===10)a[0]=num(v);else if(c===20)a[1]=num(v);else if(c===30)a[2]=num(v);
+        else if(c===11)b[0]=num(v);else if(c===21)b[1]=num(v);else if(c===31)b[2]=num(v);
+      }
+      lines.push({layer,pts:[a,b],closed:false});lay(layer,'lines');
+    }else if(t==='LWPOLYLINE'){
+      let fl=0,elev=0;const vs=[];
+      for(const [c,v] of g){
+        if(c===70)fl=parseInt(v,10)||0;else if(c===38)elev=num(v);
+        else if(c===10)vs.push([num(v),0,0]);else if(c===20&&vs.length)vs[vs.length-1][1]=num(v);
+      }
+      for(const p of vs)p[2]=elev;
+      if(vs.length>=2){lines.push({layer,pts:vs,closed:(fl&1)===1});lay(layer,'lines');}
+    }else if(t==='POLYLINE'){
+      let fl=0,elev=0;
+      for(const [c,v] of g){if(c===70)fl=parseInt(v,10)||0;else if(c===30)elev=num(v);}
+      poly={layer,pts:[],closed:(fl&1)===1,elev};
+    }
+  }
+  for(let k=0;k+1<L.length;k+=2){
+    const c=parseInt(L[k],10);const v=(L[k+1]||'').trim();
+    if(c===0){
+      finish(cur);cur=null;
+      if(v==='SECTION')afterSection=true;
+      else if(v==='ENDSEC'||v==='EOF'){pushPoly();section='';afterSection=false;}
+      else if(section==='ENTITIES')cur={t:v,g:[]};
+    }else if(afterSection&&c===2){section=v;afterSection=false;}
+    else if(cur)cur.g.push([c,v]);
+  }
+  finish(cur);pushPoly();
+  return {points,lines,layers};
+}
+
+function pointLayers(dxf){return [...dxf.layers.values()].filter(l=>l.points>0&&!RESERVED.has(norm(l.name)));}
+
+function defaultSelection(dxf,mode){
+  const pl=pointLayers(dxf);
+  const names=new Set(pl.map(l=>norm(l.name)));
+  const partner=new Set();
+  for(const l of pl){const n=norm(l.name);if(n.length>1&&n.endsWith('c')&&names.has(n.slice(0,-1)))partner.add(l.name);}
+  let chosen;
+  if(partner.size){chosen=mode==='after'?pl.filter(l=>partner.has(l.name)):pl.filter(l=>!partner.has(l.name));}
+  else chosen=pl;
+  return new Set(chosen.map(l=>l.name));
+}
+
+function slotData(dxf,sel,mode,allowFallback){
+  const pts=dxf.points.filter(p=>sel.has(p.l));
+  const want=mode==='after'?['upc','downc']:['up','down'];
+  let br=dxf.lines.filter(l=>want.includes(norm(l.layer)));
+  let fallback=false;
+  if(mode==='after'&&!br.length&&allowFallback){br=dxf.lines.filter(l=>['up','down'].includes(norm(l.layer)));fallback=br.length>0;}
+  const up=br.filter(l=>norm(l.layer).startsWith('up')).length;
+  return {pts,lines:br,up,down:br.length-up,fallback};
+}
+
+function findRings(dxfs){
+  for(const d of dxfs){
+    if(!d)continue;
+    const ls=d.lines.filter(l=>norm(l.layer)==='jarf'&&l.pts.length>=3);
+    if(ls.length)return {rings:ls.map(l=>l.pts.map(p=>[p[0],p[1]])),open:ls.filter(l=>!l.closed&&Math.hypot(l.pts[0][0]-l.pts[l.pts.length-1][0],l.pts[0][1]-l.pts[l.pts.length-1][1])>1e-6).length};
+  }
+  return null;
+}
+
+function makeIndex(pts,bs){
+  const m=new Map();
+  for(let i=0;i<pts.length;i++){const k=Math.floor(pts[i][0]/bs)+','+Math.floor(pts[i][1]/bs);let a=m.get(k);if(!a){a=[];m.set(k,a);}a.push(i);}
+  return {m,bs,pts};
+}
+function nearest(ix,x,y){
+  const {m,bs,pts}=ix;const cx=Math.floor(x/bs),cy=Math.floor(y/bs);
+  let best=-1,bd=Infinity;
+  for(let r=0;r<3000;r++){
+    for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++){
+      if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
+      const a=m.get((cx+dx)+','+(cy+dy));
+      if(a)for(const i of a){const d=(pts[i][0]-x)**2+(pts[i][1]-y)**2;if(d<bd){bd=d;best=i;}}
+    }
+    if(best>=0&&Math.sqrt(bd)<=r*bs)break;
+  }
+  return best;
+}
+
+function buildSurface(set,G,label,warnings){
+  const {ox,oy,minx,miny,maxx,maxy,margin,spacing}=G;
+  const P=[];
+  for(const p of set.pts){
+    if(!isFinite(p.x)||!isFinite(p.y)||!isFinite(p.z))continue;
+    if(p.x<minx-margin||p.x>maxx+margin||p.y<miny-margin||p.y>maxy+margin)continue;
+    P.push([p.x-ox,p.y-oy,p.z]);
+  }
+  if(P.length<3)return {error:label+': عدد نقاط الرصد حول منطقة الجرف أقل من 3. تأكد من اختيار طبقات النقاط.'};
+  if(P.every(p=>Math.abs(p[2])<1e-9))warnings.push(label+': كل نقاط الرصد ارتفاعها صفر. تأكد أن النقاط ثلاثية الأبعاد.');
+  let ix=null,lines2D=0;
+  const Ls=[];
+  for(const ln of set.lines){
+    if(ln.pts.length<2)continue;
+    const pts=ln.pts.map(p=>[p[0]-ox,p[1]-oy,p[2]]);
+    if(pts.every(p=>!isFinite(p[2])||Math.abs(p[2])<1e-9)){
+      if(!ix)ix=makeIndex(P,10);
+      for(const p of pts){const k=nearest(ix,p[0],p[1]);if(k>=0)p[2]=P[k][2];}
+      lines2D++;
+    }
+    if(ln.closed&&pts.length>2)pts.push(pts[0].slice());
+    Ls.push(pts);
+  }
+  if(lines2D)warnings.push(label+': '+lines2D+' خط كسر بلا ارتفاع (2D). أُخذ ارتفاع كل رأس من أقرب نقطة رصد.');
+  let est=0;
+  for(const pts of Ls)for(let i=1;i<pts.length;i++)est+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+  let sp=spacing;if(est/sp>150000)sp=est/150000;
+  const seen=new Set();const X=[],Y=[],Z=[];
+  const add=(x,y,z)=>{const k=Math.round(x*1000)+','+Math.round(y*1000);if(seen.has(k))return;seen.add(k);X.push(x);Y.push(y);Z.push(z);};
+  for(const pts of Ls){
+    for(let i=0;i<pts.length;i++){
+      add(pts[i][0],pts[i][1],pts[i][2]);
+      if(i>0){
+        const a=pts[i-1],b=pts[i];const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/sp);
+        for(let j=1;j<n;j++){const t=j/n;add(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t);}
+      }
+    }
+  }
+  for(const p of P)add(p[0],p[1],p[2]);
+  if(typeof Delaunator==='undefined')return {error:'تعذّر تحميل مكتبة المثلثات. تحقّق من الاتصال بالإنترنت ثم أعد فتح الصفحة.'};
+  const n=X.length;const co=new Float64Array(2*n);
+  for(let i=0;i<n;i++){co[2*i]=X[i];co[2*i+1]=Y[i];}
+  const d=new Delaunator(co);
+  if(!d.triangles.length)return {error:label+': نقاط الرصد على خط واحد، لا يمكن بناء سطح.'};
+  return {X,Y,Z,tri:d.triangles,lines:Ls,pts:P,nPts:P.length,nBreak:Ls.length};
+}
+
+function raster(S,g){
+  const {nx,ny,cs,zref}=g;
+  const out=new Float32Array(nx*ny).fill(NaN);
+  const X=S.X,Y=S.Y,Z=S.Z,T=S.tri;const eps=1e-7;
+  for(let t=0;t<T.length;t+=3){
+    const a=T[t],b=T[t+1],c=T[t+2];
+    const x0=X[a],y0=Y[a],x1=X[b],y1=Y[b],x2=X[c],y2=Y[c];
+    const d=(y1-y2)*(x0-x2)+(x2-x1)*(y0-y2);
+    if(Math.abs(d)<1e-14)continue;
+    const z0=Z[a]-zref,z1=Z[b]-zref,z2=Z[c]-zref;
+    const A=(z0*(y1-y2)+z1*(y2-y0)+z2*(y0-y1))/d;
+    const B=(z0*(x2-x1)+z1*(x0-x2)+z2*(x1-x0))/d;
+    let j0=Math.ceil((Math.min(y0,y1,y2)-eps)/cs-0.5),j1=Math.floor((Math.max(y0,y1,y2)+eps)/cs-0.5);
+    if(j0<0)j0=0;if(j1>ny-1)j1=ny-1;
+    for(let j=j0;j<=j1;j++){
+      const py=(j+0.5)*cs;let xl=Infinity,xr=-Infinity;
+      if((y0<=py)!==(y1<=py)){const x=x0+(py-y0)*(x1-x0)/(y1-y0);if(x<xl)xl=x;if(x>xr)xr=x;}
+      if((y1<=py)!==(y2<=py)){const x=x1+(py-y1)*(x2-x1)/(y2-y1);if(x<xl)xl=x;if(x>xr)xr=x;}
+      if((y2<=py)!==(y0<=py)){const x=x2+(py-y2)*(x0-x2)/(y0-y2);if(x<xl)xl=x;if(x>xr)xr=x;}
+      if(xl>xr)continue;
+      let i0=Math.ceil((xl-eps)/cs-0.5),i1=Math.floor((xr+eps)/cs-0.5);
+      if(i0<0)i0=0;if(i1>nx-1)i1=nx-1;
+      const row=j*nx;
+      for(let i=i0;i<=i1;i++){const px=(i+0.5)*cs;out[row+i]=z0+A*(px-x0)+B*(py-y0);}
+    }
+  }
+  return out;
+}
+
+function maskRings(R,g){
+  const {nx,ny,cs}=g;const m=new Uint8Array(nx*ny);
+  for(let j=0;j<ny;j++){
+    const py=(j+0.5)*cs;const xs=[];
+    for(const r of R)for(let k=0;k<r.length;k++){
+      const a=r[k],b=r[(k+1)%r.length];
+      if((a[1]>py)!==(b[1]>py))xs.push(a[0]+(py-a[1])*(b[0]-a[0])/(b[1]-a[1]));
+    }
+    xs.sort((p,q)=>p-q);
+    for(let t=0;t+1<xs.length;t+=2){
+      const i0=Math.max(0,Math.ceil(xs[t]/cs-0.5)),i1=Math.min(nx-1,Math.ceil(xs[t+1]/cs-0.5)-1);
+      for(let i=i0;i<=i1;i++)m[j*nx+i]=1;
+    }
+  }
+  return m;
+}
+
+function compute(inp){
+  const warnings=[];
+  const rings=inp.rings;
+  let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
+  for(const r of rings)for(const p of r){if(p[0]<minx)minx=p[0];if(p[0]>maxx)maxx=p[0];if(p[1]<miny)miny=p[1];if(p[1]>maxy)maxy=p[1];}
+  const w=maxx-minx,h=maxy-miny;
+  if(!(w>0&&h>0))return {error:'حدود الجرف JARF غير صالحة.'};
+  let cs=inp.cell&&inp.cell>0?inp.cell:Math.min(2,Math.max(0.05,Math.sqrt(w*h/400000)));
+  const MAXC=3.5e6;
+  if(Math.ceil(w/cs)*Math.ceil(h/cs)>MAXC){cs=Math.sqrt(w*h/MAXC)*1.001;warnings.push('كبّرنا حجم الخلية إلى '+cs.toFixed(3)+' م لأن عدد الخلايا كان كبيراً جداً.');}
+  const nx=Math.max(1,Math.ceil(w/cs)),ny=Math.max(1,Math.ceil(h/cs));
+  const G={ox:minx,oy:miny,minx,miny,maxx,maxy,margin:0.1*Math.max(w,h)+5,spacing:Math.min(1,Math.max(0.1,cs*2))};
+  const sB=buildSurface(inp.before,G,'قبل الجرف',warnings);if(sB.error)return sB;
+  const levelMode=typeof inp.after.level==='number';
+  let sA=null;
+  if(!levelMode){sA=buildSurface(inp.after,G,'بعد الجرف',warnings);if(sA.error)return sA;}
+  const g={nx,ny,cs,zref:sB.Z[0]};
+  const zB=raster(sB,g);
+  const zA=levelMode?new Float32Array(nx*ny).fill(inp.after.level-g.zref):raster(sA,g);
+  const R=rings.map(r=>r.map(p=>[p[0]-minx,p[1]-miny]));
+  const mask=maskRings(R,g);
+  const cell=cs*cs;
+  let cut=0,fill=0,maxCut=0,maxFill=0,nMask=0,nMiss=0,sumB=0,nOk=0,minB=Infinity,maxB=-Infinity;
+  const dz=new Float32Array(nx*ny).fill(NaN);
+  for(let i=0;i<mask.length;i++){
+    if(!mask[i])continue;nMask++;
+    const b=zB[i],a=zA[i];
+    if(b!==b||a!==a){nMiss++;continue;}
+    sumB+=b;nOk++;if(b<minB)minB=b;if(b>maxB)maxB=b;
+    const d=a-b;dz[i]=d;
+    if(d<0){cut-=d*cell;if(-d>maxCut)maxCut=-d;}else{fill+=d*cell;if(d>maxFill)maxFill=d;}
+  }
+  if(!nMask)return {error:'لم تقع أي خلية داخل حدود الجرف.'};
+  let polyArea=null;
+  if(R.length===1){let s=0;const r=R[0];for(let k=0;k<r.length;k++){const a=r[k],b=r[(k+1)%r.length];s+=a[0]*b[1]-b[0]*a[1];}polyArea=Math.abs(s)/2;}
+  const area=polyArea!==null?polyArea:nMask*cell;
+  if(nMiss*cell>0.005*nMask*cell)warnings.push('جزء مساحته '+(nMiss*cell).toFixed(2)+' م² داخل الحدود خارج تغطية النقاط، ولم يُحسب. أضف نقاطاً أو وسّع التغطية.');
+  const avgB=nOk?sumB/nOk+g.zref:null;
+  return {cut,fill,net:cut-fill,maxCut,maxFill,area,areaGrid:nMask*cell,missing:nMiss*cell,
+    cs,nx,ny,w,h,zref:g.zref,zB,zA,dz,mask,rings:R,warnings,
+    levelMode,level:levelMode?inp.after.level:null,avgBefore:avgB,
+    minBefore:nOk?minB+g.zref:null,maxBefore:nOk?maxB+g.zref:null,
+    before:{pts:sB.pts,lines:sB.lines,nPts:sB.nPts,nBreak:sB.nBreak},
+    after:sA?{pts:sA.pts,lines:sA.lines,nPts:sA.nPts,nBreak:sA.nBreak}:{pts:[],lines:[],nPts:0,nBreak:0}};
+}
+
+function demo(){
+  const OX=181234.5,OY=672345.25;
+  const points=[],lines=[];
+  const pt=(x,y,z,l)=>points.push({x:x+OX,y:y+OY,z,l});
+  for(let x=0;x<=60;x+=5)for(let y=0;y<=50;y+=5){
+    pt(x,y,100,'PTS');
+    const inPit=x>=19.99&&x<=40.01&&y>=18.99&&y<=31.01;
+    if(!inPit)pt(x,y,100,'PTS c');
+  }
+  for(let x=22;x<=38;x+=3)for(let y=21;y<=29;y+=3)pt(x,y,97,'PTS c');
+  const rect=(x0,y0,x1,y1,z)=>[[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(p=>[p[0]+OX,p[1]+OY,z]);
+  lines.push({layer:'UP c',pts:rect(20,19,40,31,100),closed:true});
+  lines.push({layer:'Down c',pts:rect(20.5,19.5,39.5,30.5,97),closed:true});
+  lines.push({layer:'JARF',pts:rect(15,14,45,36,0),closed:true});
+  const layers=new Map();
+  const lay=(n,k)=>{let o=layers.get(n);if(!o){o={name:n,points:0,lines:0};layers.set(n,o);}o[k]++;};
+  for(const p of points)lay(p.l,'points');
+  for(const l of lines)lay(l.layer,'lines');
+  const A1=20*12,A2=19*11,Am=19.5*11.5;
+  return {dxf:{points,lines,layers},expected:3/6*(A1+4*Am+A2)};
+}
+
+return {norm,parseDXF,pointLayers,defaultSelection,slotData,findRings,compute,demo};
+})();
+/*CORE-END*/
+</script>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt=(n,d=2)=>n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const slots={before:null,after:null,bound:null};
+let last=null,mode='two';
+const DEMO_PIT=673,DEMO_AREA=660,DEMO_Z=100;
+const demoOn=()=>!!(slots.before&&slots.before.demo);
+function expectedFor(r){
+  if(!demoOn())return null;
+  if(r.levelMode){const L=r.level;return {cut:Math.max(0,DEMO_Z-L)*DEMO_AREA,fill:Math.max(0,L-DEMO_Z)*DEMO_AREA};}
+  return {cut:DEMO_PIT,fill:0};
+}
+function updateBanner(){
+  const bn=$('demoBanner');
+  if(!demoOn()){bn.hidden=true;return;}
+  bn.hidden=false;
+  bn.innerHTML=mode==='two'
+    ?'<b>بيانات تجريبية.</b> حفرة 20×12 م أسفلها 19×11 م وعمقها 3 م، وحجمها النظري <span class="num">'+fmt(DEMO_PIT)+'</span> م³. اختر ملفاتك لتحل محلها.'
+    :'<b>بيانات تجريبية.</b> أرض مستوية منسوبها <span class="num">100.00</span> م ومساحتها <span class="num">660</span> م². غيّر المنسوب المطلوب لترى الحفر أو الطمم. اختر ملفك ليحل محلها.';
+}
+function setMode(m){
+  mode=m;
+  $('mode-two').setAttribute('aria-pressed',String(m==='two'));
+  $('mode-level').setAttribute('aria-pressed',String(m==='level'));
+  $('slot-after').hidden=m!=='two';$('slot-level').hidden=m!=='level';
+  if(m==='level'&&demoOn()&&!$('level').value)$('level').value='98';
+  renderAll();updateBanner();
+  if(demoOn())run();
+}
+
+function setStatus(t){$('status').textContent=t||'';}
+
+function slotInfo(key){
+  const s=slots[key];if(!s)return null;
+  const other=key==='before'?slots.after:slots.before;
+  return Core.slotData(s.dxf,s.sel,key,!(other&&other.id===s.id));
+}
+
+function renderSlot(key){
+  const body=$('slot-'+key).querySelector('.slot-body');const s=slots[key];
+  if(!s){body.innerHTML=key==='bound'?'<p class="stat">اتركها فارغة إن كانت JARF في ملف النقاط. اختر ملفاً هنا فقط إن كانت الحدود محفوظة في ملف DXF منفصل.</p>':'<p class="stat">لم يُختر ملف بعد.</p>';return;}
+  let h='<p class="fname">'+esc(s.name)+(s.demo?' <span class="tag">تجريبي</span>':'')+'</p>';
+  if(key==='bound'){
+    const R=Core.findRings([s.dxf]);
+    h+=R?'<p class="stat">حدود JARF: <span class="num">'+R.rings.length+'</span> مضلع</p>':'<p class="stat warn">لا توجد في هذا الملف Polyline على طبقة JARF.</p>';
+  }else{
+    const pl=Core.pointLayers(s.dxf);
+    if(!pl.length)h+='<p class="stat warn">لا توجد نقاط (POINT) في هذا الملف.</p>';
+    else{
+      h+='<div class="chips" role="group" aria-label="طبقات النقاط">'+pl.map(l=>'<button type="button" class="chip" data-slot="'+key+'" data-layer="'+esc(l.name)+'" aria-pressed="'+s.sel.has(l.name)+'">'+esc(l.name)+' <span class="num">'+l.points+'</span></button>').join('')+'</div>';
+    }
+    const d=slotInfo(key);
+    const np=d.pts.length;
+    h+='<p class="stat">نقاط مختارة: <span class="num">'+np+'</span></p>';
+    h+='<p class="stat">خطوط الكسر: <span class="num">UP '+d.up+'</span> · <span class="num">Down '+d.down+'</span>'+(d.fallback?' (استُخدمت UP وDown لعدم وجود نسخة c)':'')+'</p>';
+    const other=key==='before'?slots.after:slots.before;
+    if(mode==='two'&&other&&other.id===s.id&&setEq(other.sel,s.sel))h+='<p class="stat warn">نفس الملف ونفس طبقات النقاط في المرحلتين. اختر لكل مرحلة طبقاتها.</p>';
+  }
+  body.innerHTML=h;
+}
+function setEq(a,b){if(a.size!==b.size)return false;for(const x of a)if(!b.has(x))return false;return true;}
+function renderAll(){renderSlot('before');renderSlot('after');renderSlot('bound');}
+
+async function loadFile(key,file){
+  if(!file)return;
+  setStatus('جارٍ قراءة الملف…');
+  try{
+    const text=await file.text();
+    const dxf=Core.parseDXF(text);
+    const s={name:file.name,id:file.name+'|'+file.size+'|'+file.lastModified,dxf,sel:new Set(),demo:false};
+    if(key!=='bound')s.sel=Core.defaultSelection(dxf,key);
+    slots[key]=s;
+    for(const k of Object.keys(slots))if(slots[k]&&slots[k].demo)slots[k]=null;
+    updateBanner();
+    renderAll();setStatus('تم تحميل '+file.name);
+  }catch(e){
+    setStatus(e&&e.message==='BINARY'?'هذا ملف DXF ثنائي (Binary). احفظه بصيغة ASCII من AutoCAD.':'تعذّرت قراءة الملف. تأكد أنه DXF صالح.');
+  }
+}
+
+function run(){
+  const b=slots.before,a=slots.after;const two=mode==='two';
+  if(!b){setStatus('اختر ملف قبل الجرف أولاً.');return;}
+  let level=null;
+  if(two){
+    if(!a){setStatus('اختر ملف قبل الجرف وملف بعد الجرف أولاً.');return;}
+    if(b.id===a.id&&setEq(b.sel,a.sel)){setStatus('اخترت نفس النقاط للمرحلتين. اختر لكل مرحلة طبقاتها.');return;}
+  }else{
+    level=parseFloat($('level').value);
+    if(!isFinite(level)){setStatus('اكتب المنسوب المطلوب بالمتر.');return;}
+  }
+  const bd=Core.slotData(b.dxf,b.sel,'before',true);
+  const ad=two?Core.slotData(a.dxf,a.sel,'after',b.id!==a.id):null;
+  const R=Core.findRings([slots.bound&&slots.bound.dxf,b.dxf,a&&a.dxf]);
+  if(!R){setStatus('لم أجد حدود الجرف: ارسم Polyline مغلقة على طبقة JARF، أو اختر ملفها في الخانة 3.');return;}
+  const cv=parseFloat($('cell').value);
+  setStatus('جارٍ الحساب…');$('run').disabled=true;
+  setTimeout(()=>{
+    let res;
+    const after=two?{pts:ad.pts,lines:ad.lines}:{level};
+    try{res=Core.compute({before:{pts:bd.pts,lines:bd.lines},after,rings:R.rings,cell:cv>0?cv:null});}
+    catch(e){res={error:'حدث خطأ أثناء الحساب: '+(e&&e.message?e.message:e)};}
+    $('run').disabled=false;
+    if(res.error){setStatus(res.error);return;}
+    if(R.open)res.warnings.unshift('حدود JARF غير مغلقة، أغلقناها تلقائياً. الأفضل إغلاقها بالأمر C.');
+    if(two&&b.id===a.id&&bd.up+bd.down===0&&ad.up+ad.down===0)res.warnings.push('لم توجد خطوط كسر. هذا مناسب للأرض اللطيفة فقط.');
+    last=res;setStatus('');show(res);
+  },30);
+}
+
+function show(r){
+  $('results').hidden=false;
+  $('t-cut').textContent=fmt(r.cut);$('t-fill').textContent=fmt(r.fill);
+  const net=r.net;$('t-net').textContent=fmt(Math.abs(net));
+  $('t-net-lab').textContent=net>=0?'الصافي (حفر)':'الصافي (طمم)';
+  $('warnings').innerHTML=r.warnings.map(w=>'<p>'+esc(w)+'</p>').join('');
+  const rows=[['مساحة حدود الجرف',fmt(r.area)+' م²']];
+  if(r.levelMode){
+    rows.push(['المنسوب المطلوب',fmt(r.level)+' م']);
+    if(r.avgBefore!==null)rows.push(['متوسط منسوب الأرض الحالي (حفر = طمم عنده)',fmt(r.avgBefore)+' م'],['أدنى / أعلى منسوب للأرض',fmt(r.minBefore)+' / '+fmt(r.maxBefore)+' م']);
+  }
+  rows.push(['أعمق حفر',fmt(r.maxCut,3)+' م'],['أعلى طمم',fmt(r.maxFill,3)+' م'],['حجم الخلية',fmt(r.cs,3)+' م']);
+  rows.push(r.levelMode?['نقاط قبل الجرف',String(r.before.nPts)]:['نقاط قبل / بعد',r.before.nPts+' / '+r.after.nPts]);
+  rows.push(r.levelMode?['خطوط الكسر قبل الجرف',String(r.before.nBreak)]:['خطوط الكسر قبل / بعد',r.before.nBreak+' / '+r.after.nBreak]);
+  const ex=expectedFor(r);
+  if(ex)rows.unshift(['الحفر النظري للمثال',fmt(ex.cut)+' م³'],['الفرق عن النظري',fmt(r.cut-ex.cut)+' م³']);
+  $('tbl').innerHTML=rows.map(x=>'<tr><th scope="row">'+x[0]+'</th><td class="v">'+x[1]+'</td></tr>').join('');
+  $('lg-cut').textContent=fmt(r.maxCut,2)+' م';$('lg-fill').textContent=fmt(r.maxFill,2)+' م';
+  drawMap();
+}
+
+function cssColor(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
+function rgb(hex){hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');return [parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)];}
+let geo=null;
+
+function drawMap(){
+  const r=last;if(!r)return;
+  const cv=$('map'),W=Math.max(200,Math.floor(cv.parentElement.clientWidth));
+  const s=Math.min(W/r.w,(W*1.15)/r.h);
+  const Wc=W,Hc=Math.max(120,Math.ceil(r.h*s)),offX=(Wc-r.w*s)/2;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const Wd=Math.round(Wc*dpr),Hd=Math.round(Hc*dpr);
+  cv.width=Wd;cv.height=Hd;cv.style.width=Wc+'px';cv.style.height=Hc+'px';
+  const ctx=cv.getContext('2d');
+  const sd=s*dpr,offd=offX*dpr;
+  geo={s,offX,Hc};
+  const cutC=rgb(cssColor('--cut')),fillC=rgb(cssColor('--fill'));
+  const img=ctx.createImageData(Wd,Hd);const D=img.data;
+  const maxAbs=Math.max(r.maxCut,r.maxFill,0.01);
+  for(let py=0;py<Hd;py++){
+    const y=r.h-(py+0.5)/sd;const j=Math.floor(y/r.cs);
+    if(j<0||j>=r.ny)continue;
+    for(let px=0;px<Wd;px++){
+      const x=(px+0.5-offd)/sd;const i=Math.floor(x/r.cs);
+      if(i<0||i>=r.nx)continue;
+      const idx=j*r.nx+i;if(!r.mask[idx])continue;
+      const o=(py*Wd+px)*4;const d=r.dz[idx];
+      if(d!==d){D[o]=140;D[o+1]=150;D[o+2]=158;D[o+3]=70;continue;}
+      const a=Math.abs(d);
+      if(a<0.005){D[o]=140;D[o+1]=150;D[o+2]=158;D[o+3]=40;continue;}
+      const c=d<0?cutC:fillC;const t=Math.pow(Math.min(1,a/maxAbs),0.6);
+      D[o]=c[0];D[o+1]=c[1];D[o+2]=c[2];D[o+3]=Math.round(60+195*t);
+    }
+  }
+  ctx.putImageData(img,0,0);
+  ctx.save();ctx.scale(dpr,dpr);
+  const X=x=>offX+x*s,Y=y=>Hc-y*s;
+  const ink=cssColor('--ink'),muted=cssColor('--muted');
+  ctx.fillStyle=muted;
+  const pts=r.before.pts;const step=Math.max(1,Math.floor(pts.length/6000));
+  for(let k=0;k<pts.length;k+=step){ctx.fillRect(X(pts[k][0])-1,Y(pts[k][1])-1,2,2);}
+  ctx.lineJoin='round';
+  ctx.strokeStyle=ink;ctx.lineWidth=1.6;
+  for(const ln of r.after.lines){ctx.beginPath();ln.forEach((p,k)=>k?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.stroke();}
+  ctx.setLineDash([5,4]);ctx.strokeStyle=muted;ctx.lineWidth=1.2;
+  for(const ln of r.before.lines){ctx.beginPath();ln.forEach((p,k)=>k?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.stroke();}
+  ctx.setLineDash([]);ctx.strokeStyle=ink;ctx.lineWidth=2;
+  for(const ring of r.rings){ctx.beginPath();ring.forEach((p,k)=>k?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.closePath();ctx.stroke();}
+  ctx.restore();
+}
+
+function probe(ev){
+  const r=last;if(!r||!geo)return;
+  const cv=$('map'),b=cv.getBoundingClientRect();
+  const cx=ev.clientX-b.left,cy=ev.clientY-b.top;
+  const x=(cx-geo.offX)/geo.s,y=(geo.Hc-cy)/geo.s;
+  const i=Math.floor(x/r.cs),j=Math.floor(y/r.cs);
+  const el=$('probe');
+  if(i<0||j<0||i>=r.nx||j>=r.ny||!r.mask[j*r.nx+i]){el.textContent='هذه النقطة خارج حدود الجرف.';return;}
+  const idx=j*r.nx+i;const zb=r.zB[idx],za=r.zA[idx];
+  if(zb!==zb||za!==za){el.textContent='لا توجد تغطية نقاط هنا.';return;}
+  const d=za-zb;
+  el.innerHTML='قبل <span class="num">'+fmt(zb+r.zref,3)+'</span>'+(r.levelMode?' · المطلوب ':' · بعد ')+'<span class="num">'+fmt(za+r.zref,3)+'</span> · الفرق <span class="num '+(d<0?'cut-c':'fill-c')+'">'+fmt(d,3)+'</span> م ('+(d<0?'حفر':d>0?'طمم':'بلا تغيير')+')';
+}
+
+function loadDemo(){
+  const dx=Core.demo();const id='demo';
+  slots.before={name:'ملف تجريبي (طبقات PTS و PTS c)',id,dxf:dx.dxf,sel:Core.defaultSelection(dx.dxf,'before'),demo:true};
+  slots.after={name:'ملف تجريبي (طبقات PTS و PTS c)',id,dxf:dx.dxf,sel:Core.defaultSelection(dx.dxf,'after'),demo:true};
+  slots.bound=null;
+  if(mode==='level'&&!$('level').value)$('level').value='98';
+  updateBanner();renderAll();run();
+}
+
+function copyText(){
+  const r=last;if(!r)return;
+  const t=['حاسبة الجرف',(r.levelMode?'المنسوب المطلوب: '+fmt(r.level)+' م':'قبل وبعد الجرف'),'مساحة الحدود: '+fmt(r.area)+' م²','حفر: '+fmt(r.cut)+' م³','طمم: '+fmt(r.fill)+' م³','الصافي (حفر - طمم): '+fmt(r.net)+' م³','أعمق حفر: '+fmt(r.maxCut,3)+' م','أعلى طمم: '+fmt(r.maxFill,3)+' م','حجم الخلية: '+fmt(r.cs,3)+' م'].join('\n');
+  const done=()=>setStatus('تم نسخ النتائج');
+  const fallback=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){setStatus('تعذّر النسخ');}ta.remove();};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,fallback);else fallback();
+}
+
+document.addEventListener('click',e=>{
+  const chip=e.target.closest('.chip');
+  if(chip){
+    const s=slots[chip.dataset.slot];if(!s)return;
+    const name=chip.dataset.layer;
+    if(s.sel.has(name))s.sel.delete(name);else s.sel.add(name);
+    renderAll();return;
+  }
+  const tab=e.target.closest('.tab');
+  if(tab){
+    const t=tab.dataset.tab;
+    $('calc').hidden=t!=='calc';$('guide').hidden=t!=='guide';
+    document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b===tab)));
+    if(t==='calc'&&last)drawMap();
+  }
+});
+$('file-before').addEventListener('change',e=>loadFile('before',e.target.files[0]));
+$('file-after').addEventListener('change',e=>loadFile('after',e.target.files[0]));
+$('file-bound').addEventListener('change',e=>loadFile('bound',e.target.files[0]));
+$('run').addEventListener('click',run);
+$('mode-two').addEventListener('click',()=>setMode('two'));
+$('mode-level').addEventListener('click',()=>setMode('level'));
+$('level').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+$('demoBtn').addEventListener('click',loadDemo);
+$('copy').addEventListener('click',copyText);
+$('map').addEventListener('click',probe);
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(last&&!$('calc').hidden)drawMap();},150);});
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(last)drawMap();});
+
+renderAll();
+loadDemo();
+})();
+</script>
+</body>
+</html>

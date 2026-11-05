@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- المساح إسلام | صاحب ومطور التطبيق: إسلام دويكات (Islam Dweikat) | © 2026 Islam Dweikat -->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>المساح إسلام</title>
+<link rel="stylesheet" href="ifraz/fonts.css">
+<style>
+/* شاشة رئيسية: عمود واحد من بطاقات الأدوات، كل بطاقة بلون أداتها */
+:root{
+  --bg:#eef2ec; --card:#fbfcfa; --ink:#18261e; --muted:#5b6a60; --line:#cdd8cf; --accent:#1d6a46;
+  --c1:#2B3A8F; --c2:#1d6a46; --c3:#9a5a1c;
+  --f-display:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif; --f-body:"IBM Plex Sans Arabic",Tahoma,sans-serif;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root{--bg:#0f1612;--card:#16201a;--ink:#e2ebe4;--muted:#98a79c;--line:#2b3a30;--accent:#5cbc88;--c1:#8f9cf0;--c2:#5cbc88;--c3:#e0a060;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);min-height:100vh;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 36px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+header svg{flex:0 0 56px}
+h1{font-family:var(--f-display);font-size:30px;line-height:1.15;margin:0;color:var(--accent)}
+header p{margin:2px 0 0;color:var(--muted);font-size:14px}
+a.tool{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;text-decoration:none;color:inherit;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;border-inline-start:5px solid var(--c)}
+a.tool:active{transform:scale(.985)}
+a.tool:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.ico{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.ico svg{width:30px;height:30px}
+.t{font-family:var(--f-display);font-size:20px;line-height:1.3;color:var(--c)}
+.d{color:var(--muted);font-size:13.5px;line-height:1.5}
+.go{color:var(--c);font-size:22px}
+.note{font-size:12.5px;color:var(--accent);margin-top:2px}
+footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#1d6a46"/><path d="M28 12l9 6-9 6-9-6z" fill="#f6f1de"/><path d="M28 24v6M28 30l-11 16M28 30l11 16M28 30v16" stroke="#f6f1de" stroke-width="3" stroke-linecap="round"/></svg>
+    <div>
+      <h1>المساح إسلام</h1>
+      <p>أدوات المساحة في تطبيق واحد</p>
+    </div>
+  </header>
+
+  <a class="tool" href="index.html" style="--c:var(--c1)">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2.5h8.5L19.5 7.5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M14 2.5V8h5.5M8.5 12h7M8.5 15.5h7M8.5 19h4"/></svg></span>
+    <span><span class="t">حاسب الكواشين</span><br><span class="d">يقرأ صور سند الملكية ويحوّل حصص كل مالك وورثته إلى متر مربع.</span></span>
+    <span class="go" aria-hidden="true">‹</span>
+  </a>
+
+  <a class="tool" href="ifraz/index.html" style="--c:var(--c2)">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 20.5 4.5 3.5l16 1.5-1 15.5z"/><path d="M11.5 20v-9M13.5 20v-9M4 12l7.5-.5M13.5 11.5l6.5.3M4.3 7.5l7.2.3"/><circle cx="12.5" cy="9.5" r="2.4"/></svg></span>
+    <span><span class="t">الإفراز</span><br><span class="d">يقسم القطعة بين الشركاء من ملف DXF، مع الطرق واقتطاع البلدية.</span><span class="note" id="hisasNote" hidden></span></span>
+    <span class="go" aria-hidden="true">‹</span>
+  </a>
+
+  <a class="tool" href="jarf/index.html" style="--c:var(--c3)">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M2.5 17.5h7l3-4 4 2 5-3"/><path d="M2.5 21h19"/><path d="M9.5 17.5 12.5 21M16.5 15.5 18 21" opacity=".55"/><path d="M5 9l3-4 4 2"/></svg></span>
+    <span><span class="t">حاسبة الجرف</span><br><span class="d">الحفر والطمم من نقاط الرصد قبل الجرف وبعده (ملفات DXF).</span></span>
+    <span class="go" aria-hidden="true">‹</span>
+  </a>
+
+  <footer>صنع وتطوير: إسلام دويكات<br><span dir="ltr">© 2026 Islam Dweikat</span><span id="ver"></span></footer>
+</div>
+<script>
+try {
+  const d = JSON.parse(localStorage.getItem("hisas-ifraz") || "null");
+  if (d && d.owners && d.owners.length) {
+    const n = document.getElementById("hisasNote");
+    n.textContent = "جاهز للإفراز من حاسب الكواشين: " + [d.h && d.h.vil, d.h && d.h.parcel ? "قطعة " + d.h.parcel : ""].filter(Boolean).join(" – ") + " (" + d.owners.length + " مالك)";
+    n.hidden = false; n.style.display = "block";
+  }
+} catch (e) {}
+try { if (window.AndroidBridge && AndroidBridge.appVersion) document.getElementById("ver").textContent = " · النسخة " + AndroidBridge.appVersion(); } catch (e) {}
+</script>
+</body>
+</html>

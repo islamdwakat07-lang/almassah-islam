@@ -1,0 +1,2834 @@
+<!DOCTYPE html>
+<!-- حاسبة حصص سند الملكية | صاحب ومطور التطبيق: إسلام دويكات (Islam Dweikat) | هاتف: 0598161862 | © 2026 Islam Dweikat. جميع الحقوق محفوظة. -->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Islam Dweikat - إسلام دويكات - 0598161862">
+<meta name="copyright" content="© 2026 Islam Dweikat. All rights reserved.">
+<meta name="application-name" content="حاسبة حصص سند الملكية">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حاسب الكواشين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Noto+Kufi+Arabic:wght@600;800&display=swap" rel="stylesheet">
+<script src="xlsx.full.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="pdf.min.js"></script>
+<script src="polygon-clipping.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F3F5F4; --card:#FFFFFF; --ink:#1B2740; --muted:#5E6878; --line:#D5DAE0;
+  --stamp:#4A3F9F; --stamp-soft:#ECEAF8; --ok:#2E7D5B; --ok-soft:#E4F2EB; --warn:#9A6212; --warn-soft:#FBF0DC; --err:#B3261E;
+  --mourn:#3D4452; --mourn-soft:#E9EBEF; --on-stamp:#FFFFFF; --area:#C62828; --row-a:#F7F6FD; --row-b:#E9E5F8;
+  --body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --head:"Noto Kufi Arabic","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161F; --card:#1A202C; --ink:#E6E9F0; --muted:#9AA3B3; --line:#2E3646;
+  --stamp:#A99CF0; --stamp-soft:#262345; --ok:#6CC49A; --ok-soft:#173026; --warn:#E3B062; --warn-soft:#33280F; --err:#F2918A;
+  --mourn:#C9CED8; --mourn-soft:#252B37; --on-stamp:#15122B; --area:#FF8A80; --row-a:#1E2332; --row-b:#282D45;}}
+:root[data-theme="dark"]{
+  --bg:#12161F; --card:#1A202C; --ink:#E6E9F0; --muted:#9AA3B3; --line:#2E3646;
+  --stamp:#A99CF0; --stamp-soft:#262345; --ok:#6CC49A; --ok-soft:#173026; --warn:#E3B062; --warn-soft:#33280F; --err:#F2918A;
+  --mourn:#C9CED8; --mourn-soft:#252B37; --on-stamp:#15122B; --area:#FF8A80; --row-a:#1E2332; --row-b:#282D45;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+main{max-width:860px;margin:0 auto;padding:20px 14px 60px}
+h1{font-family:var(--head);font-weight:800;font-size:1.55rem;line-height:1.35;margin:4px 0 2px}
+.sub{color:var(--muted);margin:0 0 18px;font-size:.95rem}
+h2{font-family:var(--head);font-weight:600;font-size:1.05rem;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+h2 .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--stamp);color:var(--stamp);font-size:.85rem}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;min-height:42px}
+button.primary{background:var(--stamp);border-color:var(--stamp);color:var(--on-stamp);font-weight:600}
+button.link{border:0;background:none;color:var(--stamp);padding:4px 6px;min-height:0;text-decoration:underline}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--stamp);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pages{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.thumb{position:relative;width:86px;height:112px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:4px;left:4px;min-height:0;width:26px;height:26px;padding:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:0;font-size:14px}
+.thumb .st{position:absolute;bottom:0;inset-inline:0;font-size:.72rem;text-align:center;padding:2px;background:rgba(0,0,0,.6);color:#fff}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted)}
+.pick{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:600}
+.pick.primary{background:var(--stamp);border-color:var(--stamp);color:var(--on-stamp)}
+.pick svg{width:22px;height:22px;margin-inline-end:8px;flex:none}
+.pick.p-cam{background:#E65100;border-color:#E65100;color:#fff}
+.pick.p-img{background:#1565C0;border-color:#1565C0;color:#fff}
+.pick.p-pdf{background:#C62828;border-color:#C62828;color:#fff}
+.pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px;min-height:0;padding:0;border:0}
+.msg{margin-top:10px;font-size:.92rem;padding:8px 12px;border-radius:8px;display:none}
+.msg.show{display:block}
+.msg.info{background:var(--stamp-soft);color:var(--ink)}
+.msg.err{background:var(--warn-soft);color:var(--err)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.f label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:3px}
+input,select,textarea{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-height:40px}
+input.numf{font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
+input[type=checkbox]{width:20px;height:20px;min-height:0;accent-color:var(--mourn);margin:0}
+.formula{margin-top:14px;padding:14px;border-radius:10px;background:var(--stamp-soft);font-variant-numeric:tabular-nums}
+.formula .eq{font-family:var(--head);font-size:1.1rem;font-weight:600;word-break:break-word}
+.formula .eq b{color:var(--stamp)}
+.formula small{color:var(--muted)}
+
+.vf{position:relative}
+.vf input{padding-left:40px}
+.vmic{position:absolute;left:3px;top:50%;transform:translateY(-50%);min-height:0;width:34px;height:34px;padding:0;border:0;background:none;font-size:16px;border-radius:8px;opacity:.75}
+.vmic:hover{opacity:1;background:var(--stamp-soft)}
+.vmic.on{background:var(--err);opacity:1}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;z-index:20;max-width:92%;text-align:center;display:none}
+.toast.show{display:block}
+details{margin-top:4px}
+summary{cursor:pointer;font-family:var(--head);font-weight:600}
+/* splash */
+#splash{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;text-align:center;
+  background:linear-gradient(160deg,#4A3F9F 0%,#2E2766 100%);color:#fff;transition:opacity .45s ease;padding:24px}
+#splash.hide{opacity:0;pointer-events:none}
+.sp-in{max-width:340px}
+.sp-in svg{width:88px;height:88px;margin-bottom:18px}
+.sp-app{font-family:var(--head);font-weight:800;font-size:1.45rem;line-height:1.4;margin-bottom:26px}
+.sp-by{font-size:1.05rem;font-weight:600;opacity:.95}
+.sp-c{font-size:.9rem;opacity:.75;margin-top:6px}
+@media (prefers-reduced-motion:reduce){#splash{transition:none}}
+/* about */
+.about{margin-top:12px;font-size:.95rem;line-height:1.9}
+.about .ab-name{font-family:var(--head);font-weight:600;font-size:1.05rem}
+.about .ab-dev{margin-top:10px;padding:12px;border-radius:10px;background:var(--stamp-soft)}
+.about .ab-dev b{font-size:1.05rem}
+.about .muted{color:var(--muted);font-size:.88rem}
+/* search */
+.searchbar{position:relative;margin-bottom:6px}
+.searchbar input{padding-right:38px}
+.searchbar .qx{position:absolute;right:4px;top:50%;transform:translateY(-50%);min-height:0;width:32px;height:32px;padding:0;border:0;background:none;color:var(--muted);font-size:20px}
+.qinfo{font-size:.85rem;color:var(--muted);margin:0 2px 8px}
+.qempty{color:var(--muted);text-align:center;padding:14px 8px}
+/* alerts panel */
+#alerts{margin:4px 0 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+#alerts summary{padding:10px 12px;font-family:var(--body);font-weight:600;font-size:.95rem;list-style-position:inside}
+#alerts.has summary{color:var(--warn)}
+#alerts.clean summary{color:var(--ok)}
+#alerts .al{padding:0 10px 10px;display:grid;gap:6px}
+#alerts .ai{font-size:.88rem;padding:7px 10px;border-radius:8px;background:var(--warn-soft);color:var(--warn);cursor:pointer;border:0;text-align:right;width:100%;min-height:0;font:inherit;font-size:.88rem;line-height:1.5}
+#alerts .ai.ok{background:var(--ok-soft);color:var(--ok);cursor:default}
+#alerts .ai b{color:var(--ink)}
+.owner.flash{animation:fl 1.6s ease}
+@keyframes fl{0%,60%{box-shadow:0 0 0 3px var(--warn)}100%{box-shadow:0 0 0 0 transparent}}
+/* parcel location */
+.loc-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.loc-img canvas{display:block;width:100%;height:auto}
+.loc-info{padding:10px 12px;font-size:.9rem;line-height:1.8;font-variant-numeric:tabular-nums}
+.loc-info b{color:var(--ink)}
+.loc-pdf{padding:0 12px 10px;font-weight:600;color:var(--stamp)}
+.loc-plan{padding:0 12px 10px;font-size:.9rem;line-height:1.7}
+.loc-plan .pl-row{padding:7px 0;border-top:1px dashed var(--line)}
+.loc-plan .pl-k{display:block;color:var(--stamp);font-weight:600;font-size:.82rem}
+.loc-plan .pl-v{font-weight:600}
+.loc-plan .pl-note{font-size:.8rem;color:var(--muted);padding-top:6px}
+.loc-src{padding:0 12px 10px;font-size:.78rem;color:var(--muted)}
+.loc-choices{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+/* full-screen page viewer */
+.viewer{position:fixed;inset:0;z-index:70;background:#000;touch-action:none;user-select:none}
+.viewer[hidden]{display:none}
+.vw-stage{position:absolute;inset:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.vw-stage img{max-width:100%;max-height:100%;transform-origin:0 0;will-change:transform;-webkit-user-drag:none}
+.vw-top{position:absolute;top:0;inset-inline:0;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:linear-gradient(rgba(0,0,0,.65),transparent);color:#fff;font-weight:600}
+.vw-x{min-height:0;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:20px;padding:0}
+.vw-nav{position:absolute;top:50%;transform:translateY(-50%);min-height:0;width:46px;height:66px;border:0;border-radius:12px;background:rgba(0,0,0,.55);box-shadow:0 0 0 1.5px rgba(255,255,255,.5);color:#fff;font-size:36px;padding:0;line-height:1;z-index:2}
+.vw-prev{right:8px} .vw-next{left:8px}
+.vw-nav[hidden]{display:none}
+.vw-hint{position:absolute;bottom:calc(12px + env(safe-area-inset-bottom,0px));inset-inline:0;text-align:center;color:rgba(255,255,255,.7);font-size:.8rem;pointer-events:none}
+.thumb img{cursor:zoom-in}
+/* page separators */
+.pagesep{display:flex;align-items:center;gap:8px;margin:22px 0 10px;color:var(--stamp);font-family:var(--head);font-weight:600;font-size:.9rem}
+.pagesep::before,.pagesep::after{content:"";flex:1;height:2px;border-radius:2px}
+.pagesep::before{background:linear-gradient(to right,var(--stamp),transparent)}
+.pagesep::after{background:linear-gradient(to left,var(--stamp),transparent)}
+.pagesep span{display:inline-flex;align-items:center;gap:8px;padding:3px 14px;border:1.5px solid var(--stamp);border-radius:999px;background:var(--stamp-soft);white-space:nowrap}
+.pagesep span::before,.pagesep span::after{content:"";width:6px;height:6px;background:var(--stamp);transform:rotate(45deg);border-radius:1px}
+.pagesep:first-child{margin-top:4px}
+.pagesep small{font-family:var(--body);font-weight:400;color:var(--muted)}
+
+/* owner cards */
+.o-head,.o-row,.o-heir{display:grid;grid-template-columns:20px minmax(0,1fr) var(--shw,auto) var(--arw,auto);gap:8px;align-items:center}
+.o-head{font-size:.78rem;color:var(--muted);padding:4px 6px 6px;border-bottom:1px solid var(--line)}
+.o-head span:nth-child(3),.o-head span:nth-child(4){text-align:left}
+.owner{background:var(--row-a);border:1px solid var(--line);border-radius:10px;margin:6px 0}
+.o-row{padding:9px 8px;cursor:pointer;border-radius:8px;grid-template-areas:"idx name name name" "idx dead sh ar";row-gap:6px}
+.o-row .o-idx{grid-area:idx;align-self:start;padding-top:1px}
+.o-row .o-name{grid-area:name}
+.o-row .o-dt{grid-area:dead;margin-top:0;justify-self:start}
+.o-row .o-sh{grid-area:sh}
+.o-row .o-ar{grid-area:ar}
+.o-row:hover{box-shadow:inset 0 0 0 1.5px var(--stamp)}
+.o-row:focus-visible{outline:2px solid var(--stamp);outline-offset:-2px}
+.o-idx{color:var(--muted);font-variant-numeric:tabular-nums;text-align:center;font-size:.85rem}
+.o-name{font-weight:500;line-height:1.4;overflow-wrap:anywhere;font-size:.95rem}
+.o-nm{display:block}
+.o-dt{margin-top:4px;font-size:.85rem;font-weight:400;color:var(--muted);padding:2px 0}
+.o-dt input[type=checkbox]{width:18px;height:18px}
+.o-name .tag{display:inline-block;font-size:.72rem;font-weight:500;color:var(--mourn);border:1px solid var(--mourn);border-radius:5px;padding:0 5px;margin-inline-start:4px;vertical-align:1px}
+.o-sh{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:left;font-size:.86rem}
+.o-ar{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:left;font-weight:700;color:var(--area);font-size:.92rem}
+.o-sh .o-ob{display:block;font-size:.72rem;color:var(--stamp);font-weight:600}
+.o-empty{color:var(--muted);font-weight:400}
+.o-heirs{padding:0 6px 8px}
+.o-heir{padding:4px 0;font-size:.86rem;cursor:pointer}
+.o-heir .o-name{font-weight:400;color:var(--ink)}
+.o-heir .o-name::before{content:"↳ ";color:var(--muted)}
+.o-heir .o-sh{font-size:.8rem;color:var(--muted)}
+.o-heir .o-ar{font-weight:600}
+.o-heirs .none{font-size:.82rem;color:var(--warn);padding:2px 28px 4px 0}
+button.btn-new{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600;display:block;width:100%;min-height:50px;font-size:1.02rem;margin:0 0 14px}
+button.btn-add{display:block;width:100%;margin-top:12px;min-height:50px;font-size:1.02rem;font-weight:700;background:var(--stamp);border-color:var(--stamp);color:var(--on-stamp)}
+.send h2{margin-bottom:12px}
+.xgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:360px){.xgrid{grid-template-columns:repeat(2,1fr)}}
+.xbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 4px;min-height:92px;font-weight:600;font-size:.88rem;border-radius:12px;background:var(--card)}
+.xbtn:hover{border-color:var(--stamp)}
+.xbtn .xi{width:36px;height:40px}
+.xbtn span{white-space:nowrap;font-size:.84rem}
+.xbtn:disabled .xi{opacity:.4}
+:root[data-theme="dark"] button.btn-new{color:#0E1F17}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.btn-new{color:#0E1F17}}
+.e-res{margin-top:12px;padding:12px;border-radius:10px;background:var(--bg);font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
+.e-res .area{font-weight:700;font-size:1.15rem;color:var(--area)}
+.e-res .meta{color:var(--muted);font-size:.88rem}
+.e-more{margin-top:12px}
+.e-more summary{font-family:var(--body);font-weight:500;font-size:.9rem;color:var(--muted);cursor:pointer}
+.deadtog{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:.95rem}
+.e-foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:14px}
+.e-foot .del{color:var(--err)}
+.totals{margin-top:10px;padding:12px;border-radius:10px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px 18px;font-weight:600;font-variant-numeric:tabular-nums}
+.checks{margin-top:12px;display:grid;gap:6px}
+.chk{font-size:.9rem;padding:7px 12px;border-radius:8px}
+.chk.ok{background:var(--ok-soft);color:var(--ok)}
+.chk.warn{background:var(--warn-soft);color:var(--warn)}
+.empty{color:var(--muted);text-align:center;padding:18px 8px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px}
+@keyframes s{to{transform:rotate(360deg)}}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,14,22,.55);display:none;align-items:flex-end;justify-content:center;z-index:10;padding-top:env(safe-area-inset-top,0px)}
+.ov.open{display:flex}
+.sheet{background:var(--card);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.ov{align-items:center}.sheet{border-radius:16px}}
+.sheet h3{font-family:var(--head);font-size:1.1rem;margin:0 0 2px}
+.sheet .who{color:var(--muted);font-size:.9rem;margin-bottom:12px}
+.hrow{display:grid;grid-template-columns:1fr 120px auto;gap:6px;align-items:center;margin-bottom:6px}
+.hrow .ha{grid-column:1/-1;font-size:.82rem;color:var(--muted);margin:-2px 2px 6px;font-variant-numeric:tabular-nums}
+.hrow .ha b{color:var(--ink)}
+.hrow .hdel{min-height:40px;padding:4px 10px;color:var(--err)}
+.dict{margin-top:14px;padding:12px;border:1px dashed var(--line);border-radius:10px}
+.dict textarea{min-height:84px;resize:vertical}
+.dict .hint{font-size:.8rem;color:var(--muted);margin:6px 0 8px}
+.mic.on{background:var(--err);border-color:var(--err);color:#fff}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+/* smart reading */
+button.smart{background:#00695C;border-color:#00695C;color:#fff;font-weight:600}
+.sm-tip{font-size:.8rem;color:var(--muted);margin-top:6px}
+.sm-sheet{max-width:780px;max-height:96%}
+.sm-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.sm-mode{font-size:.8rem;color:var(--muted);margin:4px 2px 0}
+.sm-h{font-family:var(--head);font-size:1rem;margin:16px 0 8px}
+.sm-land{display:grid;gap:8px}
+.sm-f,.sm-o{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card)}
+.sm-f.st-rev,.sm-o.st-rev{border-color:var(--warn);background:var(--warn-soft)}
+.sm-f.flash,.sm-o.flash{outline:3px solid var(--err)}
+.sm-l{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:.92rem;margin-bottom:6px}
+.sm-in{display:flex;gap:6px;align-items:center}
+.sm-in>input{flex:1;min-width:0}
+.sm-area{flex:1;display:flex;gap:6px;align-items:center}
+.sm-area input{width:0;flex:1;min-width:0}
+.sm-area span{font-size:.85rem;color:var(--muted)}
+.sm-zoom{min-height:40px;padding:4px 10px;flex:none}
+.bdg{font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap;flex:none}
+.bdg.ok{background:var(--ok-soft);color:var(--ok)}
+.bdg.rev{background:var(--warn);color:#fff}
+.bdg.user{background:var(--stamp-soft);color:var(--stamp)}
+.sm-note{font-size:.82rem;color:var(--warn);margin-top:6px}
+.sm-orig{font-size:.8rem;color:var(--muted);margin-top:4px;word-break:break-word}
+.sm-diff{margin-top:8px;padding:8px;border-radius:8px;background:var(--card);border:1px dashed var(--warn);display:grid;gap:6px;font-size:.88rem}
+.sm-diff>div:first-child{font-weight:600;color:var(--err)}
+.sm-diff.done{opacity:.6}
+.sm-pick{text-align:left;min-height:40px;padding:6px 10px;word-break:break-word}
+.sm-pick.on{border-color:var(--stamp);background:var(--stamp-soft)}
+.sm-hint{font-size:.78rem;color:var(--muted)}
+.sm-ok{margin-top:8px;min-height:38px;padding:4px 12px;font-size:.88rem}
+.sm-oh{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);padding:0 4px 4px}
+#s_owners{display:grid;gap:8px}
+.sm-pg{font-family:var(--head);font-size:.85rem;color:var(--stamp);border-bottom:2px solid var(--stamp-soft);padding:6px 2px 2px;margin-top:4px}
+.sm-o1{display:flex;gap:6px;align-items:center}
+.sm-o1 input{flex:1;min-width:0;font-weight:600}
+.sm-n{min-width:24px;text-align:center;color:var(--muted);font-size:.85rem}
+.sm-o2{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+.sm-o2>label:first-child{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
+.sm-o2>label:first-child input{width:150px}
+.sm-ar{color:var(--area);font-weight:600;font-variant-numeric:tabular-nums;margin-inline-start:auto}
+.sm-o.ex .sm-o1 input{text-decoration:line-through;color:var(--muted)}
+.sm-o.ex .sm-ar{color:var(--muted)}
+.sm-more{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sm-more button{flex:1 1 auto;font-size:.9rem}
+.sm-foot{position:sticky;bottom:-16px;background:var(--card);padding:10px 0 4px;margin-top:6px}
+.sm-foot .primary{width:100%}
+</style>
+</head>
+<body>
+<div id="splash" role="dialog" aria-label="شاشة البداية">
+  <div class="sp-in">
+    <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="0" y="0" width="100" height="100" rx="22" fill="#ffffff" opacity=".12"/>
+      <polygon points="24,30 72,22 80,66 34,80 20,58" fill="#ECEAF8" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+      <line x1="47" y1="26" x2="56" y2="74" stroke="#4A3F9F" stroke-width="3.5"/><line x1="22" y1="46" x2="52" y2="50" stroke="#4A3F9F" stroke-width="3.5"/></svg>
+    <div class="sp-app">حاسبة حصص سند الملكية</div>
+    <div class="sp-by">صنع وتطوير: إسلام دويكات</div>
+    <div class="sp-c" dir="ltr">0598161862</div>
+    <div class="sp-c" dir="ltr">© 2026 Islam Dweikat</div>
+  </div>
+</div>
+<main>
+  <a href="home.html" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;margin-bottom:8px;border:1px solid currentColor;border-radius:99px;font:600 13px inherit;color:inherit;opacity:.8;text-decoration:none">⌂ الرئيسية</a>
+  <h1>حاسبة حصص سند الملكية</h1>
+  <p class="sub"><span style="font-weight:600;color:var(--stamp)">إسلام دويكات</span><br>صوّر صفحات السند أو اختر ملف PDF، ليقرأها التطبيق ويحسب مساحة كل مالك وورثته بالمتر المربع.</p>
+
+  <section>
+    <h2><span class="n">1</span>صفحات السند</h2>
+    <div class="drop" id="drop">
+      <div class="row" style="justify-content:center">
+        <span class="pick p-cam"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3.2L8.8 5h6.4l1.6 2.5H20a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>التقط بالكاميرا<input id="cam" type="file" accept="image/*" capture="environment" aria-label="التقط بالكاميرا"></span>
+        <span class="pick p-img"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="2" fill="currentColor"/><path d="M4 18l5.5-5.5 4 4 3-3L21 17.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>اختر من الصور<input id="file" type="file" accept="image/*" multiple aria-label="اختر من الصور"></span>
+        <span class="pick p-pdf"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8.5L19.5 7.5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 2.5V8h5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><text x="12" y="17.3" text-anchor="middle" font-size="6.2" font-weight="800" font-family="Arial,sans-serif" fill="currentColor">PDF</text></svg>ملف PDF<input id="pdfIn" type="file" accept="application/pdf" multiple aria-label="اختر ملف PDF"></span>
+      </div>
+      <div style="font-size:.85rem;margin-top:8px">يمكنك إضافة عدة صفحات لنفس القطعة، أو ملف PDF للكوشان كاملاً</div>
+    </div>
+    <div class="pages" id="pages"></div>
+    <div class="row">
+      <button class="primary" id="readBtn" disabled>اقرأ السند</button>
+      <button class="smart" id="smartBtn" disabled>✨ القراءة الذكية للعقار</button>
+      <button id="stopBtn" hidden>إيقاف</button>
+    </div>
+    <div class="sm-tip" id="smTip">القراءة الذكية: تحسّن الصورة وتقصّ الخانات، ثم يقرؤها Gemini و Groq كلٌّ على حدة وتُقارن القراءتان، وكل اختلاف يُعرض عليك للمراجعة. تحتاج المفتاحين معاً، وتستهلك 3 إلى 5 طلبات لكل صفحة.</div>
+    <div class="msg" id="msg"></div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>بيانات القطعة</h2>
+    <div class="grid">
+      <div class="f"><label for="h_gov">المحافظة</label><div class="vf"><input id="h_gov"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_vil">القرية</label><div class="vf"><input id="h_vil"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_basin">الحوض</label><div class="vf"><input id="h_basin"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_parcel">رقم القطعة</label><div class="vf"><input id="h_parcel"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_dun">المساحة – دونم</label><div class="vf"><input id="h_dun" type="text" inputmode="decimal" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_m2">المساحة – متر مربع</label><div class="vf"><input id="h_m2" type="text" inputmode="decimal" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_base">أصل الحصص</label><div class="vf"><input id="h_base" type="text" inputmode="numeric" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_pages">عدد صفحات الكوشان</label><div class="vf"><input id="h_pages" type="text" inputmode="numeric" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="h_dec">خانات عشرية</label>
+        <select id="h_dec"><option value="2">خانتان</option><option value="1">خانة واحدة</option><option value="0">بدون كسور</option></select></div>
+    </div>
+    <div class="formula" id="formula"></div>
+    <div class="row" style="margin-top:12px"><button id="locBtn">📍 اعرض موقع القطعة</button></div>
+    <div class="msg" id="locMsg"></div>
+    <div id="locChoices" class="loc-choices" hidden></div>
+    <div id="locBox" class="loc-box" hidden>
+      <div class="loc-img" id="locImg"></div>
+      <div class="loc-info" id="locInfo"></div>
+      <div class="loc-plan" id="locPlan"></div>
+      <label class="deadtog loc-pdf"><input type="checkbox" id="locPdf"> إضافة الخارطة إلى ملف PDF</label>
+      <div class="loc-src">المصدر: جيومولج، وزارة الحكم المحلي. الحدود للاسترشاد فقط.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>المالكون والحصص</h2>
+    <details id="alerts" hidden><summary id="alertsSum"></summary><div class="al" id="alertsList"></div></details>
+    <div class="searchbar"><div class="vf"><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="ابحث عن اسم مالك أو وريث" aria-label="بحث عن اسم مالك"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div><button type="button" class="qx" id="qClear" hidden aria-label="مسح البحث">×</button></div>
+    <div class="qinfo" id="qInfo" hidden></div>
+    <div class="o-head" id="oHead" hidden><span>#</span><span>الاسم</span><span>الحصص</span><span>المساحة م²</span></div>
+    <div id="owners"></div>
+    <div id="totals" hidden></div>
+    <button id="addBtn" class="btn-add">＋ إضافة مالك</button>
+  </section>
+
+  <section class="send">
+    <h2>إرسال ملف بواسطة:</h2>
+    <div class="xgrid">
+      <button id="pdfBtn" class="xbtn"><svg class="xi" viewBox="0 0 40 48" aria-hidden="true"><path d="M4 2h22l10 10v32a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#D32F2F" stroke-width="2.5"/><path d="M26 2v10h10" fill="#FFCDD2" stroke="#D32F2F" stroke-width="2.5" stroke-linejoin="round"/><rect x="0" y="24" width="30" height="14" rx="2" fill="#D32F2F"/><text x="15" y="34.5" text-anchor="middle" font-size="10" font-weight="800" font-family="Arial,sans-serif" fill="#fff">PDF</text></svg><span>PDF</span></button>
+      <button id="xlsxBtn" class="xbtn"><svg class="xi" viewBox="0 0 44 44" aria-hidden="true"><rect x="12" y="4" width="30" height="36" rx="3" fill="#fff" stroke="#1D6F42" stroke-width="2.5"/><path d="M12 14h30M12 24h30M12 34h30M27 4v36" stroke="#1D6F42" stroke-width="1.8"/><rect x="2" y="9" width="24" height="26" rx="3" fill="#1D6F42"/><path d="M8 15l12 14M20 15L8 29" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg><span>Excel</span></button>
+      <button id="csvBtn" class="xbtn"><svg class="xi" viewBox="0 0 40 48" aria-hidden="true"><path d="M4 2h22l10 10v32a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#00796B" stroke-width="2.5"/><path d="M26 2v10h10" fill="#B2DFDB" stroke="#00796B" stroke-width="2.5" stroke-linejoin="round"/><rect x="0" y="24" width="30" height="14" rx="2" fill="#00796B"/><text x="15" y="34.5" text-anchor="middle" font-size="10" font-weight="800" font-family="Arial,sans-serif" fill="#fff">CSV</text></svg><span>CSV</span></button>
+      <button id="copyBtn" class="xbtn"><svg class="xi" viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="4" width="24" height="30" rx="3" fill="#E8EAF6" stroke="#4A3F9F" stroke-width="2.5"/><rect x="15" y="11" width="24" height="30" rx="3" fill="#fff" stroke="#4A3F9F" stroke-width="2.5"/><path d="M20 20h14M20 26h14M20 32h9" stroke="#4A3F9F" stroke-width="2.2" stroke-linecap="round"/></svg><span>نسخ الجدول</span></button>
+    </div>
+  </section>
+
+  <button id="clearBtn" class="btn-new">سند جديد</button>
+
+  <section>
+    <details id="gemBox">
+      <summary>قراءة الصور بمفاتيح مجانية (Gemini و Groq)</summary>
+      <p style="font-size:.9rem;color:var(--muted);margin:10px 0">لتطبيق الجوال: أضف مفتاحاً مجانياً واحداً على الأقل. تُحفظ المفاتيح على هذا الجهاز فقط. في نسخة الويب تتم القراءة تلقائياً ولا حاجة لها.<br>عند انتهاء حصة المزوّد الأساسي ينتقل التطبيق إلى الآخر تلقائياً. في Gemini: النموذج <span dir="ltr">gemini-flash-latest</span> أدق، وعند انتهاء حصته يُستخدم <span dir="ltr">gemini-flash-lite-latest</span> ذو الحصة الأكبر.</p>
+      <div class="grid">
+        <div class="f"><label for="g_prov">المزوّد الأساسي</label><select id="g_prov"><option value="gemini">Gemini أولاً ثم Groq</option><option value="groq">Groq أولاً ثم Gemini</option></select></div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div class="f"><label for="g_key">مفتاح Gemini API</label><input id="g_key" type="password" autocomplete="off" spellcheck="false" dir="ltr"></div>
+        <div class="f"><label for="g_model">نموذج Gemini</label><input id="g_model" dir="ltr" spellcheck="false"></div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div class="f"><label for="q_key">مفتاح Groq API</label><input id="q_key" type="password" autocomplete="off" spellcheck="false" dir="ltr"></div>
+        <div class="f"><label for="q_model">نموذج Groq</label><input id="q_model" dir="ltr" spellcheck="false"></div>
+      </div>
+    </details>
+  </section>
+
+  <section id="about">
+    <details id="aboutBox">
+      <summary>حول التطبيق</summary>
+      <div class="about">
+        <div class="ab-name">حاسبة حصص سند الملكية</div>
+        <div class="muted">الإصدار: <span id="appVer" dir="ltr">—</span></div>
+        <div class="ab-dev">صاحب ومطور التطبيق: <b>إسلام إسماعيل دويكات</b><br><span dir="ltr">Islam Dweikat</span><br>هاتف: <a href="tel:0598161862" dir="ltr" style="color:var(--stamp);font-weight:600">0598161862</a></div>
+        <p style="margin:10px 0 0">© 2026 جميع الحقوق محفوظة</p>
+      </div>
+    </details>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<div id="viewer" class="viewer" role="dialog" aria-modal="true" aria-label="عرض صفحة السند" hidden>
+  <div class="vw-stage" id="vwStage"><img id="vwImg" alt="صفحة السند"></div>
+  <div class="vw-top"><button type="button" class="vw-x" id="vwClose" aria-label="إغلاق">✕</button><span id="vwCount"></span></div>
+  <button type="button" class="vw-nav vw-prev" id="vwPrev" aria-label="الصفحة السابقة">‹</button>
+  <button type="button" class="vw-nav vw-next" id="vwNext" aria-label="الصفحة التالية">›</button>
+  <div class="vw-hint">المس مرتين للتكبير، وحرّك بإصبعين للتكبير والتصغير</div>
+</div>
+
+<div class="ov" id="ovE" role="dialog" aria-modal="true" aria-labelledby="e_title">
+  <div class="sheet">
+    <h3 id="e_title">تعديل المالك</h3>
+    <div class="who" id="e_who"></div>
+    <div class="f"><label for="e_name">اسم المالك</label><div class="vf"><input id="e_name" data-k="name" placeholder="اسم المالك"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px">
+      <div class="f"><label for="e_shares">الحصص</label><div class="vf"><input id="e_shares" data-k="shares" type="text" inputmode="decimal" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label for="e_page">صفحة الكوشان</label><div class="vf"><input id="e_page" data-k="page" type="text" inputmode="numeric" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+    </div>
+    <div class="f" style="margin-top:10px"><label for="e_text">نص الحصص كما في السند (عدّله فتتحدث الأرقام)</label><div class="vf"><input id="e_text" data-k="text" placeholder="مثال: ثمانمائة وخمسة حصة من اصل ثلاثمائة واثنان الف واربعمائة"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+    <details class="e-more" id="e_moreBox"><summary>أصل حصص مختلف لهذا المالك</summary>
+      <div class="f" style="margin-top:8px"><label for="e_base">من أصل (اتركه فارغاً إذا كان نفس أصل القطعة)</label><div class="vf"><input id="e_base" data-k="base" type="text" inputmode="numeric" class="numf"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+    </details>
+    <div class="e-res"><span class="area" id="e_area"></span><span class="meta" id="e_dun"></span></div>
+    <div class="e-foot">
+      <label class="deadtog"><input type="checkbox" id="e_dead"> متوفى</label>
+      <button class="link" id="e_heirs" hidden>الورثة وحصر الإرث</button>
+    </div>
+    <div class="e-foot">
+      <button class="primary" id="e_done">تم</button>
+      <button class="del" id="e_del">حذف المالك</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="m_title">
+  <div class="sheet">
+    <h3 id="m_title">حصر الإرث</h3>
+    <div class="who" id="m_who"></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="f"><label for="m_base">أصل حصر الإرث (حسب حجة حصر الإرث)</label><div class="vf"><input id="m_base" type="text" inputmode="numeric" class="numf" placeholder="أدخل أصل حصر الإرث"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div></div>
+      <div class="f"><label>مساحة المتوفى</label><input id="m_area" disabled></div>
+    </div>
+    <div class="formula" id="m_formula" style="margin-top:10px"></div>
+    <h3 style="margin-top:14px;font-size:1rem">الورثة</h3>
+    <div id="m_heirs"></div>
+    <button id="m_add">إضافة وريث</button>
+
+    <div class="dict">
+      <label for="m_text" style="font-weight:600">إضافة بالإملاء الصوتي أو اللصق</label>
+      <div class="hint">قل مثلاً: "محمد ستة أسهم، فاطمة ثلاثة أسهم، أصل الحصر أربعة وعشرون". إذا لم يعمل زر الميكروفون، استخدم ميكروفون لوحة المفاتيح داخل الخانة.</div>
+      <textarea id="m_text" placeholder="اسم الوريث وعدد أسهمه، كل وريث في سطر أو مفصولين بفاصلة"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="mic" id="m_mic">🎤 ابدأ الإملاء</button>
+        <button class="primary" id="m_parse">حوّل النص إلى ورثة</button>
+      </div>
+      <div class="msg" id="m_msg"></div>
+    </div>
+
+    <div class="checks" id="m_checks"></div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <button class="primary" id="m_done">تم</button>
+      <button id="m_alive">إلغاء الوفاة</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ovS" role="dialog" aria-modal="true" aria-labelledby="s_title">
+  <div class="sheet sm-sheet">
+    <div class="sm-top"><h3 id="s_title">القراءة الذكية للعقار – المراجعة</h3><button type="button" class="link" id="s_close">إغلاق</button></div>
+    <div id="s_sum"></div>
+    <h4 class="sm-h">بيانات الأرض</h4>
+    <div id="s_land" class="sm-land"></div>
+    <h4 class="sm-h">المتصرفون</h4>
+    <div class="sm-oh"><span>المتصرف</span><span>الحصة</span><span>المساحة</span></div>
+    <div id="s_owners"></div>
+    <div id="s_check" class="checks"></div>
+    <div class="sm-more">
+      <button id="s_confirmAll" hidden>راجعتُ كل القيم – تأكيد الباقي</button>
+      <button id="s_reread" hidden>إعادة قراءة البنود المختلف عليها</button>
+      <button id="s_log">تنزيل سجل القراءة (JSON)</button>
+    </div>
+    <div class="sm-foot"><button class="primary" id="s_apply">اعتماد وإضافة إلى الجدول</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const KEY = "deed-shares-v4";
+const SEED = { h:{gov:"نابلس",vil:"بلاطة",basin:"1 الصفحة الشمالية",parcel:"4",dun:"41",m2:"671",base:"34978944000",pages:"33",dec:"2"},
+  owners:[
+    {name:"اسماعيل عبدالله ابراهيم دويكات",shares:"499699200",base:"",page:"25",text:"اربعمائة وتسعة وتسعون مليون وستمائة وتسعة وتسعون الف ومئتان حصة"},
+    {name:"خالد هلال محمد ابو حامد",shares:"1748947200",base:"",page:"25",text:"مليار وسبعمائة وثمانية واربعون مليون وتسعمائة وسبعة واربعون الف ومئتان حصة"},
+    {name:"نهله انيس سالم عبد الله",shares:"62462400",base:"",page:"25",text:"اثنان وستون مليون واربعمائة واثنان وستون الف واربعمائة حصة"}
+  ]};
+let state = JSON.parse(JSON.stringify(window.AndroidBridge ? {h:{}, owners:[]} : SEED));
+let pages = [];
+let sample = null, downloads = null, imgLimit = 0, ctl = null;
+let uid = 1;
+
+try { const s = JSON.parse(localStorage.getItem(KEY)||"null"); if (s && s.h && Array.isArray(s.owners)) state = s; } catch(e){}
+function norm(){
+  state.h = Object.assign({gov:"",vil:"",basin:"",parcel:"",dun:"",m2:"",base:"",pages:"",dec:"2"}, state.h);
+  if (!["0","1","2"].includes(String(state.h.dec))) state.h.dec = "2";
+  state.owners.forEach(o => { o.base ??= ""; o.id = o.id || ("o"+(uid++)+Date.now()); o.page ??= ""; o.dead = !!o.dead; o.heirs = Array.isArray(o.heirs)?o.heirs:[]; o.estate ??= ""; });
+}
+norm();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} try { localStorage.setItem("hisas-ifraz", JSON.stringify(ifrazData())); } catch(e){} };
+
+// ---- Arabic number words -> number ----
+const normAr = t => String(t).replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي");
+const UNITS = {"صفر":0,"واحد":1,"واحده":1,"احد":1,"اثنان":2,"اثنين":2,"اثنتان":2,"اثنتين":2,"اثنا":2,"اثني":2,"ثنتين":2,"تنين":2,"اتنين":2,
+  "ثلاث":3,"ثلاثه":3,"تلات":3,"تلاته":3,"اربع":4,"اربعه":4,"خمس":5,"خمسه":5,"ست":6,"سته":6,"سبع":7,"سبعه":7,
+  "ثمان":8,"ثماني":8,"ثمانيه":8,"تمان":8,"تمانيه":8,"تسع":9,"تسعه":9,
+  "عشرون":20,"عشرين":20,"ثلاثون":30,"ثلاثين":30,"تلاتين":30,"اربعون":40,"اربعين":40,"خمسون":50,"خمسين":50,"ستون":60,"ستين":60,
+  "سبعون":70,"سبعين":70,"ثمانون":80,"ثمانين":80,"تمانين":80,"تسعون":90,"تسعين":90};
+const HUND = {"مائه":100,"مئه":100,"ميه":100,"ميت":100,"مايه":100,"مئتان":200,"مئتين":200,"مائتان":200,"مائتين":200,"ميتين":200};
+const SCALE = {"الف":1e3,"الاف":1e3,"الفا":1e3,"مليون":1e6,"ملايين":1e6,"مليونا":1e6,"مليار":1e9,"مليارات":1e9,"مليارا":1e9,"بليون":1e9};
+const DUAL = {"الفان":2e3,"الفين":2e3,"مليونان":2e6,"مليونين":2e6,"ملياران":2e9,"مليارين":2e9};
+function wordVal(w){
+  if (w in UNITS) return {u:UNITS[w]};
+  if (w==="عشر"||w==="عشره") return {teen:10};
+  if (w in HUND) return {h:HUND[w]};
+  if (w in SCALE) return {s:SCALE[w]};
+  if (w in DUAL) return {d:DUAL[w]};
+  const m = w.match(/^(.+?)(مائه|مئه|ميه|ميت|مايه)$/);
+  if (m && m[1] in UNITS && UNITS[m[1]]<10) return {u:UNITS[m[1]]*100};
+  return null;
+}
+function arWordsToNum(text){
+  const t = normAr(text).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/(\d)[,،٬](?=\d{3})/g,"$1");
+  let total = 0, small = 0, any = false;
+  for (let w of t.split(/[\s\-–]+/)){
+    if (!w) continue;
+    if (/^و\d/.test(w)) w = w.slice(1);
+    if (/^\d+(\.\d+)?$/.test(w)){ small += parseFloat(w); any = true; continue; }
+    let v = wordVal(w);
+    if (!v && w.startsWith("و")) v = wordVal(w.slice(1));
+    if (!v && (w.startsWith("ال"))) v = wordVal(w.slice(2));
+    if (!v) continue;
+    any = true;
+    if (v.u != null) small += v.u;
+    else if (v.teen) small += 10;
+    else if (v.h) small = (small > 0 && small < 10 && v.h === 100) ? small * 100 : small + v.h;
+    else if (v.s){ total += (small || 1) * v.s; small = 0; }
+    else if (v.d){ total += v.d; small = 0; }
+  }
+  return any ? total + small : null;
+}
+function pageNum(v){
+  if (v == null || v === "") return 0;
+  if (typeof v === "number") return v > 0 && v < 10000 ? Math.round(v) : 0;
+  const t = String(v).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+  const m = t.match(/\d+/);
+  if (m) return +m[0] > 0 && +m[0] < 10000 ? +m[0] : 0;
+  const w = arWordsToNum(t.split(/\s+من\s+/)[0]);
+  return w && w > 0 && w < 10000 ? w : 0;
+}
+function parseShareText(t){
+  if (!t || !hasArLetters(t)) return null;
+  const n = normAr(t);
+  const parts = n.split(/\s*من\s+(?:ال)?اصل\s*/);
+  if (/كامل/.test(parts[0]) && parts.length > 1){ const b = arWordsToNum(parts.slice(1).join(" ")); return b == null ? null : {shares:b, base:b}; }
+  const a = arWordsToNum(parts[0]);
+  const b = parts.length > 1 ? arWordsToNum(parts.slice(1).join(" ")) : null;
+  return (a == null && b == null) ? null : {shares:a, base:b};
+}
+const hasArLetters = v => /[\u0621-\u064A]/.test(String(v));
+const num = v => {
+  if (v == null || v === "") return 0;
+  if (typeof v === "number") return isFinite(v) ? v : 0;
+  if (hasArLetters(v)){ const w = arWordsToNum(v); return w == null ? 0 : w; }
+  const n = parseFloat(String(v).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[,،٬]/g,"").replace(/٫/g,".")); return isFinite(n)?n:0; };
+const dec = () => +state.h.dec || 0;
+const fmt = (n,d=dec()) => Number(n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const totalM2 = () => num(state.h.dun)*1000 + num(state.h.m2);
+const baseOf = o => num(o.base) || num(state.h.base);   // parcel base by default; an owner may have a different base in the deed
+const hasOwnBase = o => !!num(o.base) && num(o.base) !== num(state.h.base);
+const anyOwnBase = () => state.owners.some(hasOwnBase);
+const areaOf = o => { const b = baseOf(o); return b ? totalM2()*num(o.shares)/b : 0; };
+const toDunam = m => { const d = Math.floor(m/1000); return {d, m: m - d*1000}; };
+const dunTxt = m => { const x = toDunam(m); return (x.d ? x.d+" دونم و " : "") + fmt(x.m) + " م"; };
+const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const heirSum = o => o.heirs.reduce((a,h)=>a+num(h.shares),0);
+const estateOf = o => num(o.estate);   // entered by the user from the inheritance deed; never derived from the parcel base
+const heirArea = (o,h) => { const e = estateOf(o); return e ? areaOf(o)*num(h.shares)/e : 0; };
+const pageLabel = p => p ? `صفحة ${p}${state.h.pages?` من ${state.h.pages}`:""}` : "بدون رقم صفحة";
+
+const hMap = {gov:"h_gov",vil:"h_vil",basin:"h_basin",parcel:"h_parcel",dun:"h_dun",m2:"h_m2",base:"h_base",pages:"h_pages",dec:"h_dec"};
+function fillHeader(){ for (const k in hMap) $(hMap[k]).value = state.h[k] ?? ""; }
+for (const k in hMap) $(hMap[k]).addEventListener("input", e => { state.h[k] = e.target.value; save(); if (k==="pages") renderOwners(); else recalc(); });
+
+function ordered(){
+  return state.owners.map((o,i)=>({o,i})).sort((a,b)=>{
+    const pa = num(a.o.page)||Infinity, pb = num(b.o.page)||Infinity;
+    return pa-pb || a.i-b.i;
+  }).map(x=>x.o);
+}
+
+// ---------- owners ----------
+function renderOwners(){
+  const w = $("owners"); w.innerHTML = "";
+  $("oHead").hidden = !state.owners.length;
+  if (!state.owners.length){ w.innerHTML = '<div class="empty">لا يوجد مالكون بعد. اقرأ السند أو أضف مالكاً يدوياً.</div>'; recalc(); applySearch(); return; }
+  let lastPage = null, n = 0;
+  ordered().forEach(o => {
+    const pg = String(o.page||"").trim();
+    if (pg !== lastPage){
+      const sep = document.createElement("div"); sep.className = "pagesep";
+      sep.innerHTML = `<span>${esc(pageLabel(pg))}</span>`;
+      w.appendChild(sep); lastPage = pg;
+    }
+    n++;
+    const c = document.createElement("div"); c.className = "owner"; c.dataset.id = o.id;
+    c.innerHTML = `<div class="o-row" role="button" tabindex="0" aria-label="تعديل ${esc(o.name || "المالك")}">
+        <span class="o-idx">${n}</span><span class="o-name"><span class="o-nm"></span></span><label class="deadtog o-dt"><input type="checkbox" class="dead"> متوفى</label><span class="o-sh"></span><span class="o-ar"></span></div>
+      <div class="o-heirs" hidden></div>`;
+    const row = c.querySelector(".o-row");
+    row.onclick = () => openEditor(o);
+    row.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openEditor(o); } };
+    c.querySelector(".o-heirs").onclick = () => openHeirs(o);
+    const dl = c.querySelector(".o-dt"), cb = dl.querySelector(".dead");
+    dl.addEventListener("click", e => e.stopPropagation());
+    dl.addEventListener("keydown", e => e.stopPropagation());
+    cb.checked = !!o.dead;
+    cb.onchange = () => { o.dead = cb.checked; save(); renderOwners(); if (o.dead) openHeirs(o); };
+    w.appendChild(c);
+  });
+  recalc();
+  applySearch();
+}
+
+// equal-width number columns: measure the widest value and header
+function fitColumns(){
+  const sec3 = $("owners").parentElement;
+  sec3.style.setProperty("--shw", "max-content"); sec3.style.setProperty("--arw", "max-content");
+  let shW = 0, arW = 0;
+  sec3.querySelectorAll(".o-head span:nth-child(3), #owners .o-sh").forEach(e => { shW = Math.max(shW, e.scrollWidth || 0); });
+  sec3.querySelectorAll(".o-head span:nth-child(4), #owners .o-ar").forEach(e => { arW = Math.max(arW, e.scrollWidth || 0); });
+  if (shW) sec3.style.setProperty("--shw", Math.ceil(shW) + 2 + "px"); else sec3.style.removeProperty("--shw");
+  if (arW) sec3.style.setProperty("--arw", Math.ceil(arW) + 2 + "px"); else sec3.style.removeProperty("--arw");
+}
+addEventListener("resize", () => { clearTimeout(fitColumns.t); fitColumns.t = setTimeout(fitColumns, 150); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitColumns);
+
+// ---------- owner editor ----------
+let edCur = null;
+function openEditor(o){
+  edCur = o;
+  const n = ordered().indexOf(o) + 1;
+  $("e_who").textContent = `المالك رقم ${n}` + (o.page ? ` · ${pageLabel(o.page)}` : "");
+  ["name","shares","page","text","base"].forEach(k => { $("e_" + k).value = o[k] ?? ""; });
+  $("e_base").placeholder = state.h.base || "";
+  $("e_moreBox").open = hasOwnBase(o);
+  $("e_dead").checked = !!o.dead;
+  $("e_heirs").hidden = !o.dead;
+  edRecalc();
+  $("ovE").classList.add("open"); document.body.style.overflow = "hidden";
+  if (!String(o.name||"").trim()) setTimeout(() => $("e_name").focus(), 60);
+}
+function closeEditor(){
+  if (!edCur) return;
+  if (typeof fRec !== "undefined" && fRec){ try { fRec.stop(); } catch(e){} }
+  $("ovE").classList.remove("open"); document.body.style.overflow = "";
+  const id = edCur.id; edCur = null; save(); renderOwners();
+  const r = document.querySelector(`.owner[data-id="${id}"] .o-row`); if (r) r.focus({preventScroll:true});
+}
+function edRecalc(){
+  const o = edCur; if (!o) return;
+  const b = baseOf(o), a = areaOf(o);
+  $("e_area").textContent = b && num(o.shares) ? fmt(a) + " م²" : "—";
+  $("e_dun").textContent = b && num(o.shares) ? dunTxt(a) : "";
+}
+["name","shares","page","text","base"].forEach(k => $("e_" + k).addEventListener("input", () => {
+  const o = edCur; if (!o) return;
+  o[k] = $("e_" + k).value;
+  if (k === "text"){
+    const pt = parseShareText(o.text);
+    if (pt){
+      if (pt.shares != null){ o.shares = String(pt.shares); $("e_shares").value = o.shares; }
+      if (pt.base != null){ o.base = pt.base === num(state.h.base) ? "" : String(pt.base); $("e_base").value = o.base; if (o.base) $("e_moreBox").open = true; }
+    }
+  }
+  if (k === "base" && num(o.base) === num(state.h.base)) o.base = "";
+  if (["text","shares","base"].includes(k)) o.check = "";
+  save(); edRecalc(); recalc();
+}));
+$("e_dead").onchange = () => {
+  const o = edCur; if (!o) return;
+  o.dead = $("e_dead").checked; $("e_heirs").hidden = !o.dead; save();
+  if (o.dead){ closeEditor(); openHeirs(o); } else recalc();
+};
+$("e_heirs").onclick = () => { const o = edCur; closeEditor(); openHeirs(o); };
+$("e_done").onclick = closeEditor;
+$("e_del").onclick = () => {
+  const o = edCur; if (!o) return;
+  if (!confirm(`حذف ${o.name || "هذا المالك"}؟`)) return;
+  state.owners = state.owners.filter(x => x !== o); edCur = null;
+  $("ovE").classList.remove("open"); document.body.style.overflow = "";
+  save(); renderOwners();
+};
+$("ovE").addEventListener("click", e => { if (e.target === $("ovE")) closeEditor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && edCur) closeEditor(); });
+
+// ---------- search ----------
+const normQ = t => normAr(String(t||"")).toLowerCase().replace(/\s+/g," ").trim();
+function applySearch(){
+  const q = normQ($("q").value), qn = q.replace(/\s/g,"");
+  $("qClear").hidden = !q;
+  const cards = [...document.querySelectorAll("#owners .owner")];
+  let shown = 0;
+  cards.forEach(c => {
+    const o = state.owners.find(x => x.id === c.dataset.id);
+    let hit = !q;
+    if (!hit && o){
+      const names = [o.name, ...(o.heirs||[]).map(h => h.name)].map(normQ);
+      hit = names.some(n => n.includes(q) || n.replace(/\s/g,"").includes(qn));
+    }
+    c.hidden = !hit; if (hit) shown++;
+  });
+  document.querySelectorAll("#owners .pagesep").forEach(sep => {
+    let el = sep.nextElementSibling, any = false;
+    while (el && !el.classList.contains("pagesep")){ if (el.classList.contains("owner") && !el.hidden) any = true; el = el.nextElementSibling; }
+    sep.hidden = !any;
+  });
+  const info = $("qInfo"), old = document.getElementById("qEmpty"); if (old) old.remove();
+  if (q){
+    info.hidden = false; info.textContent = `النتائج: ${shown} من ${cards.length}`;
+    if (!shown){ const d = document.createElement("div"); d.id = "qEmpty"; d.className = "qempty"; d.textContent = "لا يوجد اسم مطابق."; $("owners").appendChild(d); }
+  } else info.hidden = true;
+}
+$("q").addEventListener("input", applySearch);
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+$("qClear").onclick = () => { $("q").value = ""; applySearch(); $("q").focus(); };
+
+function recalc(){
+  const T = totalM2(), B = num(state.h.base);
+  $("formula").innerHTML = (T && B)
+    ? `<div class="eq">${fmt(T,0)} م² ÷ ${fmt(B,0)} حصة = <b>${(T/B)<0.01?(T/B).toPrecision(7):(T/B).toFixed(7)}</b> م² للحصة</div><small>مساحة المالك = قيمة الحصة × عدد حصصه</small>`
+    : `<small>أدخل المساحة وأصل الحصص لتظهر قيمة الحصة الواحدة.</small>`;
+  let sumS = 0, sumA = 0, deadCount = 0, heirIssues = 0, checkCount = 0;
+  state.owners.forEach(o => {
+    const a = areaOf(o); sumS += num(o.shares); sumA += a;
+    if (o.check) checkCount++;
+    if (o.dead){
+      deadCount++;
+      if (!o.heirs.length || !num(o.estate) || heirSum(o) !== num(o.estate)){ heirIssues++; o._heirIssue = true; } else o._heirIssue = false;
+    }
+    const c = document.querySelector(`.owner[data-id="${o.id}"]`); if (!c) return;
+    const b = baseOf(o), hasS = !!num(o.shares);
+    c.querySelector(".o-nm").innerHTML = String(o.name||"").trim() ? esc(o.name) : '<span class="o-empty">بدون اسم</span>';
+    c.querySelector(".o-dt .dead").checked = !!o.dead;
+    c.querySelector(".o-sh").innerHTML = (hasS ? fmt(num(o.shares), num(o.shares)%1 ? 2 : 0) : "—") + (hasOwnBase(o) ? `<small class="o-ob">من أصل ${fmt(num(o.base),0)}</small>` : "");
+    c.querySelector(".o-ar").textContent = b && hasS ? fmt(a) : "—";
+    const hb = c.querySelector(".o-heirs");
+    if (o.dead){
+      const e = estateOf(o);
+      hb.hidden = false;
+      hb.innerHTML = o.heirs.length
+        ? o.heirs.map(h => `<div class="o-heir"><span></span><span class="o-name">${esc(h.name||"—")}</span><span class="o-sh">${fmt(num(h.shares),num(h.shares)%1?2:0)} سهم</span><span class="o-ar">${e ? fmt(heirArea(o,h)) : "—"}</span></div>`).join("")
+        : `<div class="none">لم يُضف ورثة بعد. اضغط هنا لإضافتهم.</div>`;
+    } else { hb.hidden = true; hb.innerHTML = ""; }
+  });
+  fitColumns();
+  // totals are not shown on screen; they still appear in the exported PDF / Excel / CSV
+  const c = [];
+  if (state.owners.length && T && B){
+    if (anyOwnBase()){
+      const rest = T - sumA, tol = Math.max(0.005, T * 1e-9);
+      if (Math.abs(rest) <= tol) c.push(["ok","مجموع مساحات المالكين يساوي مساحة القطعة."]);
+      else if (rest > 0) c.push(["warn",`الباقي ${fmt(rest)} م² من مساحة القطعة، وقد يكون في صفحات أخرى من الكوشان.`]);
+      else c.push(["warn",`مجموع مساحات المالكين أكبر من مساحة القطعة بـ ${fmt(-rest)} م². راجع الحصص وأصولها.`]);
+    } else {
+      if (Math.abs(sumS - B) < 1e-9) c.push(["ok","مجموع الحصص يساوي أصل الحصص، ومجموع المساحات يساوي مساحة القطعة."]);
+      else if (sumS < B) c.push(["warn",`الباقي ${fmt(B-sumS,0)} حصة = ${fmt(T*(B-sumS)/B)} م²، وقد يكون في صفحات أخرى من الكوشان.`]);
+      else c.push(["warn",`مجموع الحصص ${fmt(sumS,0)} أكبر من أصل الحصص ${fmt(B,0)}. راجع الأرقام.`]);
+    }
+  }
+  renderAlerts(c);
+}
+function renderAlerts(general){
+  const idx = {}; ordered().forEach((o,i) => idx[o.id] = i+1);
+  const items = [];
+  general.filter(([k]) => k === "warn").forEach(([,t]) => items.push({t}));
+  ordered().forEach(o => {
+    const who = `<b>${idx[o.id]}. ${esc(o.name || "بدون اسم")}</b>`;
+    if (!String(o.name||"").trim() || !num(o.shares)) items.push({id:o.id, t:`${who}: ينقصه ${!String(o.name||"").trim() ? "الاسم" : "عدد الحصص"}.`});
+    if (o.check) items.push({id:o.id, t:`${who}: ${esc(o.check)}`});
+    if (o.dead && o._heirIssue) items.push({id:o.id, t:`${who}: ${!o.heirs.length ? "متوفى ولم يُضف ورثته بعد." : !num(o.estate) ? "أدخل أصل حصر الإرث." : "مجموع أسهم الورثة لا يساوي أصل حصر الإرث."}`});
+  });
+  const box = $("alerts"), okMsg = general.find(([k]) => k === "ok");
+  if (!state.owners.length){ box.hidden = true; return; }
+  box.hidden = false;
+  box.classList.toggle("has", items.length > 0); box.classList.toggle("clean", !items.length);
+  $("alertsSum").textContent = items.length ? `⚠ التنبيهات (${items.length})` : "✓ لا توجد تنبيهات";
+  $("alertsList").innerHTML = (okMsg ? `<div class="ai ok">${okMsg[1]}</div>` : "") +
+    items.map(it => it.id ? `<button type="button" class="ai" data-go="${it.id}">${it.t}</button>` : `<div class="ai">${it.t}</div>`).join("");
+}
+$("alertsList").addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if (!b) return;
+  const card = document.querySelector(`.owner[data-id="${b.dataset.go}"]`); if (!card) return;
+  if (card.hidden){ $("q").value = ""; applySearch(); }
+  card.scrollIntoView({behavior:"smooth", block:"center"});
+  card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+  const o = state.owners.find(x => x.id === b.dataset.go); if (o) setTimeout(() => openEditor(o), 350);
+});
+
+// ---------- heirs modal ----------
+let cur = null;
+function openHeirs(o){
+  cur = o;
+  $("m_who").textContent = `المتوفى: ${o.name || "بدون اسم"}`;
+  $("m_base").value = o.estate || "";
+  $("m_text").value = ""; $("m_msg").className = "msg";
+  renderHeirs();
+  $("ov").classList.add("open"); document.body.style.overflow = "hidden";
+  setTimeout(() => (o.heirs.length ? $("m_base") : $("m_text")).focus(), 50);
+}
+function closeHeirs(){
+  stopMic();
+  $("ov").classList.remove("open"); document.body.style.overflow = "";
+  cur = null; save(); renderOwners();
+}
+function renderHeirs(){
+  const o = cur, w = $("m_heirs"); w.innerHTML = "";
+  o.heirs.forEach((h,i) => {
+    const r = document.createElement("div"); r.className = "hrow";
+    r.innerHTML = `<div class="vf"><input data-k="name" placeholder="اسم الوريث" aria-label="اسم الوريث"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div>
+      <div class="vf"><input data-k="shares" type="text" inputmode="decimal" class="numf" placeholder="الأسهم" aria-label="الأسهم"><button type="button" class="vmic" aria-label="إدخال صوتي">🎤</button></div>
+      <button type="button" class="hdel" aria-label="حذف الوريث">حذف</button><div class="ha"></div>`;
+    r.querySelectorAll("input").forEach(inp => { inp.value = h[inp.dataset.k] ?? "";
+      inp.addEventListener("input", () => { h[inp.dataset.k] = inp.value; save(); recalcHeirs(); }); });
+    r.querySelector(".hdel").onclick = () => { o.heirs.splice(i,1); save(); renderHeirs(); renderOwners(); };
+    w.appendChild(r);
+  });
+  recalcHeirs();
+}
+function recalcHeirs(){
+  const o = cur; if (!o) return;
+  const a = areaOf(o), e = estateOf(o), hs = heirSum(o);
+  $("m_area").value = fmt(a) + " م²";
+  $("m_formula").innerHTML = e
+    ? `<div class="eq">${fmt(a)} م² ÷ ${fmt(e,0)} سهم = <b>${(a/e).toFixed(6)}</b> م² للسهم</div><small>مساحة الوريث = قيمة السهم × أسهمه</small>`
+    : `<small>أدخل أصل حصر الإرث لتُحسب مساحة كل وريث.</small>`;
+  $("m_heirs").querySelectorAll(".hrow").forEach((r,i) => {
+    const h = o.heirs[i]; r.querySelector(".ha").innerHTML = e && num(h.shares) ? `<b>${fmt(heirArea(o,h))} م²</b> &nbsp; ${dunTxt(heirArea(o,h))}` : "";
+  });
+  const c = [];
+  if (!num(o.estate)) c.push(["warn","أصل حصر الإرث غير مُدخل بعد."]);
+  else if (o.heirs.length){
+    if (Math.abs(hs - num(o.estate)) < 1e-9) c.push(["ok","مجموع أسهم الورثة يساوي أصل حصر الإرث."]);
+    else c.push(["warn",`مجموع أسهم الورثة ${fmt(hs,0)} لا يساوي أصل حصر الإرث ${fmt(num(o.estate),0)}.`]);
+  }
+  $("m_checks").innerHTML = c.map(([k,t]) => `<div class="chk ${k}">${t}</div>`).join("");
+}
+$("m_base").addEventListener("input", e => { cur.estate = e.target.value; save(); recalcHeirs(); });
+$("m_add").onclick = () => { cur.heirs.push({name:"",shares:""}); save(); renderHeirs();
+  const ins = $("m_heirs").querySelectorAll('input[data-k="name"]'); ins[ins.length-1]?.focus(); };
+$("m_done").onclick = closeHeirs;
+$("m_alive").onclick = () => { cur.dead = false; closeHeirs(); };
+$("ov").addEventListener("click", e => { if (e.target === $("ov")) closeHeirs(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && cur) closeHeirs(); });
+
+// voice dictation
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function stopMic(){ if (rec){ try{rec.stop();}catch(e){} } }
+$("m_mic").onclick = () => {
+  if (rec){ stopMic(); return; }
+  if (window.AndroidBridge){
+    $("m_mic").classList.add("on");
+    androidVoice((err, t) => { $("m_mic").classList.remove("on");
+      if (err){ if (err !== "cancel") mMsg("تعذّر الإدخال الصوتي. استخدم ميكروفون لوحة المفاتيح داخل الخانة.","err"); return; }
+      $("m_text").value = ($("m_text").value ? $("m_text").value.trimEnd() + "\n" : "") + t;
+      mMsg("أُضيف النص. أملِ المزيد أو اضغط \"حوّل النص إلى ورثة\"."); });
+    return;
+  }
+  if (!SR){ mMsg("الإملاء من داخل الصفحة غير مدعوم هنا. اضغط داخل الخانة واستخدم ميكروفون لوحة المفاتيح."); $("m_text").focus(); return; }
+  rec = new SR(); rec.lang = "ar-JO"; rec.continuous = true; rec.interimResults = true;
+  const base = $("m_text").value ? $("m_text").value.trimEnd() + "\n" : "";
+  rec.onresult = ev => { let t = ""; for (const r of ev.results) t += r[0].transcript + " "; $("m_text").value = base + t.trim(); };
+  rec.onerror = ev => { mMsg(ev.error === "not-allowed" || ev.error === "service-not-allowed"
+      ? "لا يوجد إذن للميكروفون هنا. استخدم ميكروفون لوحة المفاتيح داخل الخانة." : "توقف الإملاء. حاول مرة أخرى."); };
+  rec.onend = () => { rec = null; $("m_mic").classList.remove("on"); $("m_mic").textContent = "🎤 ابدأ الإملاء"; };
+  try { rec.start(); $("m_mic").classList.add("on"); $("m_mic").textContent = "⏹ أوقف الإملاء"; mMsg("تكلّم الآن…"); }
+  catch(e){ rec = null; mMsg("تعذّر تشغيل الميكروفون. استخدم ميكروفون لوحة المفاتيح."); }
+};
+function mMsg(t, kind="info"){ const m = $("m_msg"); m.className = "msg show "+kind; m.textContent = t; }
+
+function localParse(txt){
+  const out = []; let base = null;
+  txt.split(/[\n،,؛;]+|\s+و(?=\S+\s+[\d٠-٩])/).forEach(part => {
+    const p = part.trim(); if (!p) return;
+    const m = p.match(/^(.*?)[\s:=\-–]*([\d٠-٩]+(?:[.,][\d٠-٩]+)?)\s*(?:سهم|أسهم|اسهم|حصة|حصص)?\s*$/);
+    if (!m) return;
+    const name = m[1].replace(/(له|لها|ل)\s*$/,"").trim(); const v = num(m[2].replace(",", "."));
+    if (/اصل|أصل|حصر|المجموع/.test(name)) base = v; else if (name) out.push({name, shares:String(v)});
+  });
+  return {heirs:out, base};
+}
+const HEIR_PROMPT = txt => `النص التالي إملاء صوتي أو مكتوب لأسماء ورثة وعدد أسهم كل منهم في حصر إرث. الأرقام قد تكون بالحروف العربية أو بالأرقام، وقد توجد أخطاء إملاء صوتي بسيطة فصحّح الأسماء العربية الشائعة.
+أعد JSON فقط: {"base": رقم أصل حصر الإرث إن ذُكر وإلا null, "heirs":[{"name":"الاسم","shares": رقم}]}
+لا تخترع ورثة أو أسهماً غير مذكورة.
+
+النص:
+${txt.slice(0,4000)}`;
+$("m_parse").onclick = async () => {
+  stopMic();
+  const txt = $("m_text").value.trim(); if (!txt){ mMsg("اكتب أو أملِ أسماء الورثة وأسهمهم أولاً.","err"); return; }
+  let r = null;
+  if (sample){
+    $("m_parse").disabled = true; $("m_msg").className = "msg show info"; $("m_msg").innerHTML = '<span class="spin"></span> جارٍ تحويل النص…';
+    try {
+      r = await sample.json(HEIR_PROMPT(txt), {modelTier:"quick", cache:false});
+    } catch(e){ r = null; if (["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code)) sample = null; }
+    $("m_parse").disabled = false;
+  } else if (gem.key || gem.groqKey){
+    $("m_parse").disabled = true; $("m_msg").className = "msg show info"; $("m_msg").innerHTML = '<span class="spin"></span> جارٍ تحويل النص…';
+    try { r = await freeRead(HEIR_PROMPT(txt), null); } catch(e){ r = null; }
+    $("m_parse").disabled = false;
+  }
+  if (!r || !Array.isArray(r.heirs)) r = localParse(txt);
+  const add = (r.heirs||[]).filter(h => String(h.name||"").trim()).map(h => ({name:String(h.name).trim(), shares:String(num(h.shares)||"")}));
+  if (!add.length){ mMsg("لم أتعرف على أسماء وأسهم. اكتب كل وريث بصيغة: الاسم العدد","err"); return; }
+  cur.heirs = cur.heirs.filter(h => String(h.name||"").trim() || num(h.shares)).concat(add);
+  if (r.base && !num(cur.estate)){ cur.estate = String(num(r.base)); $("m_base").value = cur.estate; }
+  $("m_text").value = ""; save(); renderHeirs();
+  mMsg(`أُضيف ${add.length} وريث. راجع الأسماء والأسهم.`);
+};
+
+// ---------- per-field voice input ----------
+const toastEl = $("toast"); let toastT;
+function toast(t){ toastEl.textContent = t; toastEl.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("show"), 4500); }
+let fRec = null, fBtn = null;
+const nativeVoice = {}; let nvSeq = 0;
+window.onNativeVoice = (id, text) => { const cb = nativeVoice[id]; delete nativeVoice[id]; if (cb) cb(null, String(text||"")); };
+window.onNativeVoiceError = (id, msg) => { const cb = nativeVoice[id]; delete nativeVoice[id]; if (cb) cb(msg || "error"); };
+function androidVoice(cb){ const id = "v" + (++nvSeq); nativeVoice[id] = cb; try { AndroidBridge.startVoice(id); } catch(e){ delete nativeVoice[id]; cb("error"); } }
+function applyVoice(inp, t){
+  if (inp.classList.contains("numf")){ const v = arWordsToNum(t); inp.value = v != null ? String(v) : t; }
+  else inp.value = t;
+  inp.dispatchEvent(new Event("input",{bubbles:true})); inp.dispatchEvent(new Event("change",{bubbles:true}));
+}
+function convertField(inp){
+  if (inp.classList.contains("numf") && hasArLetters(inp.value)){
+    const v = arWordsToNum(inp.value);
+    if (v != null){ inp.value = String(v); inp.dispatchEvent(new Event("input",{bubbles:true})); inp.dispatchEvent(new Event("change",{bubbles:true})); }
+  }
+}
+document.addEventListener("focusout", e => { const t = e.target;
+  if (t.classList && t.classList.contains("numf")){ convertField(t); if (t.dataset.im){ t.setAttribute("inputmode", t.dataset.im); delete t.dataset.im; } } });
+document.addEventListener("click", e => {
+  const b = e.target.closest(".vmic"); if (!b) return;
+  e.preventDefault();
+  const inp = b.parentElement.querySelector("input");
+  if (fRec){ const same = fBtn === b; try { fRec.stop(); } catch(_){} if (same) return; }
+  if (window.AndroidBridge){
+    b.classList.add("on");
+    androidVoice((err, t) => { b.classList.remove("on");
+      if (err){ if (err !== "cancel") toast("تعذّر الإدخال الصوتي على هذا الجهاز. استخدم ميكروفون لوحة المفاتيح."); return; }
+      applyVoice(inp, t); });
+    return;
+  }
+  if (!SR){
+    if (inp.classList.contains("numf")){ inp.dataset.im = inp.getAttribute("inputmode") || "decimal"; inp.setAttribute("inputmode","text"); }
+    inp.blur(); setTimeout(() => inp.focus(), 30);
+    toast("اضغط ميكروفون لوحة المفاتيح وتكلّم. الأرقام المنطوقة بالحروف تتحول إلى أرقام تلقائياً.");
+    return;
+  }
+  const r = new SR(); r.lang = "ar-JO"; r.interimResults = false; r.continuous = false; r.maxAlternatives = 1;
+  fRec = r; fBtn = b; b.classList.add("on");
+  r.onresult = ev => {
+    applyVoice(inp, ev.results[0][0].transcript.trim());
+  };
+  r.onerror = ev => toast(ev.error === "not-allowed" || ev.error === "service-not-allowed"
+      ? "لا يوجد إذن للميكروفون هنا. استخدم ميكروفون لوحة المفاتيح داخل الخانة."
+      : ev.error === "no-speech" ? "لم أسمع شيئاً. حاول مرة أخرى." : "تعذّر الإدخال الصوتي.");
+  r.onend = () => { b.classList.remove("on"); if (fRec === r){ fRec = null; fBtn = null; } };
+  try { r.start(); toast("تكلّم الآن…"); }
+  catch(err){ b.classList.remove("on"); fRec = null; toast("تعذّر تشغيل الميكروفون. استخدم ميكروفون لوحة المفاتيح."); }
+});
+
+// ---------- Gemini (standalone / APK) ----------
+const GK = "deed-gemini";
+const GROQ_DEFAULT = "qwen/qwen3.8-27b";
+const gem = {key:"", model:"gemini-flash-latest", groqKey:"", groqModel:GROQ_DEFAULT, primary:"gemini"};
+try { Object.assign(gem, JSON.parse(localStorage.getItem(GK) || "{}")); } catch(e){}
+if (/^gemini-2\./.test(gem.model) || gem.model === "gemini-flash-lite-latest") gem.model = "gemini-flash-latest";
+$("g_key").value = gem.key; $("g_model").value = gem.model;
+$("q_key").value = gem.groqKey; $("q_model").value = gem.groqModel; $("g_prov").value = gem.primary === "groq" ? "groq" : "gemini";
+["g_key","g_model","q_key","q_model","g_prov"].forEach(id => $(id).addEventListener(id === "g_prov" ? "change" : "input", () => {
+  gem.key = $("g_key").value.trim(); gem.model = $("g_model").value.trim() || "gemini-flash-latest";
+  gem.groqKey = $("q_key").value.trim(); gem.groqModel = $("q_model").value.trim() || GROQ_DEFAULT; gem.primary = $("g_prov").value;
+  try { localStorage.setItem(GK, JSON.stringify(gem)); } catch(e){}
+  renderPages();
+}));
+const useClaude = () => !!(sample && imgLimit);
+const canRead = () => useClaude() || !!gem.key || !!gem.groqKey;
+function fileToB64(file){
+  return new Promise(async (res, rej) => {
+    try {
+      const img = await createImageBitmap(file);
+      const k = Math.min(1, 2600 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      res({mime:"image/jpeg", data: c.toDataURL("image/jpeg", 0.85).split(",")[1]});
+    } catch(e){
+      const fr = new FileReader();
+      fr.onload = () => res({mime: file.type || "image/jpeg", data: String(fr.result).split(",")[1]});
+      fr.onerror = () => rej(e); fr.readAsDataURL(file);
+    }
+  });
+}
+const GEM_FALLBACK = ["gemini-flash-latest", "gemini-flash-lite-latest"];
+const GEM_LITE = "gemini-flash-lite-latest";
+let gemOverride = "";
+async function geminiCall(model, parts, signal){
+  let res;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method:"POST", signal, headers:{"Content-Type":"application/json","x-goog-api-key":gem.key.trim()},
+      body: JSON.stringify({contents:[{role:"user", parts}], generationConfig:{responseMimeType:"application/json", temperature:0}})});
+  } catch(e){ if (signal && signal.aborted) throw {code:"cancelled"}; throw {code:"network"}; }
+  const j = await res.json().catch(() => null);
+  if (!res.ok){
+    const msg = j?.error?.message || ("HTTP " + res.status), st = j?.error?.status || "";
+    const modelProblem = res.status === 404 || /model|not found|no longer available|not supported/i.test(msg) && !/api key|API_KEY/i.test(msg);
+    const det = JSON.stringify(j?.error?.details || []);
+    const rd = det.match(/"retryDelay"\s*:\s*"(\d+)/);
+    throw {code: res.status === 429 ? "rate_limited" : modelProblem ? "bad_model" : (res.status === 400 || res.status === 403) ? "bad_key" : "upstream_error",
+      message: msg, status: st, daily: /PerDay/i.test(det) || /per day|daily/i.test(msg), retry: rd ? +rd[1] : 0};
+  }
+  const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+  const m = txt.match(/[\[{][\s\S]*[\]}]/);
+  if (!m) throw {code:"invalid_json", message: j?.promptFeedback?.blockReason || "no JSON"};
+  try { return JSON.parse(m[0]); } catch(e){ throw {code:"invalid_json"}; }
+}
+async function geminiJSON(prompt, file, signal){
+  const parts = [{text: prompt}];
+  if (file){ const im = await fileToB64(file); parts.push({inline_data:{mime_type: im.mime, data: im.data}}); }
+  const first = gemOverride || gem.model;
+  const models = [first, ...GEM_FALLBACK.filter(x => x !== first)];
+  let last;
+  for (const m of models){
+    try {
+      const r = await geminiCall(m, parts, signal);
+      return r;
+    } catch(e){ last = e; if (e.code !== "bad_model") throw e; }
+  }
+  throw last;
+}
+// ---------- Groq (second free provider) ----------
+const nhttp = {}; let nhSeq = 0;
+window.onNativeHttp = (id, status, text) => { const cb = nhttp[id]; delete nhttp[id]; if (cb) cb({status, text: String(text||"")}); };
+function postJSON(url, headers, bodyObj, signal){
+  const body = JSON.stringify(bodyObj);
+  if (window.AndroidBridge && AndroidBridge.httpPost){
+    return new Promise((res, rej) => {
+      const id = "h" + (++nhSeq);
+      nhttp[id] = r => { if (r.status === -1) rej({code:"network", message:r.text}); else res(r); };
+      if (signal) signal.addEventListener("abort", () => { if (nhttp[id]){ delete nhttp[id]; rej({code:"cancelled"}); } }, {once:true});
+      try { AndroidBridge.httpPost(id, url, JSON.stringify(headers), body); } catch(e){ delete nhttp[id]; rej({code:"network"}); }
+    });
+  }
+  return fetch(url, {method:"POST", headers, body, signal}).then(async r => ({status:r.status, text: await r.text()}),
+    () => { throw (signal && signal.aborted) ? {code:"cancelled"} : {code:"network"}; });
+}
+async function groqCall(prompt, im, signal, strict){
+  const content = [{type:"text", text: prompt}];
+  const ims = Array.isArray(im) ? im : im ? [im] : [];
+  ims.forEach(x => content.push({type:"image_url", image_url:{url:`data:${x.mime};base64,${x.data}`}}));
+  const body = {model: gem.groqModel || GROQ_DEFAULT, messages:[{role:"user", content: ims.length ? content : prompt}], temperature: 0, max_completion_tokens: 8192};
+  if (strict){ body.response_format = {type:"json_object"}; body.reasoning_format = "hidden"; }
+  const r = await postJSON("https://api.groq.com/openai/v1/chat/completions",
+    {"Content-Type":"application/json", "Authorization":"Bearer " + gem.groqKey.trim()}, body, signal);
+  let j = null; try { j = JSON.parse(r.text); } catch(e){}
+  if (r.status < 200 || r.status >= 300){
+    const msg = j?.error?.message || ("HTTP " + r.status);
+    const ra = msg.match(/try again in\s*(?:(\d+)m)?\s*([\d.]+)s/i);
+    throw {code: r.status === 429 ? "rate_limited" : r.status === 401 ? "bad_key"
+        : (r.status === 404 || (/model/i.test(msg) && /not found|decommission|does not exist|not supported/i.test(msg))) ? "bad_model"
+        : r.status === 400 ? "bad_request" : "upstream_error",
+      message: msg, daily: /per day|\(RPD\)|\(TPD\)/i.test(msg), retry: ra ? (+(ra[1]||0))*60 + Math.ceil(+ra[2]) : 0, provider:"Groq"};
+  }
+  let txt = String(j?.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/g, "");
+  const m = txt.match(/[\[{][\s\S]*[\]}]/);
+  if (!m) throw {code:"invalid_json", provider:"Groq", message:"no JSON"};
+  try { return JSON.parse(m[0]); } catch(e){ throw {code:"invalid_json", provider:"Groq", message:"bad JSON"}; }
+}
+async function groqJSON(prompt, file, signal){
+  const im = file ? await fileToB64(file) : null;
+  try { return await groqCall(prompt, im, signal, true); }
+  catch(e){ if (e.code === "bad_request" || e.code === "invalid_json") return await groqCall(prompt, im, signal, false); throw e; }
+}
+
+// ---------- provider chain: primary -> fallback ----------
+const exhausted = {gemini:false, groq:false};
+let lastVia = "", usedLiteFlag = false;
+async function freeRead(prompt, file, signal){
+  const order = (gem.primary === "groq" ? ["groq","gemini"] : ["gemini","groq"])
+    .filter(p => p === "groq" ? !!gem.groqKey : !!gem.key).filter(p => !exhausted[p]);
+  if (!order.length) throw {code:"rate_limited", daily:true, message:"all providers exhausted"};
+  let last;
+  for (let k = 0; k < order.length; k++){
+    const p = order[k], next = order[k+1];
+    try {
+      let r;
+      if (p === "gemini"){
+        try { r = await geminiJSON(prompt, file, signal); }
+        catch(e){
+          if (e.code === "rate_limited" && e.daily && (gemOverride || gem.model) !== GEM_LITE){
+            gemOverride = GEM_LITE; usedLiteFlag = true;
+            toast("انتهت حصة اليوم لنموذج Gemini Flash. أكملتُ بنموذج Flash-Lite.");
+            r = await geminiJSON(prompt, file, signal);
+          } else throw e;
+        }
+        lastVia = (gemOverride === GEM_LITE) ? "Gemini Lite" : "Gemini";
+      } else { r = await groqJSON(prompt, file, signal); lastVia = "Groq"; }
+      return r;
+    } catch(e){
+      last = e; if (!e.provider) e.provider = p === "groq" ? "Groq" : "Gemini";
+      if (e.code === "cancelled") throw e;
+      const moveOn = (e.code === "rate_limited" && e.daily) || ["bad_key","bad_model","network"].includes(e.code);
+      if (moveOn && e.code === "rate_limited") exhausted[p] = true;
+      if (moveOn && next){ toast(`تعذّر ${e.provider} (${e.code === "rate_limited" ? "انتهت الحصة" : "خطأ في المفتاح أو الاتصال"}). أكملتُ بـ ${next === "groq" ? "Groq" : "Gemini"}.`); continue; }
+      throw e;
+    }
+  }
+  throw last;
+}
+const GEM_ERR = {network:"تعذّر الاتصال بـ Gemini. تأكد من الاتصال بالإنترنت. (في نسخة الويب لا يعمل هذا المفتاح، فهو مخصص لتطبيق الجوال.)",
+  bad_key:"مفتاح Gemini غير مقبول. انسخه من جديد من aistudio.google.com/apikey والصقه بدون مسافات.",
+  bad_model:"النموذج غير متاح لهذا المفتاح. جرّب كتابة gemini-flash-latest في خانة النموذج.",
+  rate_limited:"انتهت حصة Gemini المجانية لهذا اليوم. الصفحات المقروءة أُضيفت، واضغط \"اقرأ السند\" غداً بعد الساعة 10 صباحاً لإكمال الباقي دون تكرار."};
+
+// ---------- parcel location (GeoMOLG) ----------
+const GEO = "https://orthophotos.geomolg.ps/adaptor/rest/services";
+const ORTHO = ["Orthophotos_WB_2024_15cm_tif_PG1923", "Orthophoto_WB_2022_15cm_jp2_PG1923_06"];
+function httpGet(url, binary){
+  if (window.AndroidBridge && AndroidBridge.httpGet){
+    return new Promise((res, rej) => {
+      const id = "g" + (++nhSeq);
+      nhttp[id] = r => { if (r.status === -1) rej({code:"network", message:r.text}); else res(r); };
+      try { AndroidBridge.httpGet(id, url, !!binary); } catch(e){ delete nhttp[id]; rej({code:"network"}); }
+    });
+  }
+  return fetch(url).then(async r => {
+    if (!binary) return {status:r.status, text: await r.text()};
+    const b = await r.blob();
+    const b64 = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.onerror = no; fr.readAsDataURL(b); });
+    return {status:r.status, text:b64};
+  }, () => { throw {code:"network"}; });
+}
+async function geoQuery(params){
+  const q = new URLSearchParams(Object.assign({f:"json", outSR:"28191", returnGeometry:"true"}, params));
+  const r = await httpGet(`${GEO}/ParcelsRegistered_11/MapServer/0/query?${q}`, false);
+  let j = null; try { j = JSON.parse(r.text); } catch(e){}
+  if (r.status !== 200 || !j || j.error) throw {code:"geo", message: j?.error?.message || ("HTTP " + r.status)};
+  return j.features || [];
+}
+const firstInt = v => { const m = String(v||"").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).match(/\d+/); return m ? String(+m[0]) : ""; };
+const numVariants = n => [n, n.padStart(2,"0"), n.padStart(3,"0"), n.padStart(4,"0")].filter((v,i,a) => a.indexOf(v) === i).map(v => `'${v}'`).join(",");
+const normPlace = t => normAr(String(t||"")).replace(/^ال/,"").replace(/\s+ال/g," ").replace(/[\s\-ـ]/g,"");
+const ringsOf = f => (f.geometry && f.geometry.rings) || [];
+let locCanvas = null, locData = null;
+function sidesOf(ring, turnDeg = 12){
+  let pts = ring.slice();
+  if (pts.length > 1 && pts[0][0] === pts[pts.length-1][0] && pts[0][1] === pts[pts.length-1][1]) pts.pop();
+  const n = pts.length; if (n < 3) return [];
+  const dir = (a, b) => Math.atan2(b[1]-a[1], b[0]-a[0]);
+  const turn = i => { const a = dir(pts[(i-1+n)%n], pts[i]), b = dir(pts[i], pts[(i+1)%n]); let d = Math.abs(b - a); if (d > Math.PI) d = 2*Math.PI - d; return d; };
+  // start at the sharpest corner so a straight side is never split across the start
+  let s0 = 0, best = -1; for (let i = 0; i < n; i++){ const t = turn(i); if (t > best){ best = t; s0 = i; } }
+  pts = pts.slice(s0).concat(pts.slice(0, s0));
+  const lim = turnDeg * Math.PI / 180, sides = []; let cur = [pts[0]];
+  for (let i = 1; i <= n; i++){
+    const p = pts[i % n]; cur.push(p);
+    const isCorner = i === n || turn(i % n) > lim;
+    if (isCorner){ sides.push(cur); cur = [p]; }
+  }
+  return sides.map(ps => { let L = 0; for (let k = 1; k < ps.length; k++) L += Math.hypot(ps[k][0]-ps[k-1][0], ps[k][1]-ps[k-1][1]); return {pts: ps, len: L}; });
+}
+
+function locSay(t, kind="info"){ const m = $("locMsg"); m.className = "msg show " + kind; m.innerHTML = t; }
+async function locate(){
+  const h = state.h, basin = firstInt(h.basin), parcel = firstInt(h.parcel), vil = String(h.vil||"").trim();
+  if (!basin || !parcel){ locSay("أدخل رقم الحوض ورقم القطعة في بيانات القطعة أولاً.", "err"); return; }
+  $("locBtn").disabled = true; $("locChoices").hidden = true;
+  locSay('<span class="spin"></span> جارٍ البحث عن القطعة في خرائط جيومولج…');
+  try {
+    const feats = await geoQuery({
+      where: `BlockNumber IN (${numVariants(basin)}) AND ParcelNumber IN (${numVariants(parcel)})`,
+      outFields: "ParcelNumber,BlockNumber,BlockName_Arabic,CommunityName_Arabic,GovernorateName_Arabic"
+    });
+    if (!feats.length){ locSay(`لم أجد القطعة ${parcel} حوض ${basin} في طبقة القطع المسجلة. قد تكون الأرض غير مسوّاة أو غير مدخلة في الخرائط.`, "err"); return; }
+    const nv = normPlace(vil);
+    let pick = vil ? feats.filter(f => { const c = normPlace(f.attributes.CommunityName_Arabic); return c && (c.includes(nv) || nv.includes(c)); }) : [];
+    if (pick.length === 1){ await drawLocation(pick[0]); return; }
+    const opts = pick.length ? pick : feats;
+    $("locMsg").className = "msg";
+    const box = $("locChoices"); box.innerHTML = ""; box.hidden = false;
+    const lab = document.createElement("div"); lab.style.cssText = "width:100%;font-size:.9rem;color:var(--muted)";
+    lab.textContent = vil && !pick.length ? `لم أجد "${vil}" بالضبط. وُجدت القطعة ${parcel} حوض ${basin} في:` : "اختر القرية:";
+    box.appendChild(lab);
+    opts.slice(0, 20).forEach(f => { const a = f.attributes, b = document.createElement("button");
+      b.textContent = `${a.CommunityName_Arabic || "—"}${a.GovernorateName_Arabic ? " · " + a.GovernorateName_Arabic : ""}`;
+      b.onclick = () => { box.hidden = true; drawLocation(f); }; box.appendChild(b); });
+  } catch(e){
+    locSay(e.code === "network" ? (window.AndroidBridge ? "تعذّر الاتصال بخادم جيومولج. تأكد من الاتصال بالإنترنت." : "عرض الموقع يعمل في تطبيق الجوال، لأن هذه الصفحة لا تستطيع الاتصال بخادم الخرائط.")
+      : `تعذّر البحث في الخرائط.<br><small dir="ltr">${esc(e.message||"")}</small>`, "err");
+  } finally { $("locBtn").disabled = false; }
+}
+// ---------- planning analysis: Oslo areas, master plan, land use, roads ----------
+const ABC_SVC = "ABC_Areas_JurisdictionBorders_07", PLAN_SVC = "UrbanMasterPlans_Approved_03";
+async function geoQueryAt(svc, layer, params){
+  const q = new URLSearchParams(Object.assign({f:"json", outSR:"28191", inSR:"28191", returnGeometry:"true",
+    spatialRel:"esriSpatialRelIntersects", geometryType:"esriGeometryEnvelope"}, params));
+  const r = await httpGet(`${GEO}/${svc}/MapServer/${layer}/query?${q}`, false);
+  let j = null; try { j = JSON.parse(r.text); } catch(e){}
+  if (r.status !== 200 || !j || j.error) throw {code:"geo", message: j?.error?.message || ("HTTP " + r.status)};
+  return j.features || [];
+}
+const ringArea = r => { let a = 0; for (let i = 0, n = r.length; i < n; i++){ const [x1,y1] = r[i], [x2,y2] = r[(i+1) % n]; a += x1*y2 - x2*y1; } return a / 2; };
+function ptInRing(pt, r){ let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++){ const [xi,yi] = r[i], [xj,yj] = r[j];
+  if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) c = !c; } return c; }
+// ArcGIS rings -> list of polygons [outer, ...holes] (outer rings run clockwise)
+function esriToMP(rings){
+  const outers = [], holes = [];
+  rings.forEach(r => { if (r.length >= 4) (ringArea(r) < 0 ? outers : holes).push(r); });
+  if (!outers.length) return holes.map(r => [r]);
+  const polys = outers.map(o => [o]);
+  holes.forEach(hr => { const p = polys.find(pp => ptInRing(hr[0], pp[0])); if (p) p.push(hr); });
+  return polys;
+}
+const mpArea = mp => mp.reduce((s, poly) => s + Math.abs(ringArea(poly[0])) - poly.slice(1).reduce((t, h) => t + Math.abs(ringArea(h)), 0), 0);
+const interArea = (a, b) => mpArea(polygonClipping.intersection(a, b));
+const inMP = (pt, mp) => mp.some(poly => ptInRing(pt, poly[0]) && !poly.slice(1).some(h => ptInRing(pt, h)));
+function lineLenInside(paths, mp){
+  let L = 0;
+  paths.forEach(p => { for (let i = 1; i < p.length; i++){ const a = p[i-1], b = p[i], l = Math.hypot(b[0]-a[0], b[1]-a[1]), n = Math.max(1, Math.ceil(l / 0.5));
+    for (let k = 0; k < n; k++){ const t = (k + .5) / n; if (inMP([a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t], mp)) L += l / n; } } });
+  return L;
+}
+const isRoadUse = u => /شارع|شوارع|طرق|طريق/.test(u || "") && !/ملغ/.test(u || "");
+const abcLabel = a => { const ar = String(a.LandClassificationValue_Arabic || "").trim(), en = String(a.LandClassificationValue_English || "").trim();
+  const m = (en.match(/\b([ABC])\b/i) || [])[1];
+  if (/^(أ|ب|ج)$/.test(ar)) return "منطقة " + ar;
+  if (ar) return ar;
+  return m ? "منطقة " + {A:"أ", B:"ب", C:"ج"}[m.toUpperCase()] : (en || "غير معروف"); };
+
+async function analyzeParcel(rings){
+  const out = {ok:false, abc:null, plan:null, guide:null, failed:[]};
+  if (!window.polygonClipping){ out.failed.push("lib"); return out; }
+  const parcel = esriToMP(rings), pA = mpArea(parcel); if (!pA) return out;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  rings.flat().forEach(([x,y]) => { x0 = Math.min(x0,x); x1 = Math.max(x1,x); y0 = Math.min(y0,y); y1 = Math.max(y1,y); });
+  const env = [x0,y0,x1,y1].map(v => v.toFixed(2)).join(",");
+  const pct = a => Math.min(100, a / pA * 100);
+  // Oslo classification
+  try {
+    const flds = "LandClassificationValue_Arabic,LandClassificationValue_English";
+    let fs = await geoQueryAt(ABC_SVC, 0, {geometry: env, outFields: flds, returnGeometry: "false"});
+    const cls = [...new Set(fs.map(f => abcLabel(f.attributes || {})))];
+    if (cls.length === 1) out.abc = [{cls: cls[0], pct: 100}];
+    else if (cls.length > 1){
+      fs = await geoQueryAt(ABC_SVC, 0, {geometry: env, outFields: flds, maxAllowableOffset: "1"});
+      const acc = {};
+      fs.forEach(f => { const c = abcLabel(f.attributes || {}); acc[c] = (acc[c] || 0) + interArea(parcel, esriToMP(ringsOf(f))); });
+      out.abc = Object.entries(acc).map(([cls, a]) => ({cls, pct: pct(a)})).filter(x => x.pct >= 0.5).sort((a, b) => b.pct - a.pct);
+    } else out.abc = [];
+  } catch(e){ out.failed.push("abc"); }
+  // master plan + land use + roads inside the plan
+  try {
+    const fs = await geoQueryAt(PLAN_SVC, 1, {geometry: env, outFields: "LandUse_Arabic,CommunityName_Arabic,ApprovalYear,Status_Arabic,Type_Arabic", maxAllowableOffset: "0.1"});
+    const uses = {}, plans = {}; let inside = 0;
+    fs.forEach(f => { const a = interArea(parcel, esriToMP(ringsOf(f))); if (a <= 0.01) return;
+      const at = f.attributes || {}, u = String(at.LandUse_Arabic || "غير محدد").trim();
+      uses[u] = (uses[u] || 0) + a; inside += a;
+      const k = [at.CommunityName_Arabic, at.ApprovalYear, at.Type_Arabic].join("|");
+      plans[k] = plans[k] || {a: 0, name: at.CommunityName_Arabic || "", year: at.ApprovalYear || "", type: at.Type_Arabic || "", status: at.Status_Arabic || ""};
+      plans[k].a += a; });
+    const list = Object.entries(uses).map(([use, a]) => ({use, pct: pct(a)})).filter(x => x.pct >= 0.1).sort((a, b) => b.pct - a.pct);
+    out.plan = {insidePct: pct(inside), plans: Object.values(plans).sort((a, b) => b.a - a.a),
+      uses: list.filter(x => !isRoadUse(x.use)), roads: list.filter(x => isRoadUse(x.use))};
+  } catch(e){ out.failed.push("plan"); }
+  // guide roads outside the master plans (lines, no width)
+  try {
+    const fs = await geoQueryAt(PLAN_SVC, 2, {geometry: env, outFields: "ValueName_Arabic", maxAllowableOffset: "0.1"});
+    let L = 0; fs.forEach(f => { L += lineLenInside((f.geometry && f.geometry.paths) || [], parcel); });
+    out.guide = {len: L};
+  } catch(e){ out.failed.push("guide"); }
+  out.ok = true;
+  return out;
+}
+// readable lines for the app and the PDF (percentages from the map shapes, square metres from the deed area)
+function planLines(an){
+  if (!an) return [];
+  const T = totalM2(), p1 = v => fmt(v, 1) + "٪", L = [];
+  if (an.failed.includes("lib")) return [{k:"المعلومات التخطيطية", v:"تعذّر تحميل أداة التحليل. أعد فتح التطبيق."}];
+  L.push({k:"تصنيف أوسلو", v: an.abc == null ? "تعذّر التحقق" : !an.abc.length ? "غير متوفر لهذا الموقع"
+    : an.abc.length === 1 ? an.abc[0].cls : "على الحد بين المناطق: " + an.abc.map(x => `${x.cls} ${p1(x.pct)}`).join("، ")});
+  if (an.plan == null) L.push({k:"المخطط الهيكلي", v:"تعذّر التحقق"});
+  else {
+    const P = an.plan, pl = P.plans[0], name = pl ? [pl.type || "مخطط هيكلي", pl.name, pl.year ? "مصادقة " + pl.year : ""].filter(Boolean).join(" ") : "";
+    L.push({k:"المخطط الهيكلي", v: P.insidePct < 0.5 ? "خارج المخطط الهيكلي"
+      : P.insidePct >= 99.5 ? "داخل المخطط الهيكلي" + (name ? ` (${name})` : "")
+      : `جزء منها داخل المخطط الهيكلي: ${p1(P.insidePct)}` + (name ? ` (${name})` : "")});
+    if (P.insidePct >= 0.5){
+      L.push({k:"استعمال الأرض", v: P.uses.length ? P.uses.map(x => `${x.use} ${p1(x.pct)}`).join("، ") : "—"});
+      const rp = P.roads.reduce((s, x) => s + x.pct, 0);
+      L.push({k:"الطرق المقتطعة (تقريباً)", v: rp < 0.1 ? "لا توجد طرق مخططة داخل القطعة"
+        : `${p1(rp)} من القطعة` + (T ? ` ≈ ${fmt(T * rp / 100)} م² من مساحة السند` : "") + (P.roads.length > 1 || P.roads[0].use ? ` (${P.roads.map(x => `${x.use} ${p1(x.pct)}`).join("، ")})` : "")});
+    }
+  }
+  if (an.guide && an.guide.len >= 1) L.push({k:"شارع توجيهي خارج المخطط", v:`يمر عبر القطعة بطول تقريبي ${fmt(an.guide.len, 0)} م`});
+  return L;
+}
+function renderPlanInfo(){
+  const box = $("locPlan"); if (!box) return;
+  if (!locData){ box.innerHTML = ""; return; }
+  if (locData.analysing){ box.innerHTML = '<span class="spin"></span> جارٍ فحص تصنيف أوسلو والمخطط الهيكلي…'; return; }
+  const L = planLines(locData.an);
+  box.innerHTML = L.map(x => `<div class="pl-row"><span class="pl-k">${esc(x.k)}</span><span class="pl-v">${esc(x.v)}</span></div>`).join("") +
+    (L.length ? '<div class="pl-note">معلومات تقريبية من خرائط جيومولج، والمرجع الرسمي هو البلدية أو الوزارة. النِّسب محسوبة من أشكال الخرائط، والأمتار من مساحة السند.</div>' : "");
+}
+async function drawLocation(f){
+  $("locBtn").disabled = true;
+  locSay('<span class="spin"></span> جارٍ تحميل الصورة الجوية…');
+  try {
+    const rings = ringsOf(f); if (!rings.length) throw {code:"geo", message:"no geometry"};
+    const anP = analyzeParcel(rings).catch(() => null);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    rings.flat().forEach(([x,y]) => { x0 = Math.min(x0,x); x1 = Math.max(x1,x); y0 = Math.min(y0,y); y1 = Math.max(y1,y); });
+    const W = 1200, H = 900, cx = (x0+x1)/2, cy = (y0+y1)/2;
+    let span = Math.max(x1-x0, (y1-y0)*W/H) * 1.9; span = Math.max(span, 120);
+    const bx0 = cx - span/2, bx1 = cx + span/2, by0 = cy - span*H/W/2, by1 = cy + span*H/W/2;
+    const bbox = [bx0,by0,bx1,by1].map(v => v.toFixed(2)).join(",");
+    // neighbouring parcels for context (best effort)
+    let neigh = [];
+    try { neigh = await geoQuery({geometry: bbox, geometryType:"esriGeometryEnvelope", inSR:"28191", spatialRel:"esriSpatialRelIntersects", outFields:"ParcelNumber,BlockNumber", resultRecordCount:"500"}); } catch(e){}
+    // aerial photo
+    let img = null, year = "";
+    for (const svc of ORTHO){
+      try {
+        const r = await httpGet(`${GEO}/${svc}/MapServer/export?bbox=${bbox}&bboxSR=28191&imageSR=28191&size=${W},${H}&format=jpg&f=image`, true);
+        if (r.status !== 200 || !r.text || r.text.length < 2000) continue;
+        img = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = "data:image/jpeg;base64," + r.text; });
+        year = (svc.match(/20\d\d/) || [""])[0]; break;
+      } catch(e){}
+    }
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    if (img) g.drawImage(img, 0, 0, W, H); else { g.fillStyle = "#E9ECEF"; g.fillRect(0,0,W,H); }
+    const P = ([x,y]) => [(x - bx0) / (bx1 - bx0) * W, (by1 - y) / (by1 - by0) * H];
+    const path = rs => { g.beginPath(); rs.forEach(r => r.forEach((pt, i) => { const [px,py] = P(pt); i ? g.lineTo(px,py) : g.moveTo(px,py); })); g.closePath(); };
+    const centroid = rs => { let sx=0, sy=0, n=0; (rs[0]||[]).forEach(pt => { sx+=pt[0]; sy+=pt[1]; n++; }); return n ? P([sx/n, sy/n]) : [W/2,H/2]; };
+    const label = (t, x, y, size, fill) => { g.font = `700 ${size}px ${PDF_FONT}`; g.textAlign = "center"; g.textBaseline = "middle";
+      g.lineWidth = Math.max(3, size/4); g.strokeStyle = "rgba(0,0,0,.75)"; g.strokeText(t, x, y); g.fillStyle = fill; g.fillText(t, x, y); };
+    // Oslo areas border line, when it passes through this view
+    let osloLine = false;
+    try {
+      const dl = JSON.stringify([{id: 0, source: {type: "mapLayer", mapLayerId: 0}, drawingInfo: {renderer: {type: "simple",
+        symbol: {type: "esriSFS", style: "esriSFSNull", outline: {type: "esriSLS", style: "esriSLSDash", color: [255, 214, 0, 255], width: 3.5}}}}}]);
+      const base = `${GEO}/${ABC_SVC}/MapServer/export?bbox=${bbox}&bboxSR=28191&imageSR=28191&size=${W},${H}&format=png32&transparent=true&f=image`;
+      let ov = null;
+      for (const u of [`${base}&dynamicLayers=${encodeURIComponent(dl)}`, `${base}&layers=show:0`]){
+        try {
+          const r = await httpGet(u, true); if (r.status !== 200 || !r.text || r.text.length < 100) continue;
+          ov = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = "data:image/png;base64," + r.text; });
+          break;
+        } catch(e){ ov = null; }
+      }
+      if (ov){
+        const tc = document.createElement("canvas"); tc.width = W; tc.height = H; const tg = tc.getContext("2d"); tg.drawImage(ov, 0, 0, W, H);
+        const d = tg.getImageData(0, 0, W, H).data; let n = 0; for (let i = 3; i < d.length; i += 16) if (d[i] > 40) n++;
+        if (n > 30){ g.drawImage(tc, 0, 0); osloLine = true; }
+      }
+    } catch(e){}
+    // neighbours: thin white outlines + numbers
+    const me = f.attributes;
+    neigh.forEach(n => { const a = n.attributes || {};
+      if (a.ParcelNumber === me.ParcelNumber && a.BlockNumber === me.BlockNumber) return;
+      path(ringsOf(n)); g.lineWidth = 1.6; g.strokeStyle = img ? "rgba(255,255,255,.85)" : "#7A8594"; g.stroke();
+      const [lx, ly] = centroid(ringsOf(n)); if (lx > 20 && lx < W-20 && ly > 20 && ly < H-20) label(String(a.ParcelNumber||""), lx, ly, 18, "#FFFFFF"); });
+    // the parcel
+    path(rings); g.fillStyle = "rgba(229,57,53,.18)"; g.fill(); g.lineWidth = 5; g.strokeStyle = "#E53935"; g.lineJoin = "round"; g.stroke();
+    // approximate side lengths along the boundary
+    let placed = 0;
+    rings.forEach(ring => sidesOf(ring).forEach(sd => {
+      if (placed >= 30) return;
+      const px = sd.pts.map(P), [ax, ay] = px[0], [bx, by] = px[px.length-1];
+      const pixLen = Math.hypot(bx-ax, by-ay); if (pixLen < 46) return;
+      // point half-way along the side
+      let half = sd.len / 2, m = sd.pts[0];
+      for (let k = 1; k < sd.pts.length; k++){ const a = sd.pts[k-1], b = sd.pts[k], l = Math.hypot(b[0]-a[0], b[1]-a[1]);
+        if (half <= l){ const t = l ? half / l : 0; m = [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; break; } half -= l; m = b; }
+      const [mx0, my0] = P(m);
+      let ang = Math.atan2(by-ay, bx-ax), nx = -Math.sin(ang), ny = Math.cos(ang);
+      path(rings); if (g.isPointInPath(mx0 + nx*6, my0 + ny*6)){ nx = -nx; ny = -ny; }
+      if (ang > Math.PI/2) ang -= Math.PI; else if (ang < -Math.PI/2) ang += Math.PI;
+      const t = `${fmt(sd.len, 1)} م`;
+      g.save(); g.translate(mx0 + nx*17, my0 + ny*17); g.rotate(ang);
+      g.font = `700 17px ${PDF_FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.direction = "rtl";
+      const tw = g.measureText(t).width + 12, th = 24;
+      g.fillStyle = "rgba(20,20,20,.78)"; g.beginPath(); g.roundRect ? g.roundRect(-tw/2, -th/2, tw, th, 6) : g.rect(-tw/2, -th/2, tw, th); g.fill();
+      g.strokeStyle = "#E53935"; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = "#FFFFFF"; g.fillText(t, 0, 1);
+      g.restore(); placed++;
+    }));
+    const [mx, my] = centroid(rings); label(String(me.ParcelNumber||""), mx, my, 34, "#FFEB3B");
+    // north arrow (top right)
+    g.save(); g.translate(W - 50, 62); g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,.7)"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(0,-30); g.lineTo(14,14); g.lineTo(0,5); g.lineTo(-14,14); g.closePath(); g.fill(); g.stroke();
+    label("N", 0, 34, 20, "#fff"); g.restore();
+    // scale bar (bottom left)
+    const mpp = (bx1 - bx0) / W, nice = [10,20,25,50,100,200,250,500,1000].find(v => v / mpp >= W * 0.14) || 1000, bw = nice / mpp;
+    g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(18, H - 58, bw + 24, 44);
+    g.fillStyle = "#fff"; g.fillRect(30, H - 30, bw, 6); g.fillRect(30, H - 38, 3, 14); g.fillRect(30 + bw - 3, H - 38, 3, 14);
+    label(`${nice} م`, 30 + bw/2, H - 44, 17, "#fff");
+    if (osloLine){
+      g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(W - 250, H - 58, 232, 44);
+      g.strokeStyle = "#FFD600"; g.lineWidth = 3.5; g.setLineDash([12, 7]); g.beginPath(); g.moveTo(W - 238, H - 36); g.lineTo(W - 188, H - 36); g.stroke(); g.setLineDash([]);
+      label("حد مناطق أوسلو", W - 104, H - 36, 18, "#fff");
+    }
+    if (!img){ label("تعذّر تحميل الصورة الجوية، تظهر الحدود فقط", W/2, 30, 22, "#fff"); }
+    locCanvas = c;
+    locData = {community: me.CommunityName_Arabic || "", gov: me.GovernorateName_Arabic || "", basin: me.BlockNumber, basinName: me.BlockName_Arabic || "",
+      parcel: me.ParcelNumber, year, osloLine, an: null, analysing: true, inPdf: false, key: `${firstInt(state.h.basin)}/${firstInt(state.h.parcel)}`};
+    $("locImg").innerHTML = ""; $("locImg").appendChild(c);
+    $("locInfo").innerHTML = `<b>${esc(locData.community)}</b>${locData.gov ? " · " + esc(locData.gov) : ""}<br>
+      حوض ${esc(locData.basin)}${locData.basinName ? " " + esc(locData.basinName) : ""} · قطعة ${esc(locData.parcel)}${year ? ` · صورة جوية ${year}` : ""}
+      <br><span style="color:var(--muted);font-size:.85rem">الأبعاد المكتوبة على أضلاع القطعة مسافات تقريبية، للاسترشاد فقط.</span>`;
+    $("locPdf").checked = false;
+    $("locBox").hidden = false; $("locMsg").className = "msg";
+    const mine = locData; renderPlanInfo();
+    anP.then(an => { if (locData !== mine) return; mine.an = an; mine.analysing = false; renderPlanInfo(); });
+  } catch(e){
+    locSay(e.code === "network" ? "تعذّر الاتصال بخادم جيومولج. تأكد من الاتصال بالإنترنت." : `تعذّر رسم الموقع.<br><small dir="ltr">${esc(e.message||"")}</small>`, "err");
+  } finally { $("locBtn").disabled = false; }
+}
+$("locBtn").onclick = locate;
+$("locPdf").onchange = () => { if (locData) locData.inPdf = $("locPdf").checked;
+  toast($("locPdf").checked ? "ستُضاف الخارطة كصفحة في ملف PDF." : "لن تُضاف الخارطة إلى ملف PDF."); };
+
+// ---------- full-screen viewer (pinch / double-tap zoom, pan, swipe between pages) ----------
+const VW = {i: 0, s: 1, x: 0, y: 0, pts: new Map(), start: null, lastTap: 0};
+function vwApply(){ $("vwImg").style.transform = `translate(${VW.x}px,${VW.y}px) scale(${VW.s})`; }
+function vwReset(){ VW.s = 1; VW.x = 0; VW.y = 0; const im = $("vwImg"); im.style.transform = ""; }
+function vwShow(i){
+  const L = VW.list || pages;
+  if (!L.length) return closeViewer();
+  VW.i = (i + L.length) % L.length; vwReset();
+  const im = $("vwImg"); im.src = L[VW.i].url;
+  im.onload = () => { const r = im.getBoundingClientRect(), st = $("vwStage").getBoundingClientRect();
+    im.style.transform = ""; VW.baseX = r.left - st.left; VW.baseY = r.top - st.top; };
+  $("vwCount").textContent = VW.list ? `${L[VW.i].label || ""}${L.length > 1 ? ` (${VW.i + 1} من ${L.length})` : ""}` : pages.length > 1 ? `صفحة ${VW.i + 1} من ${pages.length}` : "";
+  $("vwPrev").hidden = $("vwNext").hidden = L.length < 2;
+}
+function openViewer(i){ VW.list = null; $("viewer").hidden = false; document.body.style.overflow = "hidden"; vwShow(i); }
+function openViewerList(list, i){ VW.list = list; $("viewer").hidden = false; document.body.style.overflow = "hidden"; vwShow(i || 0); }
+function closeViewer(){ $("viewer").hidden = true; VW.pts.clear(); if (VW.list){ VW.list = null; if ($("ovS").classList.contains("open")) return; } document.body.style.overflow = ""; }
+$("vwClose").onclick = closeViewer;
+$("vwPrev").onclick = () => vwShow(VW.i - 1);
+$("vwNext").onclick = () => vwShow(VW.i + 1);
+function vwZoomAt(s, cx, cy){
+  const im = $("vwImg"), st = $("vwStage").getBoundingClientRect();
+  s = Math.max(1, Math.min(6, s));
+  // keep the point under (cx, cy) fixed while scaling
+  const ox = cx - st.left, oy = cy - st.top, r = im.getBoundingClientRect();
+  const px = (ox - (r.left - st.left)) / VW.s, py = (oy - (r.top - st.top)) / VW.s;
+  VW.x += (VW.s - s) * px; VW.y += (VW.s - s) * py; VW.s = s;
+  if (s === 1){ VW.x = 0; VW.y = 0; }
+  vwApply();
+}
+const stage = $("vwStage");
+stage.addEventListener("pointerdown", e => {
+  stage.setPointerCapture(e.pointerId); VW.pts.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (VW.pts.size === 1){
+    const now = Date.now();
+    if (now - VW.lastTap < 300){ vwZoomAt(VW.s > 1 ? 1 : 2.5, e.clientX, e.clientY); VW.lastTap = 0; }
+    else VW.lastTap = now;
+    VW.start = {x: e.clientX, y: e.clientY, tx: VW.x, ty: VW.y, t: now};
+  } else if (VW.pts.size === 2){
+    const [a, b] = [...VW.pts.values()];
+    VW.pinch = {d: Math.hypot(a.x - b.x, a.y - b.y), s: VW.s};
+  }
+});
+stage.addEventListener("pointermove", e => {
+  if (!VW.pts.has(e.pointerId)) return;
+  VW.pts.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (VW.pts.size === 2 && VW.pinch){
+    const [a, b] = [...VW.pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+    vwZoomAt(VW.pinch.s * d / VW.pinch.d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  } else if (VW.pts.size === 1 && VW.start && VW.s > 1){
+    VW.x = VW.start.tx + (e.clientX - VW.start.x); VW.y = VW.start.ty + (e.clientY - VW.start.y); vwApply();
+  }
+});
+const vwUp = e => {
+  if (!VW.pts.has(e.pointerId)) return;
+  VW.pts.delete(e.pointerId);
+  if (VW.pts.size < 2) VW.pinch = null;
+  if (VW.pts.size === 0 && VW.start && VW.s === 1){
+    const dx = e.clientX - VW.start.x, dy = e.clientY - VW.start.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - VW.start.t < 600) vwShow(VW.i + (dx > 0 ? 1 : -1));
+    else if (dy > 110 && Math.abs(dy) > Math.abs(dx) * 1.5) closeViewer();
+  }
+  if (VW.pts.size === 0) VW.start = null;
+};
+stage.addEventListener("pointerup", vwUp); stage.addEventListener("pointercancel", vwUp);
+document.addEventListener("keydown", e => { if ($("viewer").hidden) return;
+  if (e.key === "Escape") closeViewer(); else if (e.key === "ArrowLeft") vwShow(VW.i + 1); else if (e.key === "ArrowRight") vwShow(VW.i - 1); });
+// Android back button: close the top-most window first
+window.__back = () => {
+  if (!$("viewer").hidden){ closeViewer(); return 1; }
+  if ($("ovS").classList.contains("open")){ $("s_close").click(); return 1; }
+  if ($("ov").classList.contains("open")){ $("m_done").click(); return 1; }
+  if ($("ovE").classList.contains("open")){ $("e_done").click(); return 1; }
+  return 0;
+};
+
+// ---------- files shared to the app from WhatsApp, Telegram, a file manager… ----------
+window.onSharedFiles = async list => {
+  try {
+    const files = [];
+    for (const it of list || []){
+      try { const r = await fetch(it.url); if (!r.ok) continue;
+        const b = await r.blob(); files.push(new File([b], it.name || "deed", {type: it.mime || b.type || ""})); } catch(e){}
+    }
+    if (!files.length){ say("تعذّر استلام الملف المُشارَك.", "err"); return; }
+    scrollTo({top: 0, behavior: "smooth"});
+    const n = await addFiles(files);
+    if (n) say(`استُلمت ${n} صفحة من المشاركة. اضغط "اقرأ السند".`);
+  } catch(e){ say("تعذّر استلام الملف المُشارَك.", "err"); }
+};
+
+// ---------- pages / reading ----------
+function renderPages(){
+  const w = $("pages"); w.innerHTML = "";
+  pages.forEach((p,i) => {
+    const d = document.createElement("div"); d.className = "thumb";
+    d.innerHTML = `<img alt="صورة ${i+1}"><button class="x" aria-label="إزالة الصورة">×</button>${p.status?`<div class="st">${p.status}</div>`:""}`;
+    d.querySelector("img").src = p.url;
+    d.querySelector("img").onclick = () => openViewer(i);
+    d.querySelector(".x").onclick = e => { e.stopPropagation(); URL.revokeObjectURL(p.url); pages.splice(i,1); renderPages(); };
+    w.appendChild(d);
+  });
+  $("readBtn").disabled = !pages.length || !canRead() || !!ctl || adding;
+  $("smartBtn").disabled = !pages.length || !(gem.key || gem.groqKey) || !!ctl || adding;
+  $("smTip").hidden = !!(gem.key && gem.groqKey) && !!pages.length;
+}
+const isPdf = f => f.type === "application/pdf" || /\.pdf$/i.test(f.name || "");
+async function pdfToImages(file){
+  const lib = window.pdfjsLib;
+  if (!lib) throw {code:"nolib"};
+  if (!lib.GlobalWorkerOptions.workerSrc) lib.GlobalWorkerOptions.workerSrc = window.AndroidBridge ? "pdf.worker.min.js" : "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const doc = await lib.getDocument({data: new Uint8Array(await file.arrayBuffer())}).promise;
+  const out = [], base = (file.name || "kushan").replace(/\.pdf$/i, "");
+  for (let i = 1; i <= doc.numPages; i++){
+    say(`<span class="spin"></span> تحضير صفحة ${i} من ${doc.numPages} من ملف PDF…`);
+    const pg = await doc.getPage(i);
+    const v1 = pg.getViewport({scale:1});
+    const vp = pg.getViewport({scale: Math.min(4, 2400 / Math.max(v1.width, v1.height))});
+    const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const cx = c.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, c.width, c.height);
+    await pg.render({canvasContext: cx, viewport: vp}).promise;
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
+    out.push(new File([blob], `${base}-${i}.jpg`, {type:"image/jpeg"}));
+    pg.cleanup(); c.width = c.height = 0;
+  }
+  await doc.destroy();
+  return out;
+}
+let adding = false;
+async function addFiles(list){
+  const files = [...list]; let added = 0;
+  adding = true; renderPages();
+  for (const f of files){
+    if (isPdf(f)){
+      try { const imgs = await pdfToImages(f); imgs.forEach(im => pages.push({file:im, url:URL.createObjectURL(im), status:""})); added += imgs.length; renderPages(); }
+      catch(e){ say(e && e.code === "nolib" ? "مكتبة قراءة PDF لم تُحمّل. تأكد من الاتصال بالإنترنت." :
+        (e && e.name === "PasswordException") ? "ملف PDF محمي بكلمة مرور ولا يمكن فتحه." : "تعذّر فتح ملف PDF. جرّب ملفاً آخر أو صوّر الصفحات.", "err"); }
+    } else if (!f.type || /^image\//.test(f.type)){ pages.push({file:f, url:URL.createObjectURL(f), status:""}); added++; }
+  }
+  adding = false; renderPages();
+  return added;
+}
+["file","cam","pdfIn"].forEach(id => $(id).addEventListener("change", async e => { const fl = [...e.target.files]; e.target.value = ""; const n = await addFiles(fl);
+  if (n) say(`أُضيفت ${n} صفحة. اضغط "اقرأ السند".`); }));
+$("drop").addEventListener("dragover", e => e.preventDefault());
+$("drop").addEventListener("drop", e => { e.preventDefault(); addFiles(e.dataTransfer.files); });
+function say(t, kind="info"){ const m = $("msg"); m.className = "msg show " + kind; m.innerHTML = t; }
+
+const PROMPT = `هذه صورة صفحة من سند ملكية أرض فلسطيني (كوشان / سجل الأموال غير المنقولة / سند تسجيل).
+استخرج البيانات بدقة وأعد كائن JSON واحداً فقط بهذا الشكل:
+{"header":{"governorate":"","village":"","basin":"","parcel":"","area_dunum":null,"area_m2":null,"total_shares":null,"page":null,"pages_total":null,"next_page":null},
+ "owners":[{"name":"","shares":0,"base":0,"text":""}]}
+القواعد:
+- basin: رقم الحوض واسمه إن وُجد، مثل "38 العقبة الوسطى". parcel: رقم القطعة.
+- خانة المساحة فيها عمودان: دونم ومتر مربع. ضع رقم الدونم في area_dunum ورقم المتر المربع في area_m2 (مثلاً 5 دونم و38 م² => 5 و 38، وليس 538).
+- page و pages_total مهمان جداً: ابحث في أسفل الصفحة (غالباً في الزاوية السفلية تحت التاريخ والوقت) عن عبارة "صفحة X من Y" واكتبهما كرقمين فقط (مثلاً "صفحة 25 من 33" => page=25 و pages_total=33، و"صفحة 1 من 7" => 1 و 7). انتبه أن الأرقام قد تكون صغيرة أو فوقها ختم.
+- next_page: إذا وُجدت في أسفل الصفحة عبارة "يتبع (N)..." فاكتب N كرقم (مثلاً "يتبع(26)..." => 26).
+- owners: كل صف في جدول المتصرفين. name هو "اسم المتصرف" كاملاً وحرفياً كما هو مكتوب. تجاهل عمود توقيع الموظف والتواريخ وأرقام المستندات ونوع المعاملة.
+- عمود الحصص مكتوب بالحروف العربية وقد يصل إلى المليارات. أهم حقل هو text: انسخ نص خانة الحصص حرفياً كلمة بكلمة كما هو مطبوع، من أوله إلى آخره، دون تصحيح أو اختصار أو تحويل، مع عبارة "من اصل" وما بعدها. اقرأ كل كلمة رقمية بعناية (مثلاً: ثلاثمائة/ثلاثون/ثلاثة، سبعمائة/سبعون/سبعة، الف/مليون/مليار).
+- ثم حوّل النص إلى أرقام في shares و base. مثال: "ثمانمائة وخمسة حصة من اصل ثلاثمائة واثنان الف واربعمائة حصة" => shares=805 و base=302400.
+- إذا كانت الحصة "كامل القطعة" أو ما شابه فاجعل shares مساوياً لـ base.
+- total_shares هو أصل الحصص المشترك لمعظم الصفوف.
+- تجاهل أي ملاحظة عن الوقف.
+- أي قيمة غير موجودة في هذه الصفحة اجعلها null أو نصاً فارغاً. لا تخمّن.`;
+
+async function readDeed(){
+  if (!canRead() || !pages.length) return;
+  const viaClaude = useClaude();
+  ctl = new AbortController(); $("stopBtn").hidden = false; renderPages();
+  const found = []; let header = {}; let failed = 0; usedLiteFlag = false;
+  for (let i = 0; i < pages.length; i++){
+    if (ctl.signal.aborted) break;
+    if (pages[i].done) continue;
+    pages[i].status = "جارٍ القراءة"; renderPages();
+    say(`<span class="spin"></span> جارٍ قراءة الصورة ${i+1} من ${pages.length}… قد يستغرق ذلك دقيقة.`);
+    try {
+      let r, tries = 0;
+      for (;;){
+        try { r = viaClaude ? await sample.json(PROMPT, { images: pages[i].file, signal: ctl.signal }) : await freeRead(PROMPT, pages[i].file, ctl.signal); break; }
+        catch(err){
+          if (!viaClaude && err.code === "rate_limited" && !err.daily && tries < 5 && !ctl.signal.aborted){
+            tries++; pages[i].status = "انتظار"; renderPages();
+            const wait = Math.min(65, Math.max(20, (err.retry || 30) + 3));
+            say(`<span class="spin"></span> وصلنا لحد ${err.provider || "القراءة"} في الدقيقة. انتظار ${wait} ثانية ثم متابعة الصفحة ${i+1} من ${pages.length}…`);
+            await new Promise(res => { const t = setTimeout(res, wait*1000); ctl.signal.addEventListener("abort", () => { clearTimeout(t); res(); }, {once:true}); });
+            if (ctl.signal.aborted) throw {code:"cancelled"};
+            pages[i].status = "جارٍ القراءة"; renderPages();
+            continue;
+          }
+          throw err;
+        }
+      }
+      const h = (r && r.header) || {};
+      for (const k in h) if (!["page","next_page","pages_total"].includes(k) && h[k] !== null && h[k] !== "" && header[k] == null) header[k] = h[k];
+      if (pageNum(h.pages_total) && header.pages_total == null) header.pages_total = pageNum(h.pages_total);
+      let pgN = pageNum(h.page);
+      if (!pgN && pageNum(h.next_page) > 1) pgN = pageNum(h.next_page) - 1;
+      pages[i].pg = pgN || 0; pages[i].pgGuess = false;
+      const pg = pgN ? String(pgN) : "";
+      (Array.isArray(r && r.owners) ? r.owners : []).forEach(o => {
+        const text = String(o.text||"").trim();
+        let shares = o.shares ?? "", base = o.base ?? "", check = "";
+        const pt = parseShareText(text);
+        if (pt){
+          if (pt.shares != null){ if (num(shares) && num(shares) !== pt.shares) check = `الرقم المقروء ${fmt(num(shares),0)} لا يطابق النص (${fmt(pt.shares,0)}). اعتمدتُ النص، راجعه مقابل السند.`; shares = pt.shares; }
+          if (pt.base != null){ if (num(base) && num(base) !== pt.base && !check) check = `أصل الحصص المقروء ${fmt(num(base),0)} لا يطابق النص (${fmt(pt.base,0)}). راجعه مقابل السند.`; base = pt.base; }
+        } else if (text) check = "تعذّر فهم نص الحصص. راجعه مقابل السند.";
+        found.push({ name: String(o.name||"").trim(), shares: String(shares), base: String(base), text, page: pg, check, _img: pages[i] });
+      });
+      pages[i].status = (pg ? `صفحة ${pg}` : "تمت") + (!viaClaude && lastVia ? ` · ${lastVia}` : ""); pages[i].done = true;
+    } catch(e){
+      pages[i].status = "تعذّرت";
+      if (e.code === "cancelled") break;
+      failed++;
+      if (["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed","images_unavailable"].includes(e.code)){
+        sample = null; say("قراءة الصور غير متاحة هنا. أدخل البيانات يدوياً.", "err"); break; }
+      if (!viaClaude && e.provider === "Groq" && ["bad_key","bad_model","network","rate_limited"].includes(e.code)){
+        say(({bad_key:"مفتاح Groq غير مقبول. انسخه من جديد من console.groq.com/keys.", bad_model:"نموذج Groq غير متاح. اكتب qwen/qwen3.8-27b في خانة نموذج Groq.", network:"تعذّر الاتصال بـ Groq. تأكد من الاتصال بالإنترنت.", rate_limited:"انتهت حصة Groq المجانية لهذا اليوم."})[e.code] + (e.message ? `<br><small dir="ltr" style="display:block;text-align:left;opacity:.8">${esc(String(e.message).slice(0,300))}</small>` : ""), "err"); break; }
+      if (!viaClaude && GEM_ERR[e.code]){ say(GEM_ERR[e.code] + (e.message ? `<br><small dir="ltr" style="display:block;text-align:left;opacity:.8">${esc(String(e.message).slice(0,300))}</small>` : ""), "err"); break; }
+      if (!viaClaude && e.message){ say(`تعذّرت قراءة الصورة ${i+1}.<br><small dir="ltr" style="display:block;text-align:left;opacity:.8">${esc(String(e.message).slice(0,300))}</small>`, "err"); }
+      if (e.code === "rate_limited"){ say("تم الوصول إلى حد الاستخدام مؤقتاً. حاول لاحقاً.", "err"); break; }
+    }
+    renderPages();
+  }
+  const aborted = ctl.signal.aborted; ctl = null; $("stopBtn").hidden = true;
+  // pages whose number could not be read: estimate from neighbouring images in upload order
+  let guessed = 0;
+  pages.forEach((pgI, i) => {
+    if (!pgI.done || pgI.pg) return;
+    let est = 0;
+    for (let k = i - 1; k >= 0 && !est; k--) if (pages[k].pg && !pages[k].pgGuess) est = pages[k].pg + (i - k);
+    for (let k = i + 1; k < pages.length && !est; k++) if (pages[k].pg && !pages[k].pgGuess && pages[k].pg - (k - i) > 0) est = pages[k].pg - (k - i);
+    if (est){ pgI.pg = est; pgI.pgGuess = true; guessed++; pgI.status = pgI.status.replace(/^تمت/, `صفحة ${est}؟`); }
+  });
+  found.forEach(o => { if (!o.page && o._img && o._img.pg) o.page = String(o._img.pg); delete o._img; });
+  if (guessed) toast(`لم يظهر رقم الصفحة بوضوح في ${guessed} صورة، فقدّرته من ترتيب الصور. راجعه عند الحاجة.`);
+  const map = {governorate:"gov",village:"vil",basin:"basin",parcel:"parcel",area_dunum:"dun",area_m2:"m2",total_shares:"base",pages_total:"pages"};
+  for (const k in map) if (header[k] != null && header[k] !== "") state.h[map[k]] = String(header[k]);
+  // the share base is one number for the whole parcel: take the value most rows agree on
+  const cnt = {}; found.forEach(o => { const b = num(o.base); if (b) cnt[b] = (cnt[b]||0) + 1; });
+  const top = Object.entries(cnt).sort((a,b) => b[1]-a[1])[0];
+  if (top && (!num(state.h.base) || (top[1] >= 2 && num(state.h.base) !== +top[0]))){
+    if (num(state.h.base) && num(state.h.base) !== +top[0]) toast("تم تصحيح أصل الحصص حسب نصوص الحصص في السند.");
+    state.h.base = String(+top[0]);
+  }
+  const B = num(state.h.base);
+  found.forEach(o => {
+    if (num(o.base) && B && num(o.base) !== B){
+      if (!o.check) o.check = `هذا المالك مسجّل بأصل حصص مختلف (${fmt(num(o.base),0)}) عن أصل القطعة (${fmt(B,0)}). حُسبت مساحته على أصله، تأكد من ذلك في السند.`;
+    } else o.base = "";
+  });
+  if (found.length) state.owners = state.owners.filter(o => String(o.name||"").trim() || num(o.shares)).concat(found);
+  norm(); save(); fillHeader(); renderOwners(); renderPages();
+
+  if (aborted) say("توقفت القراءة.");
+  else if (found.length){
+    const left = pages.filter(p => !p.done).length;
+    say(`تمت القراءة: ${found.length} مالك${failed?`، وتعذّرت ${failed} صفحة`:""}${left?`. بقيت ${left} صفحة غير مقروءة، أبقِ التطبيق مفتوحاً واضغط "اقرأ السند" لإكمالها`:""}.${usedLiteFlag?" قُرئ جزء منها بنموذج Flash-Lite، فراجع التنبيهات بعناية.":""} راجع الأسماء والحصص قبل الاعتماد.`, (failed||left)?"err":"info");
+  }
+  else if (canRead() && !failed) say("لم أجد مالكين في الصور. تأكد أن جدول المتصرفين ظاهر بوضوح، أو أدخلهم يدوياً.", "err");
+}
+$("readBtn").onclick = readDeed;
+$("stopBtn").onclick = () => ctl && ctl.abort();
+
+// ================= القراءة الذكية للعقار: قراءتان مستقلتان (Gemini + Groq) ومقارنة ومراجعة =================
+// الخطوات لكل صفحة: تحسين الصورة (تعديل الميل، إضاءة، تباين، حدة خفيفة) ← Gemini يحدد مواقع الخانات ←
+// قص الخانات ← قراءة Gemini وقراءة Groq بشكل مستقل (Groq لا يرى نتيجة Gemini أبداً) ← مقارنة ←
+// قراءة ثانية مركّزة للبنود المختلف عليها ← مراجعة المستخدم ← الحساب في التطبيق فقط.
+const SMART_VER = "3.6", SMART_LOG = "deed-smart-log";
+let SMR = null;   // result under review
+const smSleep = (s, signal) => new Promise(res => { const t = setTimeout(res, s*1000); if (signal) signal.addEventListener("abort", () => { clearTimeout(t); res(); }, {once:true}); });
+const smCnv = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+const smSay = t => say(`<span class="spin"></span> ${t}`);
+
+// ---------- image preprocessing (canvas) ----------
+async function smLoad(file, maxSide = 2400){
+  let src;
+  try { src = await createImageBitmap(file); }
+  catch(e){ src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(file); }); }
+  const W = src.width || src.naturalWidth, H = src.height || src.naturalHeight;
+  const k = Math.min(1, maxSide / Math.max(W, H));
+  const c = smCnv(W*k, H*k), g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = "high"; g.drawImage(src, 0, 0, c.width, c.height);
+  if (src.close) src.close();
+  return c;
+}
+function smMaxF(A, w, h, r){
+  const T = new Float32Array(w*h), O = new Float32Array(w*h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){ let m = 0; for (let k = Math.max(0, x-r); k <= Math.min(w-1, x+r); k++) m = Math.max(m, A[y*w+k]); T[y*w+x] = m; }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){ let m = 0; for (let k = Math.max(0, y-r); k <= Math.min(h-1, y+r); k++) m = Math.max(m, T[k*w+x]); O[y*w+x] = m; }
+  return O;
+}
+function smBoxF(A, w, h, r){
+  const O = new Float32Array(w*h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){ let s = 0, n = 0;
+    for (let j = Math.max(0, y-r); j <= Math.min(h-1, y+r); j++) for (let k = Math.max(0, x-r); k <= Math.min(w-1, x+r); k++){ s += A[j*w+k]; n++; }
+    O[y*w+x] = s/n; }
+  return O;
+}
+// paper illumination estimated on a tiny copy (max filter keeps the paper, drops the ink), then each pixel is divided by it
+function smFlatten(c, stretch){
+  const w = c.width, h = c.height, g = c.getContext("2d", {willReadFrequently:true});
+  const im = g.getImageData(0, 0, w, h), d = im.data;
+  const bw = Math.max(6, Math.round(w/28)), bh = Math.max(6, Math.round(h/28));
+  const sc = smCnv(bw, bh), sg = sc.getContext("2d"); sg.drawImage(c, 0, 0, bw, bh);
+  const sd = sg.getImageData(0, 0, bw, bh).data; let B = new Float32Array(bw*bh);
+  for (let i = 0; i < bw*bh; i++) B[i] = Math.max(sd[i*4], sd[i*4+1], sd[i*4+2]);
+  B = smBoxF(smMaxF(B, bw, bh, 2), bw, bh, 1);
+  const hist = new Uint32Array(256);
+  for (let y = 0; y < h; y++){
+    const fy = Math.min(bh - 1.001, Math.max(0, (y + .5)*bh/h - .5)), y0 = fy|0, ty = fy - y0;
+    for (let x = 0; x < w; x++){
+      const fx = Math.min(bw - 1.001, Math.max(0, (x + .5)*bw/w - .5)), x0 = fx|0, tx = fx - x0, o = y0*bw + x0;
+      const bg = (B[o]*(1-tx) + B[o+1]*tx)*(1-ty) + (B[o+bw]*(1-tx) + B[o+bw+1]*tx)*ty;
+      const f = 250 / Math.max(bg, 60), i = (y*w + x)*4;
+      d[i] = Math.min(255, d[i]*f); d[i+1] = Math.min(255, d[i+1]*f); d[i+2] = Math.min(255, d[i+2]*f);
+      hist[(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2])|0]++;
+    }
+  }
+  if (stretch){
+    // gentle contrast stretch between the 0.5% and 99% luminance percentiles
+    const tot = w*h; let acc = 0, lo = 0, hi = 255;
+    for (let v = 0; v < 256; v++){ acc += hist[v]; if (acc >= tot*0.005){ lo = v; break; } }
+    acc = 0; for (let v = 255; v >= 0; v--){ acc += hist[v]; if (acc >= tot*0.01){ hi = v; break; } }
+    lo = Math.min(lo, 90); hi = Math.max(hi, 200); const s = 255/(hi - lo);
+    for (let i = 0; i < d.length; i += 4){
+      let r = (d[i]-lo)*s, gg = (d[i+1]-lo)*s, b = (d[i+2]-lo)*s;
+      // light cleanup: only near-white paper speckle becomes white (ink and Arabic dots are much darker)
+      if (0.299*r + 0.587*gg + 0.114*b > 244){ r = gg = b = 255; }
+      d[i] = r; d[i+1] = gg; d[i+2] = b;   // Uint8Clamped clamps
+    }
+  }
+  g.putImageData(im, 0, 0);
+  return c;
+}
+function smSharpen(c, a){
+  const w = c.width, h = c.height, g = c.getContext("2d", {willReadFrequently:true});
+  const im = g.getImageData(0, 0, w, h), s = im.data, o = new Uint8ClampedArray(s), W4 = w*4;
+  for (let y = 1; y < h-1; y++) for (let x = 1; x < w-1; x++){ const i = y*W4 + x*4;
+    for (let ch = 0; ch < 3; ch++){ const k = i + ch; o[k] = s[k]*(1 + 4*a) - a*(s[k-4] + s[k+4] + s[k-W4] + s[k+W4]); } }
+  im.data.set(o); g.putImageData(im, 0, 0); return c;
+}
+function smCopy(c){ const n = smCnv(c.width, c.height); n.getContext("2d").drawImage(c, 0, 0); return n; }
+function smEnhance(c){ return smSharpen(smFlatten(smCopy(c), true), 0.18); }
+// skew: the angle that makes the horizontal ink profile sharpest (text lines line up)
+function smSkew(c){
+  const k = Math.min(1, 1000/Math.max(c.width, c.height));
+  const s = smFlatten((() => { const n = smCnv(c.width*k, c.height*k); const g = n.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,n.width,n.height); g.drawImage(c, 0, 0, n.width, n.height); return n; })(), false);
+  const w = s.width, h = s.height, d = s.getContext("2d").getImageData(0, 0, w, h).data, P = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){ const i = (y*w + x)*4; if (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2] < 150) P.push(x - w/2, y - h/2); }
+  if (P.length < 400) return 0;
+  const step = Math.max(1, Math.floor(P.length/2/60000))*2, off = Math.ceil(Math.hypot(w, h)/2) + 2;
+  const score = a => { const r = a*Math.PI/180, sn = Math.sin(r), cs = Math.cos(r), B = new Float64Array(off*2 + 2);
+    for (let j = 0; j < P.length; j += step) B[(-P[j]*sn + P[j+1]*cs + off)|0]++;
+    let q = 0; for (let b = 1; b < B.length; b++){ const dd = B[b] - B[b-1]; q += dd*dd; } return q; };
+  let best = 0, bs = -1;
+  for (let a = -6; a <= 6.001; a += 0.5){ const v = score(a); if (v > bs){ bs = v; best = a; } }
+  const c0 = best; for (let a = c0 - 0.45; a <= c0 + 0.451; a += 0.05){ const v = score(a); if (v > bs){ bs = v; best = a; } }
+  return Math.round(best*20)/20;
+}
+function smRotate(c, deg){
+  if (Math.abs(deg) < 0.15) return c;
+  const r = deg*Math.PI/180, cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
+  const n = smCnv(c.width*cs + c.height*sn, c.width*sn + c.height*cs), g = n.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, n.width, n.height); g.imageSmoothingQuality = "high";
+  g.translate(n.width/2, n.height/2); g.rotate(r); g.drawImage(c, -c.width/2, -c.height/2);
+  return n;
+}
+// box_2d = [ymin, xmin, ymax, xmax] on a 0..1000 scale (Gemini's native format)
+function smValidBox(b){ return Array.isArray(b) && b.length === 4 && b.every(v => isFinite(+v) && +v >= -5 && +v <= 1005) && Math.abs(b[2]-b[0]) >= 3 && Math.abs(b[3]-b[1]) >= 3; }
+function smCrop(c, box, pad = 0.3, minPad = 6){
+  if (!smValidBox(box)) return null;
+  let [y0, x0, y1, x1] = box.map(Number); if (y0 > y1) [y0, y1] = [y1, y0]; if (x0 > x1) [x0, x1] = [x1, x0];
+  const px = (x1-x0)*pad*0.4 + minPad, py = (y1-y0)*pad + minPad;
+  const X0 = Math.max(0, (x0-px)/1000*c.width), X1 = Math.min(c.width, (x1+px)/1000*c.width);
+  const Y0 = Math.max(0, (y0-py)/1000*c.height), Y1 = Math.min(c.height, (y1+py)/1000*c.height);
+  if (X1 - X0 < 4 || Y1 - Y0 < 4) return null;
+  const n = smCnv(X1-X0, Y1-Y0); n.getContext("2d").drawImage(c, X0, Y0, X1-X0, Y1-Y0, 0, 0, n.width, n.height);
+  return n;
+}
+function smUpscale(c, minH, maxW, maxK){
+  let k = Math.min(maxK, Math.max(1, minH/c.height)); if (c.width*k > maxW) k = Math.max(1, maxW/c.width);
+  if (k < 1.1) return c;
+  const n = smCnv(c.width*k, c.height*k), g = n.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, n.width, n.height);
+  return smSharpen(n, 0.22);
+}
+function smComposite(items, maxW = 1500){
+  const W = Math.min(maxW, Math.max(...items.map(it => it.canvas.width))), LB = 42;
+  const sc = items.map(it => Math.min(1, W/it.canvas.width));
+  const H = items.reduce((t, it, i) => t + LB + it.canvas.height*sc[i] + 10, 0);
+  const n = smCnv(W, H), g = n.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, n.width, n.height);
+  let y = 0;
+  items.forEach((it, i) => {
+    g.fillStyle = "#1B2740"; g.fillRect(0, y, W, LB); g.fillStyle = "#fff"; g.font = "bold 24px Tahoma, Arial, sans-serif";
+    g.textAlign = "right"; g.textBaseline = "middle"; g.direction = "rtl"; g.fillText(`[${it.id}] ${it.label || ""}`, W - 10, y + LB/2);
+    y += LB; g.drawImage(it.canvas, 0, y, it.canvas.width*sc[i], it.canvas.height*sc[i]); y += it.canvas.height*sc[i] + 10;
+  });
+  return n;
+}
+function smJpeg(c, maxSide = 2600, q = 0.88){
+  let s = c; const k = Math.min(1, maxSide/Math.max(c.width, c.height));
+  if (k < 1){ s = smCnv(c.width*k, c.height*k); const g = s.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, s.width, s.height); }
+  return {mime:"image/jpeg", data: s.toDataURL("image/jpeg", q).split(",")[1]};
+}
+const smURL = (c, maxSide = 1600, q = 0.85) => c ? "data:image/jpeg;base64," + smJpeg(c, maxSide, q).data : "";
+// Groq accepts about 4 MB of base64 images per request
+function smFit(list, budget){
+  let ims = list.map(x => smJpeg(x.c, x.max, 0.88)), side = 1;
+  for (let t = 0; t < 4 && ims.reduce((s, x) => s + x.data.length, 0) > budget; t++){ side *= 0.8; ims = list.map(x => smJpeg(x.c, Math.round(x.max*side), 0.8)); }
+  return ims;
+}
+
+// ---------- model calls (quota aware, same key storage as the rest of the app) ----------
+async function smGem(prompt, ims, signal){
+  const parts = [{text: prompt}, ...ims.map(im => ({inline_data:{mime_type: im.mime, data: im.data}}))];
+  for (let tries = 0;; tries++){
+    const first = gemOverride || gem.model, models = [first, ...GEM_FALLBACK.filter(x => x !== first)];
+    try {
+      let last;
+      for (const m of models){ try { return await geminiCall(m, parts, signal); } catch(e){ last = e; if (e.code !== "bad_model") throw e; } }
+      throw last;
+    } catch(e){
+      if (e.code === "rate_limited" && e.daily && (gemOverride || gem.model) !== GEM_LITE){ gemOverride = GEM_LITE; usedLiteFlag = true; toast("انتهت حصة اليوم لنموذج Gemini Flash. أكملتُ بنموذج Flash-Lite."); continue; }
+      if (e.code === "rate_limited" && !e.daily && tries < 4 && !signal.aborted){
+        const w = Math.min(65, Math.max(15, (e.retry || 30) + 3)); smSay(`وصلنا لحد Gemini في الدقيقة. انتظار ${w} ثانية ثم المتابعة…`);
+        await smSleep(w, signal); if (signal.aborted) throw {code:"cancelled"}; continue; }
+      e.provider = "Gemini"; throw e;
+    }
+  }
+}
+async function smGroq(prompt, ims, signal){
+  for (let tries = 0;; tries++){
+    try {
+      try { return await groqCall(prompt, ims, signal, true); }
+      catch(e){ if (e.code === "bad_request" || e.code === "invalid_json") return await groqCall(prompt, ims, signal, false); throw e; }
+    } catch(e){
+      if (e.code === "rate_limited" && !e.daily && tries < 4 && !signal.aborted){
+        const w = Math.min(65, Math.max(15, (e.retry || 30) + 3)); smSay(`وصلنا لحد Groq في الدقيقة. انتظار ${w} ثانية ثم المتابعة…`);
+        await smSleep(w, signal); if (signal.aborted) throw {code:"cancelled"}; continue; }
+      e.provider = "Groq"; throw e;
+    }
+  }
+}
+const smErrTxt = e => {
+  const p = e.provider || "";
+  const m = {bad_key:`مفتاح ${p} غير مقبول`, bad_model:`نموذج ${p} غير متاح`, network:`تعذّر الاتصال بـ ${p}`, rate_limited:`انتهت حصة ${p}`, invalid_json:`${p} أعاد رداً غير مفهوم`, upstream_error:`خطأ من خادم ${p}`, bad_request:`${p} رفض الطلب`}[e.code];
+  return (m || `تعذّر ${p}`) + (e.message ? ` (${String(e.message).slice(0, 160)})` : "");
+};
+
+// ---------- prompts ----------
+const SM_FIELDS = ["total_area","basin","parcel","village","district","page_number"];   // reading priority order
+const SM_FLABEL = {village:"القرية", district:"القضاء", basin:"الحوض", parcel:"القطعة", total_area:"المساحة", page_number:"رقم الصفحة"};
+const SM_DETECT = `هذه صورة صفحة من سند ملكية أرض فلسطيني (كوشان / سند تسجيل أراضي). مهمتك تحديد مواقع الخانات فقط، لا تقرأ النصوص.
+أعد كائن JSON واحداً فقط:
+{"regions":[{"label":"basin","box_2d":[ymin,xmin,ymax,xmax]}],"rows":[{"box_2d":[ymin,xmin,ymax,xmax]}]}
+- الإحداثيات أعداد صحيحة من 0 إلى 1000 نسبةً إلى ارتفاع الصورة وعرضها، بالترتيب [ymin, xmin, ymax, xmax].
+- label واحد من: village (اسم القرية أو المدينة)، district (القضاء أو المحافظة)، basin (رقم الحوض واسمه)، parcel (رقم القطعة)، total_area (خانة المساحة بالدونم والمتر المربع)، owners_table (جدول المتصرفين كاملاً: الأسماء والحصص)، page_number (عبارة "صفحة X من Y" أسفل الصفحة).
+- كل مربع يشمل عنوان الخانة وقيمتها المكتوبة معاً.
+- rows: مربع لكل صف بيانات في جدول المتصرفين بالترتيب من الأعلى إلى الأسفل، بدون صف العناوين، ويشمل الاسم والحصة.
+- لا تضع مربعاً لعنصر غير موجود في الصورة.`;
+const SM_RULES = `القواعد:
+- ترتيب الأولوية في الدقة: المساحة، ثم رقم الحوض، ثم رقم القطعة، ثم القرية، ثم القضاء، ثم أسماء المتصرفين، ثم الحصص.
+- انسخ ما تراه حرفياً. لا تصحح ولا تكمل ولا تخمّن أي اسم أو رقم. أي كلمة أو رقم غير واضح اكتب مكانه [غير واضح]، وأي خانة غير موجودة اجعلها null.
+- انتبه جداً للنقاط العربية (ب ت ث ن ي ج ح خ ف ق ش س ز ر) وللكتابة اليدوية وللأختام فوق الكتابة.
+- total_area: رقم الدونم في dunum ورقم المتر المربع في m2 كما هما (مثلاً 5 دونم و38 م² => dunum=5 و m2=38).
+- basin_number رقم الحوض فقط، و basin_name اسم الحوض إن وُجد.
+- owners: كل صفوف جدول المتصرفين بنفس ترتيبها في السند من الأعلى إلى الأسفل، بدون صف العناوين. name اسم المتصرف كاملاً.
+- share_original: انسخ نص خانة الحصة حرفياً كما هو (مثل "5/24" أو "ثمانمائة وخمسة حصة من اصل ثلاثمائة واثنان الف واربعمائة حصة"). ثم ضع البسط في share_numerator والمقام (أصل الحصص) في share_denominator كأرقام. إذا كانت "كامل القطعة" بدون أصل فاجعلهما 1 و 1.
+- الشطب: is_crossed_out = true فقط إذا كان هناك خط مرسوم فوق الاسم أو الحصة لإلغائه (خط أفقي أو مائل أو متعرج يقطع الكتابة نفسها). خطوط الجدول وحدود الخانات والتسطير ليست شطباً. إذا لم تكن متأكداً فاكتب "uncertain". أعد كل الصفوف حتى المشطوبة ولا تحذف أي صف.
+- confidence رقم من 0 إلى 1 لثقتك في قراءة الصف. notes لأي ملاحظة (خط يد غير واضح، ختم فوق الكتابة…).
+- page_number و pages_total من عبارة "صفحة X من Y" إن ظهرت.
+- تجاهل التواقيع والتواريخ وأرقام المعاملات وملاحظات الوقف.`;
+const SM_SCHEMA = `{"village":null,"district":null,"basin_number":null,"basin_name":null,"parcel_number":null,
+ "total_area":{"dunum":null,"m2":null,"value":null,"unit":"m2"},"page_number":null,"pages_total":null,
+ "field_confidence":{"village":0,"district":0,"basin_number":0,"parcel_number":0,"total_area":0},
+ "owners":[{"name":"","share_original":"","share_numerator":null,"share_denominator":null,"is_crossed_out":false,"confidence":0,"notes":""}]}`;
+function smReadPrompt(cr){
+  let desc;
+  if (cr.mode === "page") desc = "الصورة المرفقة: صفحة من سند ملكية أرض فلسطيني بعد تحسينها.";
+  else desc = (cr.header ? `الصورة الأولى: مقتطفات مكبّرة من ترويسة سند ملكية أرض فلسطيني، فوق كل مقتطف اسم الخانة بين قوسين (${cr.labels.join("، ")}).\n` : "")
+    + `الصورة ${cr.header ? "الثانية" : "المرفقة"}: جدول المتصرفين في السند (أسماء المالكين وحصصهم).`
+    + (cr.header ? "" : "\nالترويسة غير مرفقة، فاجعل خاناتها null إلا ما يظهر في الصورة.");
+  return `${desc}\nأعد كائن JSON واحداً فقط بهذا الشكل بالضبط:\n${SM_SCHEMA}\n${SM_RULES}`;
+}
+function smSecondPrompt(ids, tableRows){
+  return `هذه مقتطفات مكبّرة من سند ملكية أرض فلسطيني، فوق كل مقتطف رمز بين قوسين مثل [H_basin] أو [R3].
+اقرأ كل مقتطف بعناية شديدة حرفاً حرفاً ورقماً رقماً. الرموز المطلوبة: ${ids.join("، ")}.
+${tableRows.length ? `الصورة الثانية جدول المتصرفين كاملاً. اقرأ منه الصفوف التالية بترتيبها من الأعلى (بدون صف العناوين): ${tableRows.map(t => `${t.id} = الصف رقم ${t.n}`).join("، ")}.\n` : ""}أعد كائن JSON واحداً فقط: {"items":[...]}
+- لرمز خانة ترويسة (يبدأ بـ H_): {"id":"H_basin","value":"النص كما هو"} ، ولرقم الحوض أضف "basin_name" إن ظهر، وللمساحة H_total_area: {"id":"H_total_area","dunum":null,"m2":null}.
+- لرمز صف متصرف (يبدأ بـ R): {"id":"R3","name":"","share_original":"","share_numerator":null,"share_denominator":null,"is_crossed_out":false,"confidence":0}
+- انسخ حرفياً ولا تخمّن. غير الواضح اكتبه [غير واضح]. الشطب فقط لخط يقطع الكتابة نفسها، وخطوط الجدول ليست شطباً، وعند الشك "uncertain".`;
+}
+
+// ---------- normalisation / comparison ----------
+const smDig = s => String(s ?? "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+const smBlank = v => v == null || /^\s*(null|none|undefined|-|—)?\s*$/i.test(String(v));
+const smUnclear = v => !smBlank(v) && /غير واضح|\?|؟|unclear/i.test(String(typeof v === "object" ? JSON.stringify(v) : v));
+const smTxt = v => smBlank(v) ? "" : String(v).trim();
+const smNText = v => smBlank(v) ? "" : normAr(smDig(v)).replace(/[^ء-ي0-9]/g, "");
+const smNInt = v => { if (smBlank(v)) return ""; const t = smDig(v).replace(/(\d)[,،٬](?=\d{3})/g, "$1"); const m = t.match(/\d+/); if (m) return String(+m[0]);
+  const w = hasArLetters(t) ? arWordsToNum(t) : null; return w == null ? "" : String(w); };
+function smArea(t){
+  if (t == null) return null;
+  if (typeof t !== "object"){ const v = num(smDig(t)); return v ? {dun: String(Math.floor(v/1000)), m2: String(+(v - Math.floor(v/1000)*1000).toFixed(2)), tot: v} : null; }
+  const du = smBlank(t.dunum) ? null : num(smDig(t.dunum)), mm = smBlank(t.m2) ? null : num(smDig(t.m2));
+  const unclear = smUnclear(t.dunum) || smUnclear(t.m2);
+  if (du == null && mm == null){
+    const v = smBlank(t.value) ? 0 : num(smDig(t.value)) * (/dun|دونم/i.test(String(t.unit||"")) ? 1000 : 1);
+    return v ? {dun: String(Math.floor(v/1000)), m2: String(+(v - Math.floor(v/1000)*1000).toFixed(2)), tot: v, unclear} : (unclear ? {dun:"", m2:"", tot:null, unclear} : null);
+  }
+  return {dun: du == null ? "" : String(du), m2: mm == null ? "" : String(mm), tot: (du||0)*1000 + (mm||0), unclear};
+}
+const smAreaTxt = a => a ? `${a.dun || 0} دونم و ${a.m2 || 0} م²` : "—";
+// shares: "5/24", "٥/٢٤", "5 من 24", Arabic words "… حصة من اصل …", "كامل القطعة"
+function smFrac(orig, n, d){
+  const t = smDig(orig).trim();
+  let m = t.match(/^\D*?(\d+(?:\.\d+)?)\s*[\/\\÷]\s*(\d+(?:\.\d+)?)\D*$/) || t.match(/(\d+(?:\.\d+)?)\s*(?:حصه|حصة|سهم|اسهم|أسهم)?\s*من\s*(?:ال)?[اأ]?صل\s*(\d+(?:\.\d+)?)/) || t.match(/^\s*(\d+(?:\.\d+)?)\s+من\s+(\d+(?:\.\d+)?)\s*$/);
+  if (m && +m[2]) return {n: +m[1], d: +m[2]};
+  if (t && hasArLetters(t)){
+    if (/كامل/.test(normAr(t)) && !/اصل/.test(normAr(t))) return {n: 1, d: 1};
+    const p = parseShareText(t); if (p && p.shares != null && p.base) return {n: p.shares, d: p.base};
+  }
+  const N = smNInt(n), D = smNInt(d);
+  if (N !== "" && D !== "" && +D) return {n: +N, d: +D};
+  return null;
+}
+const smFracTxt = f => f ? `${f.n}/${f.d}` : "";
+const smCross = v => v === true || /^(true|yes|نعم|1)$/i.test(String(v)) ? "y" : /uncertain|غير متأكد|ربما|maybe/i.test(String(v)) ? "u" : "n";
+const smCrossTxt = c => c === "y" ? "مشطوب" : c === "u" ? "غير متأكد" : "غير مشطوب";
+function smLev(a, b){
+  if (a === b) return 0; if (!a.length) return b.length; if (!b.length) return a.length;
+  let p = Array.from({length: b.length + 1}, (_, i) => i);
+  for (let i = 1; i <= a.length; i++){ const c = [i]; for (let j = 1; j <= b.length; j++) c[j] = Math.min(p[j] + 1, c[j-1] + 1, p[j-1] + (a[i-1] === b[j-1] ? 0 : 1)); p = c; }
+  return p[b.length];
+}
+const smSim = (a, b) => { a = smNText(a); b = smNText(b); if (!a && !b) return 1; return 1 - smLev(a, b)/Math.max(a.length, b.length); };
+// align the two owner lists keeping document order (a row one model missed stays unmatched)
+function smAlign(A, B){
+  const n = A.length, m = B.length, S = Array.from({length: n+1}, () => new Float64Array(m+1)), T = Array.from({length: n+1}, () => new Int8Array(m+1));
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++){
+    const s = smSim(A[i-1].name, B[j-1].name) - 0.45 + ((smFrac(A[i-1].share_original, A[i-1].share_numerator, A[i-1].share_denominator) || {}).n === (smFrac(B[j-1].share_original, B[j-1].share_numerator, B[j-1].share_denominator) || {}).n ? 0.1 : 0);
+    let best = S[i-1][j-1] + s, t = 1;
+    if (S[i-1][j] > best){ best = S[i-1][j]; t = 2; }
+    if (S[i][j-1] > best){ best = S[i][j-1]; t = 3; }
+    S[i][j] = best; T[i][j] = t;
+  }
+  const out = []; let i = n, j = m;
+  while (i > 0 || j > 0){
+    if (i > 0 && j > 0 && T[i][j] === 1){ out.push({gi: i-1, qi: j-1}); i--; j--; }
+    else if (i > 0 && (j === 0 || T[i][j] === 2)){ out.push({gi: i-1, qi: null}); i--; }
+    else { out.push({gi: null, qi: j-1}); j--; }
+  }
+  return out.reverse();
+}
+// one value read by both models -> verified / needs review. Nothing is picked automatically on disagreement.
+function smDecide(kind, g, q, dual, gOn, qOn){
+  const key = v => kind === "area" ? (v && v.tot != null ? (+v.tot).toFixed(2) : "") : kind === "int" ? smNInt(v) : kind === "frac" ? smFracTxt(v) : kind === "cross" ? v : smNText(v);
+  const kg = gOn ? key(g) : "", kq = qOn ? key(q) : "";
+  const unc = (gOn && (kind === "area" ? g && g.unclear : smUnclear(g))) || (qOn && (kind === "area" ? q && q.unclear : smUnclear(q)));
+  if (!dual) return {status: "rev", single: true, pick: gOn ? g : q, note: `قراءة واحدة فقط (${gOn ? "Gemini" : "Groq"})، لم تتم المقارنة.`};
+  if (kg === "" && kq === "") return {status: "rev", pick: null, empty: true, note: "لم تُقرأ هذه القيمة."};
+  if (kg === "" || kq === "") return {status: "rev", pick: kg ? g : q, note: `قرأها ${kg ? "Gemini" : "Groq"} فقط.`};
+  if (kg === kq && !unc) return {status: "ok", pick: g};
+  return {status: "rev", pick: null, note: unc ? "في القراءة جزء غير واضح." : "يوجد اختلاف في القراءة."};
+}
+
+// ---------- per page ----------
+function smBoxes(det){
+  const out = {rows: []};
+  (Array.isArray(det && det.regions) ? det.regions : []).forEach(r => { const l = String(r.label || "").toLowerCase().trim(); if (smValidBox(r.box_2d) && !out[l]) out[l] = r.box_2d.map(Number); });
+  (Array.isArray(det && det.rows) ? det.rows : []).forEach(r => { const b = r && (r.box_2d || r); if (smValidBox(b)) out.rows.push(b.map(Number)); });
+  out.rows.sort((a, b) => Math.min(a[0], a[2]) - Math.min(b[0], b[2]));
+  return out;
+}
+function smMakeCrops(P){
+  const cr = {fields: {}, labels: [], mode: "detected"}, list = [];
+  for (const k of SM_FIELDS){
+    const b = P.boxes[k]; if (!b) continue;
+    const co = smCrop(P.orig, b, .3, 6), ce = smCrop(P.enh, b, .3, 6); if (!co || !ce) continue;
+    const up = smUpscale(ce, 120, 1400, 3);
+    cr.fields[k] = {o: smURL(co, 1400), e: smURL(up, 1400)};
+    list.push({id: k, label: SM_FLABEL[k], canvas: up}); cr.labels.push(`[${k}] ${SM_FLABEL[k]}`);
+  }
+  const tb = P.boxes.owners_table;
+  const to = tb ? smCrop(P.orig, tb, .02, 4) : null, te = tb ? smCrop(P.enh, tb, .02, 4) : null;
+  if (!list.length && !te){ cr.mode = "page"; cr.table = {o: smURL(P.orig, 1800, .8), e: smURL(P.enh, 1800, .8)};
+    cr.send = [{c: P.enh, max: 2600}]; return cr; }
+  const tUp = te ? smUpscale(te, 0, 1800, 1.6) : P.enh;
+  cr.table = {o: smURL(to || P.orig, 1800, .8), e: smURL(tUp, 1800, .8)};
+  if (list.length){ cr.header = smComposite(list); }
+  cr.send = (cr.header ? [{c: cr.header, max: 1800}] : []).concat([{c: tUp, max: 2600}]);
+  return cr;
+}
+function smProviderDown(e, st, who){
+  if (e.code === "cancelled") throw e;
+  const fatal = e.code === "bad_key" || (e.code === "rate_limited" && e.daily) || e.code === "network";
+  if (fatal && !st[who + "Dead"]){ st[who + "Dead"] = true; toast(`${smErrTxt(e)}. أكملتُ بالمزوّد الآخر، والقيم ستحتاج مراجعتك.`); }
+}
+async function smPage(R, pi, st, signal){
+  const tag = `الصفحة ${pi+1} من ${pages.length}`;
+  smSay(`القراءة الذكية – ${tag}: تحسين الصورة (تعديل الميل والإضاءة والتباين)…`);
+  const raw = await smLoad(pages[pi].file);
+  const angle = smSkew(raw), orig = smRotate(raw, -angle), enh = smEnhance(orig);
+  const PL = {index: pi + 1, deskew_deg: -angle, detection: null, gemini: null, groq: null, second: []};
+  R.log.pages.push(PL);
+  let det = null;
+  if (!st.gDead){
+    smSay(`القراءة الذكية – ${tag}: Gemini يحدد مواقع الخانات…`);
+    try { det = await smGem(SM_DETECT, [smJpeg(enh, 2000, .85)], signal); PL.detection = det; }
+    catch(e){ PL.detection_error = smErrTxt(e); smProviderDown(e, st, "g"); }
+  }
+  const P = {pi, orig, enh, boxes: smBoxes(det)};
+  PL.boxes = P.boxes;
+  const cr = smMakeCrops(P);
+  PL.crop_mode = cr.mode;
+  R.pagesRef[pi] = {file: pages[pi].file, angle, boxes: P.boxes, table: cr.table};
+  const prompt = smReadPrompt(cr);
+  const gOn = !st.gDead, qOn = !st.qDead;
+  smSay(`القراءة الذكية – ${tag}: قراءتان مستقلتان${gOn && qOn ? " (Gemini و Groq)" : gOn ? " (Gemini فقط)" : " (Groq فقط)"}…`);
+  // the two reads are independent: same crops, same prompt, and neither sees the other's answer
+  const [g, q] = await Promise.all([
+    gOn ? smGem(prompt, cr.send.map(x => smJpeg(x.c, x.max, .88)), signal).catch(e => ({__err: e})) : null,
+    qOn ? smGroq(prompt, smFit(cr.send, 3400000), signal).catch(e => ({__err: e})) : null]);
+  let G = g, Q = q;
+  if (G && G.__err){ PL.gemini_error = smErrTxt(G.__err); smProviderDown(G.__err, st, "g"); G = null; }
+  if (Q && Q.__err){ PL.groq_error = smErrTxt(Q.__err); smProviderDown(Q.__err, st, "q"); Q = null; }
+  PL.gemini = G; PL.groq = Q;
+  if (!G && !Q) throw (g && g.__err) || (q && q.__err) || {code: "upstream_error"};
+  const targets = smMerge(R, P, cr, G, Q);
+  if (targets.length && G && Q && !st.gDead && !st.qDead){
+    await smSecond(R, P, targets, st, signal, PL, tag);
+  }
+  raw.width = raw.height = 0; orig.width = orig.height = 0; enh.width = enh.height = 0;
+}
+function smMerge(R, P, cr, G, Q){
+  const dual = !!(G && Q), targets = [];
+  // page number (metadata only)
+  const pg = smDecide("int", G && G.page_number, Q && Q.page_number, dual, !!G, !!Q);
+  const pageNo = pg.status === "ok" || pg.single || (pg.pick != null && !pg.empty) ? smNInt(pg.pick) : "";
+  if (!R.pagesTotal){ const pt = smDecide("int", G && G.pages_total, Q && Q.pages_total, dual, !!G, !!Q); if (pt.status === "ok") R.pagesTotal = smNInt(pt.pick); }
+  // land data: decided on the first page where it was read
+  const FD = {
+    area:       {label: "المساحة", kind: "area", get: r => smArea(r && r.total_area), crop: "total_area", conf: "total_area"},
+    basin:      {label: "رقم الحوض", kind: "int", get: r => r && r.basin_number, crop: "basin", conf: "basin_number"},
+    parcel:     {label: "رقم القطعة", kind: "int", get: r => r && r.parcel_number, crop: "parcel", conf: "parcel_number"},
+    village:    {label: "القرية", kind: "text", get: r => r && r.village, crop: "village", conf: "village"},
+    district:   {label: "القضاء", kind: "text", get: r => r && r.district, crop: "district", conf: "district"},
+    basin_name: {label: "اسم الحوض", kind: "text", get: r => r && r.basin_name, crop: "basin", conf: "basin_number"}};
+  for (const k in FD){
+    if (R.fields[k]) continue;
+    const d = FD[k], gv = G ? d.get(G) : null, qv = Q ? d.get(Q) : null;
+    const has = v => d.kind === "area" ? !!v : !smBlank(v);
+    if (!has(gv) && !has(qv)) continue;
+    const r = smDecide(d.kind, gv, qv, dual, !!G, !!Q);
+    const conf = [G, Q].map(x => x && x.field_confidence ? +x.field_confidence[d.conf] : NaN).filter(isFinite);
+    if (r.status === "ok" && conf.length === 2 && Math.min(...conf) < 0.4){ r.status = "rev"; r.note = "اتفقت القراءتان لكن الثقة منخفضة، تأكد منها."; r.pick = gv; }
+    const val = d.kind === "area" ? (r.pick ? {dun: r.pick.dun, m2: r.pick.m2} : {dun: "", m2: ""}) : (r.pick != null ? smTxt(r.pick) : "");
+    R.fields[k] = {key: k, label: d.label, kind: d.kind, status: r.status, single: !!r.single, note: r.note || "", g: gv, q: qv, val, pi: P.pi,
+      crop: cr.fields[d.crop] || null, table: cr.table, box: P.boxes[d.crop] || null, conf};
+    if (r.status === "rev" && dual) targets.push({type: "H", key: k});
+  }
+  // owners, in document order
+  const go = G && Array.isArray(G.owners) ? G.owners : [], qo = Q && Array.isArray(Q.owners) ? Q.owners : [];
+  const pairs = dual ? smAlign(go, qo) : (G ? go : qo).map((_, i) => G ? {gi: i, qi: null} : {gi: null, qi: i});
+  const rb = P.boxes.rows, rowBox = p => rb.length && rb.length === go.length && p.gi != null ? rb[p.gi] : rb.length && rb.length === qo.length && p.qi != null ? rb[p.qi] : null;
+  pairs.forEach(p => {
+    const a = p.gi != null ? go[p.gi] : null, b = p.qi != null ? qo[p.qi] : null;
+    const one = (dual && (!a || !b)) || !dual, onlyG = !!a && !b;
+    const fa = a ? smFrac(a.share_original, a.share_numerator, a.share_denominator) : null, fb = b ? smFrac(b.share_original, b.share_numerator, b.share_denominator) : null;
+    const row = {pi: P.pi, page: pageNo, gi: p.gi, qi: p.qi, box: rowBox(p), table: cr.table,
+      g: a ? {name: smTxt(a.name), orig: smTxt(a.share_original), frac: fa, cross: smCross(a.is_crossed_out), conf: +a.confidence, notes: smTxt(a.notes)} : null,
+      q: b ? {name: smTxt(b.name), orig: smTxt(b.share_original), frac: fb, cross: smCross(b.is_crossed_out), conf: +b.confidence, notes: smTxt(b.notes)} : null};
+    if (one){
+      const src = a ? row.g : row.q, why = dual ? `هذا الصف قرأه ${onlyG ? "Gemini" : "Groq"} فقط.` : `قراءة واحدة فقط (${a ? "Gemini" : "Groq"})، لم تتم المقارنة.`;
+      row.name = {status: "rev", single: !dual, val: src.name, note: why};
+      row.share = {status: "rev", single: !dual, val: smFracTxt(src.frac), note: ""};
+      row.cross = {status: src.cross === "n" ? (dual ? "rev" : "rev") : "rev", single: !dual, val: src.cross === "y", note: src.cross !== "n" ? "قد يكون مشطوباً." : ""};
+    } else {
+      const n = smDecide("text", row.g.name, row.q.name, true, true, true);
+      row.name = {status: n.status, val: n.status === "ok" ? row.g.name : "", note: n.status === "ok" ? "" : n.note};
+      const s = smDecide("frac", fa, fb, true, true, true);
+      const sUnc = smUnclear(row.g.orig) || smUnclear(row.q.orig);
+      row.share = {status: s.status === "ok" && !sUnc ? "ok" : "rev", val: s.status === "ok" ? smFracTxt(fa) : "", note: s.status === "ok" && !sUnc ? "" : sUnc ? "نص الحصة فيه جزء غير واضح." : s.note};
+      const cg = row.g.cross, cq = row.q.cross;
+      row.cross = cg === cq && cg !== "u" ? {status: "ok", val: cg === "y", note: cg === "y" ? "مشطوب في القراءتين: مستبعد من الحساب." : ""}
+        : {status: "rev", val: false, note: `احتمال شطب (Gemini: ${smCrossTxt(cg)} / Groq: ${smCrossTxt(cq)}). لم يُستبعد تلقائياً.`};
+      const cf = [row.g.conf, row.q.conf].filter(isFinite);
+      if (row.name.status === "ok" && row.share.status === "ok" && cf.length === 2 && Math.min(...cf) < 0.4){ row.name.status = "rev"; row.name.val = row.g.name; row.name.note = "اتفقت القراءتان لكن الثقة منخفضة."; }
+    }
+    const fv = smFrac(row.share.val);
+    if (fv && fv.n > fv.d){ row.share.status = "rev"; row.share.note = "البسط أكبر من المقام: قد يكون الكسر مقلوباً."; }
+    row.id = "R" + (R.owners.length + 1);
+    R.owners.push(row);
+    if (dual && smRowStatus(row) === "rev") targets.push({type: "R", row});
+  });
+  return targets;
+}
+const smRowStatus = r => [r.name, r.share, r.cross].some(x => x.status === "rev") ? "rev" : [r.name, r.share, r.cross].some(x => x.status === "user") ? "user" : "ok";
+// focused second read of the disputed items only, on smaller, bigger crops. Each model again reads on its own.
+async function smSecond(R, P, targets, st, signal, PL, tag){
+  for (let s = 0; s < targets.length && s < 36; s += 12){
+    const batch = targets.slice(s, s + 12), items = [], tableRows = [], ids = [];
+    batch.forEach(t => {
+      if (t.type === "H"){
+        const f = R.fields[t.key], cropKey = {area: "total_area", basin_name: "basin"}[t.key] || t.key, b = P.boxes[cropKey];
+        const c = b ? smCrop(P.enh, b, .5, 10) : null;
+        if (!c) return;
+        const id = "H_" + (t.key === "area" ? "total_area" : t.key); ids.push(id);
+        items.push({id, label: f.label, canvas: smUpscale(c, 170, 1500, 4)});
+      } else {
+        const r = t.row, c = r.box ? smCrop(P.enh, r.box, .25, 4) : null;
+        ids.push(r.id);
+        if (c) items.push({id: r.id, label: "صف متصرف", canvas: smUpscale(c, 130, 1600, 3)});
+        else tableRows.push({id: r.id, n: (r.gi != null ? r.gi : r.qi) + 1});
+      }
+    });
+    if (!ids.length) continue;
+    const send = [];
+    if (items.length) send.push({c: smComposite(items, 1600), max: 2600});
+    if (tableRows.length) send.push({c: P.boxes.owners_table ? smUpscale(smCrop(P.enh, P.boxes.owners_table, .02, 4), 0, 1800, 1.6) : P.enh, max: 2600});
+    const prompt = smSecondPrompt(ids, tableRows);
+    smSay(`القراءة الذكية – ${tag}: قراءة ثانية مركّزة لـ ${ids.length} بند مختلف عليه…`);
+    const [g, q] = await Promise.all([smGem(prompt, send.map(x => smJpeg(x.c, x.max, .9)), signal).catch(e => ({__err: e})), smGroq(prompt, smFit(send, 3400000), signal).catch(e => ({__err: e}))]);
+    const rec = {ids, gemini: g && g.__err ? null : g, groq: q && q.__err ? null : q};
+    if (g && g.__err){ rec.gemini_error = smErrTxt(g.__err); smProviderDown(g.__err, st, "g"); }
+    if (q && q.__err){ rec.groq_error = smErrTxt(q.__err); smProviderDown(q.__err, st, "q"); }
+    PL.second.push(rec);
+    if (!rec.gemini || !rec.groq) continue;
+    smApplySecond(R, batch, rec.gemini, rec.groq);
+  }
+}
+function smApplySecond(R, batch, g, q){
+  const byId = o => { const m = {}; (Array.isArray(o && o.items) ? o.items : []).forEach(x => { if (x && x.id) m[String(x.id).trim()] = x; }); return m; };
+  const G = byId(g), Q = byId(q);
+  batch.forEach(t => {
+    if (t.type === "H"){
+      const f = R.fields[t.key], id = "H_" + (t.key === "area" ? "total_area" : t.key), a = G[id], b = Q[id];
+      if (!a || !b) return;
+      const get = x => f.kind === "area" ? smArea({dunum: x.dunum, m2: x.m2, value: x.value}) : t.key === "basin_name" ? (x.basin_name ?? x.value) : x.value;
+      f.g2 = get(a); f.q2 = get(b);
+      const r = smDecide(f.kind, f.g2, f.q2, true, true, true);
+      f.second = true;
+      if (r.status === "ok"){ f.status = "ok"; f.val = f.kind === "area" ? {dun: f.g2.dun, m2: f.g2.m2} : smTxt(f.g2); f.note = "تم التحقق بقراءة ثانية مركّزة."; }
+      else f.note = "ما زال الاختلاف بعد القراءة الثانية المركّزة: يحتاج مراجعة يدوية.";
+    } else {
+      const r = t.row, a = G[r.id], b = Q[r.id];
+      if (!a || !b) return;
+      r.g2 = {name: smTxt(a.name), orig: smTxt(a.share_original), frac: smFrac(a.share_original, a.share_numerator, a.share_denominator), cross: smCross(a.is_crossed_out)};
+      r.q2 = {name: smTxt(b.name), orig: smTxt(b.share_original), frac: smFrac(b.share_original, b.share_numerator, b.share_denominator), cross: smCross(b.is_crossed_out)};
+      r.second = true;
+      if (r.name.status === "rev"){ const n = smDecide("text", r.g2.name, r.q2.name, true, true, true);
+        if (n.status === "ok"){ r.name.status = "ok"; r.name.val = r.g2.name; r.name.note = "تم التحقق بقراءة ثانية مركّزة."; } else r.name.note = "ما زال الاختلاف بعد القراءة الثانية: راجعه يدوياً."; }
+      if (r.share.status === "rev"){ const s = smDecide("frac", r.g2.frac, r.q2.frac, true, true, true);
+        if (s.status === "ok" && !(r.g2.frac.n > r.g2.frac.d)){ r.share.status = "ok"; r.share.val = smFracTxt(r.g2.frac); r.share.note = "تم التحقق بقراءة ثانية مركّزة."; } else r.share.note = "ما زال الاختلاف بعد القراءة الثانية: راجعه يدوياً."; }
+      if (r.cross.status === "rev" && r.g2.cross === r.q2.cross && r.g2.cross !== "u"){ r.cross.status = "ok"; r.cross.val = r.g2.cross === "y"; r.cross.note = r.cross.val ? "مشطوب في القراءة الثانية لكلا النموذجين: مستبعد من الحساب." : ""; }
+    }
+  });
+}
+
+// ---------- run ----------
+async function smartRead(){
+  if (!pages.length || !(gem.key || gem.groqKey) || ctl || adding) return;
+  if (!gem.key || !gem.groqKey) toast(`القراءة الذكية بمفتاح ${gem.key ? "Gemini" : "Groq"} فقط: لن تتم مقارنة قراءتين، وكل القيم ستحتاج مراجعتك. أضف المفتاح الآخر للتحقق التلقائي.`);
+  ctl = new AbortController(); const signal = ctl.signal; $("stopBtn").hidden = false; usedLiteFlag = false; renderPages();
+  const R = {dual: !!(gem.key && gem.groqKey), fields: {}, owners: [], pagesRef: [], pagesTotal: "", failed: 0,
+    log: {app: "حاسب الكواشين", version: SMART_VER, time: new Date().toISOString(), mode: gem.key && gem.groqKey ? "dual" : gem.key ? "gemini-only" : "groq-only",
+      models: {gemini: gem.key ? (gemOverride || gem.model) : null, groq: gem.groqKey ? (gem.groqModel || GROQ_DEFAULT) : null}, pages: [], final: null}};
+  const st = {gDead: !gem.key, qDead: !gem.groqKey};
+  let stopped = false;
+  for (let pi = 0; pi < pages.length; pi++){
+    if (signal.aborted){ stopped = true; break; }
+    pages[pi].status = "قراءة ذكية"; renderPages();
+    try { await smPage(R, pi, st, signal); pages[pi].status = "✓ ذكية"; }
+    catch(e){
+      if (e.code === "cancelled" || signal.aborted){ pages[pi].status = ""; stopped = true; renderPages(); break; }
+      pages[pi].status = "تعذّرت"; R.failed++;
+      R.log.pages.push({index: pi + 1, error: smErrTxt(e)});
+      if (st.gDead && st.qDead){ say(`تعذّرت القراءة الذكية: ${esc(smErrTxt(e))}`, "err"); break; }
+    }
+    renderPages(); smSaveLog(R);
+  }
+  ctl = null; $("stopBtn").hidden = true; renderPages();
+  R.log.models.gemini_used = gem.key ? (gemOverride || gem.model) : null;
+  for (const [k, l, kind] of [["village","القرية","text"],["district","القضاء","text"],["basin","رقم الحوض","int"],["basin_name","اسم الحوض","text"],["parcel","رقم القطعة","int"],["area","المساحة","area"]])
+    if (!R.fields[k]) R.fields[k] = {key: k, label: l, kind, status: k === "basin_name" || k === "district" ? "ok" : "rev", note: "لم تُقرأ هذه القيمة من الصور.", val: kind === "area" ? {dun: "", m2: ""} : "", missing: true, table: null};
+  smSaveLog(R);
+  if (!R.owners.length && R.fields.area.missing && R.fields.basin.missing){ if (!stopped) say("لم تنجح القراءة الذكية في استخراج بيانات. جرّب صورة أوضح أو القراءة العادية.", "err"); else say("توقفت القراءة."); return; }
+  SMR = R; smOpen();
+  const rev = smPending().length;
+  say(`انتهت القراءة الذكية${stopped ? " (أوقفتَها قبل النهاية)" : ""}: ${R.owners.length} صف${R.failed ? `، وتعذّرت ${R.failed} صفحة` : ""}. ${rev ? `${rev} بند يحتاج مراجعتك.` : "كل القيم متحقق منها."} <button class="link" data-smopen="1">افتح شاشة المراجعة</button>`, rev || R.failed ? "err" : "info");
+}
+function smSaveLog(R){
+  const L = JSON.parse(JSON.stringify(R.log));
+  try { localStorage.setItem(SMART_LOG, JSON.stringify(L)); }
+  catch(e){ try { L.pages.forEach(p => { delete p.detection; }); localStorage.setItem(SMART_LOG, JSON.stringify(L)); } catch(e2){} }
+}
+
+// ---------- review screen ----------
+const SM_BADGE = {ok: `<span class="bdg ok">✓ متحقق</span>`, rev: `<span class="bdg rev">⚠ يحتاج مراجعة</span>`, user: `<span class="bdg user">✎ راجعتَه</span>`};
+const smTot = () => { const a = SMR.fields.area.val || {}; return num(a.dun)*1000 + num(a.m2); };
+function smCands(label, list, kindArea){
+  // list: [[source, value]]; each line is a button that takes that value
+  const seen = [], lines = list.filter(([, v]) => kindArea ? v && v.tot != null : !smBlank(v)).map(([src, v]) => {
+    const shown = kindArea ? smAreaTxt(v) : String(v);
+    return `<button type="button" class="sm-pick" dir="ltr" data-v="${esc(JSON.stringify(kindArea ? {dun: v.dun, m2: v.m2} : v))}"><b>${src}:</b> <span dir="auto">${esc(shown)}</span></button>`;
+  });
+  return lines.length ? `<div class="sm-diff"><div>يوجد اختلاف في قراءة ${esc(label)}</div>${lines.join("")}<div class="sm-hint">اضغط القيمة الصحيحة حسب الصورة، أو صحّحها في الخانة.</div></div>` : "";
+}
+function smFieldHTML(f){
+  const st = f.status, area = f.kind === "area";
+  const inp = area ? `<div class="sm-area"><input data-f="${f.key}" data-p="dun" inputmode="decimal" dir="ltr" value="${esc(f.val.dun)}" aria-label="دونم"><span>دونم</span><input data-f="${f.key}" data-p="m2" inputmode="decimal" dir="ltr" value="${esc(f.val.m2)}" aria-label="متر مربع"><span>م²</span></div>`
+    : `<input data-f="${f.key}" ${f.kind === "int" ? 'inputmode="numeric"' : ""} value="${esc(f.val)}" aria-label="${esc(f.label)}">`;
+  let diff = "";
+  if (st === "rev" && !f.single && !f.missing){
+    const L = [["Gemini", f.g], ["Groq", f.q]]; if (f.second) L.push(["Gemini (قراءة ثانية)", f.g2], ["Groq (قراءة ثانية)", f.q2]);
+    diff = smCands(f.label, L, area);
+  }
+  const canZoom = f.crop || f.table;
+  return `<div class="sm-f st-${st}" data-fk="${f.key}"><div class="sm-l"><span>${esc(f.label)}</span>${SM_BADGE[st]}</div>
+    <div class="sm-in">${inp}${canZoom ? `<button type="button" class="sm-zoom" data-zf="${f.key}" aria-label="تكبير الصورة">🔍</button>` : ""}</div>
+    ${f.note ? `<div class="sm-note">${esc(f.note)}</div>` : ""}${diff}
+    ${st === "rev" ? `<button type="button" class="sm-ok" data-okf="${f.key}">تأكيد القيمة الحالية</button>` : ""}</div>`;
+}
+function smRowHTML(r, n){
+  const st = smRowStatus(r), f = smFrac(r.share.val), T = smTot(), ex = r.cross.val;
+  const ar = ex ? "مستبعد" : f && T ? fmt(T / f.d * f.n) + " م²" : "—";
+  const diffs = [];
+  if (r.name.status === "rev" && r.g && r.q){ const L = [["Gemini", r.g.name], ["Groq", r.q.name]]; if (r.g2) L.push(["Gemini (قراءة ثانية)", r.g2.name], ["Groq (قراءة ثانية)", r.q2.name]); diffs.push(smCands("اسم المتصرف", L).replace(/sm-pick"/g, 'sm-pick" data-rp="name"')); }
+  if (r.share.status === "rev" && r.g && r.q){ const L = [["Gemini", smFracTxt(r.g.frac) + (r.g.orig && r.g.orig !== smFracTxt(r.g.frac) ? `  (${r.g.orig})` : "")], ["Groq", smFracTxt(r.q.frac) + (r.q.orig && r.q.orig !== smFracTxt(r.q.frac) ? `  (${r.q.orig})` : "")]];
+    if (r.g2) L.push(["Gemini (قراءة ثانية)", smFracTxt(r.g2.frac)], ["Groq (قراءة ثانية)", smFracTxt(r.q2.frac)]);
+    diffs.push(smCands("الحصة", L).replace(/sm-pick"/g, 'sm-pick" data-rp="share"')); }
+  const notes = [r.name.note, r.share.note, r.cross.note].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+  const orig = [r.g && r.g.orig, r.q && r.q.orig].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i && smFracTxt(smFrac(v)) !== v);
+  const mnotes = [r.g && r.g.notes, r.q && r.q.notes].filter(Boolean);
+  return `<div class="sm-o st-${st}${ex ? " ex" : ""}" data-r="${r.id}">
+    <div class="sm-o1"><span class="sm-n">${n}</span><input data-r="${r.id}" data-p="name" value="${esc(r.name.val)}" aria-label="اسم المتصرف" placeholder="اسم المتصرف">${SM_BADGE[st]}</div>
+    <div class="sm-o2"><label>الحصة<input data-r="${r.id}" data-p="share" dir="ltr" value="${esc(r.share.val)}" placeholder="مثل 5/24" aria-label="الحصة"></label>
+      <span class="sm-ar">${ar}</span>
+      <label class="deadtog"><input type="checkbox" data-r="${r.id}" data-p="cross"${ex ? " checked" : ""}> مشطوب</label>
+      <button type="button" class="sm-zoom" data-zr="${r.id}" aria-label="تكبير الصورة">🔍</button></div>
+    ${orig.length ? `<div class="sm-orig">نص الحصة في السند: ${orig.map(esc).join(" | ")}</div>` : ""}
+    ${notes.length ? `<div class="sm-note">${notes.map(esc).join(" ")}</div>` : ""}${mnotes.length ? `<div class="sm-orig">ملاحظة القارئ: ${mnotes.map(esc).join(" | ")}</div>` : ""}
+    ${diffs.join("")}
+    ${st === "rev" ? `<button type="button" class="sm-ok" data-okr="${r.id}">تأكيد الصف كما هو</button>` : ""}</div>`;
+}
+function smSum(){
+  // exact fraction sum with BigInt: shares_complete only when it is exactly 1
+  const gcd = (a, b) => { a = a < 0n ? -a : a; while (b){ [a, b] = [b, a % b]; } return a; };
+  const big = x => { const s = String(x); const k = (s.split(".")[1] || "").length; return {v: BigInt(s.replace(".", "")), k}; };
+  let N = 0n, D = 1n, bad = 0, used = 0;
+  SMR.owners.forEach(r => {
+    if (r.cross.val) return;
+    const f = smFrac(r.share.val); if (!f){ bad++; return; }
+    const a = big(f.n), b = big(f.d); let n = a.v * 10n ** BigInt(b.k), d = b.v * 10n ** BigInt(a.k);
+    if (!d){ bad++; return; }
+    N = N*d + n*D; D = D*d; const g = gcd(N, D) || 1n; N /= g; D /= g; used++;
+  });
+  return {N, D, bad, used};
+}
+function smRenderCheck(){
+  const s = smSum(), el = $("s_check");
+  if (!SMR.owners.length){ el.innerHTML = ""; return; }
+  const pct = s.D ? (Number(s.N * 1000000n / s.D) / 10000).toLocaleString("en-US", {maximumFractionDigits: 4}) : "0";
+  if (s.bad) el.innerHTML = `<div class="chk warn">تعذّر فهم حصة ${s.bad} صف، لذلك لا يمكن التحقق من مجموع الحصص.</div>`;
+  else if (s.N === s.D) el.innerHTML = `<div class="chk ok">✓ مجموع الحصص يساوي كامل الملكية (shares_complete).</div>`;
+  else el.innerHTML = `<div class="chk warn">تنبيه: مجموع الحصص لا يساوي كامل الملكية، يرجى مراجعة الحصص.<br><small>المجموع الحالي ${pct}٪ (${s.N}/${s.D})${pages.length > 1 || SMR.pagesTotal ? ". تأكد أيضاً أن كل صفحات الكوشان مقروءة." : ""}</small></div>`;
+}
+function smPending(){
+  if (!SMR) return [];
+  return Object.values(SMR.fields).filter(f => f.status === "rev").map(f => ({f})).concat(SMR.owners.filter(r => smRowStatus(r) === "rev").map(r => ({r})));
+}
+function smRender(){
+  const order = ["village","district","basin","basin_name","parcel","area"];
+  $("s_land").innerHTML = order.map(k => smFieldHTML(SMR.fields[k])).join("");
+  let last = null, html = "", n = 0;
+  SMR.owners.forEach(r => { const pg = r.page || ""; if (pg !== last){ html += `<div class="sm-pg">${pg ? `صفحة ${esc(pg)}` : `الصورة ${r.pi + 1}`}</div>`; last = pg; } html += smRowHTML(r, ++n); });
+  $("s_owners").innerHTML = html || '<div class="empty">لم تُقرأ صفوف متصرفين.</div>';
+  smRenderSummary(); smRenderCheck();
+}
+function smRenderSummary(){
+  const P = smPending(), all = Object.values(SMR.fields).length + SMR.owners.length;
+  const onlySingle = P.length && P.every(x => x.f ? x.f.single || x.f.missing : x.r.name.single);
+  $("s_sum").innerHTML = `<div class="${P.length ? "chk warn" : "chk ok"}">${P.length ? `${P.length} من ${all} بنداً تحتاج مراجعتك قبل الاعتماد. البنود المتحقق منها اتفقت عليها قراءتا Gemini و Groq.` : "كل البنود متحقق منها أو راجعتَها. يمكنك الاعتماد."}</div>
+    <div class="sm-mode">${SMR.dual ? "قراءتان مستقلتان: Gemini و Groq" : `قراءة واحدة (${SMR.log.mode === "gemini-only" ? "Gemini" : "Groq"}) بدون مقارنة`}${usedLiteFlag ? " · جزء منها بنموذج Flash-Lite" : ""}</div>`;
+  $("s_confirmAll").hidden = !onlySingle;
+  $("s_reread").hidden = !SMR.dual || !P.length;
+  $("s_apply").textContent = P.length ? `اعتماد (بقي ${P.length} للمراجعة)` : "اعتماد وإضافة إلى الجدول";
+}
+function smRefreshRow(id){
+  const r = SMR.owners.find(x => x.id === id); if (!r) return;
+  const el = $("s_owners").querySelector(`.sm-o[data-r="${id}"]`); if (!el) return;
+  const st = smRowStatus(r); el.className = `sm-o st-${st}${r.cross.val ? " ex" : ""}`;
+  el.querySelector(".bdg").outerHTML = SM_BADGE[st];
+  const f = smFrac(r.share.val), T = smTot();
+  el.querySelector(".sm-ar").textContent = r.cross.val ? "مستبعد" : f && T ? fmt(T / f.d * f.n) + " م²" : "—";
+  if (st !== "rev"){ const b = el.querySelector(".sm-ok"); if (b) b.remove(); el.querySelectorAll(".sm-diff").forEach(x => x.classList.add("done")); }
+}
+function smRefreshField(k){
+  const f = SMR.fields[k], el = $("s_land").querySelector(`.sm-f[data-fk="${k}"]`); if (!el) return;
+  el.className = `sm-f st-${f.status}`; el.querySelector(".bdg").outerHTML = SM_BADGE[f.status];
+  if (f.status !== "rev"){ const b = el.querySelector(".sm-ok"); if (b) b.remove(); const d = el.querySelector(".sm-diff"); if (d) d.classList.add("done"); }
+}
+function smRecalcAreas(){ SMR.owners.forEach(r => smRefreshRow(r.id)); }
+function smOpen(){ if (!SMR) return; smRender(); $("ovS").classList.add("open"); document.body.style.overflow = "hidden"; $("ovS").querySelector(".sheet").scrollTop = 0; }
+function smClose(){ $("ovS").classList.remove("open"); document.body.style.overflow = ""; }
+function smZoomList(tgt){
+  const L = [];
+  if (tgt.crop){ L.push({url: tgt.crop.o, label: "القصاصة الأصلية"}); L.push({url: tgt.crop.e, label: "بعد التحسين"}); }
+  if (tgt.rowCrop) L.push(...tgt.rowCrop);
+  if (tgt.table){ L.push({url: tgt.table.o, label: "الجدول (الأصل)"}); L.push({url: tgt.table.e, label: "الجدول بعد التحسين"}); }
+  const pf = pages.find(p => SMR.pagesRef[tgt.pi] && p.file === SMR.pagesRef[tgt.pi].file); if (pf) L.push({url: pf.url, label: "الصفحة الأصلية كاملة"});
+  return L.filter(x => x.url);
+}
+async function smRowCrops(r){
+  // row crops are cut on demand from the kept page image (original and enhanced)
+  const ref = SMR.pagesRef[r.pi]; if (!r.box || !ref || !pages.some(p => p.file === ref.file)) return null;
+  if (r._crop) return r._crop;
+  const raw = await smLoad(ref.file), o = smRotate(raw, -ref.angle), co = smCrop(o, r.box, .6, 6); if (!co){ return null; }
+  const ce = smUpscale(smEnhance(co), 140, 1600, 3);
+  r._crop = [{url: smURL(co, 1600), label: "صف المتصرف (الأصل)"}, {url: smURL(ce, 1600), label: "صف المتصرف بعد التحسين"}];
+  raw.width = o.width = 0;
+  return r._crop;
+}
+function smDownloadLog(){
+  let L = SMR ? SMR.log : null;
+  if (!L){ try { L = JSON.parse(localStorage.getItem(SMART_LOG) || "null"); } catch(e){} }
+  if (!L){ toast("لا يوجد سجل قراءة ذكية بعد."); return; }
+  const t = String(L.time || new Date().toISOString()).slice(0, 16).replace(/[:T]/g, "-");
+  offer(`سجل-القراءة-الذكية-${t}.json`, new Blob([JSON.stringify(L, null, 2)], {type: "application/json"}));
+}
+async function smReread(){
+  if (!SMR || ctl) return;
+  if (!gem.key || !gem.groqKey){ toast("إعادة القراءة تحتاج مفتاحي Gemini و Groq معاً."); return; }
+  const byPage = {};
+  Object.values(SMR.fields).forEach(f => { if (f.status === "rev" && !f.missing && f.pi != null) (byPage[f.pi] ||= []).push({type: "H", key: f.key}); });
+  SMR.owners.forEach(r => { if (smRowStatus(r) === "rev" && r.g && r.q) (byPage[r.pi] ||= []).push({type: "R", row: r}); });
+  const pis = Object.keys(byPage).map(Number);
+  if (!pis.length){ toast("لا توجد بنود مختلف عليها يمكن إعادة قراءتها."); return; }
+  ctl = new AbortController(); const signal = ctl.signal, st = {gDead: false, qDead: false};
+  $("s_reread").disabled = true; $("s_reread").innerHTML = '<span class="spin"></span> جارٍ إعادة القراءة…';
+  try {
+    for (const pi of pis){
+      const ref = SMR.pagesRef[pi];
+      if (!ref || !pages.some(p => p.file === ref.file)){ toast(`الصورة ${pi + 1} لم تعد موجودة، فلا يمكن إعادة قراءتها.`); continue; }
+      const raw = await smLoad(ref.file), orig = smRotate(raw, -ref.angle), enh = smEnhance(orig);
+      const PL = {index: pi + 1, reread: true, second: []}; SMR.log.pages.push(PL);
+      await smSecond(SMR, {pi, orig, enh, boxes: ref.boxes}, byPage[pi], st, signal, PL, `الصفحة ${pi + 1}`);
+      raw.width = orig.width = enh.width = 0;
+    }
+  } catch(e){ if (e.code !== "cancelled") toast("تعذّرت إعادة القراءة: " + smErrTxt(e)); }
+  ctl = null; $("s_reread").disabled = false; $("s_reread").textContent = "إعادة قراءة البنود المختلف عليها"; renderPages();
+  smSaveLog(SMR); smRender(); $("msg").className = "msg";
+  toast(smPending().length ? "انتهت إعادة القراءة. ما زالت بعض البنود تحتاج مراجعتك." : "انتهت إعادة القراءة وتم التحقق من كل البنود.");
+}
+function smApply(){
+  const P = smPending();
+  if (P.length){
+    toast(`بقي ${P.length} بند يحتاج مراجعتك قبل الاعتماد.`);
+    const x = P[0], el = x.f ? $("s_land").querySelector(`.sm-f[data-fk="${x.f.key}"]`) : $("s_owners").querySelector(`.sm-o[data-r="${x.r.id}"]`);
+    if (el){ el.scrollIntoView({behavior: "smooth", block: "center"}); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1500); }
+    return;
+  }
+  const F = SMR.fields, rows = SMR.owners.filter(r => !r.cross.val && (smTxt(r.name.val) || smFrac(r.share.val)));
+  const fr = rows.map(r => smFrac(r.share.val));
+  const cnt = {}; fr.forEach(f => { if (f) cnt[f.d] = (cnt[f.d] || 0) + 1; });
+  const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0], B = top ? +top[0] : 0;
+  if (state.owners.some(o => String(o.name || "").trim() || num(o.shares))){
+    if (confirm("يوجد مالكون في الجدول. اضغط \"موافق\" لاستبدالهم بنتيجة القراءة الذكية، أو \"إلغاء\" لإضافتها بعدهم.")) state.owners = [];
+  }
+  const set = (k, v) => { if (!smBlank(v)) state.h[k] = String(v).trim(); };
+  set("vil", F.village.val); set("gov", F.district.val);
+  if (!smBlank(F.basin.val)) state.h.basin = [smTxt(F.basin.val), smTxt(F.basin_name.val)].filter(Boolean).join(" ");
+  set("parcel", F.parcel.val);
+  if (!smBlank(F.area.val.dun) || !smBlank(F.area.val.m2)){ state.h.dun = String(num(F.area.val.dun)); state.h.m2 = String(num(F.area.val.m2)); }
+  if (B) state.h.base = String(B);
+  if (SMR.pagesTotal) state.h.pages = SMR.pagesTotal;
+  const add = rows.map((r, i) => { const f = fr[i];
+    const orig = (r.g && r.g.orig) || (r.q && r.q.orig) || "";
+    return {name: smTxt(r.name.val), shares: f ? String(f.n) : "", base: f && f.d !== B ? String(f.d) : "", text: orig, page: String(r.page || ""),
+      check: f ? "" : "تعذّر فهم الحصة من القراءة الذكية. أدخلها يدوياً."}; });
+  state.owners = state.owners.concat(add);
+  const excluded = SMR.owners.filter(r => r.cross.val).length;
+  SMR.log.final = {applied_at: new Date().toISOString(), village: smTxt(F.village.val), district: smTxt(F.district.val), basin_number: smTxt(F.basin.val), basin_name: smTxt(F.basin_name.val),
+    parcel_number: smTxt(F.parcel.val), total_area: {dunum: F.area.val.dun, m2: F.area.val.m2, value: smTot(), unit: "m2"},
+    owners: SMR.owners.map(r => { const f = smFrac(r.share.val); return {name: smTxt(r.name.val), share_original: (r.g && r.g.orig) || (r.q && r.q.orig) || "", share_numerator: f ? f.n : null, share_denominator: f ? f.d : null,
+      is_crossed_out: !!r.cross.val, status: smRowStatus(r) === "ok" ? "verified" : "user_reviewed", area_m2: !r.cross.val && f ? +(smTot() / f.d * f.n).toFixed(4) : null, page: r.page || null}; }),
+    shares_complete: (() => { const s = smSum(); return !s.bad && s.N === s.D; })()};
+  smSaveLog(SMR);
+  norm(); save(); fillHeader(); renderOwners(); smClose();
+  say(`اعتُمدت نتيجة القراءة الذكية: ${add.length} مالك${excluded ? `، واستُبعد ${excluded} صف مشطوب من الحساب (محفوظ في سجل القراءة)` : ""}. <button class="link" data-smopen="1">افتح شاشة المراجعة</button>`);
+}
+// events
+$("smartBtn").onclick = smartRead;
+$("s_close").onclick = smClose;
+$("s_apply").onclick = smApply;
+$("s_log").onclick = smDownloadLog;
+$("s_reread").onclick = smReread;
+$("s_confirmAll").onclick = () => {
+  Object.values(SMR.fields).forEach(f => { if (f.status === "rev" && (f.single || f.missing)) f.status = "user"; });
+  SMR.owners.forEach(r => { if (r.name.single) [r.name, r.share, r.cross].forEach(x => { if (x.status === "rev") x.status = "user"; }); });
+  smRender();
+};
+$("msg").addEventListener("click", e => { if (e.target.closest("[data-smopen]")) smOpen(); });
+if (window.__SM_TEST) window.__sm = {smFrac, smAlign, smDecide, smSkew, smRotate, smEnhance, smCrop, smUpscale, smURL, smLoad, sum: () => smSum(), get SR(){ return SMR; }};
+$("ovS").addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.f){ const f = SMR.fields[t.dataset.f];
+    if (f.kind === "area") f.val[t.dataset.p] = t.value; else f.val = t.value;
+    f.status = "user"; smRefreshField(f.key); if (f.kind === "area") smRecalcAreas(); smRenderSummary(); smRenderCheck(); }
+  else if (t.dataset.r && t.dataset.p !== "cross"){ const r = SMR.owners.find(x => x.id === t.dataset.r); if (!r) return;
+    r[t.dataset.p].val = t.value; r[t.dataset.p].status = "user"; smRefreshRow(r.id); smRenderSummary(); if (t.dataset.p === "share") smRenderCheck(); }
+});
+$("ovS").addEventListener("change", e => {
+  const t = e.target; if (t.dataset.p !== "cross") return;
+  const r = SMR.owners.find(x => x.id === t.dataset.r); if (!r) return;
+  r.cross.val = t.checked; r.cross.status = "user"; smRefreshRow(r.id); smRenderSummary(); smRenderCheck();
+});
+$("ovS").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.classList.contains("sm-pick")){
+    const v = JSON.parse(b.dataset.v), fe = b.closest(".sm-f"), re = b.closest(".sm-o");
+    if (fe){ const f = SMR.fields[fe.dataset.fk]; f.val = f.kind === "area" ? {dun: v.dun, m2: v.m2} : v; f.status = "user";
+      if (f.kind === "area"){ fe.querySelector('[data-p="dun"]').value = v.dun; fe.querySelector('[data-p="m2"]').value = v.m2; smRecalcAreas(); } else fe.querySelector("input").value = v;
+      smRefreshField(f.key); }
+    else if (re){ const r = SMR.owners.find(x => x.id === re.dataset.r), p = b.dataset.rp, val = p === "share" ? String(v).split(/\s{2}\(/)[0] : v;
+      r[p].val = val; r[p].status = "user"; re.querySelector(`input[data-p="${p}"]`).value = val; smRefreshRow(r.id); }
+    b.parentNode.querySelectorAll(".sm-pick").forEach(x => x.classList.toggle("on", x === b));
+    smRenderSummary(); smRenderCheck(); return;
+  }
+  if (b.dataset.okf){ const f = SMR.fields[b.dataset.okf]; f.status = "user"; smRefreshField(f.key); smRenderSummary(); return; }
+  if (b.dataset.okr){ const r = SMR.owners.find(x => x.id === b.dataset.okr); [r.name, r.share, r.cross].forEach(x => { if (x.status === "rev") x.status = "user"; }); smRefreshRow(r.id); smRenderSummary(); return; }
+  if (b.dataset.zf){ const f = SMR.fields[b.dataset.zf]; const L = smZoomList({crop: f.crop, table: f.crop ? null : f.table, pi: f.pi}); if (L.length) openViewerList(L, 0); return; }
+  if (b.dataset.zr){ const r = SMR.owners.find(x => x.id === b.dataset.zr); b.disabled = true;
+    let rc = null; try { rc = await smRowCrops(r); } catch(err){}
+    b.disabled = false; const L = smZoomList({rowCrop: rc, table: r.table, pi: r.pi}); if (L.length) openViewerList(L, 0); }
+});
+
+// ---------- actions / export ----------
+$("addBtn").onclick = () => {
+  const last = ordered().slice(-1)[0];
+  const o = {name:"",shares:"",base:"",text:"",page:last?last.page:""};
+  state.owners.push(o); norm(); save(); renderOwners(); openEditor(o);
+};
+$("clearBtn").onclick = () => {
+  if (!confirm("بدء سند جديد؟ سيتم مسح البيانات الحالية.")) return;
+  state = { h:{gov:"",vil:"",basin:"",parcel:"",dun:"",m2:"",base:"",pages:"",dec:state.h.dec}, owners:[] };
+  pages.forEach(p => URL.revokeObjectURL(p.url)); pages = [];
+  locCanvas = null; locData = null; $("locBox").hidden = true; $("locMsg").className = "msg"; $("locChoices").hidden = true;
+  save(); fillHeader(); renderOwners(); renderPages(); $("msg").className = "msg";
+};
+
+function tableAoA(){
+  const d = dec(), h = state.h, r = x => +Number(x).toFixed(d);
+  const aoa = [
+    ["المحافظة",h.gov,"القرية",h.vil],
+    ["الحوض",h.basin,"رقم القطعة",h.parcel],
+    ["المساحة الكلية (م²)",totalM2(),"أصل الحصص",num(h.base)],
+    ["عدد صفحات الكوشان",h.pages],
+    [],
+    ["الصفحة","#","الاسم","الحالة","الحصص / الأسهم","من أصل","المساحة (م²)","دونم","متر","النسبة من القطعة ٪"]
+  ];
+  let sS = 0, sA = 0, n = 0, last = null;
+  ordered().forEach(o => {
+    const pg = String(o.page||"").trim();
+    if (pg !== last){ if (last !== null) aoa.push([]); aoa.push([pageLabel(pg)]); last = pg; }
+    const a = areaOf(o), dm = toDunam(r(a)); sS += num(o.shares); sA += a; n++;
+    aoa.push([pg, n, o.name, o.dead?"متوفى":"", num(o.shares), baseOf(o), r(a), dm.d, r(dm.m), baseOf(o)?+(num(o.shares)/baseOf(o)*100).toFixed(6):""]);
+    if (o.dead) o.heirs.forEach(hh => { const ha = heirArea(o,hh), hd = toDunam(r(ha));
+      aoa.push(["","","   ↳ "+hh.name,"وريث",num(hh.shares),estateOf(o),r(ha),hd.d,r(hd.m),""]); });
+  });
+  aoa.push([]);
+  const pctSum = state.owners.reduce((t, o) => t + (baseOf(o) ? num(o.shares)/baseOf(o)*100 : 0), 0);
+  aoa.push(["","","المجموع","",anyOwnBase() ? "" : sS,"",r(sA),"","",+pctSum.toFixed(6)]);
+  return aoa;
+}
+const fname = ext => `حصص-${state.h.parcel?"قطعة-"+state.h.parcel:"سند"}${state.h.basin?"-حوض-"+String(state.h.basin).split(" ")[0]:""}.${ext}`;
+async function offer(filename, data){
+  if (window.AndroidBridge){
+    try {
+      const blob = data instanceof Blob ? data : new Blob([data], {type:"text/plain"});
+      const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
+      AndroidBridge.saveFile(filename, b64, filename.endsWith(".xlsx") ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : filename.endsWith(".pdf") ? "application/pdf" : filename.endsWith(".json") ? "application/json" : "text/csv");
+    } catch(e){ say("تعذّر حفظ الملف.", "err"); }
+    return;
+  }
+  if (!downloads){ say("التنزيل غير متاح هنا. استخدم زر نسخ الجدول والصقه في Excel.", "err"); return; }
+  try { await downloads.save({filename, data}); }
+  catch(e){ if (e.code !== "declined") say("تعذّر حفظ الملف. جرّب زر نسخ الجدول.", "err"); }
+}
+
+function reportHTML(){
+  const h = state.h, T = totalM2(), B = num(h.base);
+  let rows = "", n = 0, last = null, sS = 0, sA = 0;
+  ordered().forEach(o => {
+    const pg = String(o.page||"").trim();
+    if (pg !== last){ rows += `<tr class="sep"><td colspan="6">${esc(pageLabel(pg))}</td></tr>`; last = pg; }
+    const a = areaOf(o), b = baseOf(o); n++; sS += num(o.shares); sA += a;
+    rows += `<tr${o.dead?' class="dead"':''}><td>${n}</td><td class="nm">${esc(o.name)}${o.dead?' <span class="tag">متوفى</span>':''}</td>
+      <td>${fmt(num(o.shares),0)}</td><td>${b?fmt(b,0):"—"}</td><td class="ar">${b?fmt(a):"—"}</td><td>${b?fmt(num(o.shares)/b*100,4)+"٪":""}</td></tr>`;
+    if (o.dead && o.heirs.length){
+      const e = estateOf(o);
+      o.heirs.forEach(x => { rows += `<tr class="heir"><td></td><td class="nm">↳ ${esc(x.name)}</td><td>${fmt(num(x.shares),num(x.shares)%1?2:0)} سهم</td>
+        <td>${e?fmt(e,0):"—"}</td><td class="ar">${e?fmt(heirArea(o,x)):"—"}</td><td></td></tr>`; });
+    }
+  });
+  const now = new Date(), date = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+  const info = [["المحافظة",h.gov],["القرية",h.vil],["الحوض",h.basin],["رقم القطعة",h.parcel],
+    ["المساحة الكلية",T?`${fmt(T,0)} م² (${esc(h.dun||0)} دونم و${esc(h.m2||0)} م)`:"—"],["أصل الحصص",B?fmt(B,0):"—"],
+    ["عدد صفحات الكوشان",h.pages||"—"],["قيمة الحصة",T&&B?`${(T/B)<0.01?(T/B).toPrecision(7):(T/B).toFixed(7)} م²`:"—"]]
+    .map(([k,v]) => `<div><span>${k}</span><b>${esc(v||"—")}</b></div>`).join("");
+  const rest = B && sS < B ? `<p class="note">الباقي في صفحات أخرى: ${fmt(B-sS,0)} حصة = ${fmt(T*(B-sS)/B)} م²</p>` : "";
+  return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(fname("pdf").replace(/\.pdf$/,""))}</title>
+<style>
+@page{size:A4;margin:14mm 12mm}
+*{box-sizing:border-box}
+body{font-family:"IBM Plex Sans Arabic","Noto Naskh Arabic","Noto Sans Arabic",Tahoma,sans-serif;color:#1B2740;font-size:11pt;margin:0;line-height:1.5}
+h1{font-size:17pt;margin:0 0 2px;color:#4A3F9F}
+.by{color:#5E6878;font-size:9.5pt;margin-bottom:10px}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;border:1px solid #D5DAE0;border-radius:6px;padding:8px 10px;margin-bottom:10px}
+.info div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted #D5DAE0;padding:2px 0}
+.info span{color:#5E6878}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{background:#4A3F9F;color:#fff;font-weight:600;padding:5px 4px;font-size:10pt;text-align:right}
+td{padding:4px;border-bottom:1px solid #D5DAE0;text-align:right;vertical-align:top}
+td.nm{width:34%}
+td.ar{font-weight:600;white-space:nowrap}
+tr.sep td{background:#ECEAF8;color:#4A3F9F;font-weight:600;text-align:center;border-bottom:1px solid #4A3F9F}
+tr.heir td{background:#F4F5F7;font-size:10pt}
+.tag{font-size:8.5pt;border:1px solid #3D4452;border-radius:4px;padding:0 4px}
+tfoot td{font-weight:700;border-top:2px solid #1B2740;border-bottom:0}
+tr{page-break-inside:avoid}
+thead{display:table-header-group}
+.note{margin:8px 0 0;color:#9A6212}
+.foot{margin-top:14px;font-size:9pt;color:#5E6878;display:flex;justify-content:space-between}
+</style></head><body>
+<h1>كشف حصص سند الملكية</h1>
+<div class="by">أُعدّ بواسطة تطبيق إسلام دويكات بتاريخ ${date}</div>
+<div class="info">${info}</div>
+<table><thead><tr><th>#</th><th>الاسم</th><th>الحصص</th><th>من أصل</th><th>المساحة (م²)</th><th>النسبة</th></tr></thead>
+<tbody>${rows || '<tr><td colspan="6">لا يوجد مالكون</td></tr>'}</tbody>
+<tfoot><tr><td></td><td>المجموع</td><td>${fmt(sS,0)}</td><td></td><td>${fmt(sA)}</td><td>${B?fmt(sS/B*100,4)+"٪":""}</td></tr></tfoot></table>
+${rest}
+<div class="foot"><span>مساحة المالك = المساحة الكلية ÷ أصل الحصص × حصصه. مساحة الوريث = مساحة المتوفى ÷ أصل حصر الإرث × أسهمه.</span></div>
+</body></html>`;
+}
+// ---------- PDF (drawn on canvas, shareable file) ----------
+const PDF_FONT = '"IBM Plex Sans Arabic","Noto Sans Arabic","Noto Naskh Arabic",Tahoma,"DejaVu Sans",sans-serif';
+function drawReportPages(mkCanvas){
+  const W = 1190, H = 1684, M = 64, FOOT = 70, IW = W - 2*M;
+  const C = {zebra:"#F3F1FB", red:"#C62828", ink:"#1B2740", muted:"#5E6878", line:"#D5DAE0", stamp:"#4A3F9F", soft:"#ECEAF8", heir:"#F4F5F7", warn:"#9A6212"};
+  const pages = []; let ctx, y;
+  const font = (sz, w=400) => { ctx.font = `${w} ${sz}px ${PDF_FONT}`; };
+  const txt = (t, x, yy, o={}) => { font(o.size||20, o.weight||400); ctx.fillStyle = o.color||C.ink; ctx.textAlign = o.align||"right"; ctx.fillText(String(t), x, yy); };
+  const wrap = (t, maxW, size, weight) => { font(size, weight); const words = String(t).split(/\s+/).filter(Boolean); const lines = []; let cur = "";
+    for (const w of words){ const test = cur ? cur + " " + w : w; if (ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur = w; } else cur = test; }
+    if (cur) lines.push(cur); return lines.length ? lines : [""]; };
+  const newPage = () => { const cv = mkCanvas(W, H); ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,W,H);
+    ctx.direction = "rtl"; ctx.textBaseline = "middle"; pages.push(cv); y = M; return cv; };
+  const hline = (yy, color=C.line, w=1) => { ctx.fillStyle = color; ctx.fillRect(M, yy, IW, w); };
+
+  const h = state.h, T = totalM2(), B = num(h.base);
+  newPage();
+  // title
+  txt("كشف حصص سند الملكية", W-M, y+22, {size:38, weight:700, color:C.stamp});
+  const now = new Date();
+  txt(`إسلام دويكات   |   ${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`, W-M, y+68, {size:19, color:C.muted});
+  y += 100;
+  // info box
+  const info = [["المحافظة",h.gov],["القرية",h.vil],["الحوض",h.basin],["رقم القطعة",h.parcel],
+    ["المساحة الكلية",T?`${fmt(T,0)} م² (${h.dun||0} دونم و${h.m2||0} م)`:"—"],["أصل الحصص",B?fmt(B,0):"—"],
+    ["عدد صفحات الكوشان",h.pages||"—"],["قيمة الحصة",T&&B?`${(T/B)<0.01?(T/B).toPrecision(7):(T/B).toFixed(7)} م²`:"—"]];
+  const rowH = 44, boxH = rowH*4 + 16, cw = (IW - 30)/2;
+  ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.strokeRect(M, y, IW, boxH);
+  info.forEach(([k,v], i) => {
+    const col = i % 2, row = Math.floor(i/2);
+    const right = W - M - 15 - col*(cw + 0), left = right - cw + 30, yy = y + 8 + row*rowH + rowH/2;
+    txt(k, right, yy, {size:19, color:C.muted});
+    font(20,600); let val = String(v||"—"); const maxV = cw - 200;
+    while (ctx.measureText(val).width > maxV && val.length > 3) val = val.slice(0,-2);
+    txt(val, left, yy, {size:20, weight:600, align:"left"});
+    if (row < 3){ ctx.fillStyle = C.line; ctx.fillRect(left, y + 8 + (row+1)*rowH, right-left, 1); }
+  });
+  y += boxH + 26;
+
+  // table
+  const mixedB = anyOwnBase();
+  const cols = mixedB
+    ? [{k:"n",w:56,t:"#"},{k:"name",w:370,t:"الاسم"},{k:"shares",w:185,t:"الحصص"},{k:"base",w:185,t:"من أصل"},{k:"area",w:158,t:"المساحة م²"},{k:"pct",w:108,t:"النسبة"}]
+    : [{k:"n",w:56,t:"#"},{k:"name",w:480,t:"الاسم"},{k:"shares",w:250,t:"الحصص"},{k:"area",w:170,t:"المساحة م²"},{k:"pct",w:106,t:"النسبة"}];
+  let sumPct = 0;
+  let xr = W - M; cols.forEach(c => { c.r = xr; xr -= c.w; });
+  const head = () => { ctx.fillStyle = C.stamp; ctx.fillRect(M, y, IW, 46);
+    cols.forEach(c => txt(c.t, c.r - 10, y + 23, {size:19, weight:600, color:"#fff"})); y += 46; };
+  const bottom = H - M - FOOT;
+  const ensure = hh => { if (y + hh > bottom){ newPage(); head(); } };
+  head();
+  const row = (cells, o={}) => {
+    const lines = wrap(cells.name, cols[1].w - 20, o.size||20, o.weight||400);
+    const hh = Math.max(44, lines.length*28 + 16);
+    ensure(hh);
+    if (o.bg){ ctx.fillStyle = o.bg; ctx.fillRect(M, y, IW, hh); }
+    lines.forEach((ln, i) => txt(ln, cols[1].r - 10 - (o.indent||0), y + 22 + i*28 + (hh - (lines.length*28+16))/2, {size:o.size||20, weight:o.weight||400, color:o.color}));
+    cols.forEach(c => { if (c.k !== "name" && cells[c.k] != null && cells[c.k] !== "") txt(cells[c.k], c.r - 10, y + hh/2, {size:o.size||20, weight:c.k==="area"?700:(o.weight||400), color:(c.k==="area" && !o.total) ? C.red : o.color}); });
+    y += hh; hline(y - 1, o.lineColor||C.line, o.lineW||1);
+  };
+  let n = 0, last = null, sS = 0, sA = 0;
+  ordered().forEach(o => {
+    const pg = String(o.page||"").trim();
+    if (pg !== last){ ensure(44 + 44); ctx.fillStyle = C.soft; ctx.fillRect(M, y, IW, 40);
+      txt(pageLabel(pg), W/2, y + 20, {size:19, weight:600, color:C.stamp, align:"center"}); y += 40; last = pg; }
+    const a = areaOf(o), b = baseOf(o); n++; sS += num(o.shares); sA += a;
+    if (b) sumPct += num(o.shares)/b*100;
+    row({n, name: (o.name||"—") + (o.dead ? "  (متوفى)" : ""), shares: fmt(num(o.shares),0), base: b?fmt(b,0):"—", area: b?fmt(a):"—", pct: b?fmt(num(o.shares)/b*100,4)+"٪":""});
+    if (o.dead && o.heirs.length){ const e = estateOf(o);
+      o.heirs.forEach(x => row({name:"• " + (x.name||"—"), shares: `${fmt(num(x.shares), num(x.shares)%1?2:0)} من ${e?fmt(e,0):"—"} (حصر إرث)`, area: e?fmt(heirArea(o,x)):"—"}, {bg:C.heir, size:18, indent:18})); }
+  });
+  ensure(50);
+  hline(y, C.ink, 3); y += 3;
+  row({name:"المجموع", shares: mixedB ? "" : fmt(sS,0), area: fmt(sA), pct: fmt(sumPct,4)+"٪"}, {weight:700, size:19, lineColor:"#fff", total:true});
+  if (mixedB){ if (T - sA > 0.005){ ensure(40); txt(`الباقي في صفحات أخرى: ${fmt(T - sA)} م²`, W-M, y + 22, {size:19, color:C.warn}); y += 44; } }
+  else if (B && sS < B){ ensure(40); txt(`الباقي في صفحات أخرى: ${fmt(B-sS,0)} حصة = ${fmt(T*(B-sS)/B)} م²`, W-M, y + 22, {size:19, color:C.warn}); y += 44; }
+  ensure(60);
+  wrap("مساحة المالك = المساحة الكلية ÷ أصل الحصص × حصصه.   مساحة الوريث = مساحة المتوفى ÷ أصل حصر الإرث × أسهمه.", IW, 16, 400)
+    .forEach(ln => { txt(ln, W-M, y + 18, {size:16, color:C.muted}); y += 26; });
+  // designer stamp
+  const SR = 128;
+  if (y + 2*SR + 40 > H - M - FOOT){ newPage(); }
+  drawStamp(pages[pages.length-1].getContext("2d"), M + SR + 10, y + SR + 24, SR, mkCanvas);
+  // parcel location page
+  if (locCanvas && locData && locData.inPdf && locData.key === `${firstInt(h.basin)}/${firstInt(h.parcel)}`){
+    newPage();
+    txt("موقع القطعة", W-M, y+22, {size:34, weight:700, color:C.stamp});
+    txt(`${locData.community}${locData.gov ? " · " + locData.gov : ""}   |   حوض ${locData.basin}${locData.basinName ? " " + locData.basinName : ""}   |   قطعة ${locData.parcel}`, W-M, y+66, {size:20, color:C.ink});
+    y += 100;
+    const ih = IW * locCanvas.height / locCanvas.width;
+    ctx.drawImage(locCanvas, M, y, IW, ih);
+    ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.strokeRect(M, y, IW, ih);
+    y += ih + 34;
+    txt("ملاحظة: الأبعاد المكتوبة على أضلاع القطعة مسافات تقريبية، للاسترشاد فقط.", W-M, y, {size:19, weight:600, color:C.ink});
+    y += 34;
+    txt(`المصدر: جيومولج، وزارة الحكم المحلي${locData.year ? "، صورة جوية " + locData.year : ""}. حدود القطعة بالأحمر، والقطع المجاورة بالأبيض${locData.osloLine ? "، وحد مناطق أوسلو بالأصفر المتقطع" : ""}.`, W-M, y, {size:16, color:C.muted});
+    y += 30;
+    const topY = y, colW = IW - 2*SR - 70, PL = planLines(locData.an);
+    PL.forEach(({k, v}) => {
+      txt(k, W-M, y + 12, {size:17, weight:700, color:C.stamp}); y += 28;
+      wrap(v, colW, 18, 600).forEach(ln => { txt(ln, W-M, y + 12, {size:18, weight:600}); y += 28; });
+      y += 8;
+    });
+    if (PL.length){ wrap("معلومات تقريبية من خرائط جيومولج، والمرجع الرسمي هو البلدية أو الوزارة. النِّسب من أشكال الخرائط، والأمتار من مساحة السند.", colW, 15, 400)
+      .forEach(ln => { txt(ln, W-M, y + 10, {size:15, color:C.muted}); y += 24; }); }
+    drawStamp(ctx, M + SR + 10, topY + SR + 10, SR, mkCanvas);
+  }
+  // footers
+  pages.forEach((cv, i) => { ctx = cv.getContext("2d"); ctx.direction = "rtl"; ctx.textBaseline = "middle";
+    ctx.fillStyle = C.line; ctx.fillRect(M, H - M - 30, IW, 1);
+    txt("إسلام دويكات", W-M, H - M - 8, {size:16, color:C.muted});
+    txt(`صفحة ${i+1} من ${pages.length}`, M, H - M - 8, {size:16, color:C.muted, align:"left"}); });
+  return pages;
+}
+// map of Palestine outline (lon, lat)
+const PAL = [[35.105,33.090],[35.20,33.08],[35.33,33.06],[35.47,33.09],[35.55,33.26],[35.62,33.25],[35.65,33.20],[35.63,33.00],[35.65,32.88],[35.64,32.73],[35.58,32.65],[35.56,32.40],[35.55,32.20],[35.53,31.95],[35.55,31.76],[35.50,31.55],[35.48,31.30],[35.43,31.05],[35.38,30.90],[35.30,30.70],[35.20,30.45],[35.15,30.25],[35.07,30.05],[35.00,29.80],[34.96,29.55],[34.90,29.49],[34.80,29.72],[34.68,30.00],[34.55,30.35],[34.48,30.60],[34.38,30.90],[34.30,31.15],[34.25,31.31],[34.22,31.33],[34.35,31.45],[34.45,31.56],[34.55,31.68],[34.64,31.81],[34.72,31.95],[34.76,32.06],[34.82,32.20],[34.85,32.33],[34.89,32.50],[34.93,32.68],[34.96,32.82],[35.03,32.82],[35.08,32.90],[35.08,33.00]];
+function palPath(ctx, cx, cy, h){
+  const K = Math.cos(31.4 * Math.PI / 180);
+  const xs = PAL.map(p => p[0]*K), ys = PAL.map(p => -p[1]);
+  const s = h / (Math.max(...ys) - Math.min(...ys));
+  const mx = (Math.max(...xs) + Math.min(...xs)) / 2, my = (Math.max(...ys) + Math.min(...ys)) / 2;
+  ctx.beginPath();
+  xs.forEach((x, i) => { const X = cx + (x - mx)*s, Y = cy + (ys[i] - my)*s; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
+  ctx.closePath();
+}
+// round ink stamp: "المصمم إسلام دويكات" on the upper arc, "حاسب الكواشين" on the lower arc, green map in the centre
+function drawStamp(ctx, cx, cy, R, mkCanvas){
+  const INK = "#2B3A8F";
+  const arcText = (text, r, top, size, weight, maxSweep) => {
+    // shape the Arabic string on a flat strip first, then bend the strip around the circle column by column
+    const m = mkCanvas(10, 10).getContext("2d");
+    m.font = `${weight} ${size}px ${PDF_FONT}`;
+    const fitW = maxSweep * r;
+    if (m.measureText(text).width > fitW) size = Math.max(12, Math.floor(size * fitW / m.measureText(text).width));
+    m.font = `${weight} ${size}px ${PDF_FONT}`;
+    const pad = 4, h = Math.ceil(size * 1.5);
+    const w = Math.ceil(m.measureText(text).width) + pad * 2;
+    const strip = mkCanvas(w, h), sx = strip.getContext("2d");
+    sx.font = `${weight} ${size}px ${PDF_FONT}`; sx.direction = "rtl"; sx.textAlign = "center"; sx.textBaseline = "middle";
+    sx.fillStyle = INK; sx.fillText(text, w/2, h/2);
+    const sweep = w / r;
+    for (let x = 0; x < w; x++){
+      const a = top ? (-Math.PI/2 - sweep/2 + (x + .5) / r) : (Math.PI/2 + sweep/2 - (x + .5) / r);
+      ctx.save(); ctx.translate(cx + r*Math.cos(a), cy + r*Math.sin(a));
+      ctx.rotate(top ? a + Math.PI/2 : a - Math.PI/2);
+      ctx.drawImage(strip, x, 0, 1, h, -0.6, -h/2, 1.6, h);
+      ctx.restore();
+    }
+    return sweep;
+  };
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(-0.16); ctx.translate(-cx, -cy);
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = INK; ctx.fillStyle = INK;
+  ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*Math.PI); ctx.stroke();
+  ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(cx, cy, R - 9, 0, 2*Math.PI); ctx.stroke();
+  ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, R - 52, 0, 2*Math.PI); ctx.stroke();
+  const topSweep = arcText("المصمم إسلام دويكات", R - 31, true, 25, 700, Math.PI * 0.86);
+  const botSweep = arcText("حاسب الكواشين", R - 31, false, 21, 600, Math.PI * 0.62);
+  // separator stars on the ring, in the middle of each gap between the two texts
+  const star = (x, y, r) => { ctx.beginPath(); for (let k = 0; k < 10; k++){ const rr = k % 2 ? r*0.45 : r, aa = -Math.PI/2 + k*Math.PI/5; ctx.lineTo(x + rr*Math.cos(aa), y + rr*Math.sin(aa)); } ctx.closePath(); ctx.fill(); };
+  const gapMid = ((-Math.PI/2 + topSweep/2) + (Math.PI/2 - botSweep/2)) / 2;
+  [gapMid, Math.PI - gapMid].forEach(a => star(cx + (R-31)*Math.cos(a), cy + (R-31)*Math.sin(a), 6.5));
+  // centre: green map of Palestine
+  ctx.globalAlpha = 1;
+  palPath(ctx, cx, cy, (R - 52) * 1.86);
+  ctx.fillStyle = "#007A3D"; ctx.fill();
+  ctx.lineWidth = 1.5; ctx.strokeStyle = "#005C2E"; ctx.lineJoin = "round"; ctx.stroke();
+  ctx.restore();
+}
+async function buildPdfBlob(){
+  try { if (document.fonts){ await Promise.race([document.fonts.load(`400 20px ${PDF_FONT}`).then(() => document.fonts.load(`700 20px ${PDF_FONT}`)), new Promise(r => setTimeout(r, 2500))]); } } catch(e){}
+  const pages = drawReportPages((w,h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; });
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({unit:"pt", format:"a4", compress:true});
+  pages.forEach((c, i) => { if (i) pdf.addPage(); pdf.addImage(c.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 595.28, 841.89); });
+  // بيانات مخفية داخل الملف يقرؤها تطبيق «إفراز الأراضي»: الاسم والمساحة لكل مالك (والورثة بدل المتوفى)
+  try { pdf.setProperties({ title: fname("pdf"), creator: "حاسب الكواشين", keywords: "IFRAZ1:" + ifrazPayload() }); } catch(e){}
+  return pdf.output("blob");
+}
+function ifrazPayload(){ return btoa(unescape(encodeURIComponent(JSON.stringify(ifrazData())))); }
+function ifrazData(){
+  const h = state.h, rows = [];
+  ordered().forEach(o => {
+    if (o.dead && o.heirs.length) o.heirs.forEach(hh => rows.push({ n: String(hh.name || "").trim(), a: +heirArea(o, hh).toFixed(4), of: String(o.name || "").trim() }));
+    else rows.push({ n: String(o.name || "").trim(), a: +areaOf(o).toFixed(4) });
+  });
+  return { v: 1, h: { gov: h.gov || "", vil: h.vil || "", basin: h.basin || "", parcel: h.parcel || "", total: totalM2() }, owners: rows.filter(r => r.a > 0) };
+}
+$("pdfBtn").onclick = async () => {
+  if (!state.owners.length){ say("أضف مالكين أولاً.", "err"); return; }
+  if (!window.jspdf){ say("مكتبة PDF لم تُحمّل. تأكد من الاتصال بالإنترنت وأعد فتح التطبيق.", "err"); return; }
+  const btn = $("pdfBtn"); btn.disabled = true; const old = btn.innerHTML; btn.innerHTML = '<span class="spin"></span> جارٍ إنشاء PDF';
+  try {
+    const blob = await buildPdfBlob(), name = fname("pdf");
+    if (window.AndroidBridge){ await offer(name, blob); }
+    else if (navigator.canShare && navigator.canShare({files:[new File([blob], name, {type:"application/pdf"})]}) && !window.claude){
+      try { await navigator.share({files:[new File([blob], name, {type:"application/pdf"})], title:name}); } catch(e){}
+    } else await offer(name, blob);
+  } catch(e){ say("تعذّر إنشاء ملف PDF.", "err"); }
+  finally { btn.disabled = false; btn.innerHTML = old; }
+};
+$("xlsxBtn").onclick = () => {
+  if (!window.XLSX){ say("مكتبة Excel لم تُحمّل. استخدم تصدير CSV.", "err"); return; }
+  const ws = XLSX.utils.aoa_to_sheet(tableAoA());
+  ws["!cols"] = [{wch:14},{wch:5},{wch:34},{wch:8},{wch:16},{wch:16},{wch:14},{wch:7},{wch:10},{wch:12}];
+  const wb = XLSX.utils.book_new(); wb.Workbook = {Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb, ws, "الحصص");
+  offer(fname("xlsx"), new Blob([XLSX.write(wb, {bookType:"xlsx", type:"array"})]));
+};
+$("csvBtn").onclick = () => offer(fname("csv"), "\ufeff" + tableAoA().map(r => r.map(v => `"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n"));
+$("copyBtn").onclick = async () => {
+  const tsv = tableAoA().map(r => r.join("\t")).join("\n");
+  if (window.AndroidBridge){ try { AndroidBridge.copy(tsv); say("تم نسخ الجدول. الصقه في Excel مباشرة."); } catch(e){ say("تعذّر النسخ.", "err"); } return; }
+  try { await navigator.clipboard.writeText(tsv); say("تم نسخ الجدول. الصقه في Excel مباشرة."); }
+  catch(e){ say("تعذّر النسخ من هذا المتصفح.", "err"); }
+};
+
+fillHeader(); renderOwners(); renderPages();
+const pushIfraz = () => { try { localStorage.setItem("hisas-ifraz", JSON.stringify(ifrazData())); } catch(e){} };
+pushIfraz(); window.addEventListener("pagehide", pushIfraz);
+
+// ---------- splash & about ----------
+(() => {
+  const sp = $("splash"); let gone = false;
+  const hide = () => { if (gone) return; gone = true; sp.classList.add("hide"); setTimeout(() => sp.remove(), 500); };
+  sp.addEventListener("click", hide);
+  try { if (sessionStorage.getItem("sp1")) hide(); sessionStorage.setItem("sp1", "1"); } catch(e){}
+  setTimeout(hide, 1800);
+  let ver = "نسخة الويب";
+  try { if (window.AndroidBridge && AndroidBridge.appVersion) ver = String(AndroidBridge.appVersion()); } catch(e){}
+  $("appVer").textContent = ver;
+})();
+
+try { if (window.AndroidBridge && AndroidBridge.jsReady) AndroidBridge.jsReady(); } catch(e){}
+(async () => {
+  const noRead = "لقراءة الصور أضف مفتاح Gemini أو Groq المجاني في الأسفل. ويمكنك دائماً الإدخال يدوياً أو بالميكروفون 🎤 بجانب كل خانة.";
+  if (!window.claude) { if (!gem.key && !gem.groqKey){ say(noRead); $("gemBox").open = true; } renderPages(); return; }
+  claude.use("downloads").then(d => { downloads = d; });
+  sample = await claude.use("sample");
+  if (sample){
+    const lim = await sample.limits().catch(() => null);
+    imgLimit = lim?.images?.maxCount || 0;
+    if (!imgLimit && !gem.key && !gem.groqKey) say(noRead);
+  } else if (!gem.key && !gem.groqKey) say(noRead);
+  renderPages();
+})();
+})();
+</script>
+</body>
+</html>

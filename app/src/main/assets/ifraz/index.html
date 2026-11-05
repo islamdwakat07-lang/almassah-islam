@@ -1,0 +1,1434 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>إفراز الأراضي</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* Layout: one survey "sheet" column — land → owners → rules → proposals; plan drawings are the visual anchor */
+:root{
+  --paper:#eef2ec; --sheet:#fbfcfa; --ink:#18261e; --muted:#5b6a60; --line:#cdd8cf;
+  --accent:#1d6a46; --accent-ink:#ffffff; --street:#b0601b; --ext:#1f5fbf; --muni:#c48b1f; --road:#8a948d; --bad:#b3261e; --warn:#9a6a00;
+  --f-display:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1612; --sheet:#16201a; --ink:#e2ebe4; --muted:#98a79c; --line:#2b3a30;
+  --accent:#5cbc88; --accent-ink:#0c1510; --street:#e39a55; --ext:#7eaaff; --muni:#e2b14c; --road:#6d7870; --bad:#ff8a80; --warn:#e9b949; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1612; --sheet:#16201a; --ink:#e2ebe4; --muted:#98a79c; --line:#2b3a30;
+  --accent:#5cbc88; --accent-ink:#0c1510; --street:#e39a55; --ext:#7eaaff; --muni:#e2b14c; --road:#6d7870; --bad:#ff8a80; --warn:#e9b949; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;direction:rtl;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 60px}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--f-display);font-size:30px;margin:0;line-height:1.2;color:var(--accent);text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted)}
+.panel{background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h2{font-family:var(--f-display);font-size:20px;margin:0;display:flex;align-items:baseline;gap:10px}
+.panel h2 .step{font-family:var(--f-num);font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:0 8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,.btn{font:inherit;font-weight:500;border:1px solid var(--line);background:var(--sheet);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer}
+button.primary,.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+button.icon{padding:4px 8px;min-width:32px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0}
+textarea{width:100%;min-height:130px;font-family:var(--f-num);font-size:13px;direction:ltr;text-align:left}
+textarea.rtl{direction:rtl;text-align:right;font-family:var(--f-body)}
+.btn input[type=file]{display:none}
+.hint{color:var(--muted);font-size:13px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.stats{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
+.stats b{font-weight:500;color:var(--muted);margin-inline-end:4px}
+.plan{width:100%;height:auto;display:block;background:var(--paper);border-radius:8px;border:1px solid var(--line)}
+.banner{background:color-mix(in srgb,var(--muni) 16%,var(--sheet));border:1px dashed var(--muni);border-radius:8px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+/* owners */
+.owners{display:flex;flex-direction:column;gap:6px}
+.orow{display:grid;grid-template-columns:26px minmax(0,1fr) 96px 150px 58px auto;gap:6px;align-items:center}
+.orow select{width:100%;font-size:13.5px;padding:6px}
+.orow select.set{border-color:var(--accent);color:var(--accent);font-weight:500}
+.orow .idx{font-family:var(--f-num);color:var(--muted);text-align:center}
+.orow .pct{font-family:var(--f-num);font-size:13px;color:var(--muted);text-align:center}
+.orow .acts{display:flex;gap:3px}
+.ohead{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.otot{border-top:1px solid var(--line);padding-top:8px}
+/* settings */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;color:var(--muted)}
+.field .inl{display:flex;gap:6px;align-items:center}
+.field .inl input{width:100%}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{flex:1;text-align:center;padding:7px 6px;cursor:pointer;font-size:14px;color:var(--ink)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
+.zones{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+/* proposals */
+.cards{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.card{flex:0 0 190px;scroll-snap-align:start;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--paper);display:flex;flex-direction:column;gap:6px;text-align:right;cursor:pointer}
+.card[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.card .t{font-weight:700;font-size:14px;line-height:1.35}
+.etog{padding:5px 10px;font-size:13px}
+.etog[aria-pressed="true"]{background:var(--ext);border-color:var(--ext);color:var(--sheet)}
+.etog:disabled{opacity:1;cursor:default}
+.guide{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--paper);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.guide ul{margin:0;padding-inline-start:4px;list-style:none;display:flex;flex-direction:column;gap:4px}
+.guide li{display:flex;gap:8px;align-items:baseline}
+.key{flex:0 0 22px;height:5px;border-radius:3px;transform:translateY(-3px)}
+.k-bound{background:var(--ink)} .k-red{background:var(--bad)} .k-blue{background:var(--ext)}
+.chip{display:inline-block;font-size:12px;border-radius:99px;padding:1px 8px;border:1px solid currentColor}
+.chip.ok{color:var(--accent)} .chip.bad{color:var(--bad)} .chip.best{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:12.5px;background:var(--paper)}
+td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-inline-end:6px;border:1px solid var(--ink)}
+.bad{color:var(--bad)} .warn{color:var(--warn)}
+.notes{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:10px 16px;border-radius:8px;max-width:min(92vw,520px);z-index:20;font-size:14px}
+.empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
+@media (max-width:620px){.orow{grid-template-columns:22px minmax(0,1fr) 84px auto}.orow .pct{display:none}.orow select{grid-column:2 / -1;grid-row:2}.orow.ohead .poshd{display:none}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<header>
+  <a href="../home.html" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;margin-bottom:8px;border:1px solid currentColor;border-radius:99px;font:600 13px inherit;color:inherit;opacity:.8;text-decoration:none">⌂ الرئيسية</a>
+  <h1>إفراز الأراضي</h1>
+  <p>ارفع حدود الأرض، أدخل حصص الملاك، وحدد اقتطاع البلدية والشروط — والتطبيق يقترح عدة طرق للإفراز.</p>
+</header>
+
+<div class="banner" id="sampleBanner" hidden>
+  <span>هذه بيانات <b>مثال</b> لتوضيح طريقة العمل. ارفع ملف DXF وأدخل حصصك الحقيقية.</span>
+  <button id="clearSample">مسح المثال</button>
+</div>
+
+<section class="panel">
+  <h2><span class="step">1</span>حدود الأرض</h2>
+  <div class="guide" role="note">
+    <b>طريقة الرسم في أوتوكاد قبل حفظ DXF</b>
+    <ul>
+      <li><span class="key k-bound"></span><span><b>حدود القطعة:</b> بوليلاين مغلق بأي لون غير الأحمر والأزرق.</span></li>
+      <li><span class="key k-red"></span><span><b>كل اقتطاع مسبق باللون الأحمر (رقم 1):</b> بوليلاين مغلق لكل طريق معتمد، أو فضلات طرق، أو قسيمة اقترحتها البلدية لتأخذها. كل ما يُرسم بالأحمر يُخصم أولاً ويُحسب ضمن نسبة الاقتطاع.</span></li>
+      <li><span class="key k-blue"></span><span><b>الطرق الخارجية باللون الأزرق (رقم 5):</b> خط فوق كل ضلع عليه طريق قائم، ومنه تنطلق الطرق الداخلية المقترحة.</span></li>
+    </ul>
+    <span class="hint">اللون يُقرأ من الخط نفسه أو من لون الطبقة. احفظ الملف بصيغة DXF نصية (ASCII).</span>
+  </div>
+  <div class="row">
+    <label class="btn primary">رفع ملف DXF<input type="file" id="dxfFile" accept=".dxf,.DXF"></label>
+    <button id="togglePaste">لصق إحداثيات X,Y</button>
+  </div>
+  <div id="pasteBox" hidden class="field">
+    <label for="coords">كل سطر نقطة: X,Y (أو رقم النقطة,X,Y)</label>
+    <textarea id="coords" placeholder="172000.00,183000.00&#10;172085.40,183008.20&#10;..."></textarea>
+    <div class="row"><button class="primary" id="useCoords">اعتماد الإحداثيات</button></div>
+  </div>
+  <div class="field" id="polyPickBox" hidden>
+    <label for="polyPick">في الملف أكثر من بوليلاين مغلق — اختر حدود الأرض</label>
+    <select id="polyPick"></select>
+  </div>
+  <div class="stats" id="landStats"></div>
+  <div class="field">
+    <label for="street">الشارع الرئيسي الذي يبدأ منه الطريق الداخلي (أو اضغط على الضلع في الرسم)</label>
+    <select id="street"></select>
+  </div>
+  <div class="field">
+    <label>أضلاع عليها طريق خارجي — تُقرأ تلقائياً من الخط الأزرق في ملف DXF، أو اضغط لتغييرها</label>
+    <div class="row" id="extEdges"></div>
+  </div>
+  <div id="landView"></div>
+</section>
+
+<section class="panel">
+  <h2><span class="step">2</span>الملاك والحصص</h2>
+  <div class="row">
+    <label class="btn primary">استيراد من حاسب الكواشين (PDF أو CSV)<input type="file" id="pdfFile" accept="application/pdf,.pdf,.csv,text/csv"></label>
+    <button id="togglePasteOwners">لصق جدول</button>
+    <button id="addOwner">+ مالك</button>
+    <button id="fromHisas" hidden>خذ الحصص من حاسب الكواشين</button>
+  </div>
+  <div id="ownersPasteBox" hidden class="field">
+    <label for="ownersText">كل سطر: الاسم ثم المساحة م² (أو الحصص). راجع الأسماء والأرقام قبل الاعتماد.</label>
+    <textarea id="ownersText" class="rtl" placeholder="أحمد محمد دويكات    1250.75&#10;ورثة يوسف خليل    640.20"></textarea>
+    <div class="row">
+      <button class="primary" id="useOwners">اعتماد (استبدال الجدول)</button>
+      <button id="appendOwners">إضافة للجدول</button>
+    </div>
+  </div>
+  <div class="row" style="gap:10px">
+    <label for="seqStart">التسلسل يبدأ من</label>
+    <select id="seqStart"></select>
+  </div>
+  <div class="owners" id="owners"></div>
+  <p class="hint">الحصة تُدخل بالمتر المربع كما تخرج من حاسب الكواشين، أو بعدد الأسهم — المهم النسبة. تُطبَّق النسبة على المساحة الفعلية للرسم. ترتيب الجدول هو تسلسل القطع المتفق عليه بين الشركاء، يبدأ من الرأس الذي تختاره ويمشي على الشارع ثم للداخل. وإذا حددت لمالك موقعاً (على الشارع، في العمق، أو بجانب ضلع معين) ينقله التطبيق لأقرب مكان يحقق الطلب، ويُبقي باقي الملاك على ترتيبهم قدر الإمكان.</p>
+</section>
+
+<section class="panel">
+  <h2><span class="step">3</span>الاقتطاع والشروط</h2>
+  <div class="row"><span class="hint">إعداد سريع:</span>
+    <button id="preIn">داخل البلدية: 30%، 600 م²، عرض 18 م</button>
+    <button id="preOut">خارج البلدية: الاقتطاع = الطرق فقط</button>
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label>موقع الأرض</label>
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="dmode" value="in" id="dmIn">داخل حدود البلدية</label>
+        <label><input type="radio" name="dmode" value="out" id="dmOut">خارج الحدود</label>
+      </div>
+    </div>
+    <div class="field" id="pinBox"><label for="pin">نسبة الاقتطاع داخل البلدية % — القانونية 30</label><div class="inl"><input type="number" id="pin" min="0" max="90" step="0.5"><button type="button" id="pinReset" title="إرجاع إلى 30%">30%</button></div></div>
+    <div class="field" id="outModeBox"><label for="outMode">الاقتطاع خارج الحدود</label><select id="outMode"><option value="roads">مساحة الطرق فقط (حسب طلب الزبون)</option><option value="pct">نسبة ثابتة أكتبها</option></select></div>
+    <div class="field" id="poutBox"><label for="pout">نسبة الاقتطاع خارج البلدية %</label><input type="number" id="pout" min="0" max="90" step="0.5"></div>
+    <div class="field"><label for="widen">توسعة / فضلات الشارع الرئيسي (عمق بالمتر)</label><input type="number" id="widen" min="0" step="0.5"></div>
+    <div class="field"><label for="road">عرض الطريق الداخلي (م)</label><input type="number" id="road" min="0" step="0.5"></div>
+    <div class="field"><label for="fr">نصف قطر منحنى التقاطع (م) — 0 بدون منحنى</label><input type="number" id="fr" min="0" step="0.5"></div>
+    <div class="field"><label for="rt">نصف قطر الدوار في نهاية الطريق (م) — 0 بدون دوار</label><input type="number" id="rt" min="0" step="0.5"></div>
+    <div class="field"><label for="roadEnd">نهاية الطريق الداخلي</label><select id="roadEnd"></select></div>
+    <div class="field"><label for="minFront">أقل واجهة للقطعة على شارع (م)</label><input type="number" id="minFront" min="0" step="0.5"></div>
+    <div class="field"><label for="minWidth">أقل عرض للقطعة بكل الأحوال (م)</label><input type="number" id="minWidth" min="0" step="0.5"></div>
+    <div class="field"><label for="minParcel">أقل مساحة قسيمة (م²) — الحصص الأصغر تُجمع معاً</label><input type="number" id="minParcel" min="0" step="10"></div>
+    <div class="field"><label for="autoMerge">الحصص التي لا تحقق الشروط</label><label class="row" style="gap:8px"><input type="checkbox" id="autoMerge"> <span>اجمعها مع جارتها في قسيمة مشتركة حتى تتحقق المساحة والعرض والواجهة</span></label></div>
+    <div class="field"><label for="landTitle">وصف الأرض للتقرير</label><input type="text" id="landTitle" placeholder="البلدة – الحوض – القطعة"></div>
+    <div class="field"><label for="surveyor">اسم المساح</label><input type="text" id="surveyor"></div>
+  </div>
+  <p class="hint" id="dedHint"></p>
+  <div class="zones">
+    <label class="row" style="gap:8px"><input type="checkbox" id="vOn"> <span>مراعاة القيمة (الأمامي أغلى من الخلفي) — القسمة بالقيمة لا بالمساحة</span></label>
+    <div class="grid" id="vFields">
+      <div class="field"><label for="d1">عمق المنطقة الأمامية من الشارع (م)</label><input type="number" id="d1" min="1" step="1"></div>
+      <div class="field"><label for="d2">نهاية المنطقة الوسطى (م)</label><input type="number" id="d2" min="1" step="1"></div>
+      <div class="field"><label for="p1">سعر المتر أمامي (دينار)</label><input type="number" id="p1" min="0"></div>
+      <div class="field"><label for="p2">سعر المتر وسط (دينار)</label><input type="number" id="p2" min="0"></div>
+      <div class="field"><label for="p3">سعر المتر خلفي (دينار)</label><input type="number" id="p3" min="0"></div>
+    </div>
+  </div>
+  <div class="zones">
+    <label class="row" style="gap:8px"><input type="checkbox" id="mOn"> <span>تقسيم يدوي على ضلع معيّن — عدد القسائم وعرض القسيمة</span></label>
+    <div class="grid" id="mFields">
+      <div class="field"><label for="mEdge">الضلع الذي تُقسم عليه</label><select id="mEdge"></select></div>
+      <div class="field"><label for="mCount">عدد القسائم على الضلع</label><input type="number" id="mCount" min="0" step="1"></div>
+      <div class="field"><label for="mWidth">عرض القسيمة (م)</label><input type="number" id="mWidth" min="0" step="0.5"></div>
+      <div class="field"><label for="mRev">اتجاه البدء</label><label class="row" style="gap:8px"><input type="checkbox" id="mRev"> <span>ابدأ من الطرف الآخر للضلع</span></label></div>
+    </div>
+    <p class="hint" id="mHint" style="margin:0">إذا كتبت العدد فقط تخرج قسائم متساوية العرض. وإذا كتبت العرض فقط يخرج أكبر عدد ممكن من القسائم، والباقي قسيمة «باقي». وإذا كتبت الاثنين معاً تخرج القسائم المطلوبة بالعرض المطلوب، والباقي وحده. خطوط القسمة عمودية على الضلع.</p>
+  </div>
+</section>
+
+<section class="panel">
+  <h2><span class="step">4</span>الاقتراحات</h2>
+  <div id="proposals"></div>
+  <div id="result"></div>
+</section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="geo">
+const G = (() => {
+  const EPS = 1e-9;
+  const sarea = p => { let s = 0; for (let i = 0, n = p.length; i < n; i++) { const a = p[i], b = p[(i + 1) % n]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
+  const area = p => (p && p.length > 2 ? Math.abs(sarea(p)) : 0);
+  function centroid(p) {
+    let a = 0, cx = 0, cy = 0;
+    for (let i = 0, n = p.length; i < n; i++) { const P = p[i], Q = p[(i + 1) % n]; const f = P[0] * Q[1] - Q[0] * P[1]; a += f; cx += (P[0] + Q[0]) * f; cy += (P[1] + Q[1]) * f; }
+    if (Math.abs(a) < EPS) { let x = 0, y = 0; p.forEach(q => { x += q[0]; y += q[1]; }); return [x / p.length, y / p.length]; }
+    return [cx / (3 * a), cy / (3 * a)];
+  }
+  function bbox(p) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const [x, y] of p) { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; } return [x0, y0, x1, y1]; }
+  function clipHalf(poly, ax, val, ge) {
+    const out = [], n = poly.length; if (!n) return out;
+    const ins = q => (ge ? q[ax] >= val : q[ax] <= val);
+    const cut = (a, b) => { const t = (val - a[ax]) / (b[ax] - a[ax]); const r = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]; r[ax] = val; return r; };
+    for (let i = 0; i < n; i++) { const c = poly[i], pv = poly[(i + n - 1) % n]; const ci = ins(c), pi = ins(pv); if (ci) { if (!pi) out.push(cut(pv, c)); out.push(c); } else if (pi) out.push(cut(pv, c)); }
+    return out;
+  }
+  function clean(p) { const o = []; for (const q of p) { const l = o[o.length - 1]; if (!l || Math.abs(l[0] - q[0]) > 1e-9 || Math.abs(l[1] - q[1]) > 1e-9) o.push(q); } if (o.length > 1) { const a = o[0], b = o[o.length - 1]; if (Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9) o.pop(); } return o.length > 2 ? o : []; }
+  const half = (poly, ax, val, ge) => clean(clipHalf(poly, ax, val, ge));
+  const slab = (poly, ax, a, b) => clean(clipHalf(clipHalf(poly, ax, a, true), ax, b, false));
+  function findCut(region, ax, st, en, target, meas) { if (meas(slab(region, ax, st, en)) <= target) return en; let lo = st, hi = en; for (let k = 0; k < 60; k++) { const m = (lo + hi) / 2; if (meas(slab(region, ax, st, m)) < target) lo = m; else hi = m; } return (lo + hi) / 2; }
+  function findRev(region, ax, st, en, target, meas) { if (meas(slab(region, ax, st, en)) <= target) return st; let lo = st, hi = en; for (let k = 0; k < 60; k++) { const m = (lo + hi) / 2; if (meas(slab(region, ax, m, en)) < target) hi = m; else lo = m; } return (lo + hi) / 2; }
+  function edgeOn(poly, ax, val, tol = 1e-5) { let s = 0; for (let i = 0, n = poly.length; i < n; i++) { const a = poly[i], b = poly[(i + 1) % n]; if (Math.abs(a[ax] - val) < tol && Math.abs(b[ax] - val) < tol) s += Math.hypot(b[0] - a[0], b[1] - a[1]); } return s; }
+  function intervals(poly, ax, val) { const ox = 1 - ax, xs = []; for (let i = 0, n = poly.length; i < n; i++) { const a = poly[i], b = poly[(i + 1) % n]; if ((a[ax] <= val && b[ax] > val) || (b[ax] <= val && a[ax] > val)) xs.push(a[ox] + (val - a[ax]) * (b[ox] - a[ox]) / (b[ax] - a[ax])); } xs.sort((p, q) => p - q); const r = []; for (let i = 0; i + 1 < xs.length; i += 2) r.push([xs[i], xs[i + 1]]); return r; }
+  const chord = (poly, ax, val) => intervals(poly, ax, val).reduce((s, [a, b]) => s + b - a, 0);
+  function minChord(poly, ax) { if (!poly.length) return 0; const bb = bbox(poly); const lo = bb[ax], hi = bb[ax + 2]; let m = Infinity; for (let t = 0.1; t < 0.91; t += 0.1) m = Math.min(m, chord(poly, ax, lo + (hi - lo) * t)); return isFinite(m) ? m : 0; }
+  function labelPt(poly) { if (!poly.length) return null; const bb = bbox(poly); const y = (bb[1] + bb[3]) / 2; const iv = intervals(poly, 1, y); if (!iv.length) return centroid(poly); let best = iv[0]; iv.forEach(v => { if (v[1] - v[0] > best[1] - best[0]) best = v; }); return [(best[0] + best[1]) / 2, y]; }
+  function mk(o, th) { const c = Math.cos(th), s = Math.sin(th); return { to: ([x, y]) => { const dx = x - o[0], dy = y - o[1]; return [dx * c + dy * s, -dx * s + dy * c]; }, from: ([u, v]) => [o[0] + u * c - v * s, o[1] + u * s + v * c] }; }
+  function frame(b, ei) { const n = b.length, p = b[ei], q = b[(ei + 1) % n]; let th = Math.atan2(q[1] - p[1], q[0] - p[0]); let f = mk(p, th); if (centroid(b.map(f.to))[1] < 0) f = mk(q, th + Math.PI); return f; }
+  const BIG = 1e9;
+  function valueOf(poly, v) { const zs = [[-BIG, v.d1, v.p1], [v.d1, Math.max(v.d2, v.d1), v.p2], [Math.max(v.d2, v.d1), BIG, v.p3]]; let s = 0; for (const [a, b, pr] of zs) if (b > a) s += area(slab(poly, 1, a, b)) * pr; return s; }
+
+  function plan(cfg) {
+    const { L, s, w, p, owners, minFront, minWidth, minParcel, value } = cfg;
+    const distSeg = (m, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy; let t = l2 ? ((m[0] - a[0]) * dx + (m[1] - a[1]) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(m[0] - a[0] - t * dx, m[1] - a[1] - t * dy); };
+    function onLen(poly, segs) {
+      let tl = 0;
+      for (let i = 0, n = poly.length; i < n; i++) {
+        const a = poly[i], b = poly[(i + 1) % n], len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1e-6) continue;
+        const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        for (const [p1, p2] of segs) { const sl = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]); if (sl < 1e-9) continue; const cr = Math.abs((b[0] - a[0]) * (p2[1] - p1[1]) - (b[1] - a[1]) * (p2[0] - p1[0])) / (len * sl); if (cr < 0.02 && distSeg(m, p1, p2) < 0.02) { tl += len; break; } }
+      }
+      return tl;
+    }
+    const T = area(L);
+    const vOn = !!(value && value.on);
+    const meas = vOn ? q => valueOf(q, value) : area;
+    const widen = s > 0 ? half(L, 1, s, false) : [];
+    let W = area(widen);
+    let Rg = s > 0 ? half(L, 1, s, true) : L;
+    const tot = owners.reduce((a, o) => a + o.frac, 0) || 1;
+    const ded = Ra => { if (cfg.roadsOnly) return { D: W + Ra, M: 0, over: false, ownersTotal: T - W - Ra }; const D = T * p, M = D - W - Ra; if (M < -1e-6) return { D, M: 0, over: true, ownersTotal: T - W - Ra }; return { D, M: Math.max(0, M), over: false, ownersTotal: T - D }; };
+    function cutSeq(region, ax, list) {
+      if (!list.length) return [];
+      if (!region.length) return list.map(o => ({ kind: 'owner', o, poly: [] }));
+      const bb = bbox(region), en = bb[ax + 2], V = meas(region), gt = list.reduce((a, o) => a + o.frac, 0) || 1;
+      let prev = bb[ax];
+      return list.map((o, i) => { const tgt = V * o.frac / gt; const c = i === list.length - 1 ? en : findCut(region, ax, prev, en, tgt, meas); const poly = slab(region, ax, prev, c); prev = c; return { kind: 'owner', o, poly }; });
+    }
+    function cutLine(region, ax, list, M, muniEnd) {
+      let own = region, muni = [];
+      if (M > 1e-6 && region.length) {
+        const bb = bbox(region), st = bb[ax], en = bb[ax + 2];
+        if (muniEnd) { const c = findRev(region, ax, st, en, M, area); muni = slab(region, ax, c, en); own = slab(region, ax, st, c); }
+        else { const c = findCut(region, ax, st, en, M, area); muni = slab(region, ax, st, c); own = slab(region, ax, c, en); }
+      }
+      const parts = cutSeq(own, ax, list);
+      if (muni.length) { if (muniEnd) parts.push({ kind: 'muni', poly: muni }); else parts.unshift({ kind: 'muni', poly: muni }); }
+      return parts;
+    }
+    /* ---- الطرق: منحنيات عند التقاطع، دوار عند النهاية المغلقة ---- */
+    const PC = cfg.PC || null, FR = Math.max(0, +cfg.fr || 0), RT = Math.max(0, +cfg.rt || 0);
+    const roadSet = cfg.roadSet || new Set(), street = cfg.street || 0, nL = L.length;
+    const segsL = [...roadSet].filter(i => i !== street && i < nL).map(i => [L[i], L[(i + 1) % nL]]);
+    function topHit(x) { let best = null; for (let i = 0; i < nL; i++) { const a = L[i], b = L[(i + 1) % nL]; if ((a[0] <= x && b[0] > x) || (b[0] <= x && a[0] > x)) { const v = a[1] + (x - a[0]) * (b[1] - a[1]) / (b[0] - a[0]); if (!best || v > best.v) best = { v, edge: i }; } } return best; }
+    const arcPts = (c, r, a1, a2, n) => { const o = []; for (let k = 0; k <= n; k++) { const t = a1 + (a2 - a1) * k / n; o.push([c[0] + r * Math.cos(t), c[1] + r * Math.sin(t)]); } return o; };
+    function fillet(P, d1, d2, r) {
+      const th = Math.acos(Math.max(-1, Math.min(1, d1[0] * d2[0] + d1[1] * d2[1])));
+      if (th < 0.2 || th > Math.PI - 0.05) return null;
+      const t = r / Math.tan(th / 2), T1 = [P[0] + d1[0] * t, P[1] + d1[1] * t], T2 = [P[0] + d2[0] * t, P[1] + d2[1] * t];
+      let bx = d1[0] + d2[0], by = d1[1] + d2[1]; const bl = Math.hypot(bx, by); bx /= bl; by /= bl;
+      const h = r / Math.sin(th / 2), C = [P[0] + bx * h, P[1] + by * h];
+      const a1 = Math.atan2(T1[1] - C[1], T1[0] - C[0]); let da = Math.atan2(T2[1] - C[1], T2[0] - C[0]) - a1;
+      while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      return [P, ...arcPts(C, r, a1, a1 + da, 12)];
+    }
+    const snap = r => r.map(q => [Math.round(q[0] * 1e6) / 1e6, Math.round(q[1] * 1e6) / 1e6]);
+    const mpRings = mp => { const o = []; for (const pg of mp || []) { const r = pg[0].slice(); const a = r[0], b = r[r.length - 1]; if (r.length > 1 && a[0] === b[0] && a[1] === b[1]) r.pop(); if (r.length > 2 && area(r) > 1e-4) o.push(r); } return o; };
+    function buildRoad(x1, x2, ex, vEnd) {
+      let strip = slab(Rg, 0, x1, x2);
+      if (vEnd != null) strip = clean(clipHalf(strip, 1, vEnd, false));
+      const xc = (x1 + x2) / 2, top = vEnd != null ? null : topHit(xc);
+      const connected = strip.length > 0 && edgeOn(strip, 1, s, 1e-4) >= (x2 - x1) * 0.9;
+      const through = !!(top && roadSet.has(top.edge) && top.edge !== street);
+      if (!strip.length || !PC || ex === false) return { rings: strip.length ? [strip] : [], through, turn: false, connected };
+      const parts = []; let turn = false;
+      if (vEnd != null && RT > (x2 - x1) / 2 + 0.01) { parts.push(arcPts([xc, vEnd], RT, 0, 2 * Math.PI * 47 / 48, 47)); turn = true; }
+      else if (!through && top && RT > (x2 - x1) / 2 + 0.01) {
+        const vc = top.v - RT;
+        if (vc > s + RT * 0.5) { strip = clean(clipHalf(strip, 1, vc, false)); parts.push(arcPts([xc, vc], RT, 0, 2 * Math.PI * 47 / 48, 47)); turn = true; }
+      }
+      if (FR > 0) {
+        parts.push(fillet([x1, s], [0, 1], [-1, 0], FR), fillet([x2, s], [0, 1], [1, 0], FR));
+        if (through) for (const [xs, sg] of [[x1, -1], [x2, 1]]) {
+          const t = topHit(xs); if (!t) continue;
+          const a = L[t.edge], b = L[(t.edge + 1) % nL]; let d = [b[0] - a[0], b[1] - a[1]]; const dl = Math.hypot(d[0], d[1]); d = [d[0] / dl, d[1] / dl];
+          if (d[0] * sg < 0) d = [-d[0], -d[1]];
+          if (Math.abs(d[0]) > 0.2) parts.push(fillet([xs, t.v], [0, -1], d, FR));
+        }
+      }
+      const geoms = [strip, ...parts].filter(g => g && g.length > 2).map(g => [snap(g)]);
+      let rings; try { rings = mpRings(PC.intersection(PC.union(...geoms), [snap(Rg)])); } catch (e) { rings = [strip]; }
+      return { rings, through, turn, connected };
+    }
+    function carve(poly, rd) {
+      if (!poly.length || !PC || !rd.rings.length) return { ring: poly, extra: [], bad: false };
+      let mp; try { mp = PC.difference([snap(poly)], ...rd.rings.map(x => [snap(x)])); } catch (e) { return { ring: poly, extra: [], bad: true }; }
+      const holes = mp.some(pg => pg.slice(1).some(h => area(h) > 0.01));
+      const r = mpRings(mp);
+      if (!r.length) return { ring: [], extra: [], bad: true };
+      r.sort((a, b) => area(b) - area(a));
+      const ex = r.slice(1), exA = ex.reduce((t, g) => t + area(g), 0);
+      return { ring: r[0], extra: ex, bad: holes || exA > Math.max(5, area(poly) * 0.01) };
+    }
+    const ringSegs = rings => rings.flatMap(r => r.map((q, i) => [q, r[(i + 1) % r.length]]));
+    const rdText = rd => (FR > 0 && PC ? ' عند التقاء الطريق بالشارع منحنيات نصف قطرها ' + FR + ' م.' : '') + (rd.through ? ' الطريق يصل إلى الطريق الخارجي في الطرف الآخر.' : rd.turn ? ' وينتهي بدوار نصف قطره ' + RT + ' م لأنه لا يتصل بطريق آخر.' : '');
+    /* الطرق المعتمدة من البلدية (بوليلاين أحمر): تُخصم أولاً وتُحسب ضمن الاقتطاع */
+    let appr = [], frag = [];
+    if (cfg.approved && cfg.approved.length && PC) {
+      try {
+        const U = PC.union(...cfg.approved.map(r => [snap(r)]));
+        const ai = mpRings(PC.intersection([snap(Rg)], U));
+        const rest = mpRings(PC.difference([snap(Rg)], U)).sort((a, b) => area(b) - area(a));
+        if (ai.length && rest.length) { appr = ai; Rg = rest[0]; frag = rest.slice(1); W += [...appr, ...frag].reduce((t, g) => t + area(g), 0); ringSegs(appr).forEach(sg => segsL.push(sg)); }
+      } catch (e) { appr = []; frag = []; }
+    }
+    const apprArea = appr.reduce((t, g) => t + area(g), 0), fragArea = frag.reduce((t, g) => t + area(g), 0);
+    /* قص مروحي حول مركز الدوار: كل قسيمة خلف نهاية الطريق تلمس الدوار */
+    function clipLn(poly, P, nx, ny) {
+      const out = [], n = poly.length, dd = q => (q[0] - P[0]) * nx + (q[1] - P[1]) * ny;
+      for (let i = 0; i < n; i++) {
+        const c = poly[i], pv = poly[(i + n - 1) % n], dc = dd(c), dp = dd(pv);
+        const cut = () => { const t = dp / (dp - dc); return [pv[0] + t * (c[0] - pv[0]), pv[1] + t * (c[1] - pv[1])]; };
+        if (dc >= 0) { if (dp < 0) out.push(cut()); out.push(c); } else if (dp >= 0) out.push(cut());
+      }
+      return out;
+    }
+    const wedge = (poly, C, t0, t1) => clean(clipLn(clipLn(poly, C, -Math.sin(t1), Math.cos(t1)), C, Math.sin(t0), -Math.cos(t0)));
+    function fanCut(region, C, list, M) {
+      if (!list.length) return [];
+      if (!region.length) return list.map(o => ({ kind: 'owner', o, poly: [] }));
+      let tm = 0; const out = [];
+      if (M > 1e-6) { let a = 0, b = Math.PI; for (let k = 0; k < 60; k++) { const m = (a + b) / 2; if (area(wedge(region, C, m, 0)) < M) a = m; else b = m; } tm = (a + b) / 2; }
+      const Vt = meas(wedge(region, C, Math.PI, tm)), gt = list.reduce((t, o) => t + o.frac, 0) || 1;
+      let st = Math.PI;
+      list.forEach((o, i) => {
+        let c = tm;
+        if (i < list.length - 1) { const tgt = Vt * o.frac / gt; let a = tm, b = st; for (let k = 0; k < 60; k++) { const m = (a + b) / 2; if (meas(wedge(region, C, st, m)) < tgt) b = m; else a = m; } c = (a + b) / 2; }
+        out.push({ kind: 'owner', o, poly: wedge(region, C, st, c) }); st = c;
+      });
+      if (M > 1e-6) out.push({ kind: 'muni', poly: wedge(region, C, tm, 0) });
+      return out;
+    }
+    /* ---- مواقع الملاك المطلوبة: نجرب نقل المالك لأماكن مختلفة ونختار الأقرب لترتيب الجدول ---- */
+    const vmax = bbox(L)[3];
+    function posOK(pc) {
+      const P = pc.o.pos; if (!P) return [true, 0];
+      if (!pc.poly.length) return [false, 0];
+      const fm = edgeOn(pc.poly, 1, s, 1e-4);
+      if (P.t === 'front' || (P.t === 'edge' && P.e === street)) return [fm > 0.5, fm];
+      if (P.t === 'back') { const c = centroid(pc.poly); return [fm < 0.01 && c[1] > (vmax + s) / 2, c[1]]; }
+      if (P.t === 'edge') { const f = onLen(pc.poly, [[L[P.e], L[(P.e + 1) % nL]]]); return [f > 0.5, f]; }
+      return [true, 0];
+    }
+    const hasPos = owners.some(o => o.pos);
+    function optimize(arrange) {
+      const evalO = ord => { const r = arrange(ord); if (!r) return null; let sat = 0, cont = 0; for (const pc of r.parcels) if (pc.kind === 'owner' && pc.o.pos) { const [ok, sc] = posOK(pc); if (ok) sat++; cont += sc; } return { r, sat, cont }; };
+      const disp = ord => ord.reduce((a, o, i) => a + Math.abs(i - owners.indexOf(o)), 0);
+      const score = (e, ord) => (e ? e.sat * 1e6 - disp(ord) * 10 + e.cont * 1e-3 : -Infinity);
+      let best = owners.slice(), bestE = evalO(best), bestS = score(bestE, best);
+      if (!hasPos || owners.length < 2) return bestE && bestE.r;
+      for (let pass = 0; pass < 2; pass++) for (const o of owners.filter(x => x.pos)) {
+        const base = best.filter(x => x !== o);
+        for (let i = 0; i <= base.length; i++) { const ord = [...base.slice(0, i), o, ...base.slice(i)]; const e = evalO(ord), sc = score(e, ord); if (sc > bestS + 1e-9) { best = ord; bestE = e; bestS = sc; } }
+      }
+      return bestE && bestE.r;
+    }
+    const props = [];
+    const stripes = (end) => {
+      const d = ded(0);
+      const r = optimize(ord => ({ parcels: cutLine(Rg, 0, ord, d.M, end) }));
+      return { key: end ? 'sA' : 'sB', title: end ? 'شرائح على الشارع (أ)' : 'شرائح على الشارع (ب)', desc: 'كل قطعة لها واجهة على الشارع الرئيسي، وخطوط القسمة متعامدة عليه. قسيمة البلدية في ' + (end ? 'الطرف الأخير' : 'الطرف الأول') + '.', d, roadArea: 0, parcels: r.parcels, widthAx: 1 };
+    };
+    const want = k => !cfg.only || cfg.only === k;
+    if (want('sA')) props.push(stripes(true));
+    if (want('sB')) props.push(stripes(false));
+    if (w > 0 && Rg.length) {
+      const bb = bbox(Rg), lo = bb[0] + w / 2, hi = bb[2] - w / 2;
+      if (want('c') && owners.length >= 2 && hi - lo > 1) {
+        const cache = new Map();
+        const roadFor = Fk => {
+          const key = Fk.toFixed(9); if (cache.has(key)) return cache.get(key);
+          const ev = (xr, ex) => {
+            const rd = buildRoad(xr - w / 2, xr + w / 2, ex), usePC = ex && PC;
+            const cl = usePC ? carve(half(Rg, 0, xr, false), rd) : { ring: half(Rg, 0, xr - w / 2, false), extra: [], bad: false };
+            const cr = usePC ? carve(half(Rg, 0, xr, true), rd) : { ring: half(Rg, 0, xr + w / 2, true), extra: [], bad: false };
+            const rings = [...rd.rings, ...cl.extra, ...cr.extra];
+            const Ra = rings.reduce((t, g) => t + area(g), 0), d = ded(Ra);
+            const Lp = cl.ring, Rp = cr.ring;
+            let Rq = Rp, muni = [];
+            if (d.M > 1e-6 && Rp.length) { const b2 = bbox(Rp); const c = findRev(Rp, 1, b2[1], b2[3], d.M, area); muni = slab(Rp, 1, c, b2[3]); Rq = slab(Rp, 1, b2[1], c); }
+            const mL = meas(Lp), mR = meas(Rq);
+            return { rd, rings, Ra, d, Lp, Rq, muni, bad: !rd.connected || cl.bad || cr.bad, f: mL - Fk * (mL + mR) };
+          };
+          let a = lo, b = hi; for (let it = 0; it < 40; it++) { const m = (a + b) / 2; if (ev(m, false).f < 0) a = m; else b = m; }
+          let xr = (a + b) / 2;
+          if (PC) {
+            a = Math.max(lo, xr - 4); b = Math.min(hi, xr + 4);
+            if (!(ev(a, true).f < 0 && ev(b, true).f >= 0)) { a = lo; b = hi; }
+            for (let it = 0; it < (b - a > 10 ? 40 : 18); it++) { const m = (a + b) / 2; if (ev(m, true).f < 0) a = m; else b = m; }
+            xr = (a + b) / 2;
+          }
+          const r = ev(xr, true); cache.set(key, r); return r;
+        };
+        const res = optimize(ord => {
+          let cum = 0, k = 1, best = Infinity;
+          for (let i = 0; i < ord.length - 1; i++) { cum += ord[i].frac / tot; const dd = Math.abs(cum - 0.5); if (dd < best) { best = dd; k = i + 1; } }
+          const left = ord.slice(0, k), right = ord.slice(k), Fk = left.reduce((t, o) => t + o.frac, 0) / tot;
+          const r = roadFor(Fk); if (r.bad) return null;
+          const parcels = [...cutSeq(r.Lp, 1, left), ...cutSeq(r.Rq, 1, right)];
+          if (r.muni.length) parcels.push({ kind: 'muni', poly: r.muni });
+          r.rings.forEach((g, i) => parcels.push({ kind: 'road', poly: g, nolabel: i > 0 }));
+          return { parcels, r };
+        });
+        if (res) props.push({ key: 'c', title: 'طريق داخلي في الوسط', desc: 'طريق بعرض ' + w + ' م يدخل من الشارع، والقطع على جانبيه بواجهة على الطريق. قسيمة البلدية في العمق.' + rdText(res.r.rd), d: res.r.d, roadArea: res.r.Ra, parcels: res.parcels, roadSegs: ringSegs(res.r.rings), widthAx: 0 });
+      }
+      /* ---- طريق ينتهي بعد قسيمة محددة: القطع حتى تلك القسيمة على جانبي الطريق، والباقي خلف نهاية الطريق ---- */
+      const xi = owners.findIndex(o => o.endMark);
+      if (want('ce') && xi >= 1 && xi < owners.length - 1 && hi - lo > 1) {
+        const A = owners.slice(0, xi + 1), Bk = owners.slice(xi + 1), fA = A.reduce((t, o) => t + o.frac, 0);
+        let cum = 0, k = 1, best = Infinity;
+        for (let i = 0; i < A.length - 1; i++) { cum += A[i].frac / fA; const dd = Math.abs(cum - 0.5); if (dd < best) { best = dd; k = i + 1; } }
+        const left = A.slice(0, k), right = A.slice(k), FkA = left.reduce((t, o) => t + o.frac, 0) / fA, fB = Bk.reduce((t, o) => t + o.frac, 0) / tot;
+        const evE = (vE, xr, ex) => {
+          const rd = buildRoad(xr - w / 2, xr + w / 2, ex, vE), usePC = ex && PC;
+          const Fr = half(Rg, 1, vE, false), Bq = half(Rg, 1, vE, true);
+          const cl = usePC ? carve(half(Fr, 0, xr, false), rd) : { ring: half(Fr, 0, xr - w / 2, false), extra: [], bad: false };
+          const cr = usePC ? carve(half(Fr, 0, xr, true), rd) : { ring: half(Fr, 0, xr + w / 2, true), extra: [], bad: false };
+          const cb = usePC ? carve(Bq, rd) : { ring: Bq, extra: [], bad: false };
+          const rings = [...rd.rings, ...cl.extra, ...cr.extra, ...cb.extra];
+          const Ra = rings.reduce((t, g) => t + area(g), 0), d = ded(Ra);
+          const mL = meas(cl.ring), mR = meas(cr.ring);
+          return { rd, rings, Ra, d, Lp: cl.ring, Rp: cr.ring, Bp: cb.ring, bad: !rd.connected || cl.bad || cr.bad || cb.bad || !cb.ring.length, f: mL - FkA * (mL + mR), g: area(cb.ring) - (d.ownersTotal * fB + d.M) };
+        };
+        const vlo = s + 2, vhi = bbox(Rg)[3] - 2;
+        const solveX = (vE, ex, xa, xb, n) => { let a = xa, b = xb; for (let it = 0; it < n; it++) { const m = (a + b) / 2; if (evE(vE, m, ex).f < 0) a = m; else b = m; } return (a + b) / 2; };
+        if (vhi > vlo) {
+          let a = vlo, b = vhi, xr = (lo + hi) / 2;
+          for (let it = 0; it < 30; it++) { const m = (a + b) / 2; xr = solveX(m, false, lo, hi, 30); if (evE(m, xr, false).g > 0) a = m; else b = m; }
+          let vE = (a + b) / 2; xr = solveX(vE, false, lo, hi, 30);
+          if (PC) {
+            const gx = v => { const x = solveX(v, true, Math.max(lo, xr - 3), Math.min(hi, xr + 3), 14); return [evE(v, x, true).g, x]; };
+            let a2 = Math.max(vlo, vE - 4), b2 = Math.min(vhi, vE + 4);
+            if (gx(a2)[0] > 0 && gx(b2)[0] <= 0) { for (let it = 0; it < 12; it++) { const m = (a2 + b2) / 2; if (gx(m)[0] > 0) a2 = m; else b2 = m; } vE = (a2 + b2) / 2; }
+            xr = gx(vE)[1];
+          }
+          const r = evE(vE, xr, true);
+          if (!r.bad) {
+            const back = r.rd.turn ? fanCut(r.Bp, [xr, vE], Bk, r.d.M) : cutLine(r.Bp, 0, Bk, r.d.M, true); back.forEach(pc => { pc.wax = 1; });
+            const parcels = [...cutSeq(r.Lp, 1, left), ...cutSeq(r.Rp, 1, right), ...back];
+            r.rings.forEach((g, i) => parcels.push({ kind: 'road', poly: g, nolabel: i > 0 }));
+            const X = A[A.length - 1];
+            props.push({ key: 'ce', title: 'طريق ينتهي بعد القسيمة ' + X.tag, desc: 'طريق بعرض ' + w + ' م يدخل من الشارع وينتهي بعد القسيمة ' + X.tag + (r.rd.turn ? ' بدوار نصف قطره ' + RT + ' م' : '') + '. القسائم من 1 حتى ' + X.tag + ' على جانبي الطريق، والباقي خلف نهاية الطريق. طول الطريق ' + (vE - s).toFixed(1) + ' م.' + (FR > 0 && PC ? ' عند التقاء الطريق بالشارع منحنيات نصف قطرها ' + FR + ' م.' : ''), d: r.d, roadArea: r.Ra, parcels, roadSegs: ringSegs(r.rings), widthAx: 0 });
+          }
+        }
+      }
+      for (const first of [true, false]) {
+        if (!want(first ? 'r1' : 'r2')) continue;
+        const ua = L[street][0], ub = L[(street + 1) % nL][0];
+        const sl = Math.abs(ub - ua);
+        if (sl <= w + 1) break;
+        const x0 = PC ? Math.min(ua, ub) : bb[0], x9 = PC ? Math.max(ua, ub) : bb[2];
+        const e = first ? x0 + w : x9 - w;
+        const rd = first ? buildRoad(x0, e) : buildRoad(e, x9);
+        const cp = carve(PC ? Rg : first ? half(Rg, 0, e, true) : half(Rg, 0, e, false), rd);
+        if (!rd.connected || cp.bad) continue;
+        const rings = [...rd.rings, ...cp.extra], Ra = rings.reduce((t, g) => t + area(g), 0), d = ded(Ra);
+        const res = optimize(ord => { const parcels = cutLine(cp.ring, 1, ord, d.M, true); rings.forEach((g, i) => parcels.push({ kind: 'road', poly: g, nolabel: i > 0 })); return { parcels }; });
+        props.push({ key: first ? 'r1' : 'r2', title: 'طريق جانبي ' + (first ? '(أ)' : '(ب)'), desc: 'طريق بعرض ' + w + ' م على طرف الأرض، والقطع مصفوفة عليه من الشارع للداخل. قسيمة البلدية في العمق.' + rdText(rd), d, roadArea: Ra, parcels: res.parcels, roadSegs: ringSegs(rings), widthAx: 0 });
+      }
+    }
+    for (const pr of props) {
+      if (widen.length) pr.parcels.push({ kind: 'widen', poly: widen });
+      appr.forEach((g, i) => pr.parcels.push({ kind: 'widen', sub: 'appr', poly: g, nolabel: i > 0 }));
+      frag.forEach(g => pr.parcels.push({ kind: 'widen', sub: 'frag', poly: g }));
+      let issues = 0, rect = 0, nOwn = 0;
+      for (const pc of pr.parcels) {
+        pc.area = area(pc.poly); pc.label = pc.nolabel ? null : labelPt(pc.poly);
+        if (pc.kind !== 'owner') continue;
+        nOwn++;
+        pc.due = pr.d.ownersTotal * pc.o.frac / tot;
+        pc.value = vOn ? meas(pc.poly) : null;
+        pc.fMain = pc.poly.length ? edgeOn(pc.poly, 1, s) : 0;
+        pc.fRoad = pc.poly.length ? onLen(pc.poly, [...(pr.roadSegs || []), ...segsL]) : 0;
+        pc.front = Math.max(pc.fMain, pc.fRoad);
+        pc.width = minChord(pc.poly, pc.wax != null ? pc.wax : pr.widthAx);
+        pc.issues = [];
+        if (pc.area < 0.01) pc.issues.push('لم تتسع لها الأرض');
+        else {
+          if (minFront > 0 && pc.front < minFront - 1e-6) pc.issues.push('واجهة أقل من ' + minFront + ' م');
+          if (minWidth > 0 && pc.width < minWidth - 1e-6) pc.issues.push('عرض أقل من ' + minWidth + ' م');
+          if (minParcel > 0 && pc.area < minParcel - 0.01) pc.issues.push('مساحة أقل من ' + minParcel + ' م²');
+          if (!vOn && Math.abs(pc.area - pc.due) > Math.max(0.05, pc.due * 0.005)) pc.issues.push('المساحة لا تطابق المستحق');
+          if (pc.o.pos) { pc.posOk = posOK(pc)[0]; if (!pc.posOk) pc.issues.push('لم يتحقق الموقع: ' + (pc.o.posText || '')); }
+        }
+        issues += pc.issues.length;
+        if (pc.area > 0) { const b2 = bbox(pc.poly); rect += pc.area / ((b2[2] - b2[0]) * (b2[3] - b2[1]) || 1); }
+      }
+      if (pr.d.over) issues++;
+      pr.issues = issues; pr.rect = nOwn ? rect / nOwn : 0;
+      pr.muniArea = pr.parcels.filter(x => x.kind === 'muni').reduce((a, x) => a + x.area, 0);
+    }
+    props.sort((a, b) => a.issues - b.issues || b.rect - a.rect);
+    return { T, W, widen, proposals: props, vOn, apprArea, fragArea, roadsOnly: !!cfg.roadsOnly };
+  }
+  // تقسيم يدوي: الضلع على محور u من 0 إلى len، والخطوط عمودية عليه
+  function manual(L, len, count, width, rev, lim) {
+    let n, Wd, rest = false;
+    if (width > 0) { Wd = width; n = count > 0 ? count : Math.max(1, Math.floor(len / width + 1e-6)); rest = n * Wd < len - 0.01; }
+    else if (count > 0) { n = count; Wd = len / count; }
+    else return null;
+    n = Math.min(Math.max(1, n), 200);
+    const pos = k => (rev ? len - k * Wd : k * Wd);
+    const marks = [rev ? BIG : -BIG];
+    for (let k = 1; k < n; k++) marks.push(pos(k));
+    if (rest) marks.push(pos(n));
+    marks.push(rev ? -BIG : BIG);
+    const lots = [];
+    for (let i = 0; i + 1 < marks.length; i++) {
+      const poly = slab(L, 0, Math.min(marks[i], marks[i + 1]), Math.max(marks[i], marks[i + 1]));
+      const isRest = rest && i === marks.length - 2;
+      const a = area(poly), bb = poly.length ? bbox(poly) : [0, 0, 0, 0];
+      const lot = { kind: isRest ? 'rest' : 'lot', no: i + 1, poly, area: a, front: poly.length ? edgeOn(poly, 1, 0) : 0, width: minChord(poly, 1), depth: bb[3] - bb[1], label: labelPt(poly), issues: [] };
+      if (!isRest) {
+        if (a < 0.01) lot.issues.push('خارج حدود الأرض');
+        else {
+          if (lim.minFront > 0 && lot.front < lim.minFront - 1e-6) lot.issues.push('واجهة أقل من ' + lim.minFront + ' م');
+          if (lim.minWidth > 0 && lot.width < lim.minWidth - 1e-6) lot.issues.push('عرض أقل من ' + lim.minWidth + ' م');
+          if (lim.minParcel > 0 && a < lim.minParcel - 0.01) lot.issues.push('مساحة أقل من ' + lim.minParcel + ' م²');
+        }
+      }
+      lots.push(lot);
+    }
+    return { lots, Wd, n, rest };
+  }
+  return { area, sarea, bbox, centroid, frame, plan, labelPt, manual };
+})();
+if (typeof module !== 'undefined') module.exports = G;
+</script>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'ifraz-v1';
+const fmt = (n, d = 2) => (isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hue = i => (i * 137.508 + 150) % 360;
+const oColor = (i, a = 1) => `hsl(${hue(i)} 55% 50% / ${a})`;
+let uid = 1;
+
+function sampleState() {
+  return {
+    sample: true,
+    boundary: [[172000.00, 183000.00], [172086.40, 183007.80], [172093.10, 183096.50], [171994.20, 183089.30]],
+    street: 0,
+    owners: [
+      { id: uid++, name: 'أحمد محمد (مثال)', area: 1850.5 },
+      { id: uid++, name: 'محمود محمد (مثال)', area: 1850.5 },
+      { id: uid++, name: 'ورثة خالد (مثال)', area: 1233.67, pos: 'back' },
+      { id: uid++, name: 'سعاد محمد (مثال)', area: 925.25 },
+      { id: uid++, name: 'يوسف محمد (مثال)', area: 925.25 },
+      { id: uid++, name: 'مريم محمد (مثال)', area: 616.83 }
+    ],
+    roadEdges: [0], fr: 6, rt: 8, seqStart: -1,
+    dmode: 'in', pin: 30, pout: 0, widen: 0, road: 6, minFront: 12, minWidth: 10, minParcel: 700,
+    value: { on: false, d1: 25, d2: 50, p1: 100, p2: 70, p3: 50 },
+    landTitle: '', surveyor: 'إسلام دويكات', sel: null
+  };
+}
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { S = null; }
+if (!S || !Array.isArray(S.boundary)) S = sampleState();
+S.owners.forEach(o => { o.id = uid++; });
+if (S.minParcel == null) S.minParcel = 0;
+if (!Array.isArray(S.roadEdges)) S.roadEdges = [S.street || 0];
+if (S.fr == null) S.fr = 6;
+if (S.seqStart == null) S.seqStart = -1;
+if (S.roadEndIdx == null) S.roadEndIdx = 0;
+if (S.pin == null || S.pin === '') S.pin = 30;
+if (!S.outMode) S.outMode = 'roads';
+if (S.autoMerge == null) S.autoMerge = true;
+if (!Array.isArray(S.approved)) S.approved = [];
+if (S.rt == null) S.rt = 8;
+const extSet = () => new Set([...S.roadEdges.filter(i => i < S.boundary.length), S.street]);
+if (!S.manual) S.manual = { on: false, edge: 0, count: 0, width: 0, rev: false };
+let dxfPolys = [];
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+function toast(msg, ms = 3800) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (t.hidden = true), ms); }
+
+/* ---------- drawing ---------- */
+function view(bb, Wd, Hmax, pad) {
+  const bw = Math.max(bb[2] - bb[0], 1e-6), bh = Math.max(bb[3] - bb[1], 1e-6);
+  const k = Math.min((Wd - 2 * pad) / bw, (Hmax - 2 * pad) / bh);
+  const H = bh * k + 2 * pad, ox = (Wd - bw * k) / 2;
+  return { k, H, x: x => ox + (x - bb[0]) * k, y: y => pad + (bb[3] - y) * k };
+}
+let patId = 0;
+function svgPlan(B, items, opt = {}) {
+  const small = !!opt.small, Wd = 1000, pad = small ? 40 : 80;
+  const v = view(G.bbox(B), Wd, small ? 900 : 1300, pad);
+  const pth = p => 'M' + p.map(q => v.x(q[0]).toFixed(1) + ',' + v.y(q[1]).toFixed(1)).join('L') + 'Z';
+  const pid = 'h' + (patId++);
+  let s = `<svg class="plan" viewBox="0 0 ${Wd} ${v.H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(opt.aria || 'مخطط الأرض')}">`;
+  s += `<defs><pattern id="${pid}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="14" fill="var(--paper)"/><line x1="0" y1="0" x2="0" y2="14" stroke="var(--road)" stroke-width="5"/></pattern></defs>`;
+  for (const it of items) {
+    if (!it.poly.length) continue;
+    let fill = 'none', stroke = 'var(--ink)', sw = small ? 2.5 : 1.6;
+    if (it.kind === 'owner' || it.kind === 'lot') fill = oColor(it.ci, 0.3);
+    if (it.kind === 'rest') fill = 'color-mix(in srgb, var(--muted) 22%, transparent)';
+    if (it.kind === 'muni') fill = 'color-mix(in srgb, var(--muni) 45%, transparent)';
+    if (it.kind === 'road') fill = 'color-mix(in srgb, var(--road) 40%, transparent)';
+    if (it.kind === 'widen') fill = `url(#${pid})`;
+    s += `<path d="${pth(it.poly)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+  }
+  s += `<path d="${pth(B)}" fill="${items.length ? 'none' : 'color-mix(in srgb, var(--accent) 10%, transparent)'}" stroke="var(--ink)" stroke-width="${small ? 5 : 3.2}" stroke-linejoin="round"/>`;
+  const n = B.length, st = opt.street;
+  for (const ei of (opt.ext || [])) { if (ei === st || ei >= n) continue; const a = B[ei], b = B[(ei + 1) % n]; s += `<line x1="${v.x(a[0])}" y1="${v.y(a[1])}" x2="${v.x(b[0])}" y2="${v.y(b[1])}" stroke="var(--ext)" stroke-width="${small ? 14 : 9}" stroke-linecap="round"/>`; }
+  if (st != null) { const a = B[st], b = B[(st + 1) % n]; s += `<line x1="${v.x(a[0])}" y1="${v.y(a[1])}" x2="${v.x(b[0])}" y2="${v.y(b[1])}" stroke="var(--street)" stroke-width="${small ? 14 : 9}" stroke-linecap="round"/>`; }
+  if (opt.hl != null && opt.hl !== st) { const a = B[opt.hl], b = B[(opt.hl + 1) % n]; s += `<line x1="${v.x(a[0])}" y1="${v.y(a[1])}" x2="${v.x(b[0])}" y2="${v.y(b[1])}" stroke="var(--accent)" stroke-width="${small ? 14 : 9}" stroke-dasharray="${small ? '28 14' : '18 9'}" stroke-linecap="round"/>`; }
+  if (opt.edges) {
+    const cw = G.sarea(B) > 0 ? 1 : -1;
+    for (let i = 0; i < n; i++) {
+      const a = B[i], b = B[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const mx = (v.x(a[0]) + v.x(b[0])) / 2, my = (v.y(a[1]) + v.y(b[1])) / 2;
+      let nx = (b[1] - a[1]) / L * cw, ny = (b[0] - a[0]) / L * cw;
+      s += `<text x="${(mx + nx * 34).toFixed(1)}" y="${(my + ny * 34).toFixed(1)}" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="${i === st ? 'var(--street)' : 'var(--muted)'}" font-family="IBM Plex Mono, monospace">${fmt(L)}</text>`;
+      s += `<line data-e="${i}" x1="${v.x(a[0])}" y1="${v.y(a[1])}" x2="${v.x(b[0])}" y2="${v.y(b[1])}" stroke="transparent" stroke-width="40" style="cursor:pointer"><title>الضلع ${i + 1}</title></line>`;
+    }
+    B.forEach((q, i) => { s += `<circle cx="${v.x(q[0])}" cy="${v.y(q[1])}" r="5" fill="var(--ink)"/><text x="${v.x(q[0]) + 10}" y="${v.y(q[1]) - 10}" font-size="18" fill="var(--ink)" font-family="IBM Plex Mono, monospace">${i + 1}</text>`; });
+  }
+  for (const it of items) {
+    if (!it.lab) continue;
+    const x = v.x(it.lab[0]), y = v.y(it.lab[1]);
+    const lines = small ? [it.tag] : it.text;
+    const fs = small ? 44 : 21;
+    lines.forEach((t, j) => {
+      const yy = y + (j - (lines.length - 1) / 2) * fs * 1.15;
+      s += `<text x="${x.toFixed(1)}" y="${yy.toFixed(1)}" font-size="${j === 0 && !small ? fs + 3 : fs}" font-weight="${j === 0 ? 700 : 400}" text-anchor="middle" dominant-baseline="middle" fill="var(--ink)" stroke="var(--paper)" stroke-width="${small ? 6 : 4}" paint-order="stroke" font-family="IBM Plex Sans Arabic, Tahoma, sans-serif">${esc(t)}</text>`;
+    });
+  }
+  return s + '</svg>';
+}
+
+/* ---------- land ---------- */
+function renderLand() {
+  const B = S.boundary, n = B.length;
+  const sel = $('street');
+  if (n < 3) { $('landView').innerHTML = '<div class="empty">ارفع ملف DXF فيه بوليلاين مغلق لحدود الأرض، أو الصق الإحداثيات.</div>'; $('landStats').innerHTML = ''; sel.innerHTML = ''; return; }
+  if (S.street >= n) S.street = 0;
+  sel.innerHTML = B.map((a, i) => { const b = B[(i + 1) % n]; return `<option value="${i}">الضلع ${i + 1} (من ${i + 1} إلى ${(i + 1) % n + 1}) — ${fmt(Math.hypot(b[0] - a[0], b[1] - a[1]))} م</option>`; }).join('');
+  sel.value = S.street;
+  if (S.manual.edge >= n) S.manual.edge = 0;
+  $('mEdge').innerHTML = sel.innerHTML; $('mEdge').value = S.manual.edge;
+  const en = seqEnds();
+  $('seqStart').innerHTML = en.map(v => `<option value="${v}">الرأس ${v + 1} — طرف الشارع الرئيسي</option>`).join('');
+  $('seqStart').value = (S.seqStart >= 0 && en.includes(S.seqStart)) ? S.seqStart : en[0];
+  let per = 0; for (let i = 0; i < n; i++) { const a = B[i], b = B[(i + 1) % n]; per += Math.hypot(b[0] - a[0], b[1] - a[1]); }
+  const T = G.area(B), deedSum = S.owners.reduce((a, o) => a + (+o.area || 0), 0);
+  $('landStats').innerHTML = `<span><b>المساحة</b><span class="num">${fmt(T)} م²</span></span><span><b>المحيط</b><span class="num">${fmt(per)} م</span></span><span><b>عدد الرؤوس</b><span class="num">${n}</span></span>` +
+    (deedSum > 0 ? `<span><b>مجموع الحصص المدخلة</b><span class="num">${fmt(deedSum)}</span></span>` : '');
+  const ex = extSet();
+  $('extEdges').innerHTML = B.map((q, i) => `<button class="etog" data-ee="${i}" aria-pressed="${ex.has(i)}"${i === S.street ? ' disabled title="الشارع الرئيسي"' : ''}>الضلع ${i + 1}${i === S.street ? ' (الرئيسي)' : ''}</button>`).join('');
+  $('extEdges').querySelectorAll('[data-ee]').forEach(b => b.addEventListener('click', () => { const i = +b.dataset.ee; const set = new Set(S.roadEdges); set.has(i) ? set.delete(i) : set.add(i); S.roadEdges = [...set]; changed(true); }));
+  $('landView').innerHTML = svgPlan(B, (S.approved || []).map(q => ({ kind: 'widen', poly: q })), { edges: true, street: S.street, ext: [...ex], aria: 'حدود الأرض' });
+  $('landView').querySelectorAll('[data-e]').forEach(el => el.addEventListener('click', () => { S.street = +el.dataset.e; changed(true); }));
+}
+$('street').addEventListener('change', e => { S.street = +e.target.value; changed(true); });
+/* طرفا الشارع الرئيسي: الأول هو بداية التسلسل الطبيعية */
+function seqEnds() {
+  const B = S.boundary, n = B.length; if (n < 3) return [0, 1];
+  const a = S.street % n, b = (a + 1) % n, f = G.frame(B, a);
+  return Math.abs(f.to(B[a])[0]) < 1e-6 ? [a, b] : [b, a];
+}
+$('roadEnd').addEventListener('change', e => { S.roadEndIdx = +e.target.value; if (S.roadEndIdx) S.sel = 'ce'; changed(false); });
+$('seqStart').addEventListener('change', e => { S.seqStart = +e.target.value; changed(false); });
+
+function parseDXF(txt) {
+  const Ls = txt.split(/\r?\n/), pr = [];
+  for (let i = 0; i + 1 < Ls.length; i += 2) pr.push([parseInt(Ls[i].trim(), 10), Ls[i + 1].trim()]);
+  const layerColor = {}, polys = [], lines = [];
+  let sec = '', bulge = false, i = 0;
+  const readHead = j => { const h = { layer: '0', color: 256, flag: 0 }; while (j < pr.length && pr[j][0] !== 0) { const [c, v] = pr[j]; if (c === 8) h.layer = v; if (c === 62) h.color = +v; if (c === 70) h.flag = +v; j++; } return [h, j]; };
+  while (i < pr.length) {
+    const [c, v] = pr[i];
+    if (c === 0 && v === 'SECTION') { sec = pr[i + 1] ? pr[i + 1][1] : ''; i += 2; continue; }
+    if (c === 0 && v === 'ENDSEC') { sec = ''; i++; continue; }
+    if (sec === 'TABLES' && c === 0 && v === 'LAYER') {
+      let j = i + 1, nm = '', col = 7; while (j < pr.length && pr[j][0] !== 0) { if (pr[j][0] === 2) nm = pr[j][1]; if (pr[j][0] === 62) col = Math.abs(+pr[j][1]); j++; }
+      if (nm) layerColor[nm] = col; i = j; continue;
+    }
+    if (sec === 'ENTITIES' && c === 0 && v === 'LINE') {
+      let j = i + 1; const e = { layer: '0', color: 256, p: [NaN, NaN], q: [NaN, NaN] };
+      while (j < pr.length && pr[j][0] !== 0) { const [cc, vv] = pr[j]; if (cc === 8) e.layer = vv; if (cc === 62) e.color = +vv; if (cc === 10) e.p[0] = +vv; if (cc === 20) e.p[1] = +vv; if (cc === 11) e.q[0] = +vv; if (cc === 21) e.q[1] = +vv; j++; }
+      lines.push(e); i = j; continue;
+    }
+    if (sec === 'ENTITIES' && c === 0 && v === 'LWPOLYLINE') {
+      let j = i + 1, pts = [], cur = null; const h = { layer: '0', color: 256, flag: 0 };
+      while (j < pr.length && pr[j][0] !== 0) { const [cc, vv] = pr[j]; if (cc === 8) h.layer = vv; if (cc === 62) h.color = +vv; if (cc === 70) h.flag = +vv; if (cc === 10) { cur = [+vv, 0]; pts.push(cur); } if (cc === 20 && cur) cur[1] = +vv; if (cc === 42 && Math.abs(+vv) > 1e-9) bulge = true; j++; }
+      polys.push({ pts, closed: (h.flag & 1) === 1, layer: h.layer, color: h.color }); i = j; continue;
+    }
+    if (sec === 'ENTITIES' && c === 0 && v === 'POLYLINE') {
+      let [h, j] = readHead(i + 1); const pts = [];
+      while (j < pr.length && pr[j][0] === 0 && pr[j][1] === 'VERTEX') {
+        let k = j + 1, x = null, y = null, vf = 0;
+        while (k < pr.length && pr[k][0] !== 0) { const [cc, vv] = pr[k]; if (cc === 10) x = +vv; if (cc === 20) y = +vv; if (cc === 70) vf = +vv; if (cc === 42 && Math.abs(+vv) > 1e-9) bulge = true; k++; }
+        if (x != null && y != null && !(vf & 16)) pts.push([x, y]); j = k;
+      }
+      polys.push({ pts, closed: (h.flag & 1) === 1, layer: h.layer, color: h.color }); i = j; continue;
+    }
+    i++;
+  }
+  const isBlue = e => e.color === 5 || ((e.color === 256 || e.color == null) && layerColor[e.layer] === 5);
+  const isRed = e => e.color === 1 || ((e.color === 256 || e.color == null) && layerColor[e.layer] === 1);
+  const blue = [], red = [];
+  lines.filter(isBlue).forEach(e => { if (isFinite(e.p[0] + e.p[1] + e.q[0] + e.q[1])) blue.push([e.p, e.q]); });
+  const out = [];
+  for (const p of polys) {
+    let pts = p.pts.filter(q => isFinite(q[0]) && isFinite(q[1]));
+    if (isRed(p) && pts.length >= 3) { const a = pts[0], b = pts[pts.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-4) pts.pop(); red.push(pts); continue; }
+    if (isBlue(p)) { for (let k = 0; k + 1 < pts.length; k++) blue.push([pts[k], pts[k + 1]]); if (p.closed && pts.length > 2) blue.push([pts[pts.length - 1], pts[0]]); continue; }
+    if (pts.length > 2) { const a = pts[0], b = pts[pts.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-4) { pts.pop(); p.closed = true; } }
+    if (pts.length >= 3) out.push({ pts, closed: p.closed, layer: p.layer, area: G.area(pts) });
+  }
+  out.sort((a, b) => (b.closed - a.closed) || b.area - a.area);
+  return { polys: out, bulge, blue, red };
+}
+let dxfBlue = [], dxfRed = [];
+function inPoly(pt, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+function matchRoads(pts, segs) {
+  const n = pts.length, res = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 1e-6) continue;
+    const ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, tol = Math.max(0.3, L * 0.01);
+    let cov = 0;
+    for (const [p, q] of segs) {
+      const dp = Math.abs((p[0] - a[0]) * uy - (p[1] - a[1]) * ux), dq = Math.abs((q[0] - a[0]) * uy - (q[1] - a[1]) * ux);
+      if (dp > tol || dq > tol) continue;
+      const tp = Math.max(0, Math.min(L, (p[0] - a[0]) * ux + (p[1] - a[1]) * uy)), tq = Math.max(0, Math.min(L, (q[0] - a[0]) * ux + (q[1] - a[1]) * uy));
+      cov += Math.abs(tq - tp);
+    }
+    if (cov >= L * 0.3) res.push(i);
+  }
+  return res;
+}
+function setBoundary(pts, roads, red) {
+  S.boundary = pts.map(q => [q[0], q[1]]);
+  const bb = G.bbox(pts);
+  S.approved = (red || []).filter(r => { const b = G.bbox(r); return b[0] < bb[2] && b[2] > bb[0] && b[1] < bb[3] && b[3] > bb[1]; });
+  roads = roads || [];
+  const elen = i => { const a = pts[i], b = pts[(i + 1) % pts.length]; return Math.hypot(b[0] - a[0], b[1] - a[1]); };
+  S.street = roads.length ? roads.slice().sort((x, y) => elen(y) - elen(x))[0] : 0;
+  S.roadEdges = roads.length ? roads : [S.street];
+  S.sample = false; S.sel = null; changed(true);
+}
+const roadMsg = r => r.length ? 'وجدت طريقاً خارجياً (خط أزرق) على ' + (r.length === 1 ? 'الضلع ' : 'الأضلاع ') + r.map(i => i + 1).join('، ') + '.' : '';
+$('dxfFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = '';
+  const r = new FileReader();
+  r.onload = () => {
+    const txt = String(r.result);
+    if (txt.startsWith('AutoCAD Binary DXF')) { toast('الملف DXF ثنائي. احفظه من أوتوكاد بصيغة DXF نصية (ASCII).'); return; }
+    const { polys, bulge, blue, red } = parseDXF(txt);
+    dxfBlue = blue; dxfRed = red;
+    if (!polys.length) { toast('لم أجد بوليلاين في الملف. ارسم حدود الأرض كبوليلاين مغلق واحفظ DXF.'); return; }
+    dxfPolys = polys.slice(0, 30);
+    const box = $('polyPickBox');
+    if (dxfPolys.length > 1) {
+      $('polyPick').innerHTML = dxfPolys.map((p, i) => `<option value="${i}">${p.closed ? 'مغلق' : 'مفتوح'} — ${fmt(p.area)} م² — ${p.pts.length} رأس${p.layer ? ' — طبقة ' + esc(p.layer) : ''}</option>`).join('');
+      box.hidden = false;
+    } else box.hidden = true;
+    const roads = matchRoads(dxfPolys[0].pts, dxfBlue);
+    setBoundary(dxfPolys[0].pts, roads, dxfRed);
+    const msgs = [];
+    if (S.approved.length) msgs.push('وجدت ' + (S.approved.length === 1 ? 'اقتطاعاً مسبقاً' : S.approved.length + ' اقتطاعات مسبقة') + ' (بوليلاين أحمر) داخل الأرض، وسيُخصم ضمن الاقتطاع.');
+    else if (dxfRed.length) msgs.push('في الملف بوليلاين أحمر لا يتقاطع مع حدود الأرض.');
+    if (roadMsg(roads)) msgs.push(roadMsg(roads));
+    else if (dxfBlue.length) msgs.push('في الملف خطوط زرقاء لكنها لا تنطبق على أي ضلع من الحدود.');
+    if (!dxfPolys[0].closed) msgs.push('البوليلاين غير مغلق، أغلقته تلقائياً.');
+    if (bulge) msgs.push('في الملف أقواس (bulge) وتم اعتبارها خطوطاً مستقيمة.');
+    toast(msgs.join(' ') || ('تم تحميل الحدود: ' + fmt(dxfPolys[0].area) + ' م²'));
+  };
+  r.readAsText(f);
+});
+$('polyPick').addEventListener('change', e => { const pts = dxfPolys[+e.target.value].pts, r = matchRoads(pts, dxfBlue); setBoundary(pts, r, dxfRed); if (roadMsg(r)) toast(roadMsg(r)); });
+$('togglePaste').addEventListener('click', () => { $('pasteBox').hidden = !$('pasteBox').hidden; });
+$('useCoords').addEventListener('click', () => {
+  const pts = [];
+  $('coords').value.split(/\r?\n/).forEach(l => { const m = l.match(/-?\d+(?:\.\d+)?/g); if (m && m.length >= 2) pts.push([+m[m.length - 2], +m[m.length - 1]]); });
+  if (pts.length > 2) { const a = pts[0], b = pts[pts.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-4) pts.pop(); }
+  if (pts.length < 3) { toast('أحتاج 3 نقاط على الأقل، كل سطر فيه X و Y.'); return; }
+  setBoundary(pts); $('pasteBox').hidden = true;
+});
+
+/* ---------- owners ---------- */
+const posText = v => !v ? '' : v === 'front' ? 'على الشارع الرئيسي' : v === 'back' ? 'في العمق' : 'بجانب الضلع ' + (+v.slice(1) + 1);
+function posOptions(cur) {
+  const n = S.boundary.length, opts = [['', 'حر — حسب الترتيب'], ['front', 'على الشارع الرئيسي'], ['back', 'في العمق (بعيد عن الشارع)']];
+  for (let i = 0; i < n; i++) if (i !== S.street) opts.push(['e' + i, 'بجانب الضلع ' + (i + 1)]);
+  return opts.map(([v, t]) => `<option value="${v}"${v === (cur || '') ? ' selected' : ''}>${t}</option>`).join('');
+}
+function renderRoadEnd() {
+  const sel = $('roadEnd'), n = S.owners.length;
+  if (S.roadEndIdx > n - 1) S.roadEndIdx = 0;
+  let h = '<option value="0">حتى آخر الأرض</option>';
+  for (let i = 1; i < n - 1; i++) h += `<option value="${i + 1}">ينتهي بعد القسيمة ${i + 1} — ${esc(shortName(S.owners[i].name))}</option>`;
+  sel.innerHTML = h; sel.value = String(S.roadEndIdx || 0);
+}
+function renderOwners() {
+  renderRoadEnd();
+  const box = $('owners'), sum = S.owners.reduce((a, o) => a + (+o.area || 0), 0);
+  if (!S.owners.length) { box.innerHTML = '<div class="empty">لا يوجد ملاك بعد. استورد ملف PDF أو CSV من حاسب الكواشين، أو أضف مالكاً.</div>'; return; }
+  box.innerHTML = `<div class="orow ohead"><span></span><span>المالك</span><span>الحصة</span><span class="poshd">الموقع المطلوب</span><span class="pct">النسبة</span><span></span></div>` +
+    S.owners.map((o, i) => `<div class="orow" data-id="${o.id}">
+      <span class="idx"><span class="sw" style="background:${oColor(i, .45)}"></span></span>
+      <input type="text" id="on${o.id}" value="${esc(o.name)}" data-f="name" aria-label="اسم المالك ${i + 1}">
+      <input type="number" id="oa${o.id}" class="num" value="${o.area}" data-f="area" step="0.01" min="0" inputmode="decimal" aria-label="حصة المالك ${i + 1}">
+      <select id="op${o.id}" data-f="pos" class="${o.pos ? 'set' : ''}" aria-label="الموقع المطلوب للمالك ${i + 1}">${posOptions(o.pos)}</select>
+      <span class="pct">${sum ? fmt((+o.area || 0) / sum * 100) + '%' : ''}</span>
+      <span class="acts"><button class="icon" data-a="up" aria-label="أعلى">↑</button><button class="icon" data-a="down" aria-label="أسفل">↓</button><button class="icon" data-a="del" aria-label="حذف">✕</button></span>
+    </div>`).join('') +
+    `<div class="row otot"><span>عدد الملاك: <span class="num">${S.owners.length}</span></span><span>— المجموع: <span class="num">${fmt(sum)}</span></span></div>`;
+}
+$('owners').addEventListener('input', e => {
+  const row = e.target.closest('.orow'); if (!row || !e.target.dataset.f) return;
+  const o = S.owners.find(x => x.id == row.dataset.id); if (!o) return;
+  if (e.target.dataset.f === 'pos') { o.pos = e.target.value; e.target.classList.toggle('set', !!o.pos); changed(false); return; }
+  if (e.target.dataset.f === 'name') o.name = e.target.value; else o.area = parseFloat(e.target.value) || 0;
+  const sum = S.owners.reduce((a, x) => a + (+x.area || 0), 0);
+  document.querySelectorAll('#owners .orow[data-id]').forEach(r => { const x = S.owners.find(q => q.id == r.dataset.id); r.querySelector('.pct').textContent = sum ? fmt((+x.area || 0) / sum * 100) + '%' : ''; });
+  changed(false);
+});
+$('owners').addEventListener('click', e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const row = b.closest('.orow'), i = S.owners.findIndex(x => x.id == row.dataset.id);
+  if (b.dataset.a === 'del') S.owners.splice(i, 1);
+  if (b.dataset.a === 'up' && i > 0) [S.owners[i - 1], S.owners[i]] = [S.owners[i], S.owners[i - 1]];
+  if (b.dataset.a === 'down' && i < S.owners.length - 1) [S.owners[i + 1], S.owners[i]] = [S.owners[i], S.owners[i + 1]];
+  changed(true);
+});
+$('addOwner').addEventListener('click', () => { S.owners.push({ id: uid++, name: 'مالك ' + (S.owners.length + 1), area: 0 }); changed(true); setTimeout(() => { const l = document.querySelectorAll('#owners input[data-f=name]'); l[l.length - 1]?.select(); }, 0); });
+$('togglePasteOwners').addEventListener('click', () => { $('ownersPasteBox').hidden = !$('ownersPasteBox').hidden; });
+
+const AR_DIG = s => s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫]/g, '.');
+const SKIP = /(المجموع|مجموع|الإجمالي|اجمالي|أصل|اصل الحصص|مساحة القطعة|رقم القطعة|الحوض|الاسم|اسم المالك|الصفحة|تطبيق|حاسب)/;
+function parseRows(text) {
+  const rows = [];
+  for (let line of text.split(/\r?\n/)) {
+    line = AR_DIG(line).trim(); if (!line || SKIP.test(line)) continue;
+    const nums = [...line.matchAll(/\d+(?:[.,]\d+)?/g)].map(m => m[0].replace(',', '.'));
+    const name = line.replace(/\d+(?:[.,]\d+)?/g, ' ').replace(/[|:؛;,،\t\-–_/\\()\[\]%*=]+/g, ' ').replace(/\s*(م²|م2|متر مربع|متر|م)\s*$/,'').replace(/\s+/g, ' ').trim();
+    if (!nums.length || !/[؀-ۿ]{2,}/.test(name)) continue;
+    const dec = nums.filter(n => n.includes('.'));
+    const area = parseFloat(dec.length ? dec[dec.length - 1] : nums[nums.length - 1]);
+    if (area > 0) rows.push({ name, area });
+  }
+  return rows;
+}
+function applyOwners(replace) {
+  const rows = parseRows($('ownersText').value);
+  if (!rows.length) { toast('لم أتعرف على أي سطر فيه اسم ورقم.'); return; }
+  const list = rows.map(r => ({ id: uid++, name: r.name, area: r.area }));
+  if (replace || S.sample) S.owners = list; else S.owners.push(...list);
+  S.sample = false; $('ownersPasteBox').hidden = true; changed(true);
+  toast('تم إدخال ' + rows.length + ' مالك. راجع الأسماء والحصص.');
+}
+$('useOwners').addEventListener('click', () => applyOwners(true));
+$('appendOwners').addEventListener('click', () => applyOwners(false));
+
+/* بيانات حاسب الكواشين: ورثة المتوفى يحلّون مكانه */
+function applyKData(d) {
+  const rows = (d.owners || []).filter(r => r && r.n && +r.a > 0);
+  if (!rows.length) { toast('لم أجد ملاكاً في الملف.'); return; }
+  S.owners = rows.map(r => ({ id: uid++, name: String(r.n), area: Math.round(+r.a * 10000) / 10000 }));
+  const h = d.h || {};
+  const t = [h.vil, h.basin ? 'حوض ' + h.basin : '', h.parcel ? 'قطعة ' + h.parcel : ''].filter(Boolean).join(' – ');
+  if (t) { S.landTitle = t; $('landTitle').value = t; }
+  S.sample = false; S.roadEndIdx = 0; S.sel = null; changed(true);
+  const sum = S.owners.reduce((a, o) => a + o.area, 0), T = S.boundary.length > 2 ? G.area(S.boundary) : 0;
+  const heirs = rows.filter(r => r.of).length;
+  toast(`قرأت جدول حاسب الكواشين. عدد الملاك: ${rows.length}${heirs ? ` (منهم ${heirs} ورثة بدل المتوفين)` : ''}. مجموع الحصص ${fmt(sum)} م²` + (T ? `، ومساحة الرسم ${fmt(T)} م². توزّع النسب على مساحة الرسم.` : '.'), 9000);
+}
+function importKCsv(text) {
+  const rows = [], cur = []; let f = '', q = false;
+  text = text.replace(/^\ufeff/, '');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ',') { cur.push(f); f = ''; } else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; cur.push(f); rows.push(cur.splice(0)); f = ''; } else f += c;
+  }
+  if (f || cur.length) { cur.push(f); rows.push(cur.splice(0)); }
+  const hi = rows.findIndex(r => r[2] === 'الاسم' && /المساحة/.test(r[6] || ''));
+  if (hi < 0) { toast('هذا الملف ليس جدول حاسب الكواشين. صدّر CSV من حاسب الكواشين أو استخدم «لصق جدول».', 7000); return; }
+  const out = []; let dead = null;
+  for (const r of rows.slice(hi + 1)) {
+    const name = String(r[2] || '').replace(/^\s*↳\s*/, '').trim(), a = parseFloat(String(r[6] || '').replace(/,/g, ''));
+    if (!name || name === 'المجموع' || !(a > 0)) continue;
+    if (r[3] === 'وريث') { if (dead) { dead.drop = true; out.push({ n: name, a, of: dead.n }); } continue; }
+    const o = { n: name, a }; dead = r[3] === 'متوفى' ? o : null; out.push(o);
+  }
+  const g = rows.slice(0, hi), cell = (k) => { for (const r of g) { const i = r.indexOf(k); if (i >= 0) return r[i + 1] || ''; } return ''; };
+  applyKData({ h: { vil: cell('القرية'), basin: cell('الحوض'), parcel: cell('رقم القطعة') }, owners: out.filter(o => !o.drop) });
+}
+/* داخل تطبيق «المساح إسلام» يقرأ الإفراز الحصص مباشرة مما حفظه حاسب الكواشين على نفس الجهاز */
+function hisasData() { try { const d = JSON.parse(localStorage.getItem('hisas-ifraz') || 'null'); return d && d.owners && d.owners.length ? d : null; } catch (e) { return null; } }
+(() => { const d = hisasData(); if (d) { $('fromHisas').hidden = false; $('fromHisas').title = [d.h && d.h.vil, d.h && d.h.parcel ? 'قطعة ' + d.h.parcel : ''].filter(Boolean).join(' – '); } })();
+$('fromHisas').addEventListener('click', () => { const d = hisasData(); if (d) applyKData(d); else toast('لا توجد حصص محفوظة في حاسب الكواشين.'); });
+const loadScript = src => new Promise((res, rej) => { if (document.querySelector(`script[src="${src}"]`)) return res(); const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load')); document.head.appendChild(s); });
+const CDN = 'lib/';
+$('pdfFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = '';
+  if (/\.csv$/i.test(f.name) || f.type === 'text/csv') { try { importKCsv(await f.text()); } catch (err) { toast('تعذرت قراءة ملف CSV.'); } return; }
+  try {
+    toast('جاري قراءة الملف…', 20000);
+    await loadScript(CDN + 'pdf.js/3.11.174/pdf.worker.min.js');
+    await loadScript(CDN + 'pdf.js/3.11.174/pdf.min.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = CDN + 'pdf.js/3.11.174/pdf.worker.min.js';
+    const doc = await pdfjsLib.getDocument({ data: await f.arrayBuffer(), isEvalSupported: false, disableFontFace: true }).promise;
+    /* حاسب الكواشين (3.7 وما بعد) يضع داخل الـPDF بيانات مخفية: الاسم والمساحة لكل مالك */
+    let kw = ''; try { const md = await doc.getMetadata(); kw = String((md && md.info && md.info.Keywords) || ''); } catch (x) {}
+    const km = kw.match(/IFRAZ1:([A-Za-z0-9+/=]+)/);
+    if (km) { applyKData(JSON.parse(decodeURIComponent(escape(atob(km[1]))))); return; }
+    const lines = [];
+    for (let p = 1; p <= doc.numPages; p++) {
+      const tc = await (await doc.getPage(p)).getTextContent(), g = new Map();
+      tc.items.forEach(it => { if (!it.str || !it.str.trim()) return; const y = Math.round(it.transform[5] / 3); if (!g.has(y)) g.set(y, []); g.get(y).push(it); });
+      [...g.entries()].sort((a, b) => b[0] - a[0]).forEach(([, its]) => lines.push(its.sort((a, b) => b.transform[4] - a.transform[4]).map(t => t.str.trim()).join('    ')));
+    }
+    if (!lines.join('').replace(/\s/g, '')) { toast('هذا الـPDF صورة بدون بيانات، صادر من نسخة قديمة من حاسب الكواشين. حدّث حاسب الكواشين إلى 3.7 وصدّر الـPDF من جديد، أو صدّر منه ملف CSV واستورده هنا.', 9000); return; }
+    const rows = parseRows(lines.join('\n'));
+    $('ownersText').value = rows.length ? rows.map(r => r.name + '    ' + r.area).join('\n') : lines.join('\n');
+    $('ownersPasteBox').hidden = false;
+    toast(rows.length ? `قرأت ${rows.length} سطر. راجعها ثم اضغط «اعتماد».` : 'قرأت النص لكن لم أميّز الأسطر. عدّلها ثم اعتمد.', 6000);
+    $('ownersText').focus();
+  } catch (err) { toast('تعذرت قراءة الملف. جرّب «لصق جدول».'); }
+});
+
+/* ---------- settings ---------- */
+const NUMF = ['pin', 'pout', 'widen', 'road', 'fr', 'rt', 'minFront', 'minWidth', 'minParcel'];
+const VF = ['d1', 'd2', 'p1', 'p2', 'p3'];
+function fillSettings() {
+  NUMF.forEach(k => ($(k).value = S[k]));
+  VF.forEach(k => ($(k).value = S.value[k]));
+  $('vOn').checked = S.value.on; $('vFields').hidden = !S.value.on;
+  $(S.dmode === 'out' ? 'dmOut' : 'dmIn').checked = true;
+  $('landTitle').value = S.landTitle || ''; $('surveyor').value = S.surveyor || '';
+  $('autoMerge').checked = !!S.autoMerge; $('outMode').value = S.outMode;
+  syncMode();
+  $('mOn').checked = S.manual.on; $('mFields').hidden = $('mHint').hidden = !S.manual.on;
+  $('mCount').value = S.manual.count || ''; $('mWidth').value = S.manual.width || ''; $('mRev').checked = S.manual.rev;
+}
+$('mOn').addEventListener('change', e => { S.manual.on = e.target.checked; $('mFields').hidden = $('mHint').hidden = !S.manual.on; if (S.manual.on) S.sel = 'm'; changed(false); });
+$('mEdge').addEventListener('change', e => { S.manual.edge = +e.target.value; S.sel = 'm'; changed(false); });
+$('mCount').addEventListener('input', e => { S.manual.count = Math.max(0, Math.floor(+e.target.value || 0)); S.sel = 'm'; changed(false); });
+$('mWidth').addEventListener('input', e => { S.manual.width = Math.max(0, +e.target.value || 0); S.sel = 'm'; changed(false); });
+$('mRev').addEventListener('change', e => { S.manual.rev = e.target.checked; S.sel = 'm'; changed(false); });
+NUMF.forEach(k => $(k).addEventListener('input', e => { S[k] = parseFloat(e.target.value) || 0; changed(false); }));
+VF.forEach(k => $(k).addEventListener('input', e => { S.value[k] = parseFloat(e.target.value) || 0; changed(false); }));
+$('vOn').addEventListener('change', e => { S.value.on = e.target.checked; $('vFields').hidden = !S.value.on; changed(false); });
+document.querySelectorAll('input[name=dmode]').forEach(r => r.addEventListener('change', e => { S.dmode = e.target.value; syncMode(); changed(false); }));
+function syncMode() {
+  const out = S.dmode === 'out';
+  $('pinBox').hidden = out; $('outModeBox').hidden = !out; $('poutBox').hidden = !out || S.outMode !== 'pct';
+  $('dedHint').textContent = !out
+    ? 'داخل حدود البلدية الاقتطاع ' + (+S.pin || 0) + '% بالضبط من كامل القطعة' + (+S.pin !== 30 ? ' (عدّلتها يدوياً، والقانونية 30%)' : '') + ': الاقتطاع المسبق المرسوم بالأحمر + توسعة وفضلات الشارع + الطريق الداخلي المقترح، والباقي حتى ' + (+S.pin || 0) + '% قسيمة مستقلة للبلدية. إذا تجاوزت الطرق هذه النسبة يظهر تنبيه أحمر.'
+    : S.outMode === 'pct' ? 'خارج الحدود بنسبة ثابتة: الطرق تُخصم من النسبة أولاً، والباقي قسيمة مستقلة.'
+    : 'خارج حدود البلدية: الاقتطاع هو مساحة الطرق فقط (المعتمدة والداخلية والفضلات) مهما كانت، ويُخصم من الشركاء بالتناسب. لا توجد قسيمة للبلدية.';
+}
+$('pin').addEventListener('input', () => syncMode());
+$('pinReset').addEventListener('click', () => { S.pin = 30; $('pin').value = 30; syncMode(); changed(false); });
+$('outMode').addEventListener('change', e => { S.outMode = e.target.value; syncMode(); changed(false); });
+$('autoMerge').addEventListener('change', e => { S.autoMerge = e.target.checked; changed(false); });
+$('preIn').addEventListener('click', () => { Object.assign(S, { dmode: 'in', pin: 30, minParcel: 600, minWidth: 18, autoMerge: true }); fillSettings(); changed(false); toast('داخل البلدية: اقتطاع 30%، أقل مساحة 600 م²، أقل عرض 18 م.'); });
+$('preOut').addEventListener('click', () => { Object.assign(S, { dmode: 'out', outMode: 'roads', roadEndIdx: 0 }); fillSettings(); renderRoadEnd(); changed(false); toast('خارج البلدية: الاقتطاع = مساحة الطرق فقط، والطريق يصل لآخر حصة.'); });
+$('landTitle').addEventListener('input', e => { S.landTitle = e.target.value; save(); });
+$('surveyor').addEventListener('input', e => { S.surveyor = e.target.value; save(); });
+$('clearSample').addEventListener('click', () => { S.boundary = []; S.owners = []; S.sample = false; S.sel = null; changed(true); });
+
+/* ---------- compute ---------- */
+let R = null, F = null;
+function compute() {
+  R = null;
+  const B = S.boundary, own = S.owners.filter(o => (+o.area || 0) > 0);
+  if (B.length < 3) return;
+  const man = manualProposal(B);
+  if (!own.length) { if (man) R = { proposals: [man], T: G.area(B), W: 0, vOn: false, pct: 0 }; return; }
+  F = G.frame(B, S.street);
+  const ends = seqEnds();
+  if (S.seqStart >= 0 && S.seqStart === ends[1]) { const F0 = F; F = { to: q => { const r = F0.to(q); return [-r[0], r[1]]; }, from: q => F0.from([-q[0], q[1]]) }; }
+  const L = B.map(F.to);
+  const roadsOnly = S.dmode === 'out' && S.outMode !== 'pct';
+  const pct = S.dmode === 'out' ? (roadsOnly ? 0 : (+S.pout || 0) / 100) : (S.pin === '' || S.pin == null ? LEGAL_PCT : (+S.pin || 0) / 100);
+  const sum = own.reduce((a, o) => a + +o.area, 0);
+  const base = own.map(o => ({ o, frac: +o.area / sum, idx: S.owners.indexOf(o) }));
+  const minP = Math.max(0, +S.minParcel || 0);
+  let owners = groupOwners(base, G.area(B) * (1 - Math.min(0.95, Math.max(0, pct))), minP);
+  const v = S.value;
+  const approved = (S.approved || []).map(r => r.map(F.to));
+  const doPlan = (us, only) => { us.forEach(u => { u.endMark = S.roadEndIdx > 0 && u.members.some(m => m.idx === S.roadEndIdx - 1); }); return G.plan({ L, s: Math.max(0, +S.widen || 0), w: Math.max(0, +S.road || 0), p: Math.min(0.95, Math.max(0, pct)), roadsOnly, approved, only, owners: us, minParcel: minP, PC: window.polygonClipping || null, fr: +S.fr || 0, rt: +S.rt || 0, roadSet: extSet(), street: S.street, minFront: +S.minFront || 0, minWidth: +S.minWidth || 0, value: { on: v.on, d1: v.d1, d2: Math.max(v.d1, v.d2), p1: v.p1, p2: v.p2, p3: v.p3 } }); };
+  /* دمج تلقائي لكل اقتراح على حدة: الحصة التي لا تحقق العرض أو المساحة أو الواجهة تُدمج مع جارتها في التسلسل */
+  const FAIL = /واجهة أقل|عرض أقل|مساحة أقل|لم تتسع/;
+  if (S.autoMerge && (minP > 0 || +S.minWidth > 0 || +S.minFront > 0) && owners.length > 1) {
+    const out = []; let meta = null;
+    for (const key of ['sA', 'sB', 'c', 'r1', 'r2', 'ce']) {
+      let us = owners.slice(), r = doPlan(us, key), pr = r.proposals[0], n = 0;
+      meta = meta || r;
+      for (let it = 0; pr && it < 15 && us.length > 1; it++) {
+        const bad = new Set(pr.parcels.filter(pc => pc.kind === 'owner' && pc.issues.some(t => FAIL.test(t))).map(pc => pc.o));
+        if (!bad.size) break;
+        const f = [...bad].sort((a, b) => a.frac - b.frac)[0], i = us.indexOf(f); if (i < 0) break;
+        const cand = [i - 1, i + 1].filter(x => x >= 0 && x < us.length);
+        cand.sort((x, y) => (bad.has(us[y]) - bad.has(us[x])) || (us[x].frac - us[y].frac));
+        const a = Math.min(i, cand[0]);
+        us = [...us.slice(0, a), mergeUnits(us[a], us[a + 1]), ...us.slice(a + 2)];
+        r = doPlan(us, key); pr = r.proposals[0]; n++;
+      }
+      if (pr) { pr.merges = n; out.push(pr); }
+    }
+    out.sort((a, b) => a.issues - b.issues || a.merges - b.merges || b.rect - a.rect);
+    R = meta; R.proposals = out;
+  } else R = doPlan(owners);
+  R.pct = pct;
+  R.proposals.forEach(pr => {
+    let muniN = 0;
+    pr.items = pr.parcels.map(pc => {
+      const W = pc.poly.map(F.from), lab = pc.label ? F.from(pc.label) : null;
+      if (pc.kind === 'owner') { const u = pc.o; return { ...pc, poly: W, lab, ci: u.idx, tag: u.tag, text: [u.tag, u.members.length > 1 ? 'مشتركة (' + u.members.length + ' ملاك)' : shortName(u.name), fmt(pc.area) + ' م²'] }; }
+      if (pc.kind === 'muni') { muniN++; return { ...pc, poly: W, lab, tag: 'ب', text: ['البلدية', fmt(pc.area) + ' م²'] }; }
+      if (pc.kind === 'road') return { ...pc, poly: W, lab, tag: '', text: ['طريق ' + S.road + ' م'] };
+      return { ...pc, poly: W, lab, tag: '', text: [pc.sub === 'appr' ? 'اقتطاع مسبق' : pc.sub === 'frag' ? 'فضلات طرق' : 'توسعة شارع'] };
+    });
+  });
+  if (man) R.proposals.unshift(man);
+}
+function manualProposal(B) {
+  const m = S.manual; if (!m || !m.on) return null;
+  const n = B.length, e = Math.min(m.edge, n - 1), a = B[e], b = B[(e + 1) % n];
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const F2 = G.frame(B, e), L2 = B.map(F2.to);
+  const res = G.manual(L2, len, +m.count || 0, +m.width || 0, !!m.rev, { minFront: +S.minFront || 0, minWidth: +S.minWidth || 0, minParcel: +S.minParcel || 0 });
+  if (!res) return null;
+  const startAtA = Math.abs(F2.to(a)[0]) < 1e-6;
+  const startV = (startAtA !== !!m.rev) ? e : (e + 1) % n;
+  const items = res.lots.map(l => {
+    const poly = l.poly.map(F2.from), lab = l.label ? F2.from(l.label) : null;
+    if (l.kind === 'rest') return { ...l, poly, lab, tag: 'باقي', text: ['باقي', fmt(l.area) + ' م²'] };
+    return { ...l, poly, lab, ci: l.no - 1, tag: String(l.no), text: ['ق' + l.no, fmt(l.area) + ' م²', 'واجهة ' + fmt(l.front, 1)] };
+  });
+  const lots = items.filter(x => x.kind === 'lot');
+  return {
+    key: 'm', manual: true, edge: e, len, Wd: res.Wd, n: lots.length, startV,
+    title: 'تقسيم يدوي على الضلع ' + (e + 1),
+    desc: `${lots.length} قسيمة بعرض ${fmt(res.Wd)} م على ضلع طوله ${fmt(len)} م، تبدأ من الرأس ${startV + 1}${res.rest ? '، والباقي قسيمة مستقلة' : ''}.`,
+    items, issues: lots.reduce((s, x) => s + x.issues.length, 0),
+    d: { D: 0, M: 0, ownersTotal: 0 }, roadArea: 0, muniArea: 0
+  };
+}
+/* الحصص التي صافيها أقل من الحد الأدنى تُجمع (بترتيب الجدول) في قسائم مشتركة لا تقل عن الحد.
+   إن بقي باقٍ صغير يُضم لآخر مجموعة، وإن لم توجد مجموعة يُضم لأصغر مالك كبير. */
+function groupOwners(list, net, min) {
+  const P = m => m.o.pos && !(m.o.pos[0] === 'e' && +m.o.pos.slice(1) >= S.boundary.length) ? { t: m.o.pos === 'front' || m.o.pos === 'back' ? m.o.pos : 'edge', e: m.o.pos[0] === 'e' ? +m.o.pos.slice(1) : -1 } : null;
+  const single = m => ({ frac: m.frac, idx: m.idx, tag: String(m.idx + 1), name: m.o.name, members: [m], pos: P(m), posText: posText(m.o.pos) });
+  if (!(min > 0) || !(net > 0)) return list.map(single);
+  const fr = g => g.reduce((a, x) => a + x.frac, 0);
+  const small = list.filter(m => m.frac * net < min - 1e-9);
+  if (!small.length) return list.map(single);
+  const groups = []; let cur = [];
+  for (const m of small) { cur.push(m); if (fr(cur) * net >= min - 1e-9) { groups.push(cur); cur = []; } }
+  if (cur.length) {
+    if (groups.length) groups[groups.length - 1].push(...cur);
+    else { const big = list.filter(m => !small.includes(m)).sort((a, b) => a.frac - b.frac)[0]; if (big) cur.push(big); groups.push(cur); }
+  }
+  const inG = new Map(); groups.forEach(g => g.forEach(m => inG.set(m, g)));
+  const out = [], done = new Set();
+  for (const m of list) {
+    const g = inG.get(m);
+    if (!g) { out.push(single(m)); continue; }
+    if (done.has(g)) continue; done.add(g);
+    if (g.length === 1) { out.push(single(m)); continue; }
+    const ms = [...g].sort((a, b) => a.idx - b.idx);
+    const pm = ms.find(x => x.o.pos);
+    out.push({ frac: fr(ms), idx: ms[0].idx, tag: ms.map(x => x.idx + 1).join('+'), name: 'مشتركة: ' + ms.map(x => shortName(x.o.name)).join('، '), members: ms, pos: pm ? P(pm) : null, posText: pm ? posText(pm.o.pos) : '' });
+  }
+  return out;
+}
+function mergeUnits(a, b) {
+  const ms = [...a.members, ...b.members].sort((x, y) => x.idx - y.idx);
+  return { frac: a.frac + b.frac, idx: ms[0].idx, tag: ms.map(x => x.idx + 1).join('+'), name: 'مشتركة: ' + ms.map(x => shortName(x.o.name)).join('، '), members: ms, pos: a.pos || b.pos, posText: a.pos ? a.posText : b.posText };
+}
+const LEGAL_PCT = 0.30;
+const shortName = n => { const w = String(n).replace(/\(مثال\)/, '').trim().split(/\s+/); return w.slice(0, 2).join(' '); };
+
+function renderProposals() {
+  const box = $('proposals');
+  if (!R || !R.proposals.length) { R = null; box.innerHTML = '<div class="empty">' + (S.boundary.length < 3 ? 'أدخل حدود الأرض أولاً.' : 'أدخل حصص الملاك لتظهر الاقتراحات.') + '</div>'; $('result').innerHTML = ''; return; }
+  const keys = R.proposals.map(p => p.key);
+  if (!keys.includes(S.sel)) S.sel = keys[0];
+  box.innerHTML = `<div class="cards" role="list">` + R.proposals.map((p, i) => `
+    <button class="card" role="listitem" data-k="${p.key}" aria-pressed="${p.key === S.sel}">
+      ${svgPlan(S.boundary, p.items, { small: true, street: S.street, ext: [...extSet()], hl: p.manual ? p.edge : null, aria: p.title })}
+      <span class="t">${esc(p.title)}</span>
+      <span class="row" style="gap:4px">${p.manual ? '<span class="chip ok">يدوي</span>' : i === R.proposals.findIndex(q => !q.manual) ? '<span class="chip best">الأنسب</span>' : ''}${p.issues ? `<span class="chip bad">${p.issues} ملاحظة</span>` : '<span class="chip ok">يحقق الشروط</span>'}</span>
+    </button>`).join('') + `</div>`;
+  box.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => { S.sel = c.dataset.k; save(); renderProposals(); }));
+  renderResult();
+}
+
+function renderResult() {
+  const p = R.proposals.find(x => x.key === S.sel); if (!p) return;
+  if (p.manual) return renderManual(p);
+  const d = p.d, vOn = R.vOn;
+  const owners = p.items.filter(x => x.kind === 'owner');
+  const subRows = it => it.o.members.length < 2 ? '' : it.o.members.map(m => `<tr>
+    <td></td><td class="hint">↳ ${esc(m.o.name)}</td>
+    <td class="n">${fmt(m.frac * 100)}%</td><td class="n">${fmt(d.ownersTotal * m.frac)}</td>
+    <td class="n">${fmt(it.area * m.frac / it.o.frac)}</td>${vOn ? '<td></td>' : ''}
+    <td colspan="3" class="hint">حصته في القسيمة المشتركة</td></tr>`).join('');
+  const rows = owners.map(it => `<tr>
+    <td class="n">${it.tag}</td>
+    <td><span class="sw" style="background:${oColor(it.ci, .45)}"></span>${esc(it.o.members.length > 1 ? 'قسيمة مشتركة' : it.o.name)}</td>
+    <td class="n">${fmt(it.o.frac * 100)}%</td>
+    <td class="n">${fmt(it.due)}</td>
+    <td class="n">${fmt(it.area)}</td>
+    ${vOn ? `<td class="n">${fmt(it.value, 0)}</td>` : ''}
+    <td class="n">${fmt(it.front)}${it.fMain > 0.01 && it.fRoad > 0.01 ? ' <span class="hint">(شارعين)</span>' : it.fRoad > 0.01 && it.fMain < 0.01 ? ' <span class="hint">(طريق داخلي)</span>' : ''}</td>
+    <td class="n">${fmt(it.width)}</td>
+    <td class="${it.issues.length ? 'bad' : ''}">${it.issues.join('، ') || ('✓' + (it.o.posText ? ' ' + it.o.posText : ''))}</td></tr>` + subRows(it)).join('');
+  const muni = p.items.filter(x => x.kind === 'muni');
+  const muniRow = muni.length ? `<tr><td class="n">ب</td><td><span class="sw" style="background:color-mix(in srgb,var(--muni) 45%,transparent)"></span>قسيمة البلدية</td><td></td><td class="n">${fmt(d.M)}</td><td class="n">${fmt(p.muniArea)}</td>${vOn ? '<td></td>' : ''}<td></td><td></td><td></td></tr>` : '';
+  const notes = [];
+  const grp = owners.filter(it => it.o.members.length > 1);
+  if (grp.length) notes.push(`الحصص الصغيرة أو الضيقة (أقل من ${fmt(+S.minParcel, 0)} م²${+S.minWidth > 0 ? ' أو عرض ' + fmt(+S.minWidth, 0) + ' م' : ''}) جُمعت في ${grp.length === 1 ? 'قسيمة مشتركة' : grp.length + ' قسائم مشتركة'}: ${grp.map(g => g.tag).join(' ، ')}. حصة كل مالك داخلها مبينة تحتها في الجدول.`);
+  if (p.roadArea > 0 && !window.polygonClipping && (+S.fr > 0 || +S.rt > 0)) notes.push('<span class="warn">لم تُحمَّل مكتبة المنحنيات، فالطريق مرسوم بدون منحنيات ودوار.</span>');
+  if (S.dmode !== 'out' && +S.pin !== 30) notes.push(`<span class="warn">نسبة الاقتطاع المستخدمة ${fmt(+S.pin, 1)}% وليست 30% القانونية (عدّلتها يدوياً).</span>`);
+  if (d.over) notes.push(`<span class="bad">الطرق (${fmt(R.W + p.roadArea)} م²) تتجاوز نسبة الاقتطاع (${fmt(d.D)} م²) بفارق ${fmt(R.W + p.roadArea - d.D)} م². هذا الاقتراح يأخذ من الملاك أكثر من النسبة المسموحة. جرّب إنهاء الطريق بعد قسيمة أقرب، أو تقليل عرض الطريق أو الدوار.</span>`);
+  else if (R.roadsOnly) notes.push(`خارج حدود البلدية: الاقتطاع = مساحة الطرق فقط (${fmt(d.D)} م²، أي ${fmt(d.D / R.T * 100, 1)}% من الأرض)، ويُخصم من الشركاء بالتناسب. لا توجد قسيمة للبلدية.`);
+  else if (p.roadArea > 0 || R.W > 0) notes.push(`الاقتطاع المسبق (الأحمر) والتوسعة والفضلات (${fmt(R.W)} م²) + الطريق الداخلي (${fmt(p.roadArea)} م²) + قسيمة البلدية (${fmt(p.muniArea)} م²) = ${fmt(d.D)} م²، أي ${fmt(d.D / R.T * 100, 1)}% من الأرض بالضبط.`);
+  if (R.fragArea > R.T * 0.03) notes.push(`<span class="warn">الاقتطاع المسبق (الأحمر) فصل جزءاً من الأرض (${fmt(R.fragArea)} م²) واعتُبر فضلات طرق. إذا كان الجزء المفصول كبيراً ويجب إفرازه، أخبرني.</span>`);
+  if (vOn) notes.push('القسمة هنا بالقيمة: من يأخذ قطعة في الخلف يأخذ مساحة أكبر تعويضاً. «المستحقة» هي المساحة لو كانت القسمة بالمساحة فقط.');
+  if (p.issues) notes.push(`<span class="bad">في هذا الاقتراح ${p.issues} ملاحظة. جرّب تغيير ترتيب الملاك، أو عرض الطريق، أو اقتراحاً آخر.</span>`);
+  $('result').innerHTML = `
+    <div class="panel" style="padding:0;border:0;background:none">
+      <h2 style="font-size:18px">${esc(p.title)}</h2>
+      <p class="hint" style="margin:0">${esc(p.desc)}</p>
+      ${svgPlan(S.boundary, p.items, { street: S.street, ext: [...extSet()], aria: 'مخطط الإفراز المقترح' })}
+      <div class="stats">
+        <span><b>مساحة الأرض</b><span class="num">${fmt(R.T)}</span></span>
+        <span><b>الاقتطاع ${fmt(d.D / R.T * 100, 1)}%</b><span class="num">${fmt(d.D)}</span></span>
+        ${R.apprArea > 0 ? `<span><b>اقتطاع مسبق (أحمر)</b><span class="num">${fmt(R.apprArea)}</span></span>` : ''}
+        ${R.W > 0 ? `<span><b>الأحمر + توسعة + فضلات</b><span class="num">${fmt(R.W)}</span></span>` : ''}
+        ${p.roadArea > 0 ? `<span><b>الطريق الداخلي</b><span class="num">${fmt(p.roadArea)}</span></span>` : ''}
+        <span><b>قسيمة البلدية</b><span class="num">${fmt(p.muniArea)}</span></span>
+        <span><b>صافي للملاك</b><span class="num">${fmt(d.ownersTotal)}</span></span>
+      </div>
+      <div class="tablebox"><table>
+        <thead><tr><th>#</th><th>المالك</th><th>النسبة</th><th>المستحقة م²</th><th>الفعلية م²</th>${vOn ? '<th>القيمة (دينار)</th>' : ''}<th>الواجهة م</th><th>أقل عرض م</th><th>ملاحظات</th></tr></thead>
+        <tbody>${rows}${muniRow}</tbody></table></div>
+      ${notes.length ? `<div class="notes">${notes.map(n => `<div>${n}</div>`).join('')}</div>` : ''}
+      <div class="row">
+        <button class="primary" id="exDXF">تنزيل DXF للأوتوكاد</button>
+        <button class="primary" id="exPDF">تقرير PDF</button>
+        <button id="exCSV">جدول CSV</button>
+      </div>
+      <p class="hint" style="margin:0">ملف DXF بنفس إحداثيات رسمتك، فيفتح فوق الأرض مباشرة. الطبقات: IFRAZ_PARCELS، IFRAZ_ROAD، IFRAZ_MUNI، IFRAZ_TEXT.</p>
+    </div>`;
+  $('exDXF').addEventListener('click', () => exportDXF(p));
+  $('exPDF').addEventListener('click', () => exportPDF(p));
+  $('exCSV').addEventListener('click', () => exportCSV(p));
+}
+
+function renderManual(p) {
+  const lots = p.items.filter(x => x.kind === 'lot'), restIt = p.items.find(x => x.kind === 'rest');
+  const sw = it => it.kind === 'lot' ? oColor(it.ci, .45) : 'color-mix(in srgb,var(--muted) 22%,transparent)';
+  const rows = p.items.map(it => `<tr>
+    <td class="n">${esc(it.tag)}</td>
+    <td><span class="sw" style="background:${sw(it)}"></span>${it.kind === 'lot' ? 'قسيمة ' + it.tag : 'باقي الأرض'}</td>
+    <td class="n">${fmt(it.area)}</td><td class="n">${fmt(it.front)}</td><td class="n">${fmt(it.width)}</td><td class="n">${fmt(it.depth)}</td>
+    <td class="${it.issues.length ? 'bad' : ''}">${it.issues.join('، ') || (it.kind === 'rest' ? '—' : '✓')}</td></tr>`).join('');
+  const ownN = S.owners.filter(o => (+o.area || 0) > 0).length;
+  const areas = lots.map(x => x.area).filter(a => a > 0.01);
+  const notes = ['التقسيم اليدوي هندسي فقط: لا يطبق اقتطاع البلدية ولا الطرق، ولا يوزع القسائم على الملاك.'];
+  if (ownN && ownN !== lots.length) notes.push(`عدد الملاك ${ownN} وعدد القسائم ${lots.length}.`);
+  if (p.issues) notes.push(`<span class="bad">في هذا التقسيم ${p.issues} ملاحظة على الشروط.</span>`);
+  $('result').innerHTML = `
+    <div class="panel" style="padding:0;border:0;background:none">
+      <h2 style="font-size:18px">${esc(p.title)}</h2>
+      <p class="hint" style="margin:0">${esc(p.desc)} الضلع المقسوم عليه مرسوم بخط متقطع.</p>
+      ${svgPlan(S.boundary, p.items, { street: S.street, ext: [...extSet()], hl: p.edge, aria: 'مخطط التقسيم اليدوي' })}
+      <div class="stats">
+        <span><b>مساحة الأرض</b><span class="num">${fmt(G.area(S.boundary))}</span></span>
+        <span><b>طول الضلع</b><span class="num">${fmt(p.len)}</span></span>
+        <span><b>عدد القسائم</b><span class="num">${lots.length}</span></span>
+        <span><b>عرض القسيمة</b><span class="num">${fmt(p.Wd)}</span></span>
+        ${areas.length ? `<span><b>أصغر / أكبر قسيمة</b><span class="num">${fmt(Math.min(...areas))} / ${fmt(Math.max(...areas))}</span></span>` : ''}
+        ${restIt ? `<span><b>الباقي</b><span class="num">${fmt(restIt.area)}</span></span>` : ''}
+      </div>
+      <div class="tablebox"><table>
+        <thead><tr><th>#</th><th>القسيمة</th><th>المساحة م²</th><th>الواجهة على الضلع م</th><th>أقل عرض م</th><th>العمق م</th><th>ملاحظات</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div class="notes">${notes.map(n => `<div>${n}</div>`).join('')}</div>
+      <div class="row">
+        <button class="primary" id="exDXF">تنزيل DXF للأوتوكاد</button>
+        <button class="primary" id="exPDF">تقرير PDF</button>
+        <button id="exCSV">جدول CSV</button>
+      </div>
+    </div>`;
+  $('exDXF').addEventListener('click', () => exportDXF(p));
+  $('exPDF').addEventListener('click', () => exportPDF(p));
+  $('exCSV').addEventListener('click', () => exportCSV(p));
+}
+
+/* ---------- exports ---------- */
+const dlP = (window.claude && claude.use) ? claude.use('downloads').catch(() => null) : Promise.resolve(null);
+const inViewer = !!(window.claude && claude.use);
+async function saveFile(name, blob) {
+  if (window.AndroidBridge && AndroidBridge.saveFile) {
+    /* داخل تطبيق «المساح إسلام»: يُحفظ في التنزيلات وتفتح نافذة المشاركة */
+    try {
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+      const mime = /\.pdf$/i.test(name) ? 'application/pdf' : /\.csv$/i.test(name) ? 'text/csv' : 'application/octet-stream';
+      AndroidBridge.saveFile(name, b64, mime);
+    } catch (e) { toast('تعذر حفظ الملف.'); }
+    return;
+  }
+  const cap = window.Capacitor;
+  if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+    /* داخل تطبيق الأندرويد: نكتب الملف ثم نفتح نافذة المشاركة (واتساب، Drive، الملفات...) */
+    try {
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+      const { Filesystem, Share } = cap.Plugins;
+      const w = await Filesystem.writeFile({ path: name, data: b64, directory: 'CACHE' });
+      await Share.share({ title: name, url: w.uri, dialogTitle: 'حفظ أو مشاركة ' + name });
+    } catch (e) { const msg = String((e && e.message) || ''); if (!/cancel/i.test(msg)) toast('تعذر حفظ الملف. ' + msg); }
+    return;
+  }
+  const dl = await dlP;
+  if (dl) {
+    try { await dl.save({ filename: name, data: blob }); toast('تم الحفظ: ' + name); }
+    catch (e) { if (e && e.code === 'declined') return; toast('تعذر الحفظ هنا (' + ((e && e.code) || 'خطأ') + ').'); }
+    return;
+  }
+  if (inViewer) { toast('الحفظ غير متاح في هذا العرض.'); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const fileBase = () => 'ifraz-' + new Date().toISOString().slice(0, 10);
+function buildDXF(p) {
+  const o = [], P = (c, v) => o.push(c, v), f = n => (+n).toFixed(4);
+  const uesc = s => String(s).split('').map(ch => ch.charCodeAt(0) > 126 ? '\\U+' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0') : ch).join('');
+  const pl = (pts, layer, col) => { P(0, 'POLYLINE'); P(8, layer); P(62, col); P(66, 1); P(10, '0.0'); P(20, '0.0'); P(30, '0.0'); P(70, 1); pts.forEach(([x, y]) => { P(0, 'VERTEX'); P(8, layer); P(10, f(x)); P(20, f(y)); P(30, '0.0'); }); P(0, 'SEQEND'); P(8, layer); };
+  const tx = (x, y, h, s, layer) => { P(0, 'TEXT'); P(8, layer); P(10, f(x)); P(20, f(y)); P(30, '0.0'); P(40, f(h)); P(1, s); P(72, 1); P(11, f(x)); P(21, f(y)); P(31, '0.0'); P(73, 2); };
+  P(0, 'SECTION'); P(2, 'HEADER'); P(9, '$ACADVER'); P(1, 'AC1009'); P(0, 'ENDSEC');
+  P(0, 'SECTION'); P(2, 'ENTITIES');
+  pl(S.boundary, 'IFRAZ_BOUNDARY', 7);
+  const owners = p.items.filter(x => x.kind === 'owner' && x.poly.length);
+  const minA = Math.min(...p.items.filter(x => x.poly.length).map(x => x.area));
+  const h = Math.max(0.4, Math.min(3, Math.sqrt(minA) / 10));
+  p.items.forEach(it => {
+    if (!it.poly.length) return;
+    const lay = (it.kind === 'owner' || it.kind === 'lot' || it.kind === 'rest') ? 'IFRAZ_PARCELS' : it.kind === 'muni' ? 'IFRAZ_MUNI' : 'IFRAZ_ROAD';
+    pl(it.poly, lay, (it.kind === 'owner' || it.kind === 'lot') ? 3 : it.kind === 'muni' ? 30 : 8);
+    if (!it.lab) return;
+    const [x, y] = it.lab;
+    if (it.kind === 'lot' || it.kind === 'rest') { tx(x, y + h * 0.7, h * 1.4, it.kind === 'lot' ? it.tag : 'REST', 'IFRAZ_TEXT'); tx(x, y - h * 0.9, h, 'A=' + it.area.toFixed(2), 'IFRAZ_TEXT'); return; }
+    if (it.kind === 'owner') { tx(x, y + h * 1.1, h * 1.4, it.o.tag, 'IFRAZ_TEXT'); tx(x, y - h * 0.6, h, 'A=' + it.area.toFixed(2), 'IFRAZ_TEXT'); tx(x, y - h * 2.1, h * 0.8, uesc(it.o.name.replace(/\(مثال\)/g, '').trim()), 'IFRAZ_NAMES'); }
+    else if (it.kind === 'muni') { tx(x, y + h * 0.6, h * 1.2, 'BALADIYA', 'IFRAZ_TEXT'); tx(x, y - h * 0.9, h, 'A=' + it.area.toFixed(2), 'IFRAZ_TEXT'); }
+    else tx(x, y, h, (it.kind === 'road' ? 'ROAD ' + S.road + 'm' : it.sub === 'appr' ? 'PRE-DEDUCTION' : it.sub === 'frag' ? 'ROAD REMNANT' : 'WIDEN') + '  A=' + it.area.toFixed(2), 'IFRAZ_TEXT');
+  });
+  P(0, 'ENDSEC'); P(0, 'EOF');
+  return o.join('\r\n') + '\r\n';
+}
+async function exportDXF(p) {
+  const txt = buildDXF(p), name = fileBase() + '.dxf';
+  const dl = await dlP;
+  if (dl) {
+    try { await loadScript(CDN + 'jszip/3.10.1/jszip.min.js'); const z = new JSZip(); z.file(name, txt); await saveFile(fileBase() + '-dxf.zip', await z.generateAsync({ type: 'blob' })); toast('الملف داخل ZIP — فك الضغط وافتح الـDXF بأوتوكاد.', 5000); }
+    catch (e) { toast('تعذر تجهيز الملف.'); }
+    return;
+  }
+  saveFile(name, new Blob([txt], { type: 'application/dxf' }));
+}
+function exportCSV(p) {
+  if (p.manual) {
+    const mr = [['#', 'القسيمة', 'المساحة م2', 'الواجهة م', 'أقل عرض م', 'العمق م', 'ملاحظات']];
+    p.items.forEach(it => mr.push([it.tag, it.kind === 'lot' ? 'قسيمة ' + it.tag : 'باقي الأرض', it.area.toFixed(2), it.front.toFixed(2), it.width.toFixed(2), it.depth.toFixed(2), it.issues.join(' / ')]));
+    const c = '﻿' + mr.map(r => r.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    return saveFile(fileBase() + '-manual.csv', new Blob([c], { type: 'text/csv' }));
+  }
+  const rows = [['#', 'المالك', 'النسبة %', 'المستحقة م2', 'الفعلية م2', 'الواجهة م', 'أقل عرض م', 'ملاحظات']];
+  p.items.filter(x => x.kind === 'owner').forEach(it => {
+    rows.push([it.o.tag, it.o.members.length > 1 ? 'قسيمة مشتركة' : it.o.name, (it.o.frac * 100).toFixed(4), it.due.toFixed(2), it.area.toFixed(2), it.front.toFixed(2), it.width.toFixed(2), it.issues.join(' / ')]);
+    if (it.o.members.length > 1) it.o.members.forEach(m => rows.push(['', '↳ ' + m.o.name, (m.frac * 100).toFixed(4), (p.d.ownersTotal * m.frac).toFixed(2), (it.area * m.frac / it.o.frac).toFixed(2), '', '', 'حصة في القسيمة ' + it.o.tag]));
+  });
+  if (p.muniArea > 0) rows.push(['ب', 'قسيمة البلدية', '', p.d.M.toFixed(2), p.muniArea.toFixed(2), '', '', '']);
+  const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  saveFile(fileBase() + '.csv', new Blob([csv], { type: 'text/csv' }));
+}
+async function exportPDF(p) {
+  try {
+    toast('جاري تجهيز التقرير…', 15000);
+    await loadScript(CDN + 'jspdf/2.5.1/jspdf.umd.min.js');
+    try { await document.fonts.load('20px "IBM Plex Sans Arabic"'); await document.fonts.load('bold 20px "IBM Plex Sans Arabic"'); } catch (e) {}
+    const FONT = '"IBM Plex Sans Arabic", Tahoma, Arial, sans-serif';
+    const CW = 1240, CH = 1754, M = 70, pages = [];
+    const page = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, CW, CH); x.direction = 'rtl'; x.textBaseline = 'middle'; pages.push(c); return x; };
+    const txt = (x, s, X, Y, size, bold, color = '#18261e', align = 'right') => { x.font = `${bold ? 'bold ' : ''}${size}px ${FONT}`; x.fillStyle = color; x.textAlign = align; x.fillText(s, X, Y); };
+    let x = page();
+    txt(x, 'مخطط إفراز مقترح', CW - M, 80, 46, true, '#1d6a46');
+    txt(x, (S.landTitle || '') , CW - M, 135, 26, false);
+    txt(x, p.title + (R.vOn ? ' — قسمة بالقيمة' : ''), CW - M, 175, 24, false, '#5b6a60');
+    txt(x, new Date().toLocaleDateString('en-GB'), M, 80, 22, false, '#5b6a60', 'left');
+    if (S.surveyor) txt(x, 'المساح: ' + S.surveyor, M, 120, 22, false, '#5b6a60', 'left');
+    // drawing
+    const top = 210, boxH = 760, boxW = CW - 2 * M;
+    x.strokeStyle = '#cdd8cf'; x.lineWidth = 2; x.strokeRect(M, top, boxW, boxH);
+    const v = view(G.bbox(S.boundary), boxW, boxH, 60);
+    const X = q => M + v.x(q[0]), Y = q => top + (boxH - v.H) / 2 + v.y(q[1]);
+    const path = poly => { x.beginPath(); poly.forEach((q, i) => (i ? x.lineTo(X(q), Y(q)) : x.moveTo(X(q), Y(q)))); x.closePath(); };
+    p.items.forEach(it => { if (!it.poly.length) return; path(it.poly); x.fillStyle = it.kind === 'owner' ? `hsl(${hue(it.ci)} 55% 78%)` : it.kind === 'muni' ? '#efd391' : '#d7dcd8'; x.fill(); x.strokeStyle = '#18261e'; x.lineWidth = 1.6; x.stroke(); });
+    path(S.boundary); x.lineWidth = 3.5; x.strokeStyle = '#18261e'; x.stroke();
+    const n = S.boundary.length, a = S.boundary[S.street], b = S.boundary[(S.street + 1) % n];
+    for (const ei of extSet()) { if (ei === S.street) continue; const ea = S.boundary[ei], eb = S.boundary[(ei + 1) % n]; x.beginPath(); x.moveTo(X(ea), Y(ea)); x.lineTo(X(eb), Y(eb)); x.strokeStyle = '#1f5fbf'; x.lineWidth = 9; x.lineCap = 'round'; x.stroke(); }
+    x.beginPath(); x.moveTo(X(a), Y(a)); x.lineTo(X(b), Y(b)); x.strokeStyle = '#b0601b'; x.lineWidth = 9; x.lineCap = 'round'; x.stroke(); x.lineCap = 'butt';
+    p.items.forEach(it => { if (!it.lab) return; const lines = it.text; lines.forEach((t, j) => { const yy = Y(it.lab) + (j - (lines.length - 1) / 2) * 24; x.font = `${j === 0 ? 'bold ' : ''}${j === 0 ? 22 : 18}px ${FONT}`; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#fff'; x.strokeText(t, X(it.lab), yy); x.fillStyle = '#18261e'; x.fillText(t, X(it.lab), yy); }); });
+    txt(x, 'الخط البرتقالي = الشارع الرئيسي', CW - M - 14, top + boxH - 22, 18, false, '#b0601b');
+    if (extSet().size > 1) txt(x, 'الخط الأزرق = طريق خارجي', CW - M - 330, top + boxH - 22, 18, false, '#1f5fbf');
+    // summary
+    const d = p.d; let y = top + boxH + 45;
+    let sum;
+    if (p.manual) {
+      const ar = p.items.filter(i => i.kind === 'lot' && i.area > 0.01).map(i => i.area);
+      sum = [['مساحة الأرض', G.area(S.boundary)], ['طول الضلع ' + (p.edge + 1) + ' (م)', p.len], ['عرض القسيمة (م)', p.Wd]];
+      if (ar.length) sum.push(['أصغر قسيمة', Math.min(...ar)], ['أكبر قسيمة', Math.max(...ar)]);
+    } else {
+      sum = [['مساحة الأرض', R.T], ['الاقتطاع ' + fmt(d.D / R.T * 100, 1) + '%', d.D]];
+      if (R.W > 0) sum.push(['اقتطاع مسبق وتوسعة وفضلات', R.W]);
+      if (p.roadArea > 0) sum.push(['الطريق الداخلي', p.roadArea]);
+      sum.push(['قسيمة البلدية', p.muniArea], ['صافي للملاك', d.ownersTotal]);
+    }
+    const colW = boxW / 3;
+    sum.forEach((s, i) => { const cx = CW - M - (i % 3) * colW, cy = y + Math.floor(i / 3) * 40; txt(x, s[0] + ':', cx, cy, 21, false, '#5b6a60'); x.font = `bold 21px ${FONT}`; const w0 = x.measureText(s[0] + ':  ').width; txt(x, fmt(s[1]) + (/\(م\)/.test(s[0]) ? '' : ' م²'), cx - w0, cy, 21, true); });
+    y += Math.ceil(sum.length / 3) * 40 + 20;
+    // table
+    const cols = p.manual ? [['#', 80], ['القسيمة', 220], ['المساحة م²', 180], ['الواجهة م', 160], ['أقل عرض م', 160], ['العمق م', 160], ['ملاحظات', 140]] : [['#', 50], ['المالك', 300], ['النسبة', 100], ['المستحقة م²', 140], ['الفعلية م²', 140], ['الواجهة م', 110], ['أقل عرض م', 110], ['ملاحظات', 150]];
+    const head = () => { x.fillStyle = '#eef2ec'; x.fillRect(M, y - 20, boxW, 40); let cx = CW - M - 8; cols.forEach(([t, w]) => { txt(x, t, cx, y, 18, true, '#5b6a60'); cx -= w; }); y += 40; };
+    const rows = p.manual ? p.items.map(it => [it.tag, it.kind === 'lot' ? 'قسيمة ' + it.tag : 'باقي الأرض', fmt(it.area), fmt(it.front), fmt(it.width), fmt(it.depth), it.issues.length ? it.issues[0] : (it.kind === 'rest' ? '—' : '✓')]) : p.items.filter(i => i.kind === 'owner').flatMap(it => [
+      [it.o.tag, it.o.members.length > 1 ? 'قسيمة مشتركة' : it.o.name, fmt(it.o.frac * 100) + '%', fmt(it.due), fmt(it.area), fmt(it.front), fmt(it.width), it.issues.length ? it.issues[0] : '✓'],
+      ...(it.o.members.length > 1 ? it.o.members.map(m => ['', '↳ ' + m.o.name, fmt(m.frac * 100) + '%', fmt(d.ownersTotal * m.frac), fmt(it.area * m.frac / it.o.frac), '', '', '✓']) : [])
+    ]);
+    if (!p.manual && p.muniArea > 0) rows.push(['ب', 'قسيمة البلدية', '', fmt(d.M), fmt(p.muniArea), '', '', '']);
+    head();
+    rows.forEach(r => {
+      if (y > CH - 70) { x = page(); y = 80; head(); }
+      let cx = CW - M - 8;
+      r.forEach((t, j) => { const w = cols[j][1]; x.font = `18px ${FONT}`; let s = t; while (x.measureText(s).width > w - 12 && s.length > 2) s = s.slice(0, -2) + '…'; txt(x, s, cx, y, 18, false, j === cols.length - 1 && t !== '✓' && t !== '—' ? '#b3261e' : '#18261e'); cx -= w; });
+      x.strokeStyle = '#cdd8cf'; x.lineWidth = 1; x.beginPath(); x.moveTo(M, y + 20); x.lineTo(CW - M, y + 20); x.stroke();
+      y += 40;
+    });
+    const pdf = new jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+    pages.forEach((c, i) => { if (i) pdf.addPage(); pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 595.28, 841.89); });
+    await saveFile(fileBase() + '.pdf', pdf.output('blob'));
+  } catch (e) { toast('تعذر تجهيز التقرير.'); }
+}
+
+/* ---------- loop ---------- */
+let tmr = null;
+function changed(full) {
+  save();
+  $('sampleBanner').hidden = !S.sample;
+  if (full) { renderLand(); renderOwners(); }
+  clearTimeout(tmr);
+  tmr = setTimeout(() => { if (!full) renderLand(); compute(); renderProposals(); }, full ? 0 : 300);
+}
+fillSettings();
+changed(true);
+loadScript('lib/polygon-clipping.umd.min.js').then(() => changed(false)).catch(() => changed(false));
+</script>
+
+</body>
+</html>

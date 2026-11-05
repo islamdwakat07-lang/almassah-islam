@@ -24,12 +24,13 @@ header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
 header svg{flex:0 0 56px}
 h1{font-family:var(--f-display);font-size:30px;line-height:1.15;margin:0;color:var(--accent)}
 header p{margin:2px 0 0;color:var(--muted);font-size:14px}
-a.tool{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;text-decoration:none;color:inherit;
+a.tool{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:14px;align-items:center;text-decoration:none;color:inherit;
   background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;border-inline-start:5px solid var(--c)}
 a.tool:active{transform:scale(.985)}
 a.tool:focus-visible{outline:2px solid var(--c);outline-offset:2px}
-.ico{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
-.ico svg{width:30px;height:30px}
+.art{width:96px;height:96px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 13%,var(--card));overflow:hidden}
+.art img{width:92px;height:92px;object-fit:contain}
+.art svg{height:84px;width:auto}
 .t{font-family:var(--f-display);font-size:20px;line-height:1.3;color:var(--c)}
 .d{color:var(--muted);font-size:13.5px;line-height:1.5}
 .go{color:var(--c);font-size:22px}
@@ -48,19 +49,19 @@ footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12.5px;lin
   </header>
 
   <a class="tool" href="index.html" style="--c:var(--c1)">
-    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2.5h8.5L19.5 7.5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M14 2.5V8h5.5M8.5 12h7M8.5 15.5h7M8.5 19h4"/></svg></span>
+    <span class="art"><svg viewBox="0 0 100 200" aria-label="خارطة فلسطين"><path d="M57.1,16.3 L61.0,16.8 L66.5,17.8 L72.3,16.3 L75.6,8.0 L78.5,8.5 L79.8,10.9 L79.0,20.7 L79.8,26.5 L79.4,33.9 L76.9,37.8 L76.0,50.0 L75.6,59.7 L74.8,71.9 L75.6,81.2 L73.5,91.5 L72.7,103.7 L70.6,115.9 L68.5,123.2 L65.2,132.9 L61.0,145.1 L59.0,154.9 L55.6,164.7 L52.7,176.9 L51.0,189.1 L48.5,192.0 L44.4,180.8 L39.4,167.1 L34.0,150.0 L31.0,137.8 L26.9,123.2 L23.5,111.0 L21.5,103.2 L20.2,102.2 L25.6,96.3 L29.8,91.0 L34.0,85.1 L37.7,78.8 L41.0,71.9 L42.7,66.6 L45.2,59.7 L46.5,53.4 L48.1,45.1 L49.8,36.3 L51.0,29.5 L54.0,29.5 L56.0,25.6 L56.0,20.7Z" fill="#007A3D" stroke="#005C2E" stroke-width="2" stroke-linejoin="round"/></svg></span>
     <span><span class="t">حاسب الكواشين</span><br><span class="d">يقرأ صور سند الملكية ويحوّل حصص كل مالك وورثته إلى متر مربع.</span></span>
     <span class="go" aria-hidden="true">‹</span>
   </a>
 
   <a class="tool" href="ifraz/index.html" style="--c:var(--c2)">
-    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 20.5 4.5 3.5l16 1.5-1 15.5z"/><path d="M11.5 20v-9M13.5 20v-9M4 12l7.5-.5M13.5 11.5l6.5.3M4.3 7.5l7.2.3"/><circle cx="12.5" cy="9.5" r="2.4"/></svg></span>
+    <span class="art"><img src="img/ifraz.png" alt="قطعة مفرزة"></span>
     <span><span class="t">الإفراز</span><br><span class="d">يقسم القطعة بين الشركاء من ملف DXF، مع الطرق واقتطاع البلدية.</span><span class="note" id="hisasNote" hidden></span></span>
     <span class="go" aria-hidden="true">‹</span>
   </a>
 
   <a class="tool" href="jarf/index.html" style="--c:var(--c3)">
-    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M2.5 17.5h7l3-4 4 2 5-3"/><path d="M2.5 21h19"/><path d="M9.5 17.5 12.5 21M16.5 15.5 18 21" opacity=".55"/><path d="M5 9l3-4 4 2"/></svg></span>
+    <span class="art"><img src="img/jarf.png" alt="جرافة"></span>
     <span><span class="t">حاسبة الجرف</span><br><span class="d">الحفر والطمم من نقاط الرصد قبل الجرف وبعده (ملفات DXF).</span></span>
     <span class="go" aria-hidden="true">‹</span>
   </a>

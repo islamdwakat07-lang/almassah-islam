@@ -124,6 +124,19 @@ public class MapActivity extends Activity {
         else toastMsg("لم أجد علامة النقطة على الخارطة. اضغط عليها بإصبعك لعرض المعلومات.");
     }
 
+    /** real touch on the point, exactly like a finger tap, so GovMap opens its information popup */
+    private void tapPoint() {
+        if (pinX < 0 || web == null) return;
+        autoTapping = true;
+        long t = SystemClock.uptimeMillis();
+        MotionEvent d = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, pinX, pinY, 0);
+        d.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        web.dispatchTouchEvent(d); d.recycle();
+        MotionEvent u = MotionEvent.obtain(t, t + 80, MotionEvent.ACTION_UP, pinX, pinY, 0);
+        u.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        ui.postDelayed(() -> { web.dispatchTouchEvent(u); u.recycle(); autoTapping = false; }, 80);
+    }
+
     private void toastMsg(String t) { android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_LONG).show(); }
 
     private void loadPoint() {

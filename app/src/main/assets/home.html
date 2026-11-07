@@ -77,6 +77,10 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <div class="ui"><img src="img/ui-p5.jpg" alt="">
     <a class="hit" href="govmap/index.html" aria-label="إحداثيات GovMap" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
   </div>
+  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
+  <div class="ui"><img src="img/ui-p6.jpg" alt="">
+    <a class="hit" href="geomolg/index.html" aria-label="جيومولج" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
+  </div>
   <img class="sky" src="img/ui-sky.jpg" alt="دقة .. احترافية .. لنتائج أفضل">
   <div class="fill"></div>
   <div class="spacer"></div>
@@ -134,7 +138,7 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <h3 id="t-about">حول التطبيق</h3>
   <div class="about">
     <b style="font:700 22px var(--f-title);color:var(--green-2)">المساح إسلام</b><br>
-    حاسب الكواشين · الإفراز · حاسبة الجرف · إحداثيات GovMap<br>
+    حاسب الكواشين · الإفراز · حاسبة الجرف · إحداثيات GovMap · جيومولج<br>
     صاحب ومطور التطبيق: <b>إسلام إسماعيل دويكات</b><br>
     <span class="phone">0598161862</span><br>
     <span id="ver2" style="color:var(--muted)"></span><br>
@@ -169,6 +173,9 @@ function projects() {
   const gm = read("govmap-xy-v1");
   if (gm && Array.isArray(gm.hist) && gm.hist.length)
     out.push({ key: "govmap-xy-v1", img: "img/c-govmap.jpg", href: "govmap/index.html", title: "إحداثيات " + gm.hist[0].x + " , " + gm.hist[0].y, sub: "إحداثيات GovMap · " + gm.hist.length + " نقطة محفوظة" });
+  const gmo = read("geomolg-v1");
+  if (gmo && gmo.vil)
+    out.push({ key: "geomolg-v1", img: "img/c-geomolg.jpg", href: "geomolg/index.html", title: gmo.vil + (gmo.blk ? " – حوض " + gmo.blk.split("/")[0] : "") + (gmo.plot ? " – قطعة " + gmo.plot : ""), sub: "جيومولج · آخر بحث" });
   return out;
 }
 function renderProjects() {

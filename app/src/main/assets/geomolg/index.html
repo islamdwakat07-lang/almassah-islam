@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="geomolg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>جيومولج</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.5 "IBM Plex Sans Arabic",Tahoma,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+.am-spacer{flex:none}
+.top{flex:none;background:var(--am-card);border-bottom:1.5px solid var(--am-line);box-shadow:0 6px 14px -10px rgba(8,42,27,.5);z-index:5;position:relative}
+.tabs{display:flex;gap:6px;padding:8px 10px 0}
+.tab{flex:1;border:1.5px solid var(--am-line);border-bottom:0;border-radius:14px 14px 0 0;background:#f3ead2;color:var(--am-green-800);font:700 15px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:8px 6px;cursor:pointer}
+.tab[aria-selected=true]{background:var(--am-btn);color:#fff6d6;border-color:var(--am-gold-500)}
+.tab.fold{flex:none;width:44px}
+.pane{padding:10px;border-top:2px solid var(--am-gold-500)}
+.pane[hidden]{display:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:3px;font-weight:700;font-size:13px;color:var(--am-green-800);min-width:0}
+label.f small{font-weight:500;color:var(--am-muted)}
+select,input{font:500 16px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:8px 10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;color:var(--am-ink);width:100%;min-width:0}
+input.num{font-family:"IBM Plex Mono",monospace;direction:ltr;text-align:left}
+select:focus,input:focus{outline:2px solid var(--am-gold-500);outline-offset:0}
+select:disabled{opacity:.55}
+.go{margin-top:8px;width:100%;border:0;border-radius:999px;padding:11px;font:700 17px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400),0 6px 12px -6px rgba(8,42,27,.7);cursor:pointer}
+.go:disabled{opacity:.6}
+.seg{display:flex;border:1.5px solid var(--am-line);border-radius:999px;overflow:hidden}
+.seg label{flex:1;text-align:center;padding:7px 4px;font-weight:700;font-size:13px;cursor:pointer;color:var(--am-green-800)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--am-btn);color:#fff}
+.msg{margin:6px 0 0;font-size:13px;color:#7a4e00;min-height:0}
+.msg:empty{display:none}
+#map{flex:1;min-height:0;background:#e9e3cf}
+.leaflet-container{font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
+.fab{position:absolute;z-index:500;border:2px solid var(--am-gold-400);border-radius:999px;background:var(--am-btn);color:#fff6d6;font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:9px 14px;box-shadow:0 6px 14px -6px rgba(0,0,0,.6);cursor:pointer}
+.mapwrap{flex:1;min-height:0;position:relative;display:flex}
+#fabLayers{top:10px;right:10px}
+#fabBase{top:56px;right:10px}
+.busy{position:absolute;z-index:500;top:10px;left:50%;transform:translateX(-50%);background:#fff8e1;border:1.5px solid var(--am-gold-500);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--am-green-800);display:none}
+.busy.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-height:52vh;display:flex;flex-direction:column;background:var(--am-card);border-top:3px solid var(--am-gold-500);border-radius:20px 20px 0 0;box-shadow:0 -10px 30px -10px rgba(0,0,0,.5);transform:translateY(105%);transition:transform .2s}
+.sheet.on{transform:none}
+.sheet header{display:flex;align-items:center;gap:8px;padding:10px 14px 6px;border-bottom:1px solid var(--am-line)}
+.sheet header h3{margin:0;flex:1;font:700 17px var(--am-title);color:var(--am-green-800)}
+.x{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--am-gold-500);background:#fff;color:var(--am-green-800);font-size:16px;cursor:pointer;flex:none}
+.sheet .body{overflow:auto;padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.res{border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;margin:8px 0;overflow:hidden}
+.res h4{margin:0;padding:6px 10px;background:#f3ead2;color:var(--am-green-800);font-size:14px}
+.res table{width:100%;border-collapse:collapse;font-size:14px}
+.res td{padding:4px 10px;border-top:1px solid #efe5cb;vertical-align:top}
+.res td:first-child{color:var(--am-muted);width:42%}
+.res td:last-child{font-weight:700}
+.xyline{direction:ltr;text-align:left;font:500 13px "IBM Plex Mono",monospace;color:var(--am-ink);background:#f6efd9;border-radius:10px;padding:6px 10px;margin:6px 0}
+.lay{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #efe5cb;cursor:pointer}
+.lay input{width:22px;height:22px;accent-color:#17613f;flex:none}
+.lay span{flex:1}
+.lay small{display:block;color:var(--am-muted);font-size:12px}
+.sw{width:18px;height:18px;border-radius:4px;border:2px solid;flex:none}
+.leaflet-control-attribution{font-size:10px}
+.pinIcon{filter:drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-geomolg.png" alt=""><b>جيومولج</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+
+<div class="top">
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tP" aria-selected="true" type="button">بحث عن قطعة</button>
+    <button class="tab" role="tab" id="tX" aria-selected="false" type="button">إحداثيات</button>
+    <button class="tab fold" id="tFold" type="button" aria-label="إخفاء">▲</button>
+  </div>
+  <div class="pane" id="pP">
+    <div class="grid">
+      <label class="f">المحافظة<select id="gov"><option value="">…جاري التحميل</option></select></label>
+      <label class="f">البلدة<select id="vil" disabled><option value="">اختر المحافظة</option></select></label>
+      <label class="f">الحوض<select id="blk" disabled><option value="">اختر البلدة</option></select></label>
+      <label class="f">القطعة <small>(اتركها فارغة للحوض كله)</small><input id="plot" class="num" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <button class="go" id="goP" type="button">اذهب للقطعة</button>
+    <p class="msg" id="msgP"></p>
+  </div>
+  <div class="pane" id="pX" hidden>
+    <div class="seg" style="margin-bottom:8px">
+      <label><input type="radio" name="sys" value="pg" checked>فلسطين (جيومولج)</label>
+      <label><input type="radio" name="sys" value="itm">ITM (الجديد)</label>
+    </div>
+    <div class="grid">
+      <label class="f">Y <small>(شمال)</small><input id="cy" class="num" inputmode="decimal" autocomplete="off"></label>
+      <label class="f">X <small>(شرق)</small><input id="cx" class="num" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <button class="go" id="goX" type="button">اعرض الموقع ومعلوماته</button>
+    <p class="msg" id="msgX"></p>
+  </div>
+</div>
+
+<div class="mapwrap">
+  <div id="map"></div>
+  <button class="fab" id="fabLayers" type="button">☰ الطبقات</button>
+  <div class="busy" id="busy">جاري التحميل…</div>
+</div>
+
+<section class="sheet" id="shInfo" aria-label="المعلومات">
+  <header><h3 id="infoTitle">معلومات الموقع</h3><button class="x" type="button" data-close>✕</button></header>
+  <div class="body" id="infoBody"></div>
+</section>
+<section class="sheet" id="shLayers" aria-label="الطبقات">
+  <header><h3>الطبقات والخلفية</h3><button class="x" type="button" data-close>✕</button></header>
+  <div class="body">
+    <label class="f" style="margin:4px 0 8px">الصورة الجوية<select id="base"></select></label>
+    <div id="layList"></div>
+    <p class="msg" style="color:var(--am-muted)">المصدر: جيومولج – وزارة الحكم المحلي. المعلومات للاستئناس وليست وثيقة رسمية.</p>
+  </div>
+</section>
+
+<script src="lib/leaflet.js"></script>
+<script src="lib/proj4.js"></script>
+<script src="lib/proj4leaflet.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
+const SQL = "https://sql.geomolg.ps/adaptor/rest/services/";
+const TK = "SdO5FSDdO2-RY1U9Oa9VitJDu7Iq86APAGjFo3kS1d4.";
+const TK2 = "yKo-w3PbR9H6a6YInoSx_qKCus9pt_54DjR1AyZ";
+const KEY = "geomolg-v1";
+const PG = "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs";
+const ITM = "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs";
+proj4.defs("EPSG:28191", PG); proj4.defs("EPSG:2039", ITM);
+const RES = [529.1677250021168, 264.5838625010584, 132.2919312505292, 66.1459656252646, 33.0729828126323, 16.933367200067735, 8.466683600033868, 4.233341800016934, 2.116670900008467, 1.0583354500042335, 0.5291677250021167, 0.26458386250105836, 0.13229193125052918, 0.06614596562526459];
+const crs = new L.Proj.CRS("EPSG:28191", PG, { origin: [-4839400, 6616800], resolutions: RES });
+const toLL = (x, y) => crs.unproject(L.point(x, y));
+const toXY = ll => { const p = crs.project(ll); return [p.x, p.y]; };
+
+const BASES = [
+  { id: "2025", name: "صورة 2025 (15 سم)", svc: "Orthophotos_WB_2025_15cm_tif_PG1923", tk: TK, maxZ: 12 },
+  { id: "2024", name: "صورة 2024 (15 سم)", svc: "Orthophotos_WB_2024_15cm_tif_PG1923", tk: TK, maxZ: 12 },
+  { id: "2022", name: "صورة 2022 (15 سم)", svc: "Orthophotos_WB_2022_15cm_tif_PG1923_05", maxZ: 13 },
+  { id: "2021", name: "صورة 2021 (15 سم)", svc: "Orthophotos_WB_2021_15cm_tif_PG1923", maxZ: 13 },
+  { id: "2019", name: "صورة 2019 (25 سم)", svc: "Orthophotos_WB_2019_Aerial_25cm_jpg_PG1923", maxZ: 12 },
+  { id: "2015", name: "صورة 2015 (25 سم)", svc: "Orthophotos_WB_2015_Aerial_25cm_jpg_PG1923", maxZ: 12 },
+  { id: "none", name: "بدون صورة جوية" }
+];
+// curated overlay layers (service, sub-layer ids, colour for the swatch)
+const LAYERS = [
+  { id: "blkR", name: "أحواض التسوية", svc: "Blocks_02", ids: [0], c: "#1e5bd8", on: true },
+  { id: "blkN", name: "الأحواض الطبيعية", svc: "Blocks_02", ids: [1], c: "#6fb3ff", on: true },
+  { id: "pla", name: "قطع الأراضي – سلطة الأراضي", svc: "Parcels_All_PLA", ids: [0], tk: TK, c: "#f59e0b", on: true },
+  { id: "parR", name: "قطع أراضي التسوية", svc: "ParcelsRegistered_11", ids: [0], c: "#a3b51b", on: true },
+  { id: "qtr", name: "أحياء التسوية", svc: "QuartersRegistered", ids: [0], c: "#ec4899", on: false },
+  { id: "abc", name: "مناطق أ، ب، ج (المعتمدة)", svc: "ABC_Areas_JurisdictionBorders_07", ids: [0], c: "#dc2626", on: true },
+  { id: "com", name: "التجمعات الفلسطينية", svc: "Communities_06", ids: [1], c: "#0f766e", on: true },
+  { id: "comB", name: "حدود أراضي التجمعات", svc: "CommunitiesLandBoundary_04", ids: [0], c: "#7c3aed", on: false },
+  { id: "ump", name: "المخططات الهيكلية المصدقة", svc: "UrbanMasterPlans_Approved_03", ids: [4], c: "#b45309", on: false },
+  { id: "umpT", name: "المخططات الهيكلية – بالألوان", svc: "UrbanMasterPlans_Approved_03", ids: [1], c: "#e879f9", on: false },
+  { id: "names", name: "الأسماء الجغرافية", svc: "GeographicNames_03", ids: [0], c: "#334155", on: false },
+  { id: "cont", name: "خطوط الكنتور كل 5 م", svc: "ContourLines_02", ids: [1], c: "#92400e", on: false },
+  { id: "cont1", name: "خطوط الكنتور كل 1 م", svc: "ContourLines_02", ids: [0], c: "#b45309", on: false },
+  { id: "state", name: "أراضي الدولة (غير دقيقة)", svc: "StateLand_02", ids: [0, 1], c: "#16a34a", on: false },
+  { id: "roads", name: "الطرق", svc: "Roads_03", ids: [1], c: "#525252", on: false },
+  { id: "nat", name: "المحميات الطبيعية", svc: "NaturalReserves_03", base: SQL, ids: [0], tk: TK2, c: "#22d3ee", on: false }
+];
+
+/* ---------- state ---------- */
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } };
+let st = load();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+st.on = st.on || Object.fromEntries(LAYERS.map(l => [l.id, l.on]));
+st.base = st.base || "2025";
+
+/* ---------- map ---------- */
+const map = L.map("map", { crs, zoomControl: true, attributionControl: true, zoomSnap: 1, maxZoom: 13, minZoom: 1, tap: true });
+map.attributionControl.setPrefix("").addAttribution("GeoMOLG – وزارة الحكم المحلي");
+if (st.view) map.setView(L.latLng(st.view[0], st.view[1]), st.view[2]); else map.setView(toLL(172000, 180000), 4);
+map.on("moveend", () => { const c = map.getCenter(); st.view = [c.lat, c.lng, map.getZoom()]; save(); });
+
+let baseLayer = null;
+function setBase(id) {
+  st.base = id; save();
+  if (baseLayer) { map.removeLayer(baseLayer); baseLayer = null; }
+  const b = BASES.find(x => x.id === id); if (!b || !b.svc) return;
+  baseLayer = L.tileLayer(REST + b.svc + "/MapServer/tile/{z}/{y}/{x}" + (b.tk ? "?token=" + b.tk : ""), { maxNativeZoom: b.maxZ, maxZoom: 13, tileSize: 256, keepBuffer: 3 });
+  let errs = 0;
+  baseLayer.on("tileerror", () => { if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
+  baseLayer.addTo(map).bringToBack();
+}
+
+/* dynamic (exported) image for one map service, exactly aligned to the projected view */
+const DynLayer = L.Layer.extend({
+  initialize(svc) { this.svc = svc; this.ids = []; },
+  onAdd(m) {
+    this._img = L.DomUtil.create("img", "leaflet-image-layer"); this._img.style.position = "absolute"; this._img.style.pointerEvents = "none";
+    this._img.alt = ""; m.getPane("overlayPane").appendChild(this._img); this._img.style.display = "none";
+    m.on("moveend", this._update, this); m.on("zoomstart", this._hide, this); m.on("zoomend viewreset", this._place, this);
+    this._update();
+  },
+  onRemove(m) { m.off("moveend", this._update, this); m.off("zoomstart", this._hide, this); m.off("zoomend viewreset", this._place, this); this._img.remove(); },
+  setIds(ids) { this.ids = ids; if (this._map) this._update(); },
+  _hide() { if (this._img) this._img.style.opacity = 0; },
+  _place() {
+    if (!this._bbox || !this._map) return;
+    const [x0, y0, x1, y1] = this._bbox, tl = this._map.latLngToLayerPoint(toLL(x0, y1)), br = this._map.latLngToLayerPoint(toLL(x1, y0));
+    L.DomUtil.setPosition(this._img, tl); this._img.style.width = (br.x - tl.x) + "px"; this._img.style.height = (br.y - tl.y) + "px"; this._img.style.opacity = 1;
+  },
+  _update() {
+    const m = this._map; if (!m) return;
+    if (!this.ids.length) { this._img.style.display = "none"; return; }
+    const s = m.getSize(), a = toXY(m.containerPointToLatLng([0, s.y])), b = toXY(m.containerPointToLatLng([s.x, 0]));
+    const bbox = [a[0], a[1], b[0], b[1]], sv = this.svc;
+    const u = (sv.base || REST) + sv.svc + "/MapServer/export?bbox=" + bbox.join(",") + "&bboxSR=28191&imageSR=28191&size=" + s.x + "," + s.y +
+      "&dpi=96&format=png32&transparent=true&layers=show:" + this.ids.join(",") + "&f=image" + (sv.tk ? "&token=" + sv.tk : "");
+    const im = new Image(), self = this, tag = this._tag = Math.random();
+    busy(1);
+    im.onload = () => { busy(-1); if (tag !== self._tag) return; self._img.src = u; self._bbox = bbox; self._img.style.display = ""; self._place(); };
+    im.onerror = () => { busy(-1); };
+    im.src = u;
+  }
+});
+let busyN = 0; function busy(d) { busyN = Math.max(0, busyN + d); $("#busy").classList.toggle("on", busyN > 0); }
+
+const services = {};   // svc name -> {layer, cfg}
+function applyLayers() {
+  const want = {};
+  LAYERS.forEach(l => { if (st.on[l.id]) { (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); } });
+  // stable z-order: as listed
+  LAYERS.forEach(l => { if (!services[l.svc]) { services[l.svc] = { layer: new DynLayer(l), added: false }; } });
+  const order = [...new Set(LAYERS.map(l => l.svc))].reverse();
+  order.forEach(svc => {
+    const s = services[svc], w = want[svc];
+    if (w) { s.layer.ids = w.ids; if (!s.added) { s.layer.addTo(map); s.added = true; } else s.layer._update(); }
+    else if (s.added) { map.removeLayer(s.layer); s.added = false; }
+  });
+}
+
+/* ---------- layers sheet ---------- */
+$("#base").innerHTML = BASES.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+$("#base").value = st.base; $("#base").addEventListener("change", e => setBase(e.target.value));
+$("#layList").innerHTML = LAYERS.map(l => `<label class="lay"><input type="checkbox" data-l="${l.id}" ${st.on[l.id] ? "checked" : ""}><span class="sw" style="border-color:${l.c}"></span><span>${l.name}</span></label>`).join("");
+$("#layList").addEventListener("change", e => { const id = e.target.dataset.l; if (!id) return; st.on[id] = e.target.checked; save(); applyLayers(); });
+setBase(st.base); applyLayers();
+
+/* ---------- sheets ---------- */
+let openSheet = null;
+function showSheet(id) { if (openSheet) openSheet.classList.remove("on"); openSheet = $(id); openSheet.classList.add("on"); }
+function closeSheet() { if (openSheet) openSheet.classList.remove("on"); openSheet = null; }
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeSheet));
+$("#fabLayers").addEventListener("click", () => showSheet("#shLayers"));
+window.__back = () => (openSheet ? (closeSheet(), 1) : 0);
+
+/* ---------- tabs ---------- */
+function tab(which) {
+  $("#tP").setAttribute("aria-selected", which === "P"); $("#tX").setAttribute("aria-selected", which === "X");
+  $("#pP").hidden = which !== "P"; $("#pX").hidden = which !== "X"; $("#tFold").textContent = "▲"; st.tab = which; save();
+  setTimeout(() => map.invalidateSize(), 50);
+}
+$("#tP").addEventListener("click", () => tab("P")); $("#tX").addEventListener("click", () => tab("X"));
+$("#tFold").addEventListener("click", () => {
+  const hide = !$("#pP").hidden || !$("#pX").hidden;
+  if (hide) { $("#pP").hidden = $("#pX").hidden = true; $("#tFold").textContent = "▼"; } else tab(st.tab || "P");
+  setTimeout(() => map.invalidateSize(), 50);
+});
+tab(st.tab || "P");
+function fold() { $("#pP").hidden = $("#pX").hidden = true; $("#tFold").textContent = "▼"; setTimeout(() => map.invalidateSize(), 50); }
+
+/* ---------- REST helpers ---------- */
+async function rq(url, params) {
+  const u = url + "?" + new URLSearchParams(Object.assign({ f: "json" }, params)).toString();
+  busy(1);
+  try { const r = await fetch(u); const j = await r.json(); if (j.error) throw new Error(j.error.message || "خطأ من الخادم"); return j; }
+  finally { busy(-1); }
+}
+const qPLA = p => rq(REST + "Parcels_All_PLA/MapServer/0/query", Object.assign({ token: TK, returnGeometry: "false" }, p));
+const qBLK = p => rq(REST + "Blocks_02/MapServer/0/query", Object.assign({ returnGeometry: "false" }, p));   // fast: same names as PLA
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sq = s => String(s).replace(/'/g, "''");
+function msg(id, t) { $("#" + id).textContent = t || ""; }
+
+/* ---------- parcel search ---------- */
+const cache = (k, v) => { if (v === undefined) { try { const c = JSON.parse(localStorage.getItem("gm-c-" + k) || "null"); return c && Date.now() - c.t < 7 * 864e5 ? c.v : null; } catch (e) { return null; } } try { localStorage.setItem("gm-c-" + k, JSON.stringify({ t: Date.now(), v })); } catch (e) {} };
+const arSort = (a, b) => a.localeCompare(b, "ar");
+async function loadGovs() {
+  let g = cache("govs");
+  if (!g) {
+    try { const j = await qBLK({ where: "1=1", outFields: "GOV_A", returnDistinctValues: "true" }); g = j.features.map(f => f.attributes.GOV_A).filter(Boolean).sort(arSort); cache("govs", g); }
+    catch (e) { $("#gov").innerHTML = '<option value="">تعذّر التحميل – تحقق من الإنترنت</option>'; return; }
+  }
+  $("#gov").innerHTML = '<option value="">اختر المحافظة</option>' + g.map(x => `<option>${esc(x)}</option>`).join("");
+  if (st.gov && g.includes(st.gov)) { $("#gov").value = st.gov; await loadVils(true); }
+}
+async function loadVils(restore) {
+  const gov = $("#gov").value; st.gov = gov; save();
+  $("#vil").disabled = $("#blk").disabled = true; $("#blk").innerHTML = '<option value="">اختر البلدة</option>';
+  if (!gov) { $("#vil").innerHTML = '<option value="">اختر المحافظة</option>'; return; }
+  $("#vil").innerHTML = '<option value="">…جاري التحميل</option>';
+  let v = cache("v-" + gov);
+  if (!v) { try { const j = await qBLK({ where: `GOV_A='${sq(gov)}'`, outFields: "VILLAGE_A", returnDistinctValues: "true" }); v = j.features.map(f => f.attributes.VILLAGE_A).filter(Boolean).sort(arSort); cache("v-" + gov, v); } catch (e) { $("#vil").innerHTML = '<option value="">تعذّر التحميل</option>'; return; } }
+  $("#vil").innerHTML = '<option value="">اختر البلدة</option>' + v.map(x => `<option>${esc(x)}</option>`).join(""); $("#vil").disabled = false;
+  if (restore && st.vil && v.includes(st.vil)) { $("#vil").value = st.vil; await loadBlks(true); }
+}
+async function loadBlks(restore) {
+  const vil = $("#vil").value; st.vil = vil; save();
+  $("#blk").disabled = true;
+  if (!vil) { $("#blk").innerHTML = '<option value="">اختر البلدة</option>'; return; }
+  $("#blk").innerHTML = '<option value="">…جاري التحميل</option>';
+  let b = cache("b-" + vil);
+  if (!b) {
+    try { const j = await qBLK({ where: `VILLAGE_A='${sq(vil)}'`, outFields: "BLOCK_NO,SUB_BLOCK_NO,BLOCK_A" });
+      b = j.features.map(f => f.attributes).filter(a => a.BLOCK_NO != null).sort((a, c) => a.BLOCK_NO - c.BLOCK_NO || (a.SUB_BLOCK_NO || 0) - (c.SUB_BLOCK_NO || 0));
+      const seen = new Set(); b = b.filter(a => { const k = a.BLOCK_NO + "/" + (a.SUB_BLOCK_NO || 0); if (seen.has(k)) return false; seen.add(k); return true; });
+      cache("b-" + vil, b); } catch (e) { $("#blk").innerHTML = '<option value="">تعذّر التحميل</option>'; return; }
+  }
+  $("#blk").innerHTML = '<option value="">اختر الحوض</option>' + b.map(a => `<option value="${a.BLOCK_NO}/${a.SUB_BLOCK_NO || 0}">${a.BLOCK_NO}${a.SUB_BLOCK_NO ? " – حي " + a.SUB_BLOCK_NO : ""}${a.BLOCK_A && a.BLOCK_A.trim() && a.BLOCK_A.trim() !== String(a.BLOCK_NO) ? " – " + esc(a.BLOCK_A.trim()) : ""}</option>`).join("");
+  $("#blk").disabled = false;
+  if (restore && st.blk) $("#blk").value = st.blk;
+}
+$("#gov").addEventListener("change", () => { st.vil = st.blk = ""; loadVils(); });
+$("#vil").addEventListener("change", () => { st.blk = ""; loadBlks(); });
+$("#blk").addEventListener("change", () => { st.blk = $("#blk").value; save(); });
+if (st.plot) $("#plot").value = st.plot;
+
+let hi = null, pin = null;
+function clearHi() { if (hi) { map.removeLayer(hi); hi = null; } }
+function ringsToLL(rings) { return rings.map(r => r.map(p => toLL(p[0], p[1]))); }
+function highlight(geom) {
+  clearHi(); if (!geom || !geom.rings) return null;
+  hi = L.polygon(ringsToLL(geom.rings), { color: "#ffd54a", weight: 4, fill: true, fillColor: "#ffd54a", fillOpacity: .18, interactive: false }).addTo(map);
+  return hi;
+}
+// Arabic letter variants (ه/ة، ي/ى، ا/أ/إ) become wildcards so MOLG names match PLA names
+const loose = s => "%" + String(s).trim().replace(/[ةهىيأإآا]/g, "_").replace(/\s+/g, "%") + "%";
+
+$("#goP").addEventListener("click", async () => {
+  msg("msgP", "");
+  const vil = $("#vil").value, bk = $("#blk").value, plot = $("#plot").value.trim().replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+  st.plot = plot; save();
+  if (!vil) return msg("msgP", "اختر المحافظة والبلدة أولاً.");
+  if (!bk) return msg("msgP", "اختر الحوض.");
+  const [bn, sb] = bk.split("/").map(Number);
+  $("#goP").disabled = true;
+  try {
+    if (!plot) {
+      const jb = await qBLK({ where: `VILLAGE_A='${sq(vil)}' AND BLOCK_NO=${bn}` + (sb ? ` AND SUB_BLOCK_NO=${sb}` : ""), outFields: "*", returnGeometry: "true", outSR: 28191 });
+      const fb = (jb.features || [])[0];
+      if (!fb) { msg("msgP", "لم أجد هذا الحوض."); return; }
+      fold(); const p = highlight(fb.geometry); if (p) map.fitBounds(p.getBounds(), { padding: [20, 20] });
+      const a = fb.attributes;
+      showInfo(`حوض ${bn}${sb ? " – حي " + sb : ""} – ${vil}`, [{ title: "أحواض التسوية", attrs: tidy(a) }]);
+      return;
+    }
+    let where = `VILLAGE_A='${sq(vil)}' AND BLOCK_NO=${bn}` + (sb ? ` AND SUB_BLOCK_NO=${sb}` : "") + ` AND Plot_NO='${sq(plot)}'`;
+    msg("msgP", "…جاري البحث عن القطعة");
+    let j = await qPLA({ where, outFields: "*", returnGeometry: "true", outSR: 28191 });
+    let feats = j.features || [], src = "قطع الأراضي – سلطة الأراضي";
+    if (!feats.length) {
+      const w2 = `CommunityName_Arabic LIKE '${sq(loose(vil))}' AND BlockNumber='${bn}' AND ParcelNumber='${sq(plot)}'`;
+      const j2 = await rq(REST + "ParcelsRegistered_11/MapServer/0/query", { where: w2, outFields: "*", returnGeometry: "true", outSR: 28191 });
+      feats = j2.features || []; src = "قطع أراضي التسوية";
+    }
+    msg("msgP", "");
+    if (!feats.length) { msg("msgP", `لم أجد القطعة ${plot} في الحوض ${bn}${sb ? " حي " + sb : ""}.`); return; }
+    fold();
+    const f = feats[0], p = highlight(f.geometry);
+    if (p) map.fitBounds(p.getBounds(), { padding: [40, 40], maxZoom: 12 });
+    const c = p ? toXY(p.getBounds().getCenter()) : null;
+    showInfo(`قطعة ${plot} – حوض ${bn} – ${vil}`, [{ title: src, attrs: tidy(f.attributes) }], c);
+    if (c) identifyAt(c[0], c[1], true);
+  } catch (e) { msg("msgP", "تعذّر البحث: " + e.message); }
+  finally { $("#goP").disabled = false; }
+});
+
+/* ---------- identify (what's at a point) ---------- */
+const LABELS = { GOV_A: "المحافظة", VILLAGE_A: "البلدة", BLOCK_A: "اسم الحوض", BLOCK_NO: "رقم الحوض", SUB_BLOCK_A: "اسم الحي", SUB_BLOCK_NO: "رقم الحي", Plot_NO: "رقم القطعة", Shape_Area: "المساحة (م²)", SHAPE_Area: "المساحة (م²)", "Shape.STArea()": "المساحة (م²)",
+  VILLAGE_NO: "رقم البلدة", BlockNumber: "رقم الحوض", BlockName_Arabic: "اسم الحوض", CommunityName_Arabic: "التجمع", SiteName_Arabic: "اسم الموقع", ParcelNumber: "رقم القطعة", QuarterNumber: "رقم الحي", QuarterName_Arabic: "اسم الحي", GovernorateName_Arabic: "المحافظة", RegistrationType_Arabic: "نوع التسجيل" };
+const SKIP = /OBJECTID|^FID$|^Shape$|SHAPE$|Shape_Length|SHAPE_Length|STLength|created|edited|English|_E$|Text|Ref_C|LayerName|GOV_NO|^Field$|Uploaded|^Code$|Allocation|_02$|Final_Plot|ParcelsNo_BlockNo|Era_|Physical|Percentage|^Era|Owner/i;
+function tidy(a) {
+  const o = {};
+  Object.entries(a || {}).forEach(([k, v]) => {
+    if (SKIP.test(k) || v == null || v === "" || v === "Null" || v === "Null " || /^\s*$/.test(String(v))) return;
+    let lab = LABELS[k] || k;
+    if (/area/i.test(k) && typeof v === "number") v = Math.round(v).toLocaleString("en-US");
+    else if (/area/i.test(k) && !isNaN(+v)) v = Math.round(+v).toLocaleString("en-US");
+    if (/^[A-Za-z_0-9.() ]+$/.test(lab) && !LABELS[k]) return;   // English / technical field
+    if (/[A-Za-z]/.test(lab) && !/[\u0600-\u06FF]/.test(lab)) return;
+    if (/الحي/.test(lab) && /^0?$/.test(String(v).trim())) return;
+    if (/المساحة/.test(lab) && +String(v).replace(/,/g, "") > 5e6) return;
+    o[lab] = v;
+  });
+  return o;
+}
+const arName = n => { const parts = String(n || "").split("|").map(s => s.trim()); return parts.find(s => /[؀-ۿ]/.test(s)) || parts[0]; };
+function fmtXY(x, y) {
+  const itm = proj4("EPSG:28191", "EPSG:2039", [x, y]);
+  return `فلسطين  X ${x.toFixed(2)}   Y ${y.toFixed(2)}<br>ITM      X ${itm[0].toFixed(2)}   Y ${itm[1].toFixed(2)}`;
+}
+function showInfo(title, groups, xy) {
+  $("#infoTitle").textContent = title;
+  $("#infoBody").innerHTML = (xy ? `<div class="xyline">${fmtXY(xy[0], xy[1])}</div>` : "") + groups.map(g =>
+    `<div class="res"><h4>${esc(g.title)}</h4><table>${Object.entries(g.attrs).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("") || '<tr><td colspan="2">—</td></tr>'}</table></div>`).join("") + '<div id="idMore"></div>';
+  showSheet("#shInfo");
+}
+async function identifyAt(x, y, append) {
+  const s = map.getSize(), a = toXY(map.containerPointToLatLng([0, s.y])), b = toXY(map.containerPointToLatLng([s.x, 0]));
+  const want = {};
+  // always ask the cadastral layers, plus whatever else is switched on
+  LAYERS.forEach(l => { if (append && l.id === "pla") return; if (st.on[l.id] || ["blkR", "blkN", "pla", "parR", "abc", "com"].includes(l.id)) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
+  if (!append) { showInfo("معلومات الموقع", [], [x, y]); }
+  const box = () => $("#idMore");
+  if (box()) box().innerHTML = '<p class="msg" style="color:var(--am-muted)">…جاري جلب المعلومات</p>';
+  const jobs = Object.values(want).map(w => rq((w.cfg.base || REST) + w.cfg.svc + "/MapServer/identify", Object.assign({
+    geometry: JSON.stringify({ x, y }), geometryType: "esriGeometryPoint", sr: 28191, layers: "all:" + w.ids.join(","), tolerance: 2,
+    mapExtent: [a[0], a[1], b[0], b[1]].join(","), imageDisplay: s.x + "," + s.y + ",96", returnGeometry: "true" }, w.cfg.tk ? { token: w.cfg.tk } : {}))
+    .then(j => ({ w, j })).catch(() => null));
+  const out = (await Promise.all(jobs)).filter(Boolean);
+  const groups = []; let parcelGeom = null;
+  const order = LAYERS.map(l => l.svc);
+  out.sort((p, q) => order.indexOf(p.w.cfg.svc) - order.indexOf(q.w.cfg.svc));
+  out.forEach(({ j }) => (j.results || []).forEach(r => {
+    const t = tidy(r.attributes); if (!Object.keys(t).length) return;
+    groups.push({ title: arName(r.layerName), attrs: t });
+    if (!parcelGeom && /قطع/.test(arName(r.layerName)) && r.geometry && r.geometry.rings) parcelGeom = r.geometry;
+  }));
+  if (!append && parcelGeom) highlight(parcelGeom);
+  if (!box()) return;
+  box().innerHTML = groups.length ? groups.map(g => `<div class="res"><h4>${esc(g.title)}</h4><table>${Object.entries(g.attrs).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table></div>`).join("")
+    : '<p class="msg">لا توجد معلومات مسجلة في هذا الموقع.</p>';
+}
+function dropPin(x, y) {
+  if (pin) map.removeLayer(pin);
+  pin = L.marker(toLL(x, y), { icon: L.divIcon({ className: "pinIcon", iconSize: [30, 40], iconAnchor: [15, 39],
+    html: '<svg viewBox="0 0 30 40" width="30" height="40"><path d="M15 39C12 30 2 24 2 14a13 13 0 1 1 26 0c0 10-10 16-13 25Z" fill="#0f5a37" stroke="#e6c35f" stroke-width="2.5"/><circle cx="15" cy="14" r="5" fill="#f3dc93"/></svg>' }) }).addTo(map);
+}
+map.on("click", e => { const [x, y] = toXY(e.latlng); dropPin(x, y); identifyAt(x, y, false); });
+
+/* ---------- coordinates ---------- */
+const num = s => parseFloat(String(s || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.\-]/g, ""));
+document.querySelectorAll('input[name=sys]').forEach(r => { r.checked = r.value === (st.sys || "pg"); r.addEventListener("change", () => { st.sys = r.value; save(); }); });
+if (st.cx) { $("#cx").value = st.cx; $("#cy").value = st.cy; }
+function pastePair(e) { const t = (e.clipboardData && e.clipboardData.getData("text")) || ""; const m = t.match(/-?\d+(?:\.\d+)?/g); if (m && m.length >= 2) { e.preventDefault(); $("#cx").value = m[0]; $("#cy").value = m[1]; } }
+$("#cx").addEventListener("paste", pastePair); $("#cy").addEventListener("paste", pastePair);
+$("#goX").addEventListener("click", () => {
+  msg("msgX", "");
+  let x = num($("#cx").value), y = num($("#cy").value);
+  if (!isFinite(x) || !isFinite(y)) return msg("msgX", "أدخل X و Y.");
+  st.cx = x; st.cy = y;
+  let sys = (document.querySelector('input[name=sys]:checked') || {}).value || "pg";
+  if (x > 350000 && y < 350000) { [x, y] = [y, x]; $("#cx").value = x; $("#cy").value = y; msg("msgX", "بدّلت X و Y لأنهما كانتا معكوستين."); }
+  if (sys === "pg" && y > 400000) { sys = "itm"; document.querySelector('input[name=sys][value=itm]').checked = true; msg("msgX", "قيمة Y بنظام ITM، فحوّلتها تلقائياً لنظام فلسطين."); }
+  else if (sys === "itm" && y < 400000) { sys = "pg"; document.querySelector('input[name=sys][value=pg]').checked = true; msg("msgX", "القيم بنظام فلسطين القديم، فاعتمدتها كما هي."); }
+  st.sys = sys; save();
+  const p = sys === "itm" ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y];
+  if (p[0] < 100000 || p[0] > 300000 || p[1] < 50000 || p[1] > 320000) return msg("msgX", "الإحداثيات خارج نطاق الضفة وغزة. تحقق من القيم والنظام.");
+  fold(); dropPin(p[0], p[1]); clearHi();
+  map.setView(toLL(p[0], p[1]), 11);
+  setTimeout(() => identifyAt(p[0], p[1], false), 350);
+});
+
+loadGovs();
+</script>
+</body>
+</html>

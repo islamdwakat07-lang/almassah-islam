@@ -51,6 +51,10 @@ select{font:600 15px "IBM Plex Sans Arabic";direction:rtl;text-align:right}
 .seg label:has(input:checked){border-color:#17613f;background:#e3efe2}
 details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
 .tip{font-size:13px;color:#5d6458;margin-top:6px}
+.guide{margin-top:10px;border:1.5px solid #e2cf98;border-radius:14px;background:#fffaf0;padding:8px 10px}
+.guide summary{cursor:pointer;font-weight:700;color:#0c3b26}
+.guide ol{margin:8px 0 2px;padding-inline-start:20px;font-size:14px;line-height:1.7}
+.guide li{margin-bottom:4px}
 .diag td{font-size:15px}
 .diag td.d{font-size:20px}
 [hidden]{display:none!important}
@@ -65,6 +69,22 @@ details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
     <p class="muted">ملف DXF فيه ألواح الخنزيرة المرصودة <b>بخط أزرق</b> بين المسامير، ومخطط المعماري مركّباً عليها (يمكن أن يكون بلوك) بخطوط المحاور وأسمائها.</p>
     <label class="pick">📂 اختر ملف DXF<input type="file" id="file" accept=".dxf,application/dxf,image/vnd.dxf,*/*"></label>
     <div id="loadMsg"></div>
+    <details class="guide" id="guide" open>
+      <summary>📋 تعليمات تجهيز ملف الأوتوكاد</summary>
+      <ol>
+        <li><b>كل لوح خشب (خنزيرة) يُرسم بخط أزرق</b> – اللون رقم 5 (Blue)، على الخط نفسه أو على طبقته (ByLayer).</li>
+        <li><b>لوح عليه مسماران:</b> خط واحد (Line أو Polyline) من نقطة الرصد إلى نقطة الرصد.</li>
+        <li><b>لوح عليه 3 أو 4 مسامير أو أكثر:</b> بوليلاين واحد (Polyline) يمر بكل نقاط الرصد بالترتيب من أول اللوح إلى آخره – لا ترسمه خطوطاً منفصلة.</li>
+        <li>ابدأ الخط وأنهِه على مركز نقطة الرصد بالضبط (استعمل التقاط Node).</li>
+        <li><b>لا تستعمل اللون الأزرق لأي شيء آخر</b> في الملف، لأن كل خط أزرق يُعتبر لوح خشب.</li>
+        <li>ركّب مخطط المعماري على الرصد بيدك (يمكن أن يبقى بلوك)، وليكن المقياس 1 على X و Y.</li>
+        <li>اترك خطوط المحاور وأسماءها (الأحرف والأرقام) كما أعطاها المعماري. لا داعي لمدّها حتى الخشب – التطبيق يمدّها وحده.</li>
+        <li>إذا كان محور بلا اسم، اكتب اسمه نصاً (Text) قرب طرفه.</li>
+        <li>اترك أرقام نقاط الرصد ظاهرة كنصوص قرب المسامير (أقرب من متر ونصف) لتظهر في الجدول بدل N1 و E1.</li>
+        <li>إذا رسمت الألواح بخط ثلاثي الأبعاد بمنسوب كل مسمار (3D Polyline)، يحسب التطبيق المسافة على سطح الخشبة المائلة.</li>
+        <li>احفظ الملف بصيغة <b>DXF</b> (Save As ← DXF). ملف DWG لا يُقرأ.</li>
+      </ol>
+    </details>
   </section>
 
   <div id="work" hidden>
@@ -421,6 +441,7 @@ function load(txt, name) {
     $("#loadMsg").innerHTML = msgs.join("");
     $("#axLayer").innerHTML = AX.layers.map(l => `<option ${l === AX.layer ? "selected" : ""}>${esc(l)}</option>`).join("");
     $("#work").hidden = !B.length || !AX.axes.length;
+    if (!$("#work").hidden) $("#guide").open = false;
     cur = 0; st.file = { name, txt: txt.length < 4e6 ? txt : null }; save(); render();
   } catch (e) { $("#loadMsg").innerHTML = `<p class="msg bad">تعذّرت قراءة الملف: ${esc(e.message)}</p>`; }
 }

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="dwg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>تحويل DWG</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#1d2a22}
+main{max-width:560px;margin:0 auto;padding:12px 14px 40px}
+.card{background:#fffcf3;border:1.5px solid #e2cf98;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 8px 18px -14px rgba(8,42,27,.5),inset 0 1px 0 #fff}
+h2{margin:0 0 6px;font:700 20px "Reem Kufi","IBM Plex Sans Arabic";color:#0c3b26}
+.muted{color:#5d6458;font-size:13px}
+.pick{display:block;text-align:center;border:2px dashed #c99a2e;border-radius:16px;padding:22px 10px;background:#fffaf0;cursor:pointer;color:#0c3b26;font-weight:700;font-size:17px}
+.pick input{display:none}
+.f{display:flex;align-items:center;gap:10px;border:1.5px solid #e2cf98;border-radius:14px;padding:10px;margin-top:10px;background:#fffdf6}
+.f .ic{width:44px;height:44px;border-radius:10px;background:#0c4f30;color:#fff6d6;display:grid;place-items:center;font:700 11px "IBM Plex Mono";flex:none}
+.f .nm{flex:1;min-width:0}.f .nm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right}
+.f .nm small{color:#5d6458}
+.st{font-size:13px;font-weight:700}.ok{color:#1e6b4a}.bad{color:#b91c1c}.wait{color:#8a6514}
+.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.btn{flex:1;border:1.5px solid #c99a2e;border-radius:999px;padding:9px 8px;background:#fffaf0;color:#0c3b26;font:700 14px "IBM Plex Sans Arabic";cursor:pointer;white-space:nowrap}
+.btn.pri{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;border-color:#e6c35f}
+.btn.gold{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00}
+.bar{height:6px;border-radius:99px;background:#f3ead2;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c99a2e,#17613f);transition:width .3s}
+ol{margin:6px 0 0;padding-inline-start:20px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-dwg.png" alt=""><b>تحويل DWG</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <section class="card">
+    <h2>من DWG إلى DXF بكبسة زر</h2>
+    <p class="muted">اختر ملف أو أكثر بصيغة DWG من الجوال، فيتحول إلى DXF هنا على الجوال نفسه دون إنترنت، ويُحفظ في التنزيلات.</p>
+    <label class="pick">📂 اختر ملف DWG<input type="file" id="file" accept=".dwg,application/acad,image/vnd.dwg,*/*" multiple></label>
+    <div class="bar" id="bar" hidden><i></i></div>
+    <div id="list"></div>
+  </section>
+  <section class="card">
+    <h2>ملاحظات</h2>
+    <ol>
+      <li>يقرأ إصدارات أوتوكاد من 2000 حتى 2018 وما بعدها.</li>
+      <li>أول تحويل يأخذ ثوانٍ لتجهيز المحوّل، وبعدها يصير أسرع.</li>
+      <li>إذا فشل ملف معيّن، احفظه من الأوتوكاد مباشرة بصيغة DXF (Save As ← DXF).</li>
+      <li>بعد التحويل تقدر تفتح الملف مباشرة في أداة الخنزيرة.</li>
+    </ol>
+  </section>
+</main>
+<script type="module">
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const kb = n => n > 1048576 ? (n / 1048576).toFixed(1) + " م.ب" : Math.max(1, Math.round(n / 1024)) + " ك.ب";
+let mod = null;
+async function engine() {
+  if (mod) return mod;
+  const { default: create } = await import("./lib/libredwg-web.js");
+  mod = await create({ locateFile: f => new URL("./lib/" + f, location.href).href });
+  return mod;
+}
+function b64(u8) { let s = ""; const C = 0x8000; for (let i = 0; i < u8.length; i += C) s += String.fromCharCode.apply(null, u8.subarray(i, i + C)); return btoa(s); }
+function saveFile(name, u8) {
+  if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, b64(u8), "application/dxf"); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u8], { type: "application/dxf" })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+const done = new Map();
+async function convert(file, row) {
+  const st = row.querySelector(".st"), btns = row.querySelector(".btns");
+  try {
+    st.className = "st wait"; st.textContent = "…جاري التحويل";
+    const M = await engine();
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if (String.fromCharCode(...buf.subarray(0, 4)) !== "AC10") throw new Error("هذا ليس ملف DWG");
+    const t0 = performance.now();
+    M.FS.writeFile("/in.dwg", buf);
+    let err = -1;
+    try { err = M.dwg_write_dxf("/in.dwg", "/out.dxf"); } catch (e) { throw new Error("تعذّر تحويل هذا الملف"); }
+    let out = null; try { out = M.FS.readFile("/out.dxf"); } catch (e) {}
+    try { M.FS.unlink("/in.dwg"); } catch (e) {} try { M.FS.unlink("/out.dxf"); } catch (e) {}
+    if (!out || !out.length) throw new Error("تعذّر تحويل هذا الملف (رمز " + err + ")");
+    const name = file.name.replace(/\.dwg$/i, "") + ".dxf";
+    done.set(row, { name, out });
+    st.className = "st ok"; st.textContent = `✓ تم التحويل (${kb(out.length)} · ${((performance.now() - t0) / 1000).toFixed(1)} ث)`;
+    btns.innerHTML = `<button class="btn pri" data-a="save" type="button">⬇ حفظ ${esc(name)}</button><button class="btn gold" data-a="kh" type="button">فتح في الخنزيرة</button>`;
+    saveFile(name, out);
+  } catch (e) {
+    st.className = "st bad"; st.textContent = "✗ " + (e.message || "تعذّر التحويل");
+    mod = null;   // a crash can leave the engine unusable: start a fresh one next time
+  }
+}
+$("#file").addEventListener("change", async e => {
+  const files = [...e.target.files]; e.target.value = ""; if (!files.length) return;
+  $("#bar").hidden = false; const bar = $("#bar i"); let n = 0; bar.style.width = "3%";
+  for (const f of files) {
+    const row = document.createElement("div"); row.className = "f";
+    row.innerHTML = `<div class="ic">DWG</div><div class="nm"><b>${esc(f.name)}</b><small>${kb(f.size)}</small><div class="st wait">بالانتظار</div><div class="btns"></div></div>`;
+    $("#list").prepend(row);
+    await convert(f, row); bar.style.width = (++n / files.length * 100) + "%";
+  }
+  setTimeout(() => { $("#bar").hidden = true; bar.style.width = "0"; }, 800);
+});
+$("#list").addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (!b) return; const r = done.get(b.closest(".f")); if (!r) return;
+  if (b.dataset.a === "save") saveFile(r.name, r.out);
+  if (b.dataset.a === "kh") {
+    const txt = new TextDecoder("utf-8").decode(r.out);
+    try { const k = JSON.parse(localStorage.getItem("khanzira-v1") || "{}"); k.file = { name: r.name, txt }; localStorage.setItem("khanzira-v1", JSON.stringify(k)); location.href = "../khanzira/index.html"; }
+    catch (err) { alert("الملف كبير على الفتح المباشر. احفظه ثم افتحه من أداة الخنزيرة."); }
+  }
+});
+</script>
+</body>
+</html>

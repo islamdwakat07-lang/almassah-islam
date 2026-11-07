@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="kh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>الخنزيرة</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#1d2a22}
+main{max-width:640px;margin:0 auto;padding:10px 12px 40px}
+.card{background:#fffcf3;border:1.5px solid #e2cf98;border-radius:18px;padding:12px;margin-bottom:10px;box-shadow:0 8px 18px -14px rgba(8,42,27,.5),inset 0 1px 0 #fff}
+h2{margin:0 0 4px;font:700 19px "Reem Kufi","IBM Plex Sans Arabic";color:#0c3b26}
+.muted{color:#5d6458;font-size:13px}
+.n{font-family:"IBM Plex Mono",monospace;direction:ltr;unicode-bidi:isolate}
+.pick{display:block;text-align:center;border:2px dashed #c99a2e;border-radius:16px;padding:18px 10px;background:#fffaf0;cursor:pointer;color:#0c3b26;font-weight:700}
+.pick input{display:none}
+.msg{margin:8px 0 0;padding:8px 10px;border-radius:12px;font-size:14px}
+.msg.warn{background:#fbf0d2;border:1px solid #c99a2e;color:#7a4e00}.msg.bad{background:#fde3e1;border:1px solid #d14b3f;color:#8a1c12}.msg.ok{background:#e3efe2;border:1px solid #9cc5a5;color:#1e6b4a}
+.boards{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.boards button{flex:1 1 22%;min-width:70px;padding:8px 4px;border-radius:999px;border:1.5px solid #e2cf98;background:#fffaf0;color:#0c3b26;font:700 13px "IBM Plex Sans Arabic";cursor:pointer}
+.boards button.on{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;border-color:#c99a2e}
+.boards button.done{background:#e3efe2}.boards button.alert{border-color:#d14b3f;color:#8a1c12}
+.boards button.on.alert{color:#ffd9d4}
+svg{display:block;width:100%;height:auto}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+td{padding:7px 6px;border-bottom:1px solid #eadfbf;vertical-align:middle}
+td.l{font:700 20px "IBM Plex Mono",monospace;color:#0c3b26;width:50px;text-align:center}
+td.d{font:700 26px "IBM Plex Mono",monospace;text-align:left;direction:ltr;white-space:nowrap}
+td.c{width:42px;text-align:center}
+.lb{display:block;font-size:16px;font-weight:700;color:#0c3b26}.sg{display:block;font-size:14px;color:#7a1010;font-weight:600}
+.ck{display:inline-block;width:30px;height:30px;border-radius:8px;border:2px solid #c99a2e}
+tr.mk{cursor:pointer}
+tr.done td{opacity:.38}tr.done td.d,tr.done td.l{text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:#7a1010}
+tr.done .ck{background:#17613f;border-color:#17613f}tr.done .ck::after{content:"✓";color:#fff;font-weight:700;display:block;text-align:center;line-height:26px}
+tr.nail td{background:#f3ead2}tr.nail td.l{font-size:14px;color:#8a6514}
+tr.chk td{background:#e3efe2}tr.chk td.d{color:#1e6b4a}tr.chk.bad td{background:#fde3e1}tr.chk.bad td.d{color:#b91c1c}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{flex:1;border:1.5px solid #c99a2e;border-radius:999px;padding:10px 8px;background:#fffaf0;color:#0c3b26;font:700 14px "IBM Plex Sans Arabic";cursor:pointer;white-space:nowrap}
+.btn.pri{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;border-color:#e6c35f}
+.btn.gold{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00}
+.btn.red{background:#b91c1c;color:#fff;border-color:#7a1010}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px;color:#0c3b26}
+input.num,select{font:600 18px "IBM Plex Mono",monospace;direction:ltr;text-align:left;padding:9px 10px;border:1.5px solid #e2cf98;border-radius:12px;background:#fffdf6;width:100%}
+select{font:600 15px "IBM Plex Sans Arabic";direction:rtl;text-align:right}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.seg label{flex:1 1 45%;border:1.5px solid #e2cf98;border-radius:12px;padding:7px 8px;font-size:13px;font-weight:700;color:#0c3b26;cursor:pointer;background:#fffdf6}
+.seg input{margin-inline-end:6px;accent-color:#17613f}
+.seg label:has(input:checked){border-color:#17613f;background:#e3efe2}
+details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
+.tip{font-size:13px;color:#5d6458;margin-top:6px}
+.diag td{font-size:15px}
+.diag td.d{font-size:20px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-kh.png" alt=""><b>الخنزيرة</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <section class="card" id="cLoad">
+    <h2>ملف الخنزيرة</h2>
+    <p class="muted">ملف DXF فيه ألواح الخنزيرة المرصودة <b>بخط أزرق</b> بين المسامير، ومخطط المعماري مركّباً عليها (يمكن أن يكون بلوك) بخطوط المحاور وأسمائها.</p>
+    <label class="pick">📂 اختر ملف DXF<input type="file" id="file" accept=".dxf,application/dxf,image/vnd.dxf,*/*"></label>
+    <div id="loadMsg"></div>
+  </section>
+
+  <div id="work" hidden>
+    <div class="boards" id="boards"></div>
+    <section class="card"><svg id="site" viewBox="0 0 360 240"></svg></section>
+    <section class="card" id="bCard">
+      <h2 id="bTitle"></h2>
+      <div class="muted" id="bSub"></div>
+      <svg id="strip" viewBox="0 0 340 80" style="margin-top:6px"></svg>
+      <div id="bAlert"></div>
+      <table id="bTable"></table>
+      <div class="tip">اضغط على السطر بعد تعليمه فيُشطب. المسافات على سطح الخشبة ومن المسمار الأول مباشرة (تراكمية) – لا تنقل صفر المتر.</div>
+      <div class="row"><button class="btn" id="flip" type="button">⇄ ابدأ من المسمار الآخر</button></div>
+    </section>
+    <section class="card" id="cClose">
+      <h2>التحقق بالمتر</h2>
+      <label class="f">المسافة التي قستها بالمتر بين المسمارين (م)<input class="num" id="meas" inputmode="decimal" placeholder="مثال 16.97"></label>
+      <div id="closeMsg"></div>
+      <div id="distBox" hidden>
+        <div class="muted" style="margin-top:8px">توزيع الفرق (المسافات بين المحاور لا تتغير):</div>
+        <div class="seg" id="distSeg">
+          <label><input type="radio" name="dist" value="none" checked>بدون توزيع</label>
+          <label><input type="radio" name="dist" value="half">بالتساوي على الطرفين</label>
+          <label><input type="radio" name="dist" value="s0">تثبيت المسمار الأول</label>
+          <label><input type="radio" name="dist" value="s1">تثبيت المسمار الآخر</label>
+        </div>
+        <button class="btn red" id="force" type="button" hidden>متابعة على مسؤوليتي</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>فحص الخيوط بعد الشد</h2>
+      <table class="diag" id="diag"></table>
+      <div class="tip">قِس القطرين بين تقاطعات الخيوط وقارنهما بالأرقام.</div>
+    </section>
+    <section class="card">
+      <details><summary>الإعدادات</summary>
+        <div class="grid2" style="margin-top:8px">
+          <label class="f">السماح على اللوح (سم)<input class="num" id="tol" inputmode="decimal"></label>
+          <label class="f">سماح القطرين (سم)<input class="num" id="dtol" inputmode="decimal"></label>
+        </div>
+        <label class="f" style="margin-top:8px">طبقة المحاور<select id="axLayer"></select></label>
+      </details>
+    </section>
+    <div class="row">
+      <button class="btn gold" id="pdf" type="button">📄 PDF للعمّال</button>
+      <button class="btn" id="dxfOut" type="button">⬇ DXF بالعلامات</button>
+      <button class="btn pri" id="next" type="button">اللوح التالي ←</button>
+    </div>
+  </div>
+</main>
+<script src="../jspdf.umd.min.js"></script>
+<script src="../geomolg/pdf.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const KEY = "khanzira-v1";
+let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+st.tol = st.tol || 4; st.dtol = st.dtol || 2;
+$("#tol").value = st.tol; $("#dtol").value = st.dtol;
+
+/* ======================= DXF reader (blocks, nested inserts, attributes) ======================= */
+function parseDXF(txt) {
+  const L = txt.split(/\r?\n/), pairs = [];
+  for (let i = 0; i + 1 < L.length; i += 2) pairs.push([parseInt(L[i], 10), L[i + 1].replace(/\s+$/, "")]);
+  const layers = {}, blocks = {}, model = [];
+  let sec = null, i = 0;
+  const readEnt = () => {               // pairs[i] is [0,TYPE]
+    const e = { t: pairs[i][1], g: [] }; i++;
+    while (i < pairs.length && pairs[i][0] !== 0) { e.g.push(pairs[i]); i++; }
+    return e;
+  };
+  while (i < pairs.length) {
+    const [c, v] = pairs[i];
+    if (c === 0 && v === "SECTION") { sec = pairs[i + 1] && pairs[i + 1][1]; i += 2; continue; }
+    if (c === 0 && v === "ENDSEC") { sec = null; i++; continue; }
+    if (sec === "TABLES" && c === 0 && v === "LAYER") {
+      const e = readEnt(); let n = "", col = 7; e.g.forEach(([k, x]) => { if (k === 2) n = x; if (k === 62) col = +x; }); layers[n] = Math.abs(col); continue;
+    }
+    if (sec === "BLOCKS" && c === 0 && v === "BLOCK") {
+      const h = readEnt(); let name = "", bx = 0, by = 0; h.g.forEach(([k, x]) => { if (k === 2) name = x; if (k === 10) bx = +x; if (k === 20) by = +x; });
+      const ents = [];
+      while (i < pairs.length && !(pairs[i][0] === 0 && pairs[i][1] === "ENDBLK")) { if (pairs[i][0] === 0) ents.push(readEnt()); else i++; }
+      if (i < pairs.length) readEnt();
+      blocks[name] = { bx, by, ents: group(ents) }; continue;
+    }
+    if (sec === "ENTITIES" && c === 0) { model.push(readEnt()); continue; }
+    i++;
+  }
+  return { layers, blocks, model: group(model) };
+}
+// attach VERTEX/ATTRIB … SEQEND to their parent
+function group(list) {
+  const out = []; let cur = null;
+  for (const e of list) {
+    if ((e.t === "VERTEX" || e.t === "ATTRIB") && cur) { cur.kids.push(e); continue; }
+    if (e.t === "SEQEND") { cur = null; continue; }
+    e.kids = []; out.push(e);
+    cur = (e.t === "POLYLINE" || (e.t === "INSERT" && e.g.some(([k, v]) => k === 66 && +v === 1))) ? e : null;
+  }
+  return out;
+}
+const gv = (e, k, d) => { const p = e.g.find(x => x[0] === k); return p ? p[1] : d; };
+const gn = (e, k, d) => { const p = e.g.find(x => x[0] === k); return p ? +p[1] : d; };
+function trueBlue(e) { const p = e.g.find(x => x[0] === 420); if (!p) return null; const v = +p[1], r = v >> 16 & 255, g = v >> 8 & 255, b = v & 255; return b > 150 && r < 90 && g < 160; }
+/* flatten everything to model space: segments (polylines) and texts, with layer + colour */
+function flatten(d) {
+  const lines = [], texts = [], M0 = [1, 0, 0, 1, 0, 0];
+  const ap = (M, x, y) => [M[0] * x + M[2] * y + M[4], M[1] * x + M[3] * y + M[5]];
+  const mul = (A, B) => [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3], A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
+  const scaleOf = M => Math.sqrt(Math.abs(M[0] * M[3] - M[1] * M[2]));
+  function walk(ents, M, inhLayer, inhCol, depth) {
+    if (depth > 8) return;
+    for (const e of ents) {
+      let layer = gv(e, 8, "0"); if (layer === "0" && inhLayer) layer = inhLayer;
+      let col = gn(e, 62, 256); if (col === 0) col = inhCol || 7; if (col === 256) col = d.layers[layer] != null ? d.layers[layer] : 7;
+      const blue = trueBlue(e); const isBlue = blue != null ? blue : Math.abs(col) === 5;
+      const lt = gv(e, 6, "");
+      if (e.t === "LINE") lines.push({ layer, blue: isBlue, lt, pts: [[...ap(M, gn(e, 10, 0), gn(e, 20, 0)), gn(e, 30, 0)], [...ap(M, gn(e, 11, 0), gn(e, 21, 0)), gn(e, 31, 0)]] });
+      else if (e.t === "LWPOLYLINE") {
+        const pts = []; let x = null; const el = gn(e, 38, 0);
+        e.g.forEach(([k, v]) => { if (k === 10) x = +v; if (k === 20 && x != null) { pts.push([...ap(M, x, +v), el]); x = null; } });
+        if (gn(e, 70, 0) & 1 && pts.length > 2) pts.push(pts[0]);
+        if (pts.length > 1) lines.push({ layer, blue: isBlue, lt, pts });
+      } else if (e.t === "POLYLINE") {
+        const pts = e.kids.filter(k => k.t === "VERTEX").map(k => [...ap(M, gn(k, 10, 0), gn(k, 20, 0)), gn(k, 30, 0)]);
+        if (gn(e, 70, 0) & 1 && pts.length > 2) pts.push(pts[0]);
+        if (pts.length > 1) lines.push({ layer, blue: isBlue, lt, pts });
+      } else if (e.t === "TEXT" || e.t === "MTEXT" || e.t === "ATTRIB") {
+        let s = e.t === "MTEXT" ? e.g.filter(([k]) => k === 3 || k === 1).map(x => x[1]).join("") : gv(e, 1, "");
+        s = s.replace(/\\[A-Za-z][^;\\]*;/g, "").replace(/\\P/g, " ").replace(/[{}]/g, "").replace(/%%[cdpCDP]/g, "").trim();
+        if (!s) continue;
+        const al = e.t !== "MTEXT" && (gn(e, 72, 0) || gn(e, 73, 0) || gn(e, 74, 0)) && e.g.some(x => x[0] === 11);
+        const p = al ? ap(M, gn(e, 11, 0), gn(e, 21, 0)) : ap(M, gn(e, 10, 0), gn(e, 20, 0));
+        const h = gn(e, 40, 0.3) * scaleOf(M);
+        texts.push({ s, p, h, layer });
+      } else if (e.t === "INSERT") {
+        const b = d.blocks[gv(e, 2, "")];
+        const sx = gn(e, 41, 1), sy = gn(e, 42, sx), r = gn(e, 50, 0) * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+        const ix = gn(e, 10, 0), iy = gn(e, 20, 0);
+        const cols = Math.max(1, gn(e, 70, 1)), rows = Math.max(1, gn(e, 71, 1)), cs = gn(e, 44, 0), rs = gn(e, 45, 0);
+        for (let ci = 0; ci < cols; ci++) for (let ri = 0; ri < rows; ri++) {
+          const ox = ix + c * ci * cs - s * ri * rs, oy = iy + s * ci * cs + c * ri * rs;
+          const T = [c * sx, s * sx, -s * sy, c * sy, ox - (c * sx * (b ? b.bx : 0) - s * sy * (b ? b.by : 0)), oy - (s * sx * (b ? b.bx : 0) + c * sy * (b ? b.by : 0))];
+          const MM = mul(M, T);
+          if (b) walk(b.ents, MM, layer, col, depth + 1);
+        }
+        walk(e.kids.filter(k => k.t === "ATTRIB"), M, layer, col, depth + 1);   // attributes are already in the parent's space
+      }
+    }
+  }
+  walk(d.model, M0, null, null, 0);
+  return { lines, texts };
+}
+
+/* ======================= geometry ======================= */
+const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+const isLabel = s => /^([A-Za-z]{1,2}'?|[A-Za-z]\d{1,2}|\d{1,2}[A-Za-z]?'?|[ء-ي]{1,2}\d?)$/.test(s);
+function findAxes(F, layerPick) {
+  const cand = F.lines.filter(l => !l.blue && l.pts.length === 2 && dist(l.pts[0], l.pts[1]) > 2);
+  const byLayer = {};
+  cand.forEach(l => (byLayer[l.layer] = byLayer[l.layer] || []).push(l));
+  const labels = F.texts.filter(t => isLabel(t.s));
+  const nameOf = l => {
+    const len = dist(l.pts[0], l.pts[1]); let best = null, bd = 1e9;
+    for (const t of labels) for (const p of l.pts) { const R = Math.max(2.2, 6 * t.h, 0.06 * len); const d = dist(p, t.p); if (d < R && d < bd) { bd = d; best = t; } }
+    return best ? best.s.toUpperCase() : null;
+  };
+  // score layers by how many of their lines carry a label
+  const score = {};
+  Object.entries(byLayer).forEach(([k, ls]) => { score[k] = ls.filter(l => nameOf(l)).length + (/(axis|grid|محاور|محور|axe|achs|center)/i.test(k) ? 3 : 0); });
+  const order = Object.keys(score).sort((a, b) => score[b] - score[a]);
+  const layer = layerPick && byLayer[layerPick] ? layerPick : order[0];
+  let axes = (byLayer[layer] || []).map(l => ({ p: l.pts[0], q: l.pts[1], name: nameOf(l), len: dist(l.pts[0], l.pts[1]) }));
+  // merge duplicates (same name / same line)
+  const out = [];
+  for (const a of axes) {
+    const d = [a.q[0] - a.p[0], a.q[1] - a.p[1]], n = Math.hypot(...d); a.u = [d[0] / n, d[1] / n];
+    const dup = out.find(b => Math.abs(a.u[0] * b.u[1] - a.u[1] * b.u[0]) < 0.01 && Math.abs((a.p[0] - b.p[0]) * b.u[1] - (a.p[1] - b.p[1]) * b.u[0]) < 0.02);
+    if (dup) { if (!dup.name && a.name) dup.name = a.name; continue; }
+    out.push(a);
+  }
+  // two direction families
+  const ang = a => { let t = Math.atan2(a.u[1], a.u[0]); if (t < 0) t += Math.PI; if (t >= Math.PI) t -= Math.PI; return t; };
+  const ref = out.length ? ang(out[0]) : 0;
+  out.forEach(a => { const d = Math.abs(((ang(a) - ref + Math.PI / 2) % Math.PI + Math.PI) % Math.PI - Math.PI / 2); a.fam = d < Math.PI / 4 ? 0 : 1; });
+  // unnamed → automatic names
+  [0, 1].forEach(f => {
+    const fam = out.filter(a => a.fam === f), nrm = fam[0] ? [-fam[0].u[1], fam[0].u[0]] : [0, 1];
+    fam.sort((a, b) => (a.p[0] * nrm[0] + a.p[1] * nrm[1]) - (b.p[0] * nrm[0] + b.p[1] * nrm[1]));
+    fam.forEach((a, i) => { a.off = a.p[0] * nrm[0] + a.p[1] * nrm[1]; if (!a.name) a.name = f === 0 ? String.fromCharCode(65 + i) + "?" : (i + 1) + "?"; });
+  });
+  return { axes: out, layers: order, layer };
+}
+function lineInter(p, u, a, b) {   // infinite line (p,u) with segment a-b -> t on segment
+  const ex = b[0] - a[0], ey = b[1] - a[1], den = ex * u[1] - ey * u[0]; if (Math.abs(den) < 1e-12) return null;
+  const t = ((p[0] - a[0]) * u[1] - (p[1] - a[1]) * u[0]) / den;
+  return t;
+}
+function buildBoards(F, axes) {
+  const blues = F.lines.filter(l => l.blue);
+  const nails = F.texts.filter(t => !isLabel(t.s) || /^\d{2,}$/.test(t.s));
+  const all = blues.flatMap(b => b.pts), cx = all.reduce((s, p) => s + p[0], 0) / (all.length || 1), cy = all.reduce((s, p) => s + p[1], 0) / (all.length || 1);
+  const boards = blues.map((b, bi) => {
+    const pts = b.pts;
+    // horizontal + along-board (with height) lengths per segment
+    const segs = []; let acc = 0;
+    for (let i = 0; i + 1 < pts.length; i++) { const h = dist(pts[i], pts[i + 1]), dz = (pts[i + 1][2] || 0) - (pts[i][2] || 0), s = Math.hypot(h, dz); segs.push({ a: pts[i], b: pts[i + 1], h, s, k: h > 0 ? s / h : 1, at: acc }); acc += s; }
+    const marks = [];
+    for (const ax of axes) segs.forEach((g, si) => {
+      const t = lineInter(ax.p, ax.u, g.a, g.b); if (t == null || t < -0.002 || t > 1.002) return;
+      const q = [g.a[0] + (g.b[0] - g.a[0]) * t, g.a[1] + (g.b[1] - g.a[1]) * t];
+      // must be reasonably close to the drawn axis
+      const along = (q[0] - ax.p[0]) * ax.u[0] + (q[1] - ax.p[1]) * ax.u[1];
+      if (along < -ax.len * 0.6 - 12 || along > ax.len * 1.6 + 12) return;
+      const gu = [(g.b[0] - g.a[0]) / g.h, (g.b[1] - g.a[1]) / g.h];
+      const sinA = Math.abs(ax.u[0] * gu[1] - ax.u[1] * gu[0]);
+      if (sinA < 0.2) return;   // axis almost parallel to the board
+      marks.push({ name: ax.name, q, d: g.at + t * g.s, ang: Math.asin(Math.min(1, sinA)) * 180 / Math.PI, fam: ax.fam });
+    });
+    marks.sort((a, b) => a.d - b.d);
+    const uniq = marks.filter((m, i) => !i || Math.abs(m.d - marks[i - 1].d) > 0.003 || m.name !== marks[i - 1].name);
+    const nailName = p => { let best = null, bd = 1.6; nails.forEach(t => { const d = dist(p, t.p); if (d < bd) { bd = d; best = t.s; } }); return best; };
+    const mid = [(pts[0][0] + pts[pts.length - 1][0]) / 2, (pts[0][1] + pts[pts.length - 1][1]) / 2];
+    const a = Math.atan2(mid[1] - cy, mid[0] - cx) * 180 / Math.PI;
+    const dir = a > 45 && a <= 135 ? "الشمالي" : a > -45 && a <= 45 ? "الشرقي" : a > -135 && a <= -45 ? "الجنوبي" : "الغربي";
+    const ini = { "الشمالي": "N", "الشرقي": "E", "الجنوبي": "S", "الغربي": "W" }[dir];
+    return { id: bi, pts, segs, L: acc, marks: uniq, dir, ini, n0: nailName(pts[0]), n1: nailName(pts[pts.length - 1]), mid };
+  }).filter(b => b.L > 0.5);
+  // unique names
+  const cnt = {}; boards.forEach(b => cnt[b.dir] = (cnt[b.dir] || 0) + 1);
+  const seen = {}; boards.forEach(b => { if (cnt[b.dir] > 1) { seen[b.dir] = (seen[b.dir] || 0) + 1; b.title = b.dir + " " + seen[b.dir]; b.ini += seen[b.dir]; } else b.title = b.dir;
+    b.n0 = b.n0 || b.ini + "1"; b.n1 = b.n1 || b.ini + "2"; });
+  const order = { "الشمالي": 0, "الشرقي": 1, "الجنوبي": 2, "الغربي": 3 };
+  boards.sort((a, b) => order[a.dir] - order[b.dir]);
+  return boards;
+}
+
+/* ======================= state & rendering ======================= */
+let D = null, F = null, AX = null, B = [], cur = 0;
+const bKey = b => b.pts.map(p => p[0].toFixed(2) + "," + p[1].toFixed(2)).join(";");
+function bState(b) { st.b = st.b || {}; const k = bKey(b); return st.b[k] = st.b[k] || { done: {}, flip: false, meas: "", dist: "none", force: false }; }
+const f2 = v => v.toFixed(2);
+
+function view(b) {   // marks as seen from the chosen start nail, with the chosen error distribution applied
+  const S = bState(b), flip = S.flip, L = b.L;
+  let ms = b.marks.map(m => ({ ...m, d: flip ? L - m.d : m.d })).sort((x, y) => x.d - y.d);
+  const n0 = flip ? b.n1 : b.n0, n1 = flip ? b.n0 : b.n1;
+  const meas = parseFloat(String(S.meas).replace(",", "."));
+  const diff = isFinite(meas) && meas > 0 ? meas - L : null;
+  const over = diff != null && Math.abs(diff) * 100 > st.tol + 1e-9;
+  let shift = 0, applied = false;
+  if (diff != null && S.dist !== "none" && (!over || S.force)) { shift = S.dist === "half" ? diff / 2 : S.dist === "s1" ? diff : 0; applied = true; }
+  ms = ms.map(m => ({ ...m, d: m.d + shift }));
+  return { ms, n0, n1, L: diff != null && applied ? meas : L, Lgps: L, diff, over, applied, shift };
+}
+function renderBoards() {
+  $("#boards").innerHTML = B.map((b, i) => { const v = view(b), S = bState(b), all = v.ms.length && v.ms.every(m => S.done[m.name + "@" + b.id]);
+    return `<button type="button" data-i="${i}" class="${i === cur ? "on" : ""} ${all ? "done" : ""} ${v.over ? "alert" : ""}">${esc(b.title)}${v.over ? " ⚠" : all ? " ✓" : ""}</button>`; }).join("");
+}
+function render() {
+  if (!B.length) return;
+  const b = B[cur], S = bState(b), v = view(b);
+  renderBoards(); drawSite(b, v);
+  const fams = [...new Set(v.ms.map(m => m.fam))];
+  $("#bTitle").textContent = `اللوح ${b.title}` + (v.ms.length ? ` – ${v.ms[0].name} ← ${v.ms[v.ms.length - 1].name}` : "");
+  const angs = v.ms.map(m => 90 - m.ang), mx = angs.length ? Math.max(...angs.map(Math.abs)) : 0;
+  $("#bSub").innerHTML = `ثبّت صفر المتر على المسمار <b class="n">${esc(v.n0)}</b> وامشِ باتجاه <b class="n">${esc(v.n1)}</b> · ميل اللوح عن المحاور <b class="n">${mx.toFixed(1)}°</b>` + (b.pts.length > 2 ? ` · اللوح مرصود بـ${b.pts.length} مسامير` : "");
+  drawStrip(v);
+  // table
+  const rows = [`<tr class="nail"><td class="l">${esc(v.n0)}</td><td><b class="lb">المسمار ${esc(v.n0)} – صفر المتر</b></td><td class="d">0.00</td><td class="c"></td></tr>`];
+  v.ms.forEach((m, i) => { const k = m.name + "@" + b.id, prev = i ? v.ms[i - 1] : null;
+    rows.push(`<tr class="mk ${S.done[k] ? "done" : ""}" data-k="${esc(k)}"><td class="l">${esc(m.name)}</td><td><b class="lb">من ${esc(v.n0)} إلى ${esc(m.name)}</b><small class="sg">المسافة من ${esc(prev ? prev.name : v.n0)} إلى ${esc(m.name)}: <span class="n">${f2(m.d - (prev ? prev.d : 0))}</span></small></td><td class="d">${f2(m.d)}</td><td class="c"><span class="ck"></span></td></tr>`); });
+  const last = v.ms[v.ms.length - 1];
+  rows.push(`<tr class="chk ${v.over ? "bad" : ""}"><td class="l">${esc(v.n1)}</td><td><b class="lb">من ${esc(v.n0)} إلى ${esc(v.n1)} (للتحقق)</b><small class="sg">المسافة من ${esc(last ? last.name : v.n0)} إلى ${esc(v.n1)}: <span class="n">${f2(v.L - (last ? last.d : 0))}</span></small></td><td class="d">${f2(v.L)}</td><td class="c">🎯</td></tr>`);
+  $("#bTable").innerHTML = rows.join("");
+  $("#bAlert").innerHTML = !v.ms.length ? '<p class="msg warn">لا يقطع هذا اللوح أي محور. تأكد أن خطوط المحاور تصل باتجاهه، أو اختر طبقة المحاور من الإعدادات.</p>' : "";
+  // closure
+  $("#meas").value = S.meas || "";
+  document.querySelectorAll('input[name=dist]').forEach(r => r.checked = r.value === (S.dist || "none"));
+  if (v.diff == null) { $("#closeMsg").innerHTML = '<p class="tip">اكتب ما قسته بالمتر من المسمار إلى المسمار لمقارنته بالمسافة المرصودة <span class="n">' + f2(v.Lgps) + "</span> م.</p>"; $("#distBox").hidden = true; }
+  else {
+    const cm = v.diff * 100, txt = `الفرق <b class="n">${cm >= 0 ? "+" : ""}${cm.toFixed(1)}</b> سم (المرصود <span class="n">${f2(v.Lgps)}</span> · المتر <span class="n">${f2(v.Lgps + v.diff)}</span>)`;
+    $("#closeMsg").innerHTML = v.over ? `<p class="msg bad">⚠ ${txt} – تجاوز المسموح (${st.tol} سم). أعد القياس أو أعد رصد المسمارين.${S.force ? "<br><b>تمت المتابعة على مسؤوليتك.</b>" : ""}</p>` : `<p class="msg ok">✓ ${txt} – ضمن المسموح (${st.tol} سم).</p>`;
+    $("#distBox").hidden = false; $("#force").hidden = !v.over || S.force;
+    if (v.over && !S.force && S.dist !== "none") $("#closeMsg").innerHTML += '<p class="tip">التوزيع لن يُطبّق حتى تضغط «متابعة على مسؤوليتي».</p>';
+    if (v.applied && v.shift) $("#closeMsg").innerHTML += `<p class="tip">تم تحريك كل العلامات <b class="n">${(v.shift * 100).toFixed(1)}</b> سم باتجاه ${esc(v.n1)}، والمسافات بين المحاور كما في المخطط.</p>`;
+  }
+  drawDiag();
+  $("#next").textContent = cur < B.length - 1 ? "اللوح التالي ←" : "↺ اللوح الأول";
+}
+function drawStrip(v) {
+  const L = v.L, X = d => 330 - Math.max(0, Math.min(L, d)) / L * 320;
+  let s = '<defs><marker id="ar" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L6 3 L0 6Z" fill="#7a1010"/></marker></defs>';
+  s += `<rect x="10" y="22" width="320" height="26" rx="4" fill="#d9b27a" stroke="#8a5a10" stroke-width="2"/>`;
+  s += `<circle cx="${X(0)}" cy="35" r="5" fill="#b91c1c"/><circle cx="${X(L)}" cy="35" r="5" fill="#b91c1c"/><text x="${X(0)}" y="64" text-anchor="middle" font-size="11" fill="#8a6514">${esc(v.n0)}</text><text x="${X(L)}" y="64" text-anchor="middle" font-size="11" fill="#8a6514">${esc(v.n1)}</text>`;
+  const fs = v.ms.length > 7 ? 9 : 12;
+  v.ms.forEach(m => { s += `<line x1="${X(m.d)}" y1="16" x2="${X(m.d)}" y2="54" stroke="#0c3b26" stroke-width="3"/><text x="${X(m.d)}" y="12" text-anchor="middle" font-size="${fs + 1}" font-weight="700" fill="#0c3b26">${esc(m.name)}</text>`; });
+  const stops = [0, ...v.ms.map(m => m.d), L];
+  for (let i = 0; i < stops.length - 1; i++) { const a = stops[i], b = stops[i + 1], w = X(a) - X(b); if (w < 14) continue;
+    s += `<text x="${(X(a) + X(b)) / 2}" y="40" text-anchor="middle" font-size="${Math.min(fs, w / 3.2)}" font-weight="700" fill="#7a1010" font-family="IBM Plex Mono">${f2(b - a)}</text>`;
+    s += `<path d="M${X(a) - 3} 74 L${X(b) + 3} 74" stroke="#7a1010" stroke-width="1" marker-start="url(#ar)" marker-end="url(#ar)"/>`; }
+  $("#strip").innerHTML = s;
+}
+function drawSite(b, v) {
+  const pts = B.flatMap(x => x.pts), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), sc = Math.min(330 / ((x1 - x0) || 1), 210 / ((y1 - y0) || 1));
+  const P = p => [(p[0] - x0) * sc + 15 + (330 - (x1 - x0) * sc) / 2, (y1 - p[1]) * sc + 15];
+  let g = "";
+  AX.axes.forEach(a => { const ext = 1e3, A = [a.p[0] - a.u[0] * ext, a.p[1] - a.u[1] * ext], C = [a.p[0] + a.u[0] * ext, a.p[1] + a.u[1] * ext];
+    const pa = P(A), pc = P(C); g += `<line x1="${pa[0]}" y1="${pa[1]}" x2="${pc[0]}" y2="${pc[1]}" stroke="#1e5bd8" stroke-width="1" stroke-dasharray="4 3" opacity=".75"/>`; });
+  // grid intersections = column centres
+  const f0 = AX.axes.filter(a => a.fam === 0), f1 = AX.axes.filter(a => a.fam === 1);
+  f0.forEach(a => f1.forEach(c => { const t = lineInter(c.p, c.u, a.p, [a.p[0] + a.u[0], a.p[1] + a.u[1]]); if (t == null) return; const q = P([a.p[0] + a.u[0] * t, a.p[1] + a.u[1] * t]); g += `<rect x="${q[0] - 3}" y="${q[1] - 3}" width="6" height="6" fill="#334155"/>`; }));
+  B.forEach(x => { const on = x === b; g += `<polyline points="${x.pts.map(p => P(p).join(",")).join(" ")}" fill="none" stroke="${on ? "#c99a2e" : "#a37a3f"}" stroke-width="${on ? 7 : 4}" stroke-linecap="round" stroke-linejoin="round"/>`; });
+  // labels of the current board
+  const flip = bState(b).flip, ptsB = [b.pts[0], ...b.marks.map(m => m.q), b.pts[b.pts.length - 1]];
+  b.marks.forEach(m => { const q = P(m.q); g += `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="#b91c1c"/>`; });
+  const cen = P([(x0 + x1) / 2, (y0 + y1) / 2]);
+  b.marks.forEach(m => { const q = P(m.q), dx = q[0] - cen[0], dy = q[1] - cen[1], n = Math.hypot(dx, dy) || 1; g += `<text x="${q[0] + dx / n * 12}" y="${q[1] + dy / n * 12 + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="#0c3b26">${esc(m.name)}</text>`; });
+  for (let i = 0; i < ptsB.length - 1; i++) { const a = P(ptsB[i]), c = P(ptsB[i + 1]); const mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2, dx = mx - cen[0], dy = my - cen[1], n = Math.hypot(dx, dy) || 1;
+    const dd = (() => { const da = i === 0 ? 0 : b.marks[i - 1].d, db = i === ptsB.length - 2 ? b.L : b.marks[i].d; return db - da; })();
+    if (dist(a, c) > 16) g += `<text x="${mx + dx / n * 22}" y="${my + dy / n * 22 + 4}" text-anchor="middle" font-size="10" font-weight="700" fill="#7a1010" font-family="IBM Plex Mono">${f2(dd)}</text>`; }
+  [[b.pts[0], flip ? b.n1 : b.n0], [b.pts[b.pts.length - 1], flip ? b.n0 : b.n1]].forEach(([p, n]) => { const q = P(p); g += `<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="#fff" stroke="#b91c1c" stroke-width="3"/><text x="${q[0]}" y="${q[1] - 8}" text-anchor="middle" font-size="10" fill="#8a6514">${esc(n)}</text>`; });
+  g += '<g transform="translate(340,24)"><circle r="13" fill="#fff" stroke="#0c3b26" stroke-width="1.5"/><path d="M0,-10 L5,6 L0,2 L-5,6Z" fill="#0c3b26"/><text y="-16" text-anchor="middle" font-size="10" font-weight="700" fill="#0c3b26">N</text></g>';
+  $("#site").innerHTML = g;
+}
+function gridPt(a, c) { const t = lineInter(c.p, c.u, a.p, [a.p[0] + a.u[0], a.p[1] + a.u[1]]); return t == null ? null : [a.p[0] + a.u[0] * t, a.p[1] + a.u[1] * t]; }
+function drawDiag() {
+  const f0 = AX.axes.filter(a => a.fam === 0).sort((a, b) => a.off - b.off), f1 = AX.axes.filter(a => a.fam === 1).sort((a, b) => a.off - b.off);
+  if (f0.length < 2 || f1.length < 2) { $("#diag").innerHTML = '<tr><td class="muted">يحتاج محورين على الأقل في كل اتجاه.</td></tr>'; return; }
+  const a0 = f0[0], a1 = f0[f0.length - 1], c0 = f1[0], c1 = f1[f1.length - 1];
+  const P00 = gridPt(a0, c0), P11 = gridPt(a1, c1), P01 = gridPt(a0, c1), P10 = gridPt(a1, c0);
+  const rows = [[`${a0.name}${c0.name} ↔ ${a1.name}${c1.name}`, dist(P00, P11)], [`${a0.name}${c1.name} ↔ ${a1.name}${c0.name}`, dist(P01, P10)]];
+  const sides = [[`${a0.name}${c0.name} ↔ ${a0.name}${c1.name}`, dist(P00, P01)], [`${a0.name}${c0.name} ↔ ${a1.name}${c0.name}`, dist(P00, P10)]];
+  $("#diag").innerHTML = rows.map(r => `<tr><td>قطر ${esc(r[0])}</td><td class="d">${f2(r[1])}</td></tr>`).join("") + sides.map(r => `<tr><td class="muted">ضلع ${esc(r[0])}</td><td class="d" style="font-size:16px;color:#5d6458">${f2(r[1])}</td></tr>`).join("") +
+    `<tr><td colspan="2" class="tip">فرق القطرين المسموح ±${st.dtol} سم.</td></tr>`;
+}
+
+/* ======================= events ======================= */
+function load(txt, name) {
+  try {
+    D = parseDXF(txt); F = flatten(D);
+    AX = findAxes(F, st.axLayer);
+    B = buildBoards(F, AX.axes);
+    const blues = F.lines.filter(l => l.blue).length;
+    const msgs = [];
+    if (!blues) msgs.push('<p class="msg bad">لم أجد أي خط أزرق (لون 5) يمثل الخشبة.</p>');
+    if (!AX.axes.length) msgs.push('<p class="msg bad">لم أجد خطوط المحاور. تأكد أنها في الملف، أو اختر طبقتها من الإعدادات.</p>');
+    const auto = AX.axes.filter(a => /\?$/.test(a.name)).length;
+    if (auto) msgs.push(`<p class="msg warn">${auto} محور بلا اسم في الملف، فسمّيتها تلقائياً (عليها علامة ؟).</p>`);
+    if (B.length && AX.axes.length) msgs.push(`<p class="msg ok">✓ ${esc(name || "الملف")}: ${B.length} ألواح، ${AX.axes.length} محاور (طبقة <b>${esc(AX.layer)}</b>).</p>`);
+    $("#loadMsg").innerHTML = msgs.join("");
+    $("#axLayer").innerHTML = AX.layers.map(l => `<option ${l === AX.layer ? "selected" : ""}>${esc(l)}</option>`).join("");
+    $("#work").hidden = !B.length || !AX.axes.length;
+    cur = 0; st.file = { name, txt: txt.length < 4e6 ? txt : null }; save(); render();
+  } catch (e) { $("#loadMsg").innerHTML = `<p class="msg bad">تعذّرت قراءة الملف: ${esc(e.message)}</p>`; }
+}
+$("#file").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => load(String(r.result), f.name); r.readAsText(f); e.target.value = ""; });
+$("#boards").addEventListener("click", e => { const t = e.target.closest("[data-i]"); if (!t) return; cur = +t.dataset.i; render(); scrollTo({ top: 0, behavior: "smooth" }); });
+$("#bTable").addEventListener("click", e => { const tr = e.target.closest("tr.mk"); if (!tr) return; const S = bState(B[cur]); S.done[tr.dataset.k] = !S.done[tr.dataset.k]; save(); tr.classList.toggle("done"); renderBoards(); });
+$("#flip").addEventListener("click", () => { const S = bState(B[cur]); S.flip = !S.flip; save(); render(); });
+$("#meas").addEventListener("change", () => { const S = bState(B[cur]); S.meas = $("#meas").value.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace("٫", "."); S.force = false; save(); render(); });
+document.querySelectorAll('input[name=dist]').forEach(r => r.addEventListener("change", () => { const S = bState(B[cur]); S.dist = r.value; save(); render(); }));
+$("#force").addEventListener("click", () => { const S = bState(B[cur]); S.force = true; if (S.dist === "none") S.dist = "half"; save(); render(); });
+$("#next").addEventListener("click", () => { cur = (cur + 1) % B.length; render(); scrollTo({ top: 0, behavior: "smooth" }); });
+$("#tol").addEventListener("change", () => { st.tol = parseFloat($("#tol").value) || 4; save(); render(); });
+$("#dtol").addEventListener("change", () => { st.dtol = parseFloat($("#dtol").value) || 2; save(); render(); });
+$("#axLayer").addEventListener("change", () => { st.axLayer = $("#axLayer").value; save(); if (st.file && st.file.txt) load(st.file.txt, st.file.name); });
+
+/* ======================= outputs ======================= */
+function saveFile(name, b64, mime) {
+  if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, b64, mime); return; }
+  const a = document.createElement("a"); a.href = "data:" + mime + ";base64," + b64; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+$("#dxfOut").addEventListener("click", () => {
+  const o = ["0", "SECTION", "2", "TABLES", "0", "TABLE", "2", "LAYER", "70", "2", "0", "LAYER", "2", "KH_MARKS", "70", "0", "62", "1", "6", "CONTINUOUS", "0", "LAYER", "2", "KH_TEXT", "70", "0", "62", "2", "6", "CONTINUOUS", "0", "ENDTAB", "0", "ENDSEC", "0", "SECTION", "2", "ENTITIES"];
+  B.forEach(b => { const v = view(b); const pts = b.pts;
+    v.ms.forEach(m => { o.push("0", "POINT", "8", "KH_MARKS", "10", m.q[0].toFixed(4), "20", m.q[1].toFixed(4), "30", "0");
+      o.push("0", "TEXT", "8", "KH_TEXT", "10", (m.q[0] + 0.15).toFixed(3), "20", (m.q[1] + 0.15).toFixed(3), "30", "0", "40", "0.25", "1", m.name + " " + f2(m.d)); }); });
+  o.push("0", "ENDSEC", "0", "EOF");
+  saveFile("khanzira-marks.dxf", btoa(o.join("\r\n")), "application/dxf");
+});
+$("#pdf").addEventListener("click", async () => {
+  const btn = $("#pdf"), old = btn.textContent; btn.disabled = true; btn.textContent = "…جاري التجهيز";
+  try {
+    await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0)));
+    const W = mm(210), H = mm(297), pages = [];
+    const newPage = (title, sub) => { const c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d"); frameHeader(x, W, title, sub); pages.push(c); return x; };
+    const foot = (x, i, n) => { const d = new Date(); txt(x, `صفحة ${i} من ${n}  ·  ${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
+      txt(x, "المسافات على سطح الخشبة من المسمار الأول (تراكمية). لا تنقل صفر المتر.", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458"); };
+    let ctx = null, y = 0;
+    B.forEach((b, bi) => {
+      const v = view(b), rowH = mm(7.2), need = mm(40) + rowH * (v.ms.length + 2);
+      if (!ctx || y + need > mm(250)) { ctx = newPage("الخنزيرة – علامات المحاور على الألواح", (st.file && st.file.name || "") ); y = mm(38); }
+      // board title
+      txt(ctx, `اللوح ${b.title}${v.over ? "  ⚠ الفرق " + (v.diff * 100).toFixed(1) + " سم" : ""}`, W - mm(12), y, `700 ${mm(5)}px ${TF}`, v.over ? "#b91c1c" : GREEN_D);
+      txt(ctx, `صفر المتر على ${v.n0} باتجاه ${v.n1}${v.applied && v.shift ? ` · معدّل ${(v.shift * 100).toFixed(1)} سم` : ""}`, W - mm(12), y + mm(6), `500 ${mm(3.2)}px ${AF}`, "#5d6458");
+      // strip
+      const sx0 = mm(14), sx1 = W - mm(14), sy = y + mm(15), Xs = d => sx1 - d / v.L * (sx1 - sx0);
+      rr(ctx, sx0, sy, sx1 - sx0, mm(7), mm(1)); ctx.fillStyle = "#d9b27a"; ctx.fill(); ctx.strokeStyle = "#8a5a10"; ctx.lineWidth = 3; ctx.stroke();
+      const stops = [0, ...v.ms.map(m => m.d), v.L];
+      v.ms.forEach(m => { ctx.strokeStyle = GREEN_D; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(Xs(m.d), sy - mm(2)); ctx.lineTo(Xs(m.d), sy + mm(9)); ctx.stroke(); txt(ctx, m.name, Xs(m.d), sy - mm(4), `700 ${mm(3.6)}px ${MF}`, GREEN_D, "center"); });
+      for (let i = 0; i < stops.length - 1; i++) { const w = Xs(stops[i]) - Xs(stops[i + 1]); if (w < mm(9)) continue; txt(ctx, f2(stops[i + 1] - stops[i]), (Xs(stops[i]) + Xs(stops[i + 1])) / 2, sy + mm(3.6), `700 ${Math.min(mm(3.4), w / 4)}px ${MF}`, "#7a1010", "center"); }
+      txt(ctx, v.n0, sx1, sy + mm(11.5), `600 ${mm(3)}px ${MF}`, "#8a6514", "center"); txt(ctx, v.n1, sx0, sy + mm(11.5), `600 ${mm(3)}px ${MF}`, "#8a6514", "center");
+      // table
+      let ty = sy + mm(16);
+      const row = (a, bTxt, c, bg, col, seg) => { if (bg) { ctx.fillStyle = bg; ctx.fillRect(mm(12), ty, W - mm(24), rowH); } ctx.strokeStyle = "#eadfbf"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(mm(12), ty + rowH); ctx.lineTo(W - mm(12), ty + rowH); ctx.stroke();
+        txt(ctx, a, W - mm(16), ty + rowH / 2, `700 ${mm(4)}px ${MF}`, GREEN_D, "center"); txt(ctx, bTxt, W - mm(24), ty + rowH / 2, `600 ${mm(3.3)}px ${AF}`, INK);
+        txt(ctx, c, mm(16), ty + rowH / 2, `700 ${mm(5)}px ${MF}`, col || INK, "left");
+        if (seg) { txt(ctx, seg[0], mm(118), ty + rowH / 2, `600 ${mm(3)}px ${AF}`, "#7a1010"); txt(ctx, seg[1], mm(60), ty + rowH / 2, `700 ${mm(3.6)}px ${MF}`, "#7a1010", "left"); }
+        ty += rowH; };
+      row(v.n0, `المسمار ${v.n0} – صفر المتر`, "0.00", "#f3ead2");
+      v.ms.forEach((m, i) => row(m.name, `من ${v.n0} إلى ${m.name}`, f2(m.d), null, null, [`المسافة من ${i ? v.ms[i - 1].name : v.n0} إلى ${m.name}`, f2(m.d - (i ? v.ms[i - 1].d : 0))]));
+      row(v.n1, `من ${v.n0} إلى ${v.n1} – للتحقق`, f2(v.L), v.over ? "#fde3e1" : "#e3efe2", v.over ? "#b91c1c" : "#1e6b4a", [`المسافة من ${v.ms.length ? v.ms[v.ms.length - 1].name : v.n0} إلى ${v.n1}`, f2(v.L - (v.ms.length ? v.ms[v.ms.length - 1].d : 0))]);
+      y = ty + mm(8);
+    });
+    drawStamp(ctx, mm(40), mm(255), mm(24));
+    pages.forEach((c, i) => foot(c.getContext("2d"), i + 1, pages.length));
+    const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+    pages.forEach((c, i) => { if (i) doc.addPage(); doc.addImage(c.toDataURL("image/jpeg", .9), "JPEG", 0, 0, 210, 297); });
+    window.__khPages = pages;
+    saveFile("الخنزيرة.pdf", doc.output("datauristring").split(",")[1], "application/pdf");
+  } catch (e) { alert("تعذّر تجهيز PDF: " + e.message); }
+  finally { btn.disabled = false; btn.textContent = old; }
+});
+
+if (st.file && st.file.txt) load(st.file.txt, st.file.name);
+</script>
+</body>
+</html>

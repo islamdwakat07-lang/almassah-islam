@@ -38,43 +38,9 @@ public class MapActivity extends Activity {
     private WebView web;
     private String startUrl;
     private final Handler ui = new Handler(Looper.getMainLooper());
-    private PinView pin;
     private float pinX = -1, pinY = -1;      // point position in WebView pixels
     private boolean autoTapping = false, locating = false;
     private int session = 0;                  // bumps on every (re)load so old timers are ignored
-    private float downX, downY;
-
-    /** red pin whose tip is drawn exactly at (tipX, tipY) */
-    private class PinView extends View {
-        float tipX = -1, tipY = -1;
-        final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG), white = new Paint(Paint.ANTI_ALIAS_FLAG), shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
-        PinView() {
-            super(MapActivity.this);
-            fill.setColor(Color.parseColor("#d32f2f"));
-            stroke.setColor(Color.parseColor("#7a0d06")); stroke.setStyle(Paint.Style.STROKE); stroke.setStrokeWidth(dp(1.5f));
-            white.setColor(Color.WHITE);
-            shadow.setColor(Color.parseColor("#55000000"));
-        }
-        void at(float x, float y) { tipX = x; tipY = y; setVisibility(x < 0 ? GONE : VISIBLE); invalidate(); }
-        @Override protected void onDraw(Canvas c) {
-            if (tipX < 0) return;
-            float r = dp(13), h = dp(36);
-            c.drawOval(tipX - dp(7), tipY - dp(2.5f), tipX + dp(7), tipY + dp(2.5f), shadow);
-            Path p = new Path();
-            float cy = tipY - h + r;
-            p.moveTo(tipX, tipY);
-            p.cubicTo(tipX - dp(4), tipY - dp(10), tipX - r, cy + r * 0.7f, tipX - r, cy);
-            p.arcTo(tipX - r, cy - r, tipX + r, cy + r, 180, 180, false);
-            p.cubicTo(tipX + r, cy + r * 0.7f, tipX + dp(4), tipY - dp(10), tipX, tipY);
-            p.close();
-            c.drawPath(p, fill); c.drawPath(p, stroke);
-            c.drawCircle(tipX, cy, dp(5), white);
-            // crosshair ticks around the exact point
-            Paint t = new Paint(Paint.ANTI_ALIAS_FLAG); t.setColor(Color.parseColor("#d32f2f")); t.setStrokeWidth(dp(1.5f));
-            c.drawLine(tipX - dp(12), tipY, tipX - dp(4), tipY, t); c.drawLine(tipX + dp(4), tipY, tipX + dp(12), tipY, t);
-            c.drawLine(tipX, tipY + dp(4), tipX, tipY + dp(10), t);
-        }
-    }
 
     /** finds the map surface (largest canvas / map container) and returns its centre in CSS px + the page width */
     private static final String FIND_JS = "(function(){try{var best=null,ba=0;"
@@ -82,7 +48,9 @@ public class MapActivity extends Activity {
         + "for(var i=0;i<els.length;i++){var r=els[i].getBoundingClientRect();var a=r.width*r.height;"
         + "if(r.width>innerWidth*0.45&&r.height>innerHeight*0.35&&a>ba){ba=a;best=r;}}"
         + "if(!best||document.readyState!=='complete')return JSON.stringify({ok:0});"
-        + "return JSON.stringify({ok:1,x:best.left+best.width/2,y:best.top+best.height/2,w:innerWidth});}catch(e){return JSON.stringify({ok:0});}})()";
+        + "return JSON.stringify({ok:1,l:Math.max(0,best.left),t:Math.max(0,best.top),r:Math.min(innerWidth,best.right),b:Math.min(innerHeight,best.bottom),w:innerWidth});}catch(e){return JSON.stringify({ok:0});}})()";
+
+    private float mapL, mapT, mapR, mapB;     // visible map surface in WebView pixels
 
     private void locatePoint(final int s, final int tries) {
         if (s != session || web == null) return;
@@ -94,10 +62,10 @@ public class MapActivity extends Activity {
                 JSONObject o = new JSONObject(j);
                 if (o.optInt("ok") == 1 && o.optDouble("w") > 0) {
                     float k = web.getWidth() / (float) o.getDouble("w");
-                    pinX = (float) o.getDouble("x") * k; pinY = (float) o.getDouble("y") * k;
-                    pin.at(pinX, pinY);
-                    // give GovMap time to draw the layers, then tap the point to show its information
-                    ui.postDelayed(() -> { if (s == session) tapPoint(); }, 2500);
+                    mapL = (float) o.getDouble("l") * k; mapT = (float) o.getDouble("t") * k;
+                    mapR = (float) o.getDouble("r") * k; mapB = (float) o.getDouble("b") * k;
+                    // give GovMap time to draw its own marker and the layers, then find the marker and tap it
+                    ui.postDelayed(() -> findMarkerAndTap(s, 0), 2500);
                     return;
                 }
             } catch (Exception ignored) { }
@@ -105,24 +73,63 @@ public class MapActivity extends Activity {
         });
     }
 
-    /** real touch on the point, exactly like a finger tap, so GovMap opens its information popup */
-    private void tapPoint() {
-        if (pinX < 0 || web == null) return;
-        autoTapping = true;
-        long t = SystemClock.uptimeMillis();
-        MotionEvent d = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, pinX, pinY, 0);
-        d.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-        web.dispatchTouchEvent(d); d.recycle();
-        MotionEvent u = MotionEvent.obtain(t, t + 80, MotionEvent.ACTION_UP, pinX, pinY, 0);
-        u.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-        ui.postDelayed(() -> { web.dispatchTouchEvent(u); u.recycle(); autoTapping = false; }, 80);
+    /** GovMap draws a blue marker exactly on the coordinate; find it on screen and return its tip */
+    private float[] findMarker() {
+        int W = web.getWidth(), H = web.getHeight();
+        if (W <= 0 || H <= 0) return null;
+        final int sc = 2;                                  // analyse at half resolution
+        int w = W / sc, h = H / sc;
+        Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm);
+        c.scale(1f / sc, 1f / sc);
+        c.translate(-web.getScrollX(), -web.getScrollY());
+        web.draw(c);
+        int[] px = new int[w * h];
+        bm.getPixels(px, 0, w, 0, 0, w, h);
+        bm.recycle();
+        int x0 = Math.max(0, (int) (mapL / sc)), x1 = Math.min(w, (int) (mapR / sc));
+        int y0 = Math.max(0, (int) (mapT / sc)), y1 = Math.min(h, (int) (mapB / sc));
+        boolean[] m = new boolean[w * h];
+        for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) {
+            int p = px[y * w + x], r = (p >> 16) & 255, g = (p >> 8) & 255, b = p & 255;
+            m[y * w + x] = b > 200 && g > 110 && g < 210 && r < 130 && b - r > 100;
+        }
+        // largest connected blob of marker blue
+        int[] stack = new int[w * h];
+        int bestN = 0, bMinX = 0, bMaxX = 0, bMinY = 0, bMaxY = 0;
+        for (int i = 0; i < m.length; i++) {
+            if (!m[i]) continue;
+            int sp = 0, n = 0, mnx = w, mxx = 0, mny = h, mxy = 0;
+            stack[sp++] = i; m[i] = false;
+            while (sp > 0) {
+                int q = stack[--sp], qx = q % w, qy = q / w; n++;
+                if (qx < mnx) mnx = qx; if (qx > mxx) mxx = qx; if (qy < mny) mny = qy; if (qy > mxy) mxy = qy;
+                int[] nb = {q - 1, q + 1, q - w, q + w};
+                for (int t : nb) if (t >= 0 && t < m.length && m[t] && Math.abs(t % w - qx) <= 1) { m[t] = false; stack[sp++] = t; }
+            }
+            if (n > bestN) { bestN = n; bMinX = mnx; bMaxX = mxx; bMinY = mny; bMaxY = mxy; }
+        }
+        float bw = bMaxX - bMinX + 1, bh = bMaxY - bMinY + 1;
+        // a marker is a compact blob taller than wide, a few dp in size
+        if (bestN < dp(40) || bw > dp(40) || bh > dp(60) || bh < bw * 0.9f) return null;
+        return new float[]{(bMinX + bMaxX) / 2f * sc, (bMaxY + bh * 0.08f) * sc};
     }
+
+    private void findMarkerAndTap(final int s, final int tries) {
+        if (s != session || web == null) return;
+        float[] t = null;
+        try { t = findMarker(); } catch (Throwable ignored) { }
+        if (t != null) { pinX = t[0]; pinY = t[1]; tapPoint(); return; }
+        if (tries < 12) ui.postDelayed(() -> findMarkerAndTap(s, tries + 1), 700);
+        else toastMsg("لم أجد علامة النقطة على الخارطة. اضغط عليها بإصبعك لعرض المعلومات.");
+    }
+
+    private void toastMsg(String t) { android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_LONG).show(); }
 
     private void loadPoint() {
         session++;
         locating = false;
         pinX = pinY = -1;
-        if (pin != null) pin.at(-1, -1);
         web.loadUrl(startUrl);
     }
 
@@ -258,15 +265,11 @@ public class MapActivity extends Activity {
         bar.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
         root.addView(bar, new FrameLayout.LayoutParams(-1, dp(4), Gravity.TOP));
 
-        pin = new PinView();
-        pin.setVisibility(View.GONE);
-        root.addView(pin, new FrameLayout.LayoutParams(-1, -1));
-
         LinearLayout tools = new LinearLayout(this);
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         tools.addView(greenPill("↺ النقطة", v -> loadPoint()));
-        tools.addView(greenPill("ℹ معلومات النقطة", v -> { if (pinX >= 0 && pin.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); }));
+        tools.addView(greenPill("ℹ معلومات النقطة", v -> { if (mapR > 0) findMarkerAndTap(session, 0); else loadPoint(); }));
         tools.addView(greenPill("المتصفح", v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
         }));
@@ -284,19 +287,6 @@ public class MapActivity extends Activity {
         s.setLoadWithOverviewMode(true);
         s.setBuiltInZoomControls(false);
         s.setAllowFileAccess(false);
-
-        // the pin marks the point only until the map is moved by hand
-        web.setOnTouchListener((v, e) -> {
-            if (autoTapping || pin == null) return false;
-            switch (e.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN: downX = e.getX(); downY = e.getY(); break;
-                case MotionEvent.ACTION_POINTER_DOWN: pin.at(-1, -1); break;
-                case MotionEvent.ACTION_MOVE:
-                    if (Math.hypot(e.getX() - downX, e.getY() - downY) > dp(10)) pin.at(-1, -1);
-                    break;
-            }
-            return false;
-        });
 
         web.setWebViewClient(new WebViewClient() {
             @Override

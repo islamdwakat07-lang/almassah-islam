@@ -39,7 +39,8 @@ select:disabled{opacity:.55}
 .leaflet-container{font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
 .fab{position:absolute;z-index:500;border:2px solid var(--am-gold-400);border-radius:999px;background:var(--am-btn);color:#fff6d6;font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:9px 14px;box-shadow:0 6px 14px -6px rgba(0,0,0,.6);cursor:pointer}
 .mapwrap{flex:1;min-height:0;position:relative;display:flex}
-#fabLayers{top:10px;right:10px}
+#fabLoc{top:10px;right:10px}
+.tab.lay{flex:.8;background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;border-color:var(--am-gold-500)}
 #fabBase{top:56px;right:10px}
 .busy{position:absolute;z-index:500;top:10px;left:50%;transform:translateX(-50%);background:#fff8e1;border:1.5px solid var(--am-gold-500);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--am-green-800);display:none}
 .busy.on{display:block}
@@ -76,6 +77,7 @@ select:disabled{opacity:.55}
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tP" aria-selected="true" type="button">بحث عن قطعة</button>
     <button class="tab" role="tab" id="tX" aria-selected="false" type="button">إحداثيات</button>
+    <button class="tab lay" id="tL" type="button">☰ الطبقات</button>
     <button class="tab fold" id="tFold" type="button" aria-label="إخفاء">▲</button>
   </div>
   <div class="pane" id="pP">
@@ -104,13 +106,25 @@ select:disabled{opacity:.55}
 
 <div class="mapwrap">
   <div id="map"></div>
-  <button class="fab" id="fabLayers" type="button">☰ الطبقات</button>
+  <button class="fab" id="fabLoc" type="button" aria-label="تحديد موقعي">◎ موقعي</button>
   <div class="busy" id="busy">جاري التحميل…</div>
 </div>
 
 <section class="sheet" id="shInfo" aria-label="المعلومات">
   <header><h3 id="infoTitle">معلومات الموقع</h3><button class="x" type="button" data-close>✕</button></header>
   <div class="body" id="infoBody"></div>
+</section>
+<section class="sheet" id="shPdf" aria-label="خيارات التصدير">
+  <header><h3>خيارات مخطط PDF</h3><button class="x" type="button" data-close>✕</button></header>
+  <div class="body">
+    <label class="lay"><input type="checkbox" id="oGrid"><span>إحداثيات حقيقية على إطار الصورة<small>أرقام X و Y على حواف المخطط مع علامات الشبكة</small></span></label>
+    <div class="seg" id="oSysBox" style="margin:6px 0 4px">
+      <label><input type="radio" name="osys" value="pg" checked>فلسطينية</label>
+      <label><input type="radio" name="osys" value="itm">إسرائيلية ITM</label>
+    </div>
+    <label class="lay"><input type="checkbox" id="oPage"><span>صفحة إحداثيات رؤوس القطعة<small>صفحة ثانية فيها جدول إحداثيات الرؤوس وأطوال الأضلاع</small></span></label>
+    <button class="go" type="button" id="oGo">📄 تصدير المخطط</button>
+  </div>
 </section>
 <section class="sheet" id="shLayers" aria-label="الطبقات">
   <header><h3>الطبقات والخلفية</h3><button class="x" type="button" data-close>✕</button></header>
@@ -152,13 +166,13 @@ const BASES = [
 ];
 // curated overlay layers (service, sub-layer ids, colour for the swatch)
 const LAYERS = [
-  { id: "blkR", name: "أحواض التسوية", svc: "Blocks_02", ids: [0], c: "#1e5bd8", on: true },
-  { id: "blkN", name: "الأحواض الطبيعية", svc: "Blocks_02", ids: [1], c: "#6fb3ff", on: true },
+  { id: "blkR", name: "أحواض التسوية", svc: "Blocks_02", ids: [0], c: "#1e5bd8", on: false },
+  { id: "blkN", name: "الأحواض الطبيعية", svc: "Blocks_02", ids: [1], c: "#6fb3ff", on: false },
   { id: "pla", name: "قطع أراضي فيها كواشين طابو", svc: "Parcels_All_PLA", ids: [0], tk: TK, c: "#f59e0b", on: true },
-  { id: "parR", name: "قطع تسوية غير منتهية", svc: "ParcelsRegistered_11", ids: [0], c: "#a3b51b", on: true },
-  { id: "abc", name: "مناطق أ، ب، ج (المعتمدة)", svc: "ABC_Areas_JurisdictionBorders_07", ids: [0], c: "#dc2626", on: true },
+  { id: "parR", name: "قطع تسوية غير منتهية", svc: "ParcelsRegistered_11", ids: [0], c: "#a3b51b", on: false },
+  { id: "abc", name: "مناطق أ، ب، ج (المعتمدة)", svc: "ABC_Areas_JurisdictionBorders_07", ids: [0], c: "#dc2626", on: false },
   { id: "com", name: "أسماء البلدات", svc: "Communities_06", ids: [1], c: "#0f766e", on: true },
-  { id: "ump", name: "المخططات الهيكلية المصدقة", svc: "UrbanMasterPlans_Approved_03", ids: [4], c: "#b45309", on: false },
+  { id: "ump", name: "المخططات الهيكلية المصدقة", svc: "UrbanMasterPlans_Approved_03", ids: [4], c: "#b45309", on: true },
   { id: "cont", name: "خطوط الكنتور كل 5 م", svc: "ContourLines_02", ids: [1], c: "#92400e", on: false },
   { id: "cont1", name: "خطوط الكنتور كل 1 م", svc: "ContourLines_02", ids: [0], c: "#b45309", on: false },
   { id: "state", name: "أراضي الدولة", svc: "StateLand_02", ids: [0, 1], c: "#16a34a", on: false },
@@ -169,7 +183,7 @@ const LAYERS = [
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } };
 let st = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
-st.on = st.on || Object.fromEntries(LAYERS.map(l => [l.id, l.on]));
+st.on = Object.fromEntries(LAYERS.map(l => [l.id, l.on]));   // every opening starts with the default layers
 st.base = st.base || "2025";
 
 /* ---------- map ---------- */
@@ -248,7 +262,7 @@ let openSheet = null;
 function showSheet(id) { if (openSheet) openSheet.classList.remove("on"); openSheet = $(id); openSheet.classList.add("on"); }
 function closeSheet() { if (openSheet) openSheet.classList.remove("on"); openSheet = null; }
 document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeSheet));
-$("#fabLayers").addEventListener("click", () => showSheet("#shLayers"));
+$("#tL").addEventListener("click", () => showSheet("#shLayers"));
 window.__back = () => (openSheet ? (closeSheet(), 1) : 0);
 
 /* ---------- tabs ---------- */
@@ -446,12 +460,24 @@ function showInfo(title, groups, xy) {
   showSheet("#shInfo"); pdfBtnState();
 }
 function pdfBtnState() { const b = $("#pdfBtn"); if (b) b.hidden = !curParcel; }
-document.addEventListener("click", e => { if (e.target && e.target.id === "pdfBtn") exportPDF(); });
+document.addEventListener("click", e => { if (e.target && e.target.id === "pdfBtn") pdfOptions(); });
+function pdfOptions() {
+  const o = st.pdf || { grid: false, sys: "pg", page: false };
+  $("#oGrid").checked = !!o.grid; $("#oPage").checked = !!o.page;
+  document.querySelectorAll('input[name=osys]').forEach(r => r.checked = r.value === (o.sys || "pg"));
+  $("#oSysBox").style.opacity = o.grid ? 1 : .45;
+  showSheet("#shPdf");
+}
+$("#oGrid").addEventListener("change", () => { $("#oSysBox").style.opacity = $("#oGrid").checked ? 1 : .45; });
+$("#oGo").addEventListener("click", () => {
+  st.pdf = { grid: $("#oGrid").checked, page: $("#oPage").checked, sys: (document.querySelector('input[name=osys]:checked') || {}).value || "pg" }; save();
+  exportPDF(st.pdf);
+});
 async function identifyAt(x, y, append) {
   const s = map.getSize(), a = toXY(map.containerPointToLatLng([0, s.y])), b = toXY(map.containerPointToLatLng([s.x, 0]));
   const want = {};
   // always ask the cadastral layers, plus whatever else is switched on
-  LAYERS.forEach(l => { if (append && l.id === "pla") return; if (st.on[l.id] || ["blkR", "blkN", "pla", "parR", "abc", "com"].includes(l.id)) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
+  LAYERS.forEach(l => { if (append === true && l.id === "pla") return; if (st.on[l.id] || ["blkR", "blkN", "pla", "parR", "abc", "com"].includes(l.id)) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
   if (!append) { showInfo("معلومات الموقع", [], [x, y]); }
   const box = () => $("#idMore");
   if (box()) box().innerHTML = '<p class="msg" style="color:var(--am-muted)">…جاري جلب المعلومات</p>';
@@ -481,6 +507,27 @@ function dropPin(x, y) {
     html: '<svg viewBox="0 0 30 40" width="30" height="40"><path d="M15 39C12 30 2 24 2 14a13 13 0 1 1 26 0c0 10-10 16-13 25Z" fill="#0f5a37" stroke="#e6c35f" stroke-width="2.5"/><circle cx="15" cy="14" r="5" fill="#f3dc93"/></svg>' }) }).addTo(map);
 }
 map.on("click", e => { const [x, y] = toXY(e.latlng); dropPin(x, y); clearHi(); curParcel = null; identifyAt(x, y, false); });
+
+/* ---------- my location (GPS) ---------- */
+let meDot = null, meAcc = null;
+$("#fabLoc").addEventListener("click", () => {
+  if (!navigator.geolocation) return;
+  const b = $("#fabLoc"); b.textContent = "…جاري التحديد"; b.disabled = true;
+  navigator.geolocation.getCurrentPosition(pos => {
+    b.textContent = "◎ موقعي"; b.disabled = false;
+    const [x, y] = proj4("EPSG:4326", "EPSG:28191", [pos.coords.longitude, pos.coords.latitude]), ll = toLL(x, y), acc = pos.coords.accuracy || 0;
+    if (meDot) map.removeLayer(meDot); if (meAcc) map.removeLayer(meAcc);
+    meAcc = L.circle(ll, { radius: acc, color: "#1a73e8", weight: 1, fillColor: "#1a73e8", fillOpacity: .12, interactive: false }).addTo(map);
+    meDot = L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#1a73e8", fillOpacity: 1, interactive: false }).addTo(map);
+    map.setView(ll, Math.max(map.getZoom(), 11));
+    clearHi(); curParcel = null;
+    showInfo("موقعي الحالي", [{ title: "دقة تحديد الموقع", attrs: { "الدقة التقريبية": "± " + Math.round(acc) + " م" } }], [x, y]);
+    setTimeout(() => identifyAt(x, y, "keep"), 300);
+  }, err => {
+    b.textContent = "◎ موقعي"; b.disabled = false;
+    showInfo("تعذّر تحديد الموقع", [{ title: "السبب", attrs: { "": err.code === 1 ? "لم يُسمح للتطبيق باستخدام الموقع. اسمح له من إعدادات الجوال." : "شغّل خدمة الموقع (GPS) في الجوال وحاول مرة أخرى." } }]);
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+});
 
 /* ---------- coordinates ---------- */
 const num = s => parseFloat(String(s || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.\-]/g, ""));

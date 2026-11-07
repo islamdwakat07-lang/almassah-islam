@@ -57,6 +57,9 @@ public class MainActivity extends Activity {
     private static final String HISAS_URL = "https://appassets.androidplatform.net/assets/index.html";
     private static final int REQ_FILE = 1;
     private static final int REQ_VOICE = 2;
+    private static final int REQ_GEO = 3;
+    private android.webkit.GeolocationPermissions.Callback geoCallback;
+    private String geoOrigin;
 
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
@@ -79,6 +82,7 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(true);
+        s.setGeolocationEnabled(true);
 
         sharedDir = new File(getCacheDir(), "shared");
         sharedDir.mkdirs();
@@ -110,6 +114,17 @@ public class MainActivity extends Activity {
         });
 
         web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, android.webkit.GeolocationPermissions.Callback callback) {
+                if (!origin.contains("appassets.androidplatform.net")) { callback.invoke(origin, false, false); return; }
+                if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    callback.invoke(origin, true, false);
+                } else {
+                    geoCallback = callback; geoOrigin = origin;
+                    requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_GEO);
+                }
+            }
+
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
@@ -542,6 +557,17 @@ public class MainActivity extends Activity {
         Intent i = new Intent(this, MapActivity.class);
         i.setData(Uri.parse(url));
         startActivity(i);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_GEO && geoCallback != null) {
+            boolean ok = false;
+            for (int g : grantResults) if (g == android.content.pm.PackageManager.PERMISSION_GRANTED) ok = true;
+            geoCallback.invoke(geoOrigin, ok, false);
+            geoCallback = null;
+        }
     }
 
     /* ---------- lifecycle ---------- */

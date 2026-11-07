@@ -292,7 +292,7 @@ function buildBoards(F, axes) {
     const pts = b.pts;
     // horizontal + along-board (with height) lengths per segment
     const segs = []; let acc = 0;
-    for (let i = 0; i + 1 < pts.length; i++) { const h = dist(pts[i], pts[i + 1]), s = h;   // X و Y فقط – المنسوب لا يدخل في الحساب segs.push({ a: pts[i], b: pts[i + 1], h, s, k: h > 0 ? s / h : 1, at: acc }); acc += s; }
+    for (let i = 0; i + 1 < pts.length; i++) { const h = dist(pts[i], pts[i + 1]), s = h; /* X و Y فقط – المنسوب لا يدخل في الحساب */ segs.push({ a: pts[i], b: pts[i + 1], h, s, k: h > 0 ? s / h : 1, at: acc }); acc += s; }
     const marks = [];
     for (const ax of axes) segs.forEach((g, si) => {
       const t = lineInter(ax.p, ax.u, g.a, g.b); if (t == null || t < -0.002 || t > 1.002) return;
@@ -376,16 +376,24 @@ function render() {
   drawDiag();
   $("#next").textContent = cur < B.length - 1 ? "اللوح التالي ←" : "↺ اللوح الأول";
 }
+const WOOD_DEFS = `<defs>
+<linearGradient id="wd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2b877"/><stop offset=".5" stop-color="#c9924c"/><stop offset="1" stop-color="#a8733a"/></linearGradient>
+<pattern id="grain" width="40" height="8" patternUnits="userSpaceOnUse"><rect width="40" height="8" fill="#c9924c"/><path d="M0 2 Q10 0 20 2 T40 2 M0 5.5 Q12 7 24 5 T40 6" stroke="#9a6630" stroke-width=".8" fill="none" opacity=".7"/></pattern>
+<radialGradient id="nail" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#cfd4d8"/><stop offset=".8" stop-color="#7d858c"/><stop offset="1" stop-color="#4b5258"/></radialGradient>
+</defs>`;
+const nailSvg = (x, y, r, hot) => `<ellipse cx="${x + r * .35}" cy="${y + r * .45}" rx="${r}" ry="${r * .8}" fill="#000" opacity=".28"/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#nail)" stroke="${hot ? "#b91c1c" : "#3b4248"}" stroke-width="${hot ? 2 : 1}"/><circle cx="${x - r * .3}" cy="${y - r * .3}" r="${r * .25}" fill="#fff" opacity=".8"/>`;
 function drawStrip(v) {
   const L = v.L, X = d => 330 - Math.max(0, Math.min(L, d)) / L * 320;
   let s = '<defs><marker id="ar" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L6 3 L0 6Z" fill="#7a1010"/></marker></defs>';
-  s += `<rect x="10" y="22" width="320" height="26" rx="4" fill="#d9b27a" stroke="#8a5a10" stroke-width="2"/>`;
-  s += `<circle cx="${X(0)}" cy="35" r="5" fill="#b91c1c"/><circle cx="${X(L)}" cy="35" r="5" fill="#b91c1c"/><text x="${X(0)}" y="64" text-anchor="middle" font-size="11" fill="#8a6514">${esc(v.n0)}</text><text x="${X(L)}" y="64" text-anchor="middle" font-size="11" fill="#8a6514">${esc(v.n1)}</text>`;
+  s += WOOD_DEFS.replace("<defs>", "").replace("</defs>", "");
+  s += `<rect x="10" y="22" width="320" height="26" rx="3" fill="url(#grain)" stroke="#6b4518" stroke-width="2"/><rect x="10" y="22" width="320" height="26" rx="3" fill="url(#wd)" opacity=".45"/><line x1="12" y1="24" x2="328" y2="24" stroke="#f3d6a2" stroke-width="1.5" opacity=".8"/>`;
+  s += nailSvg(X(0), 35, 6, true) + nailSvg(X(L), 35, 6, true) + `<text x="${X(0)}" y="64" text-anchor="middle" font-size="11" fill="#8a6514">${esc(v.n0)}</text><text x="${X(L)}" y="64" text-anchor="middle" font-size="11" fill="#8a6514">${esc(v.n1)}</text>`;
   const fs = v.ms.length > 7 ? 9 : 12;
   v.ms.forEach(m => { s += `<line x1="${X(m.d)}" y1="16" x2="${X(m.d)}" y2="54" stroke="#0c3b26" stroke-width="3"/><text x="${X(m.d)}" y="12" text-anchor="middle" font-size="${fs + 1}" font-weight="700" fill="#0c3b26">${esc(m.name)}</text>`; });
   const stops = [0, ...v.ms.map(m => m.d), L];
   for (let i = 0; i < stops.length - 1; i++) { const a = stops[i], b = stops[i + 1], w = X(a) - X(b); if (w < 14) continue;
-    s += `<text x="${(X(a) + X(b)) / 2}" y="40" text-anchor="middle" font-size="${Math.min(fs, w / 3.2)}" font-weight="700" fill="#7a1010" font-family="IBM Plex Mono">${f2(b - a)}</text>`;
+    const cxm = (X(a) + X(b)) / 2 + (i === 0 ? -5 : 0) + (i === stops.length - 2 ? 5 : 0);
+    s += `<text x="${cxm}" y="40" text-anchor="middle" font-size="${Math.min(fs, w / 3.2)}" font-weight="700" fill="#7a1010" font-family="IBM Plex Mono">${f2(b - a)}</text>`;
     s += `<path d="M${X(a) - 3} 74 L${X(b) + 3} 74" stroke="#7a1010" stroke-width="1" marker-start="url(#ar)" marker-end="url(#ar)"/>`; }
   $("#strip").innerHTML = s;
 }
@@ -399,7 +407,13 @@ function drawSite(b, v) {
   // grid intersections = column centres
   const f0 = AX.axes.filter(a => a.fam === 0), f1 = AX.axes.filter(a => a.fam === 1);
   f0.forEach(a => f1.forEach(c => { const t = lineInter(c.p, c.u, a.p, [a.p[0] + a.u[0], a.p[1] + a.u[1]]); if (t == null) return; const q = P([a.p[0] + a.u[0] * t, a.p[1] + a.u[1] * t]); g += `<rect x="${q[0] - 3}" y="${q[1] - 3}" width="6" height="6" fill="#334155"/>`; }));
-  B.forEach(x => { const on = x === b; g += `<polyline points="${x.pts.map(p => P(p).join(",")).join(" ")}" fill="none" stroke="${on ? "#c99a2e" : "#a37a3f"}" stroke-width="${on ? 7 : 4}" stroke-linecap="round" stroke-linejoin="round"/>`; });
+  B.forEach(x => { const on = x === b, pl = x.pts.map(p => P(p).join(",")).join(" "), w = on ? 11 : 8;
+    g += `<polyline points="${pl}" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="${w + 3}" stroke-linecap="butt" stroke-linejoin="round" transform="translate(1.5,2)"/>`;
+    g += `<polyline points="${pl}" fill="none" stroke="${on ? "#5a3510" : "#6b4a2a"}" stroke-width="${w + 2}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+    g += `<polyline points="${pl}" fill="none" stroke="${on ? "#e0aa5c" : "#b98b55"}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+    g += `<polyline points="${pl}" fill="none" stroke="#7c4f1e" stroke-width="1" stroke-dasharray="9 5 3 6" stroke-linecap="butt" stroke-linejoin="round" opacity=".7"/>`;
+    if (on) g += `<polyline points="${pl}" fill="none" stroke="#fff3c4" stroke-width="2" stroke-dasharray="1 0" opacity=".0"/>`;
+    x.pts.forEach(p => { const q = P(p); g += nailSvg(q[0], q[1], on ? 5 : 3.6, false); }); });
   // labels of the current board
   const flip = bState(b).flip, ptsB = [b.pts[0], ...b.marks.map(m => m.q), b.pts[b.pts.length - 1]];
   b.marks.forEach(m => { const q = P(m.q); g += `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="#b91c1c"/>`; });
@@ -408,9 +422,9 @@ function drawSite(b, v) {
   for (let i = 0; i < ptsB.length - 1; i++) { const a = P(ptsB[i]), c = P(ptsB[i + 1]); const mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2, dx = mx - cen[0], dy = my - cen[1], n = Math.hypot(dx, dy) || 1;
     const dd = (() => { const da = i === 0 ? 0 : b.marks[i - 1].d, db = i === ptsB.length - 2 ? b.L : b.marks[i].d; return db - da; })();
     if (dist(a, c) > 16) g += `<text x="${mx + dx / n * 22}" y="${my + dy / n * 22 + 4}" text-anchor="middle" font-size="10" font-weight="700" fill="#7a1010" font-family="IBM Plex Mono">${f2(dd)}</text>`; }
-  [[b.pts[0], flip ? b.n1 : b.n0], [b.pts[b.pts.length - 1], flip ? b.n0 : b.n1]].forEach(([p, n]) => { const q = P(p); g += `<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="#fff" stroke="#b91c1c" stroke-width="3"/><text x="${q[0]}" y="${q[1] - 8}" text-anchor="middle" font-size="10" fill="#8a6514">${esc(n)}</text>`; });
+  [[b.pts[0], flip ? b.n1 : b.n0], [b.pts[b.pts.length - 1], flip ? b.n0 : b.n1]].forEach(([p, n]) => { const q = P(p); g += nailSvg(q[0], q[1], 6, true) + `<text x="${q[0]}" y="${q[1] - 8}" text-anchor="middle" font-size="10" fill="#8a6514">${esc(n)}</text>`; });
   g += '<g transform="translate(340,24)"><circle r="13" fill="#fff" stroke="#0c3b26" stroke-width="1.5"/><path d="M0,-10 L5,6 L0,2 L-5,6Z" fill="#0c3b26"/><text y="-16" text-anchor="middle" font-size="10" font-weight="700" fill="#0c3b26">N</text></g>';
-  $("#site").innerHTML = g;
+  $("#site").innerHTML = WOOD_DEFS + g;
 }
 function gridPt(a, c) { const t = lineInter(c.p, c.u, a.p, [a.p[0] + a.u[0], a.p[1] + a.u[1]]); return t == null ? null : [a.p[0] + a.u[0] * t, a.p[1] + a.u[1] * t]; }
 function drawDiag() {

@@ -122,6 +122,7 @@ select:disabled{opacity:.55}
       <label><input type="radio" name="osys" value="pg" checked>فلسطينية</label>
       <label><input type="radio" name="osys" value="itm">إسرائيلية ITM</label>
     </div>
+    <label class="lay"><input type="checkbox" id="oLen" checked><span>أطوال الأضلاع على المخطط<small>أزل الإشارة لإخفاء أرقام المسافات عن الأضلاع</small></span></label>
     <label class="lay"><input type="checkbox" id="oPage"><span>صفحة إحداثيات رؤوس القطعة<small>صفحة ثانية فيها جدول إحداثيات الرؤوس وأطوال الأضلاع</small></span></label>
     <button class="go" type="button" id="oGo">📄 تصدير المخطط</button>
   </div>
@@ -139,6 +140,7 @@ select:disabled{opacity:.55}
 <script src="lib/proj4.js"></script>
 <script src="lib/proj4leaflet.js"></script>
 <script src="../jspdf.umd.min.js"></script>
+<script src="../polygon-clipping.umd.min.js"></script>
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
@@ -463,14 +465,14 @@ function pdfBtnState() { const b = $("#pdfBtn"); if (b) b.hidden = !curParcel; }
 document.addEventListener("click", e => { if (e.target && e.target.id === "pdfBtn") pdfOptions(); });
 function pdfOptions() {
   const o = st.pdf || { grid: false, sys: "pg", page: false };
-  $("#oGrid").checked = !!o.grid; $("#oPage").checked = !!o.page;
+  $("#oGrid").checked = !!o.grid; $("#oPage").checked = !!o.page; $("#oLen").checked = o.lens !== false;
   document.querySelectorAll('input[name=osys]').forEach(r => r.checked = r.value === (o.sys || "pg"));
   $("#oSysBox").style.opacity = o.grid ? 1 : .45;
   showSheet("#shPdf");
 }
 $("#oGrid").addEventListener("change", () => { $("#oSysBox").style.opacity = $("#oGrid").checked ? 1 : .45; });
 $("#oGo").addEventListener("click", () => {
-  st.pdf = { grid: $("#oGrid").checked, page: $("#oPage").checked, sys: (document.querySelector('input[name=osys]:checked') || {}).value || "pg" }; save();
+  st.pdf = { grid: $("#oGrid").checked, page: $("#oPage").checked, lens: $("#oLen").checked, sys: (document.querySelector('input[name=osys]:checked') || {}).value || "pg" }; save();
   exportPDF(st.pdf);
 });
 async function identifyAt(x, y, append) {

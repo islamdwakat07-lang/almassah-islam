@@ -55,6 +55,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MapActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

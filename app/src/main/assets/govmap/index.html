@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="govmap">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>إحداثيات GovMap</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif}
+main{max-width:560px;margin:0 auto;padding:14px 16px 40px}
+h1{font:700 30px/1.3 var(--am-title);color:var(--am-green-800);margin:8px 0 2px}
+.lead{color:var(--am-muted);margin:0 0 14px;font-size:15px}
+.card{background:var(--am-card);border:1.5px solid var(--am-line);border-radius:18px;padding:16px;box-shadow:0 10px 22px -16px rgba(8,42,27,.5),inset 0 1px 0 #fff;margin-bottom:14px}
+.xy{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:700;color:var(--am-green-800);font-size:15px}
+label.f small{font-weight:500;color:var(--am-muted)}
+input,select{font:500 20px "IBM Plex Mono","IBM Plex Sans Arabic",monospace;padding:12px 12px;border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;color:var(--am-ink);width:100%;min-width:0}
+select,.set input{font:500 16px "IBM Plex Sans Arabic",Tahoma,sans-serif}
+input:focus,select:focus{outline:2px solid var(--am-gold-500);outline-offset:1px}
+input[dir=ltr]{text-align:left}
+.go{display:block;width:100%;margin-top:16px;border:0;border-radius:999px;padding:14px;font:700 20px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400),0 8px 16px -8px rgba(8,42,27,.7);cursor:pointer}
+.go:active{transform:scale(.98)}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sm{flex:1;border:1.5px solid var(--am-gold-500);border-radius:999px;padding:9px 12px;background:#fffaf0;color:var(--am-green-800);font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;cursor:pointer;white-space:nowrap}
+.msg{margin:10px 0 0;padding:8px 12px;border-radius:12px;font-size:14px;display:none}
+.msg.on{display:block}.msg.warn{background:#fbf0d2;border:1px solid var(--am-gold-500);color:#7a4e00}.msg.ok{background:#e3efe2;border:1px solid #9cc5a5;color:#1e6b4a}
+details summary{cursor:pointer;font-weight:700;color:var(--am-green-800);list-style:none;display:flex;align-items:center;gap:8px}
+details summary::before{content:"◀";font-size:12px;transition:transform .15s}
+details[open] summary::before{transform:rotate(-90deg)}
+.set{display:grid;gap:12px;margin-top:12px}
+.set .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:flex;border:1.5px solid var(--am-line);border-radius:999px;overflow:hidden}
+.seg label{flex:1;text-align:center;padding:9px 6px;font-weight:700;font-size:14px;cursor:pointer;color:var(--am-green-800)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--am-btn);color:#fff}
+h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
+.hist{display:flex;flex-direction:column;gap:8px}
+.h{display:flex;align-items:center;gap:8px;border:1px solid var(--am-line);border-radius:14px;background:#fffdf6;padding:6px 6px 6px 10px}
+.h button.use{flex:1;text-align:right;border:0;background:none;font:500 15px "IBM Plex Mono",monospace;color:var(--am-ink);cursor:pointer;direction:ltr;display:flex;justify-content:flex-end;gap:12px;padding:6px}
+.h .del{border:0;background:#f3ead2;color:#8a3b12;border-radius:50%;width:32px;height:32px;cursor:pointer;flex:none}
+.empty{color:var(--am-muted);font-size:14px;margin:0}
+.note{color:var(--am-muted);font-size:13px;margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-govmap.png" alt=""><b>إحداثيات GovMap</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <h1>إحداثيات GovMap</h1>
+  <p class="lead">أدخل الإحداثيات بنظام ITM (الشبكة الإسرائيلية الجديدة)، ويفتح الموقع على GovMap مع حدود الأحواض ومناطق أوسلو.</p>
+
+  <section class="card">
+    <div class="xy">
+      <label class="f"><span>Y <small>(شمال)</small></span><input id="y" dir="ltr" inputmode="decimal" autocomplete="off" placeholder="677550"></label>
+      <label class="f"><span>X <small>(شرق)</small></span><input id="x" dir="ltr" inputmode="decimal" autocomplete="off" placeholder="199804"></label>
+    </div>
+    <button class="go" id="go" type="button">اعرض الموقع</button>
+    <div class="row">
+      <button class="sm" id="copy" type="button">نسخ الرابط</button>
+      <button class="sm" id="paste" type="button">لصق X,Y</button>
+      <button class="sm" id="clear" type="button">مسح</button>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+  </section>
+
+  <section class="card">
+    <details id="setBox">
+      <summary>الإعدادات</summary>
+      <div class="set">
+        <div class="two">
+          <label class="f"><span>مستوى التكبير <small>(0 بعيد – 10 قريب)</small></span><select id="z"></select></label>
+          <label class="f"><span>الخلفية <small>(b)</small></span><input id="b" dir="ltr" inputmode="numeric" value="1"></label>
+        </div>
+        <label class="f"><span>الطبقات <small>(الأحواض ومناطق أوسلو أ/ب/ج)</small></span><input id="lay" dir="ltr" value="189,188,181"></label>
+        <div><div class="f" style="margin-bottom:6px">افتح الخارطة</div>
+          <div class="seg"><label><input type="radio" name="open" value="app" checked>داخل التطبيق</label><label><input type="radio" name="open" value="ext">في المتصفح</label></div></div>
+        <button class="sm" id="reset" type="button">إرجاع الإعدادات الأصلية</button>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>آخر النقاط</h2>
+    <div class="hist" id="hist"></div>
+    <p class="note">اضغط على نقطة لإعادة عرضها. تُحفظ آخر 20 نقطة على هذا الجهاز.</p>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const KEY = "govmap-xy-v1", DEF = { z: 9, lay: "189,188,181", b: "1", open: "app" };
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } };
+const save = d => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} };
+let st = Object.assign({ hist: [] }, DEF, load());
+for (let i = 0; i <= 10; i++) $("#z").insertAdjacentHTML("beforeend", `<option value="${i}">${i}</option>`);
+const toDigits = s => String(s || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.\-]/g, "");
+function applySettings() {
+  $("#z").value = st.z; $("#lay").value = st.lay; $("#b").value = st.b;
+  document.querySelectorAll('input[name=open]').forEach(r => r.checked = r.value === st.open);
+}
+function readSettings() {
+  st.z = +$("#z").value; st.lay = $("#lay").value.replace(/\s+/g, "") || DEF.lay; st.b = toDigits($("#b").value) || DEF.b;
+  st.open = (document.querySelector('input[name=open]:checked') || {}).value || "app"; save(st);
+}
+function msg(t, kind) { const m = $("#msg"); m.textContent = t || ""; m.className = "msg" + (t ? " on " + (kind || "warn") : ""); }
+function check() {
+  let x = parseFloat(toDigits($("#x").value)), y = parseFloat(toDigits($("#y").value));
+  if (!isFinite(x) || !isFinite(y)) { msg("أدخل قيمتي X و Y."); return null; }
+  const okX = v => v >= 100000 && v <= 300000, okY = v => v >= 350000 && v <= 820000;
+  if (!okX(x) && !okY(y) && okX(y) && okY(x)) { [x, y] = [y, x]; $("#x").value = x; $("#y").value = y; msg("بدّلت X و Y لأن القيمتين كانتا معكوستين.", "ok"); }
+  else if (okX(x) && y >= 50000 && y < 350000) { msg("قيمة Y تبدو بنظام فلسطين القديم وليست ITM. تحقق من النظام قبل الاعتماد على الموقع."); }
+  else if (!okX(x) || !okY(y)) { msg("الإحداثيات خارج نطاق ITM المعتاد (X من 100000 إلى 300000، Y من 350000 إلى 820000). تحقق منها."); }
+  else msg("");
+  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+}
+const url = p => `https://www.govmap.gov.il/?c=${p.x},${p.y}&z=${st.z}&lay=${st.lay}&b=${st.b}`;
+function remember(p) {
+  st.hist = [{ x: p.x, y: p.y, t: Date.now() }, ...st.hist.filter(h => !(h.x === p.x && h.y === p.y))].slice(0, 20);
+  save(st); renderHist();
+}
+function renderHist() {
+  $("#hist").innerHTML = st.hist.length ? st.hist.map((h, i) => `<div class="h"><button class="use" type="button" data-i="${i}"><span>X ${h.x}</span><span>Y ${h.y}</span></button><button class="del" type="button" data-d="${i}" aria-label="حذف">✕</button></div>`).join("") : '<p class="empty">لا توجد نقاط بعد.</p>';
+}
+$("#hist").addEventListener("click", e => {
+  const u = e.target.closest("[data-i]"), d = e.target.closest("[data-d]");
+  if (d) { st.hist.splice(+d.dataset.d, 1); save(st); renderHist(); return; }
+  if (u) { const h = st.hist[+u.dataset.i]; $("#x").value = h.x; $("#y").value = h.y; msg(""); scrollTo({ top: 0, behavior: "smooth" }); }
+});
+$("#go").addEventListener("click", () => {
+  readSettings(); const p = check(); if (!p) return; remember(p);
+  const u = url(p), ext = st.open === "ext";
+  if (window.AndroidBridge && AndroidBridge.openMap) AndroidBridge.openMap(u, ext);
+  else window.open(u, "_blank", "noopener");
+});
+$("#copy").addEventListener("click", async () => {
+  readSettings(); const p = check(); if (!p) return; const u = url(p);
+  try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(u); else await navigator.clipboard.writeText(u); msg("نسخت الرابط.", "ok"); } catch (e) { msg(u, "ok"); }
+});
+function splitPair(t) {
+  const nums = String(t).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).match(/-?\d+(?:[.٫]\d+)?/g) || [];
+  return nums.length >= 2 ? nums.slice(0, 2).map(v => v.replace("٫", ".")) : null;
+}
+function fillPair(t) { const p = splitPair(t); if (!p) return false; $("#x").value = p[0]; $("#y").value = p[1]; check(); return true; }
+["#x", "#y"].forEach(s => $(s).addEventListener("paste", e => { const t = (e.clipboardData || {}).getData ? e.clipboardData.getData("text") : ""; if (t && fillPair(t)) e.preventDefault(); }));
+$("#paste").addEventListener("click", async () => {
+  try { const t = await navigator.clipboard.readText(); if (!fillPair(t)) msg("لم أجد رقمين في الحافظة. الصيغة: X,Y"); }
+  catch (e) { msg("الصق النص في خانة X مباشرة (X,Y) وسأفصله تلقائياً."); }
+});
+$("#clear").addEventListener("click", () => { $("#x").value = ""; $("#y").value = ""; msg(""); $("#y").focus(); });
+$("#reset").addEventListener("click", () => { Object.assign(st, DEF); save(st); applySettings(); msg("أرجعت الإعدادات الأصلية.", "ok"); });
+["#z", "#lay", "#b"].forEach(s => $(s).addEventListener("change", readSettings));
+document.querySelectorAll('input[name=open]').forEach(r => r.addEventListener("change", readSettings));
+[$("#y"), $("#x")].forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); i === $("#y") ? $("#x").focus() : $("#go").click(); } }));
+applySettings(); renderHist();
+if (st.hist[0]) { $("#x").value = st.hist[0].x; $("#y").value = st.hist[0].y; }
+</script>
+</body>
+</html>

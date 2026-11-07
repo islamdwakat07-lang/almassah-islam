@@ -103,6 +103,7 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri u = request.getUrl();
                 if ("appassets.androidplatform.net".equals(u.getHost())) return false;
+                if (MapActivity.isGovmap(u)) { openMapActivity(u.toString()); return true; }
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { }
                 return true;
             }
@@ -469,6 +470,16 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void openMap(final String url, final boolean external) {
+            runOnUiThread(() -> {
+                Uri u = Uri.parse(url);
+                if (!MapActivity.isGovmap(u)) return;
+                if (external) { try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { } }
+                else openMapActivity(url);
+            });
+        }
+
+        @JavascriptInterface
         public void jsReady() {
             runOnUiThread(() -> {
                 pageReady = true;
@@ -525,6 +536,12 @@ public class MainActivity extends Activity {
                 toast("تعذّر حفظ الملف");
             }
         }
+    }
+
+    private void openMapActivity(String url) {
+        Intent i = new Intent(this, MapActivity.class);
+        i.setData(Uri.parse(url));
+        startActivity(i);
     }
 
     /* ---------- lifecycle ---------- */

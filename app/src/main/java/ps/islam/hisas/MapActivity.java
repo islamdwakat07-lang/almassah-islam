@@ -12,7 +12,15 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.view.Gravity;
+import android.view.InputDevice;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -23,11 +31,100 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import org.json.JSONObject;
 
 /** Shows GovMap inside the app, in its own WebView (no AndroidBridge exposed to the site). */
 public class MapActivity extends Activity {
     private WebView web;
     private String startUrl;
+    private final Handler ui = new Handler(Looper.getMainLooper());
+    private PinView pin;
+    private float pinX = -1, pinY = -1;      // point position in WebView pixels
+    private boolean autoTapping = false, locating = false;
+    private int session = 0;                  // bumps on every (re)load so old timers are ignored
+    private float downX, downY;
+
+    /** red pin whose tip is drawn exactly at (tipX, tipY) */
+    private class PinView extends View {
+        float tipX = -1, tipY = -1;
+        final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG), white = new Paint(Paint.ANTI_ALIAS_FLAG), shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
+        PinView() {
+            super(MapActivity.this);
+            fill.setColor(Color.parseColor("#d32f2f"));
+            stroke.setColor(Color.parseColor("#7a0d06")); stroke.setStyle(Paint.Style.STROKE); stroke.setStrokeWidth(dp(1.5f));
+            white.setColor(Color.WHITE);
+            shadow.setColor(Color.parseColor("#55000000"));
+        }
+        void at(float x, float y) { tipX = x; tipY = y; setVisibility(x < 0 ? GONE : VISIBLE); invalidate(); }
+        @Override protected void onDraw(Canvas c) {
+            if (tipX < 0) return;
+            float r = dp(13), h = dp(36);
+            c.drawOval(tipX - dp(7), tipY - dp(2.5f), tipX + dp(7), tipY + dp(2.5f), shadow);
+            Path p = new Path();
+            float cy = tipY - h + r;
+            p.moveTo(tipX, tipY);
+            p.cubicTo(tipX - dp(4), tipY - dp(10), tipX - r, cy + r * 0.7f, tipX - r, cy);
+            p.arcTo(tipX - r, cy - r, tipX + r, cy + r, 180, 180, false);
+            p.cubicTo(tipX + r, cy + r * 0.7f, tipX + dp(4), tipY - dp(10), tipX, tipY);
+            p.close();
+            c.drawPath(p, fill); c.drawPath(p, stroke);
+            c.drawCircle(tipX, cy, dp(5), white);
+            // crosshair ticks around the exact point
+            Paint t = new Paint(Paint.ANTI_ALIAS_FLAG); t.setColor(Color.parseColor("#d32f2f")); t.setStrokeWidth(dp(1.5f));
+            c.drawLine(tipX - dp(12), tipY, tipX - dp(4), tipY, t); c.drawLine(tipX + dp(4), tipY, tipX + dp(12), tipY, t);
+            c.drawLine(tipX, tipY + dp(4), tipX, tipY + dp(10), t);
+        }
+    }
+
+    /** finds the map surface (largest canvas / map container) and returns its centre in CSS px + the page width */
+    private static final String FIND_JS = "(function(){try{var best=null,ba=0;"
+        + "var els=document.querySelectorAll('canvas,.esri-view-surface,.esri-view-root,.ol-viewport,.leaflet-container,#map,#mapDiv,.map');"
+        + "for(var i=0;i<els.length;i++){var r=els[i].getBoundingClientRect();var a=r.width*r.height;"
+        + "if(r.width>innerWidth*0.45&&r.height>innerHeight*0.35&&a>ba){ba=a;best=r;}}"
+        + "if(!best||document.readyState!=='complete')return JSON.stringify({ok:0});"
+        + "return JSON.stringify({ok:1,x:best.left+best.width/2,y:best.top+best.height/2,w:innerWidth});}catch(e){return JSON.stringify({ok:0});}})()";
+
+    private void locatePoint(final int s, final int tries) {
+        if (s != session || web == null) return;
+        web.evaluateJavascript(FIND_JS, v -> {
+            if (s != session) return;
+            try {
+                String j = v;
+                if (j != null && j.startsWith("\"")) j = new JSONObject("{\"v\":" + j + "}").getString("v");
+                JSONObject o = new JSONObject(j);
+                if (o.optInt("ok") == 1 && o.optDouble("w") > 0) {
+                    float k = web.getWidth() / (float) o.getDouble("w");
+                    pinX = (float) o.getDouble("x") * k; pinY = (float) o.getDouble("y") * k;
+                    pin.at(pinX, pinY);
+                    // give GovMap time to draw the layers, then tap the point to show its information
+                    ui.postDelayed(() -> { if (s == session) tapPoint(); }, 2500);
+                    return;
+                }
+            } catch (Exception ignored) { }
+            if (tries < 60) ui.postDelayed(() -> locatePoint(s, tries + 1), 500); else locating = false;
+        });
+    }
+
+    /** real touch on the point, exactly like a finger tap, so GovMap opens its information popup */
+    private void tapPoint() {
+        if (pinX < 0 || web == null) return;
+        autoTapping = true;
+        long t = SystemClock.uptimeMillis();
+        MotionEvent d = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, pinX, pinY, 0);
+        d.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        web.dispatchTouchEvent(d); d.recycle();
+        MotionEvent u = MotionEvent.obtain(t, t + 80, MotionEvent.ACTION_UP, pinX, pinY, 0);
+        u.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        ui.postDelayed(() -> { web.dispatchTouchEvent(u); u.recycle(); autoTapping = false; }, 80);
+    }
+
+    private void loadPoint() {
+        session++;
+        locating = false;
+        pinX = pinY = -1;
+        if (pin != null) pin.at(-1, -1);
+        web.loadUrl(startUrl);
+    }
 
     static boolean isGovmap(Uri u) {
         String h = u == null ? null : u.getHost();
@@ -161,11 +258,16 @@ public class MapActivity extends Activity {
         bar.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
         root.addView(bar, new FrameLayout.LayoutParams(-1, dp(4), Gravity.TOP));
 
+        pin = new PinView();
+        pin.setVisibility(View.GONE);
+        root.addView(pin, new FrameLayout.LayoutParams(-1, -1));
+
         LinearLayout tools = new LinearLayout(this);
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        tools.addView(greenPill("↺ النقطة", v -> web.loadUrl(startUrl)));
-        tools.addView(greenPill("فتح في المتصفح", v -> {
+        tools.addView(greenPill("↺ النقطة", v -> loadPoint()));
+        tools.addView(greenPill("ℹ معلومات النقطة", v -> { if (pinX >= 0 && pin.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); }));
+        tools.addView(greenPill("المتصفح", v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
         }));
         FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
@@ -183,7 +285,25 @@ public class MapActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setAllowFileAccess(false);
 
+        // the pin marks the point only until the map is moved by hand
+        web.setOnTouchListener((v, e) -> {
+            if (autoTapping || pin == null) return false;
+            switch (e.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN: downX = e.getX(); downY = e.getY(); break;
+                case MotionEvent.ACTION_POINTER_DOWN: pin.at(-1, -1); break;
+                case MotionEvent.ACTION_MOVE:
+                    if (Math.hypot(e.getX() - downX, e.getY() - downY) > dp(10)) pin.at(-1, -1);
+                    break;
+            }
+            return false;
+        });
+
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (pinX < 0 && !locating) { locating = true; final int sid = session; ui.postDelayed(() -> locatePoint(sid, 0), 800); }
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri u = request.getUrl();
@@ -204,7 +324,7 @@ public class MapActivity extends Activity {
             }
         });
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
-        else web.loadUrl(startUrl);
+        else loadPoint();
     }
 
     @Override

@@ -81,7 +81,6 @@ details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
         <li>اترك خطوط المحاور وأسماءها (الأحرف والأرقام) كما أعطاها المعماري. لا داعي لمدّها حتى الخشب – التطبيق يمدّها وحده.</li>
         <li>إذا كان محور بلا اسم، اكتب اسمه نصاً (Text) قرب طرفه.</li>
         <li>اترك أرقام نقاط الرصد ظاهرة كنصوص قرب المسامير (أقرب من متر ونصف) لتظهر في الجدول بدل N1 و E1.</li>
-        <li>إذا رسمت الألواح بخط ثلاثي الأبعاد بمنسوب كل مسمار (3D Polyline)، يحسب التطبيق المسافة على سطح الخشبة المائلة.</li>
         <li>احفظ الملف بصيغة <b>DXF</b> (Save As ← DXF). ملف DWG لا يُقرأ.</li>
       </ol>
     </details>
@@ -293,7 +292,7 @@ function buildBoards(F, axes) {
     const pts = b.pts;
     // horizontal + along-board (with height) lengths per segment
     const segs = []; let acc = 0;
-    for (let i = 0; i + 1 < pts.length; i++) { const h = dist(pts[i], pts[i + 1]), dz = (pts[i + 1][2] || 0) - (pts[i][2] || 0), s = Math.hypot(h, dz); segs.push({ a: pts[i], b: pts[i + 1], h, s, k: h > 0 ? s / h : 1, at: acc }); acc += s; }
+    for (let i = 0; i + 1 < pts.length; i++) { const h = dist(pts[i], pts[i + 1]), s = h;   // X و Y فقط – المنسوب لا يدخل في الحساب segs.push({ a: pts[i], b: pts[i + 1], h, s, k: h > 0 ? s / h : 1, at: acc }); acc += s; }
     const marks = [];
     for (const ax of axes) segs.forEach((g, si) => {
       const t = lineInter(ax.p, ax.u, g.a, g.b); if (t == null || t < -0.002 || t > 1.002) return;

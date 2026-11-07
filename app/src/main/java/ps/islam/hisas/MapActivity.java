@@ -138,16 +138,32 @@ public class MapActivity extends Activity {
     }
 
     /** real touch on the point, exactly like a finger tap, so GovMap opens its information popup */
+    /** a finger-like touch event: screen (raw) coordinates are set correctly, then shifted into the WebView */
+    private MotionEvent touch(long down, long at, int action, float x, float y) {
+        int[] loc = new int[2];
+        web.getLocationOnScreen(loc);
+        MotionEvent.PointerProperties[] pp = { new MotionEvent.PointerProperties() };
+        pp[0].id = 0; pp[0].toolType = MotionEvent.TOOL_TYPE_FINGER;
+        MotionEvent.PointerCoords[] pc = { new MotionEvent.PointerCoords() };
+        pc[0].x = x + loc[0]; pc[0].y = y + loc[1]; pc[0].pressure = 1f; pc[0].size = 0.05f;
+        pc[0].touchMajor = dp(8); pc[0].touchMinor = dp(8);
+        MotionEvent e = MotionEvent.obtain(down, at, action, 1, pp, pc, 0, 0, 1f, 1f, 0, 0, InputDevice.SOURCE_TOUCHSCREEN, 0);
+        e.offsetLocation(-loc[0], -loc[1]);
+        return e;
+    }
+
+    /** real touch on the point, exactly like a finger tap, so GovMap opens its information popup */
     private void tapPoint() {
         if (pinX < 0 || web == null) return;
         autoTapping = true;
-        long t = SystemClock.uptimeMillis();
-        MotionEvent d = MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, pinX, pinY, 0);
-        d.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        final long t = SystemClock.uptimeMillis();
+        final float x = pinX, y = pinY;
+        MotionEvent d = touch(t, t, MotionEvent.ACTION_DOWN, x, y);
         web.dispatchTouchEvent(d); d.recycle();
-        MotionEvent u = MotionEvent.obtain(t, t + 80, MotionEvent.ACTION_UP, pinX, pinY, 0);
-        u.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-        ui.postDelayed(() -> { web.dispatchTouchEvent(u); u.recycle(); autoTapping = false; }, 80);
+        ui.postDelayed(() -> {
+            MotionEvent u = touch(t, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y);
+            web.dispatchTouchEvent(u); u.recycle(); autoTapping = false;
+        }, 90);
     }
 
     private void toastMsg(String t) { android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_LONG).show(); }

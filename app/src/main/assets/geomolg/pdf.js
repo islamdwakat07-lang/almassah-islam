@@ -88,8 +88,9 @@ async function exportPDF(opts) {
     const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     let bx0 = Math.min(...xs), bx1 = Math.max(...xs), by0 = Math.min(...ys), by1 = Math.max(...ys);
     const W = mm(210), H = mm(297);
-    const F = { x: mm(10), y: mm(34), w: mm(190), h: mm(172) };
-    const fwmm = 190, fhmm = 172;
+    // with the coordinate grid the picture is a little smaller so the numbers fit outside it
+    const fwmm = opts.grid ? 174 : 190, fhmm = opts.grid ? 162 : 172;
+    const F = { x: mm(opts.grid ? 18 : 10), y: mm(opts.grid ? 40 : 34), w: mm(fwmm), h: mm(fhmm) };
     const need = Math.max((bx1 - bx0) * 1.5 * 1000 / fwmm, (by1 - by0) * 1.5 * 1000 / fhmm);
     const S = NICE_SCALES.find(v => v >= need) || Math.ceil(need / 1000) * 1000;
     const gw = fwmm * S / 1000, gh = fhmm * S / 1000, cxg = (bx0 + bx1) / 2, cyg = (by0 + by1) / 2;
@@ -151,7 +152,7 @@ async function exportPDF(opts) {
     ctx.strokeStyle = GREEN; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, Lp, mm(1.6));
     txt(ctx, "0", sx, sy - mm(2.6), `600 ${mm(2.6)}px ${MF}`, INK, "center"); txt(ctx, Lm + " م", sx + Lp, sy - mm(2.6), `600 ${mm(2.6)}px ${AF}`, INK, "center");
     txt(ctx, "مقياس الرسم 1:" + S.toLocaleString("en-US"), sx + Lp / 2, sy - mm(2.6), `700 ${mm(2.8)}px ${AF}`, GREEN, "center");
-    if (opts.grid) drawGrid(ctx, F, { gx0, gx1, gy0, gy1, X, Y, gw }, opts.sys === "itm", { nx: F.x + mm(24), sx: sx + Lp + mm(5), sTop: F.y + F.h - mm(18) });
+    if (opts.grid) drawGrid(ctx, F, { gx0, gx1, gy0, gy1, X, Y, gw }, opts.sys === "itm");
 
     // info table
     const area = rings.reduce((t, r) => t + Math.abs(ringArea(r)), 0), per = cr.reduce((t, p) => t + p.reduce((u, a, i) => { const b = p[(i + 1) % p.length]; return u + Math.hypot(b[0] - a[0], b[1] - a[1]); }, 0), 0);
@@ -173,7 +174,7 @@ async function exportPDF(opts) {
       if (i) { ctx.strokeStyle = "#eadfbf"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(tx0 + mm(1), y); ctx.lineTo(tx1 - mm(1), y); ctx.stroke(); }
       if (i % 2 === 0) { ctx.fillStyle = "rgba(243,234,210,.55)"; ctx.fillRect(tx1 - mm(36), y + 1, mm(36) - 2, rh - 2); }
       txt(ctx, r[0], tx1 - mm(2.5), y + rh / 2, `600 ${mm(3.1)}px ${AF}`, "#5d6458");
-      const val = String(r[1]); const isNum = /^[XY0-9 .,:–-]+$/.test(val) || /^X /.test(val);
+      const val = String(r[1]); const isNum = /^X /.test(val);
       txt(ctx, val, isNum ? tx0 + mm(3) : tx1 - mm(39), y + rh / 2, `700 ${mm(3.2)}px ${isNum ? MF : AF}`, INK, isNum ? "left" : "right");
     });
     drawStamp(ctx, mm(41), mm(246), mm(31));
@@ -213,35 +214,36 @@ async function exportPDF(opts) {
   finally { if (btn) { btn.disabled = false; btn.textContent = old; } }
 }
 
-/* real coordinates around the picture: ticks + labels on the frame, small crosses inside */
-function drawGrid(ctx, F, G, itm, avoid) {
+/* real coordinates around the picture: numbers outside the frame, ticks on it, bright crosses inside */
+function drawGrid(ctx, F, G, itm) {
   const { gx0, gx1, gy0, gy1, X, Y, gw } = G;
   const steps = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000], step = steps.reduce((a, b) => Math.abs(b - gw / 5) < Math.abs(a - gw / 5) ? b : a);
   const to = (x, y) => itm ? proj4("EPSG:28191", "EPSG:2039", [x, y]) : [x, y];
   const from = (x, y) => itm ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y];
-  // crossings of a coordinate value along an edge (edge given in grid/PG coordinates)
   const cross = (a, b, k) => { const out = [], N = 300; let pv = null, pp = null;
     for (let i = 0; i <= N; i++) { const t = i / N, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, v = to(x, y)[k];
       if (pv !== null) { const m0 = Math.floor(pv / step), m1 = Math.floor(v / step); if (m0 !== m1) { const val = Math.max(m0, m1) * step, f = (val - pv) / (v - pv); out.push({ x: pp[0] + (x - pp[0]) * f, y: pp[1] + (y - pp[1]) * f, val }); } }
       pv = v; pp = [x, y]; } return out; };
-  const fs = mm(2.5), font = `700 ${fs}px ${MF}`, tick = mm(2.6);
-  ctx.save(); ctx.lineWidth = 3;
-  const lab = (s, x, y, rot) => { ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
-    ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(255,255,255,.95)"; ctx.lineWidth = 6; ctx.strokeText(s, 0, 0); ctx.fillStyle = GREEN_D; ctx.fillText(s, 0, 0); ctx.restore(); };
-  const line = (x1, y1, x2, y2) => { ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.strokeStyle = GREEN_D; ctx.lineWidth = 2.2; ctx.stroke(); };
-  // X along top & bottom
-  cross([gx0, gy1], [gx1, gy1], 0).forEach(c => { const px = X(c.x); if (px < avoid.nx) return; line(px, F.y, px, F.y + tick); lab(String(c.val), px, F.y + tick + fs * .9); });
-  cross([gx0, gy0], [gx1, gy0], 0).forEach(c => { const px = X(c.x); if (px < avoid.sx) return; line(px, F.y + F.h, px, F.y + F.h - tick); lab(String(c.val), px, F.y + F.h - tick - fs * .9); });
-  // Y along left & right (read bottom-to-top)
-  cross([gx0, gy0], [gx0, gy1], 1).forEach(c => { const py = Y(c.y); if (py < F.y + mm(26) || py > avoid.sTop) return; line(F.x, py, F.x + tick, py); lab(String(c.val), F.x + tick + fs * .9, py, -Math.PI / 2); });
-  cross([gx1, gy0], [gx1, gy1], 1).forEach(c => { const py = Y(c.y); if (py < F.y + mm(6) || py > F.y + F.h - mm(6)) return; line(F.x + F.w, py, F.x + F.w - tick, py); lab(String(c.val), F.x + F.w - tick - fs * .9, py, -Math.PI / 2); });
-  // crosses at grid intersections
+  const fs = mm(2.6), font = `700 ${fs}px ${MF}`, tick = mm(2.2), gap = mm(1.2);
+  ctx.save();
+  const lab = (s, x, y, rot) => { ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr"; ctx.fillStyle = GREEN_D; ctx.fillText(s, 0, 0); ctx.restore(); };
+  const out = (x1, y1, x2, y2) => { ctx.strokeStyle = GREEN_D; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+  const bright = (x1, y1, x2, y2) => { ctx.lineCap = "round"; ctx.strokeStyle = "rgba(0,0,0,.75)"; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.strokeStyle = "#ffe14d"; ctx.lineWidth = 3.4; ctx.stroke(); };
+  const sys = itm ? "ITM" : "PG";
+  cross([gx0, gy1], [gx1, gy1], 0).forEach(c => { const px = X(c.x); out(px, F.y, px, F.y - tick); bright(px, F.y, px, F.y + tick); lab(String(c.val), px, F.y - tick - gap - fs * .5); });
+  cross([gx0, gy0], [gx1, gy0], 0).forEach(c => { const px = X(c.x); out(px, F.y + F.h, px, F.y + F.h + tick); bright(px, F.y + F.h, px, F.y + F.h - tick); lab(String(c.val), px, F.y + F.h + tick + gap + fs * .5); });
+  cross([gx0, gy0], [gx0, gy1], 1).forEach(c => { const py = Y(c.y); out(F.x, py, F.x - tick, py); bright(F.x, py, F.x + tick, py); lab(String(c.val), F.x - tick - gap - fs * .5, py, -Math.PI / 2); });
+  cross([gx1, gy0], [gx1, gy1], 1).forEach(c => { const py = Y(c.y); out(F.x + F.w, py, F.x + F.w + tick, py); bright(F.x + F.w, py, F.x + F.w - tick, py); lab(String(c.val), F.x + F.w + tick + gap + fs * .5, py, -Math.PI / 2); });
+  // corner captions: which axis / system
+  ctx.font = `700 ${mm(2.3)}px ${MF}`; ctx.fillStyle = GOLD; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+  ctx.textAlign = "right"; ctx.fillText("X " + sys, F.x - mm(1), F.y - tick - gap - fs * .5);
+  ctx.textAlign = "left"; ctx.fillText("Y " + sys, F.x + F.w + mm(1), F.y - tick - gap - fs * .5);
+  // crosses at the grid intersections
   const c0 = to(gx0, gy0), c1 = to(gx1, gy1), c2 = to(gx0, gy1), c3 = to(gx1, gy0);
   const ax0 = Math.min(c0[0], c1[0], c2[0], c3[0]), ax1 = Math.max(c0[0], c1[0], c2[0], c3[0]), ay0 = Math.min(c0[1], c1[1], c2[1], c3[1]), ay1 = Math.max(c0[1], c1[1], c2[1], c3[1]);
   for (let gx = Math.ceil(ax0 / step) * step; gx <= ax1; gx += step) for (let gy = Math.ceil(ay0 / step) * step; gy <= ay1; gy += step) {
-    const p = from(gx, gy), px = X(p[0]), py = Y(p[1]); if (px < F.x + mm(8) || px > F.x + F.w - mm(8) || py < F.y + mm(8) || py > F.y + F.h - mm(8)) continue;
-    const r = mm(1.6); line(px - r, py, px + r, py); line(px, py - r, px, py + r);
+    const p = from(gx, gy), px = X(p[0]), py = Y(p[1]); if (px < F.x + mm(5) || px > F.x + F.w - mm(5) || py < F.y + mm(5) || py > F.y + F.h - mm(5)) continue;
+    const r = mm(2.4); bright(px - r, py, px + r, py); bright(px, py - r, px, py + r);
   }
-  ctx.strokeStyle = GREEN; ctx.lineWidth = mm(.6); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.stroke();
   ctx.restore();
 }

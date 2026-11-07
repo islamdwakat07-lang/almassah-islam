@@ -236,7 +236,7 @@ public class MapActivity extends Activity {
         txt.setOrientation(LinearLayout.VERTICAL);
         txt.setPadding(dp(10), 0, dp(10), 0);
         TextView t = new TextView(this);
-        t.setText("إحداثيات GovMap");
+        t.setText("GOV إسلام");
         t.setTextColor(Color.parseColor("#f0cf6a"));
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
         t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);

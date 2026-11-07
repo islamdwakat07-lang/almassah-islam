@@ -203,7 +203,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
     <div class="field"><label for="minParcel">أقل مساحة قسيمة (م²) — الحصص الأصغر تُجمع معاً</label><input type="number" id="minParcel" min="0" step="10"></div>
     <div class="field"><label for="autoMerge">الحصص التي لا تحقق الشروط</label><label class="row" style="gap:8px"><input type="checkbox" id="autoMerge"> <span>اجمعها مع جارتها في قسيمة مشتركة حتى تتحقق المساحة والعرض والواجهة</span></label></div>
     <div class="field"><label for="landTitle">وصف الأرض للتقرير</label><input type="text" id="landTitle" placeholder="البلدة – الحوض – القطعة"></div>
-    <div class="field"><label for="surveyor">اسم المساح</label><input type="text" id="surveyor"></div>
+    <div class="field"><label for="surveyor">اسم المهندس</label><input type="text" id="surveyor"></div>
   </div>
   <p class="hint" id="dedHint"></p>
   <div class="zones">
@@ -1461,7 +1461,7 @@ async function exportPDF(p) {
     txt(x, (S.landTitle || '') , CW - M, 135, 26, false);
     txt(x, p.title + (R.vOn ? ' — قسمة بالقيمة' : ''), CW - M, 175, 24, false, '#5b6a60');
     txt(x, new Date().toLocaleDateString('en-GB'), M, 80, 22, false, '#5b6a60', 'left');
-    if (S.surveyor) txt(x, 'المساح: ' + S.surveyor, M, 120, 22, false, '#5b6a60', 'left');
+    if (S.surveyor) txt(x, 'المهندس: ' + S.surveyor, M, 120, 22, false, '#5b6a60', 'left');
     // drawing
     const top = 210, boxH = 760, boxW = CW - 2 * M;
     x.strokeStyle = '#cdd8cf'; x.lineWidth = 2; x.strokeRect(M, top, boxW, boxH);

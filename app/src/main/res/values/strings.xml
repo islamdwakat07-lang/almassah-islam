@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- © 2026 Islam Dweikat (إسلام دويكات). جميع الحقوق محفوظة. -->
 <resources>
-    <string name="app_name">المساح إسلام</string>
-    <string name="app_full_name">المساح إسلام: حاسب الكواشين والإفراز وحاسبة الجرف</string>
+    <string name="app_name">المهندس إسلام</string>
+    <string name="app_full_name">المهندس إسلام: حاسب الكواشين والإفراز وحاسبة الجرف</string>
     <string name="developer_name">إسلام دويكات</string>
     <string name="developer_name_en">Islam Dweikat</string>
     <string name="developer_phone">0598161862</string>

@@ -93,7 +93,7 @@ function frameHeader(ctx, W, title, sub) {
   ctx.fillStyle = GOLD; ctx.fillRect(mm(9), mm(30.2), W - mm(18), mm(.8));
   txt(ctx, title, W - mm(14), mm(16.5), `700 ${mm(7)}px ${TF}`, "#f3dc93");
   txt(ctx, sub, W - mm(14), mm(25), `600 ${mm(4.1)}px ${AF}`, "#fff6d6");
-  txt(ctx, "المساح إسلام", mm(14), mm(16.5), `700 ${mm(5)}px ${TF}`, "#f3dc93", "left");
+  txt(ctx, "المهندس إسلام", mm(14), mm(16.5), `700 ${mm(5)}px ${TF}`, "#f3dc93", "left");
   txt(ctx, "مخطط استرشادي", mm(14), mm(25), `500 ${mm(3.4)}px ${AF}`, "#e7efe1", "left");
 }
 function footer(ctx, W, page, pages) {

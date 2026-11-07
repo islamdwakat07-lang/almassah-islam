@@ -121,8 +121,7 @@ public class MapActivity extends Activity {
     private void tapCentre(final int s) {
         if (s != session || web == null || mapR <= mapL) return;
         final float cx = (mapL + mapR) / 2f, cy = (mapT + mapB) / 2f;
-        pinX = cx; pinY = cy; tapPoint();
-        ui.postDelayed(() -> checkMarker(s, cx, cy, 0), 1200);
+        pinX = cx; pinY = cy; tapPoint();   // one tap only: GovMap puts its marker exactly here
     }
 
     private void checkMarker(final int s, final float cx, final float cy, final int tries) {

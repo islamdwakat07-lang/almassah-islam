@@ -39,6 +39,7 @@ public class MapActivity extends Activity {
     private String startUrl;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private float pinX = -1, pinY = -1;      // point position in WebView pixels
+    private float downX, downY;
     private boolean autoTapping = false, locating = false;
     private int session = 0;                  // bumps on every (re)load so old timers are ignored
 
@@ -118,10 +119,46 @@ public class MapActivity extends Activity {
     /** GovMap opens the map centred on the coordinate: tap the centre so GovMap shows its information.
      *  GovMap then draws its blue marker where it understood the tap; if that is off the centre,
      *  tap again corrected by the difference so the marker and the information are for the coordinate. */
-    private void tapCentre(final int s) {
+    private int[] lastFrame = null;
+    private int stableCount = 0;
+
+    /** tiny snapshot of the map, to know when GovMap has finished moving/drawing */
+    private int[] frame() {
+        int w = Math.max(1, web.getWidth() / 10), h = Math.max(1, web.getHeight() / 10);
+        Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm); c.scale(0.1f, 0.1f); c.translate(-web.getScrollX(), -web.getScrollY()); web.draw(c);
+        int[] px = new int[w * h]; bm.getPixels(px, 0, w, 0, 0, w, h); bm.recycle(); return px;
+    }
+
+    /** GovMap opens centred on the coordinate, but it keeps animating/zooming for a moment.
+     *  Tap only after the picture has stopped changing, so the tap lands on the coordinate itself. */
+    private void tapCentre(final int s) { lastFrame = null; stableCount = 0; waitStable(s, 0); }
+
+    private void waitStable(final int s, final int tries) {
         if (s != session || web == null || mapR <= mapL) return;
-        final float cx = (mapL + mapR) / 2f, cy = (mapT + mapB) / 2f;
-        pinX = cx; pinY = cy; tapPoint();   // one tap only: GovMap puts its marker exactly here
+        int[] f = null; try { f = frame(); } catch (Throwable ignored) { }
+        if (f != null && lastFrame != null && f.length == lastFrame.length) {
+            long diff = 0; for (int i = 0; i < f.length; i++) { int a = f[i], b = lastFrame[i];
+                diff += Math.abs(((a >> 16) & 255) - ((b >> 16) & 255)) + Math.abs(((a >> 8) & 255) - ((b >> 8) & 255)) + Math.abs((a & 255) - (b & 255)); }
+            stableCount = diff / (double) f.length < 2.0 ? stableCount + 1 : 0;
+        }
+        lastFrame = f;
+        if (stableCount >= 2 || tries > 25) {
+            centreCross();
+            pinX = cx(); pinY = cy(); tapPoint();
+            return;
+        }
+        ui.postDelayed(() -> waitStable(s, tries + 1), 600);
+    }
+    private float cx() { return (mapL + mapR) / 2f; }
+    private float cy() { return (mapT + mapB) / 2f; }
+
+    /* red + white crosshair exactly on the coordinate (a backup marker, like the old app) */
+    private View cross;
+    private void centreCross() {
+        if (cross == null) return;
+        cross.setTranslationX(cx() - cross.getWidth() / 2f); cross.setTranslationY(cy() - cross.getHeight() / 2f);
+        cross.setVisibility(View.VISIBLE);
     }
 
     private void checkMarker(final int s, final float cx, final float cy, final int tries) {
@@ -171,6 +208,7 @@ public class MapActivity extends Activity {
         session++;
         locating = false;
         pinX = pinY = -1;
+        if (cross != null) cross.setVisibility(View.GONE);
         web.loadUrl(startUrl);
     }
 
@@ -306,10 +344,23 @@ public class MapActivity extends Activity {
         bar.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
         root.addView(bar, new FrameLayout.LayoutParams(-1, dp(4), Gravity.TOP));
 
+        cross = new View(this) {
+            final Paint w = new Paint(Paint.ANTI_ALIAS_FLAG), r = new Paint(Paint.ANTI_ALIAS_FLAG);
+            { w.setColor(Color.WHITE); w.setStrokeWidth(dp(6)); w.setStrokeCap(Paint.Cap.SQUARE); r.setColor(Color.parseColor("#e11d2a")); r.setStrokeWidth(dp(3)); }
+            @Override protected void onDraw(Canvas c) {
+                float m = getWidth() / 2f, a = dp(22), g = dp(5);
+                for (Paint p : new Paint[]{w, r}) { c.drawLine(m - a, m, m - g, m, p); c.drawLine(m + g, m, m + a, m, p); c.drawLine(m, m - a, m, m - g, p); c.drawLine(m, m + g, m, m + a, p); }
+                c.drawCircle(m, m, dp(2.5f), r);
+            }
+        };
+        cross.setVisibility(View.GONE);
+        root.addView(cross, new FrameLayout.LayoutParams(dp(50), dp(50)));
+
         LinearLayout tools = new LinearLayout(this);
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        tools.addView(greenPill("↺ النقطة", v -> loadPoint()));
+        tools.addView(greenPill("ℹ معلومات", v -> { if (mapR > mapL) { pinX = cx(); pinY = cy(); if (cross.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); } }));
+        tools.addView(greenPill("🎯 تمركز", v -> loadPoint()));
         tools.addView(greenPill("المتصفح", v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
         }));
@@ -328,6 +379,13 @@ public class MapActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setAllowFileAccess(false);
 
+        web.setOnTouchListener((v, e) -> {
+            if (autoTapping || cross == null) return false;
+            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) { downX = e.getX(); downY = e.getY(); }
+            else if (e.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) cross.setVisibility(View.GONE);
+            else if (e.getActionMasked() == MotionEvent.ACTION_MOVE && Math.hypot(e.getX() - downX, e.getY() - downY) > dp(10)) cross.setVisibility(View.GONE);
+            return false;
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {

@@ -65,7 +65,7 @@ public class MapActivity extends Activity {
                     mapL = (float) o.getDouble("l") * k; mapT = (float) o.getDouble("t") * k;
                     mapR = (float) o.getDouble("r") * k; mapB = (float) o.getDouble("b") * k;
                     // give GovMap time to draw its own marker and the layers, then find the marker and tap it
-                    ui.postDelayed(() -> findMarkerAndTap(s, 0), 2500);
+                    ui.postDelayed(() -> tapCentre(s), 2500);
                     return;
                 }
             } catch (Exception ignored) { }
@@ -115,13 +115,26 @@ public class MapActivity extends Activity {
         return new float[]{(bMinX + bMaxX) / 2f * sc, (bMaxY + bh * 0.08f) * sc};
     }
 
-    private void findMarkerAndTap(final int s, final int tries) {
+    /** GovMap opens the map centred on the coordinate: tap the centre so GovMap shows its information.
+     *  GovMap then draws its blue marker where it understood the tap; if that is off the centre,
+     *  tap again corrected by the difference so the marker and the information are for the coordinate. */
+    private void tapCentre(final int s) {
+        if (s != session || web == null || mapR <= mapL) return;
+        final float cx = (mapL + mapR) / 2f, cy = (mapT + mapB) / 2f;
+        pinX = cx; pinY = cy; tapPoint();
+        ui.postDelayed(() -> checkMarker(s, cx, cy, 0), 1200);
+    }
+
+    private void checkMarker(final int s, final float cx, final float cy, final int tries) {
         if (s != session || web == null) return;
         float[] t = null;
         try { t = findMarker(); } catch (Throwable ignored) { }
-        if (t != null) { pinX = t[0]; pinY = t[1]; tapPoint(); return; }
-        if (tries < 12) ui.postDelayed(() -> findMarkerAndTap(s, tries + 1), 700);
-        else toastMsg("لم أجد علامة النقطة على الخارطة. اضغط عليها بإصبعك لعرض المعلومات.");
+        if (t == null) { if (tries < 6) ui.postDelayed(() -> checkMarker(s, cx, cy, tries + 1), 500); return; }
+        float dx = t[0] - cx, dy = t[1] - cy;
+        if (Math.hypot(dx, dy) <= dp(6)) return;            // GovMap took the tap exactly on the coordinate
+        float nx = cx - dx, ny = cy - dy;
+        if (nx < mapL || nx > mapR || ny < mapT || ny > mapB) return;
+        pinX = nx; pinY = ny; tapPoint();
     }
 
     /** real touch on the point, exactly like a finger tap, so GovMap opens its information popup */
@@ -282,7 +295,6 @@ public class MapActivity extends Activity {
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         tools.addView(greenPill("↺ النقطة", v -> loadPoint()));
-        tools.addView(greenPill("ℹ معلومات النقطة", v -> { if (mapR > 0) findMarkerAndTap(session, 0); else loadPoint(); }));
         tools.addView(greenPill("المتصفح", v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
         }));

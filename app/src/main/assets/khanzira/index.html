@@ -126,6 +126,9 @@ details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
           <label class="f">سماح القطرين (سم)<input class="num" id="dtol" inputmode="decimal"></label>
         </div>
         <label class="f" style="margin-top:8px">طبقة المحاور<select id="axLayer"></select></label>
+        <div style="margin-top:10px;font-weight:700;color:#0c3b26">تصحيح أسماء المحاور</div>
+        <div class="tip">إذا قرأ التطبيق اسم محور خطأ صحّحه هنا، أو أزل الإشارة عن خط ليس محوراً.</div>
+        <table id="axFix"></table>
       </details>
     </section>
     <div class="row">
@@ -259,19 +262,50 @@ function findAxes(F, layerPick) {
   Object.entries(byLayer).forEach(([k, ls]) => { score[k] = ls.filter(l => nameOf(l)).length + (/(axis|grid|محاور|محور|axe|achs|center)/i.test(k) ? 3 : 0); });
   const order = Object.keys(score).sort((a, b) => score[b] - score[a]);
   const layer = layerPick && byLayer[layerPick] ? layerPick : order[0];
-  let axes = (byLayer[layer] || []).map(l => ({ p: l.pts[0], q: l.pts[1], name: nameOf(l), len: dist(l.pts[0], l.pts[1]) }));
-  // merge duplicates (same name / same line)
+  // 1) geometric lines of the chosen layer, duplicates merged
   const out = [];
-  for (const a of axes) {
-    const d = [a.q[0] - a.p[0], a.q[1] - a.p[1]], n = Math.hypot(...d); a.u = [d[0] / n, d[1] / n];
-    const dup = out.find(b => Math.abs(a.u[0] * b.u[1] - a.u[1] * b.u[0]) < 0.01 && Math.abs((a.p[0] - b.p[0]) * b.u[1] - (a.p[1] - b.p[1]) * b.u[0]) < 0.02);
-    if (dup) { if (!dup.name && a.name) dup.name = a.name; continue; }
-    out.push(a);
+  for (const l of (byLayer[layer] || [])) {
+    const p = l.pts[0], q = l.pts[1], len = dist(p, q), u = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+    const dup = out.find(b => Math.abs(u[0] * b.u[1] - u[1] * b.u[0]) < 0.01 && Math.abs((p[0] - b.p[0]) * b.u[1] - (p[1] - b.p[1]) * b.u[0]) < 0.02);
+    if (dup) { // keep the longest extent
+      const ts = [p, q].map(x => (x[0] - dup.p[0]) * dup.u[0] + (x[1] - dup.p[1]) * dup.u[1]);
+      const t0 = Math.min(0, ...ts), t1 = Math.max(dup.len, ...ts);
+      dup.p = [dup.p[0] + dup.u[0] * t0, dup.p[1] + dup.u[1] * t0]; dup.len = t1 - t0; dup.q = [dup.p[0] + dup.u[0] * dup.len, dup.p[1] + dup.u[1] * dup.len];
+      continue; }
+    out.push({ p, q, u, len, name: null });
   }
+  // 2) each label (bubble text) belongs to the ONE line that passes through it: the line's extension
+  //    must run through the label (small sideways offset) and the label must sit near one end of the line.
+  const pairs = [];
+  out.forEach((ax, ai) => labels.forEach((t, ti) => {
+    const vx = t.p[0] - ax.p[0], vy = t.p[1] - ax.p[1];
+    const along = vx * ax.u[0] + vy * ax.u[1], side = Math.abs(vx * ax.u[1] - vy * ax.u[0]);
+    const endGap = along < 0 ? -along : along > ax.len ? along - ax.len : Math.min(along, ax.len - along);
+    const tolSide = Math.max(0.35, 2.2 * t.h), tolEnd = Math.max(3, 8 * t.h, 0.12 * ax.len);
+    if (side <= tolSide && endGap <= tolEnd) pairs.push({ ai, ti, side, endGap });
+  }));
+  // every label goes to the line that passes closest through it (a line may get the same label at both ends)
+  const bestOf = {};
+  pairs.forEach(pr => { const b = bestOf[pr.ti]; if (!b || pr.side < b.side - 1e-6 || (Math.abs(pr.side - b.side) < 1e-6 && pr.endGap < b.endGap)) bestOf[pr.ti] = pr; });
+  const byName = {};
+  Object.values(bestOf).forEach(pr => { const n = labels[pr.ti].s.toUpperCase(); (byName[n] = byName[n] || []).push(pr); });
+  // a name that landed on two different lines stays with the line it fits best
+  Object.entries(byName).forEach(([n, prs]) => {
+    const score = {}; prs.forEach(pr => { score[pr.ai] = (score[pr.ai] || 0) + 1 / (0.01 + pr.side); });
+    const win = Object.entries(score).sort((x, y) => y[1] - x[1])[0][0];
+    if (!out[win].name) out[win].name = n;
+  });
+  // 3) the same name read at both ends of one axis is fine; the same name on two different lines → keep the better one
+  // 4) if most lines are named, unnamed lines on this layer are extra drawing lines (column faces, walls…): drop them
+  const named = out.filter(a => a.name).length;
+  let axesKept = named >= 2 && named >= out.length * 0.5 ? out.filter(a => a.name) : out;
+  // a name used twice in the same direction family is resolved after families are known (below)
+  out.length = 0; axesKept.forEach(a => out.push(a));
   // two direction families
   const ang = a => { let t = Math.atan2(a.u[1], a.u[0]); if (t < 0) t += Math.PI; if (t >= Math.PI) t -= Math.PI; return t; };
   const ref = out.length ? ang(out[0]) : 0;
   out.forEach(a => { const d = Math.abs(((ang(a) - ref + Math.PI / 2) % Math.PI + Math.PI) % Math.PI - Math.PI / 2); a.fam = d < Math.PI / 4 ? 0 : 1; });
+  [0, 1].forEach(f => { const seen = {}; out.filter(a => a.fam === f && a.name).forEach(a => { if (seen[a.name]) a.name = a.name + "'"; seen[a.name] = 1; }); });
   // unnamed → automatic names
   [0, 1].forEach(f => {
     const fam = out.filter(a => a.fam === f), nrm = fam[0] ? [-fam[0].u[1], fam[0].u[0]] : [0, 1];
@@ -457,6 +491,7 @@ function load(txt, name) {
   try {
     D = parseDXF(txt); F = flatten(D);
     AX = findAxes(F, st.axLayer);
+    applyFix();
     B = buildBoards(F, AX.axes);
     const blues = F.lines.filter(l => l.blue).length;
     const msgs = [];
@@ -482,6 +517,18 @@ $("#force").addEventListener("click", () => { const S = bState(B[cur]); S.force 
 $("#next").addEventListener("click", () => { cur = (cur + 1) % B.length; render(); scrollTo({ top: 0, behavior: "smooth" }); });
 $("#tol").addEventListener("change", () => { st.tol = parseFloat($("#tol").value) || 4; save(); render(); });
 $("#dtol").addEventListener("change", () => { st.dtol = parseFloat($("#dtol").value) || 2; save(); render(); });
+const axKey = a => { const m = [(a.p[0] + a.q[0]) / 2, (a.p[1] + a.q[1]) / 2]; let t = Math.atan2(a.u[1], a.u[0]); if (t < 0) t += Math.PI; const c = m[0] * -Math.sin(t) + m[1] * Math.cos(t); return t.toFixed(3) + ":" + c.toFixed(2); };
+function applyFix() {
+  st.fix = st.fix || {};
+  AX.axes.forEach(a => { a.key = axKey(a); a.auto = a.name; const f = st.fix[a.key]; if (f) { if (f.name) a.name = f.name; a.off_ = !!f.off; } });
+  const all = AX.axes.slice(); AX.axes = all.filter(a => !a.off_); AX.all = all;
+  $("#axFix").innerHTML = all.slice().sort((x, y) => x.fam - y.fam || x.off - y.off).map(a => `<tr><td style="width:40px"><input type="checkbox" data-k="${a.key}" ${a.off_ ? "" : "checked"} style="width:22px;height:22px;accent-color:#17613f"></td><td><input class="num" data-n="${a.key}" value="${esc(a.name)}" style="font-size:16px;padding:6px 8px"></td><td class="muted">${a.fam === 0 ? "اتجاه 1" : "اتجاه 2"}</td></tr>`).join("");
+}
+$("#axFix").addEventListener("change", e => {
+  const k = e.target.dataset.k || e.target.dataset.n; if (!k) return; st.fix = st.fix || {}; const f = st.fix[k] = st.fix[k] || {};
+  if (e.target.dataset.k) f.off = !e.target.checked; else f.name = e.target.value.trim().toUpperCase();
+  save(); if (st.file && st.file.txt) { const keep = cur; load(st.file.txt, st.file.name); cur = Math.min(keep, B.length - 1); render(); }
+});
 $("#axLayer").addEventListener("change", () => { st.axLayer = $("#axLayer").value; save(); if (st.file && st.file.txt) load(st.file.txt, st.file.name); });
 
 /* ======================= outputs ======================= */

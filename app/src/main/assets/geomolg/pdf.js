@@ -186,7 +186,7 @@ async function exportPDF(opts) {
     const iw = Math.round(F.w), ih = Math.round(F.h), bbox = [gx0, gy0, gx1, gy1].join(",");
 
     // images: aerial photo + the switched-on layers
-    const exp = (svc, extra, tk, root) => (root || REST) + svc + "/MapServer/export?bbox=" + bbox + "&bboxSR=28191&imageSR=28191&size=" + iw + "," + ih + "&dpi=200&f=image" + extra + (tk ? "&token=" + tk : "");
+    const exp = (svc, extra, tk, root) => (root || REST) + svc + "/MapServer/export?bbox=" + bbox + "&bboxSR=28191&imageSR=28191&size=" + iw + "," + ih + "&dpi=200&f=image" + extra + (tk ? "&token=" + TK : "");
     const want = {}; LAYERS.forEach(l => { if (st.on[l.id]) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
     const order = [...new Set(LAYERS.map(l => l.svc))].reverse().filter(s => want[s]);
     const jobs = [loadImg(exp(base.svc, "&format=jpg", base.tk)).catch(() => loadImg(exp("Orthophotos_WB_2022_15cm_tif_PG1923_05", "&format=jpg")).catch(() => null))]

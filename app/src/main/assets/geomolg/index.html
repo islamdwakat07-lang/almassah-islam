@@ -137,6 +137,7 @@ select:disabled{opacity:.55}
   </div>
 </section>
 
+<script src="../geotoken.js"></script>
 <script src="lib/leaflet.js"></script>
 <script src="lib/proj4.js"></script>
 <script src="lib/proj4leaflet.js"></script>
@@ -147,7 +148,7 @@ select:disabled{opacity:.55}
 const $ = s => document.querySelector(s);
 const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
 const SQL = "https://sql.geomolg.ps/adaptor/rest/services/";
-const TK = "SdO5FSDdO2-RY1U9Oa9VitJDu7Iq86APAGjFo3kS1d4.";
+let TK = (window.geoTokenNow && geoTokenNow()) || "DV4TtDaIf5VQ2I_bC-F6b0QDLVmYKqCw6aeqUgPnTns.";   // refreshed at start by geotoken.js
 const TK2 = "yKo-w3PbR9H6a6YInoSx_qKCus9pt_54DjR1AyZ";
 const KEY = "geomolg-v1";
 const PG = "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs";
@@ -159,8 +160,8 @@ const toLL = (x, y) => crs.unproject(L.point(x, y));
 const toXY = ll => { const p = crs.project(ll); return [p.x, p.y]; };
 
 const BASES = [
-  { id: "2025", name: "صورة 2025 (15 سم)", svc: "Orthophotos_WB_2025_15cm_tif_PG1923", tk: TK, maxZ: 12 },
-  { id: "2024", name: "صورة 2024 (15 سم)", svc: "Orthophotos_WB_2024_15cm_tif_PG1923", tk: TK, maxZ: 12 },
+  { id: "2025", name: "صورة 2025 (15 سم)", svc: "Orthophotos_WB_2025_15cm_tif_PG1923", tk: 1, maxZ: 12 },
+  { id: "2024", name: "صورة 2024 (15 سم)", svc: "Orthophotos_WB_2024_15cm_tif_PG1923", tk: 1, maxZ: 12 },
   { id: "2022", name: "صورة 2022 (15 سم)", svc: "Orthophotos_WB_2022_15cm_tif_PG1923_05", maxZ: 13 },
   { id: "2021", name: "صورة 2021 (15 سم)", svc: "Orthophotos_WB_2021_15cm_tif_PG1923", maxZ: 13 },
   { id: "2019", name: "صورة 2019 (25 سم)", svc: "Orthophotos_WB_2019_Aerial_25cm_jpg_PG1923", maxZ: 12 },
@@ -171,7 +172,7 @@ const BASES = [
 const LAYERS = [
   { id: "blkR", name: "أحواض التسوية", svc: "Blocks_02", ids: [0], c: "#1e5bd8", on: false },
   { id: "blkN", name: "الأحواض الطبيعية", svc: "Blocks_02", ids: [1], c: "#6fb3ff", on: false },
-  { id: "pla", name: "قطع أراضي فيها كواشين طابو", svc: "Parcels_All_PLA", ids: [0], tk: TK, c: "#f59e0b", on: true },
+  { id: "pla", name: "قطع أراضي فيها كواشين طابو", svc: "Parcels_All_PLA", ids: [0], tk: 1, c: "#f59e0b", on: true },
   { id: "parR", name: "قطع تسوية غير منتهية", svc: "ParcelsRegistered_11", ids: [0], c: "#a3b51b", on: false },
   { id: "abc", name: "مناطق أ، ب، ج (المعتمدة)", svc: "ABC_Areas_JurisdictionBorders_07", ids: [0], c: "#dc2626", on: false },
   { id: "com", name: "أسماء البلدات", svc: "Communities_06", ids: [1], c: "#0f766e", on: true },
@@ -179,8 +180,8 @@ const LAYERS = [
   { id: "cont", name: "خطوط الكنتور كل 5 م", svc: "ContourLines_02", ids: [1], c: "#92400e", on: false },
   { id: "cont1", name: "خطوط الكنتور كل 1 م", svc: "ContourLines_02", ids: [0], c: "#b45309", on: false },
   { id: "state", name: "أراضي الدولة", svc: "StateLand_02", ids: [0, 1], c: "#16a34a", on: false },
-  { id: "agri", name: "تصنيف الأراضي حسب القيمة الزراعية", svc: "AgriculturalLandClassification_old_05", ids: [1], tk: TK, c: "#65a30d", on: false },
-  { id: "nat", name: "المحميات الطبيعية", svc: "NaturalReserves_old_03", ids: [0], tk: TK, c: "#22d3ee", on: false }
+  { id: "agri", name: "تصنيف الأراضي حسب القيمة الزراعية", svc: "AgriculturalLandClassification_old_05", ids: [1], tk: 1, c: "#65a30d", on: false },
+  { id: "nat", name: "المحميات الطبيعية", svc: "NaturalReserves_old_03", ids: [0], tk: 1, c: "#22d3ee", on: false }
 ];
 
 /* ---------- state ---------- */
@@ -201,9 +202,10 @@ function setBase(id) {
   st.base = id; save();
   if (baseLayer) { map.removeLayer(baseLayer); baseLayer = null; }
   const b = BASES.find(x => x.id === id); if (!b || !b.svc) return;
-  baseLayer = L.tileLayer(REST + b.svc + "/MapServer/tile/{z}/{y}/{x}" + (b.tk ? "?token=" + b.tk : ""), { maxNativeZoom: b.maxZ, maxZoom: 13, tileSize: 256, keepBuffer: 3 });
+  baseLayer = L.tileLayer(REST + b.svc + "/MapServer/tile/{z}/{y}/{x}" + (b.tk ? "?token=" + TK : ""), { maxNativeZoom: b.maxZ, maxZoom: 13, tileSize: 256, keepBuffer: 3 });
   let errs = 0;
-  baseLayer.on("tileerror", () => { if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
+  let retried = false;
+  baseLayer.on("tileerror", () => { if (b.tk && !retried && errs === 3 && window.geoToken) { retried = true; geoToken(true).then(t => { if (t && t !== TK) { TK = t; setBase(id); } }); } if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
   baseLayer.addTo(map).bringToBack();
 }
 
@@ -230,7 +232,7 @@ const DynLayer = L.Layer.extend({
     const s = m.getSize(), a = toXY(m.containerPointToLatLng([0, s.y])), b = toXY(m.containerPointToLatLng([s.x, 0]));
     const bbox = [a[0], a[1], b[0], b[1]], sv = this.svc;
     const u = (sv.base || REST) + sv.svc + "/MapServer/export?bbox=" + bbox.join(",") + "&bboxSR=28191&imageSR=28191&size=" + s.x + "," + s.y +
-      "&dpi=96&format=png32&transparent=true&layers=show:" + this.ids.join(",") + "&f=image" + (sv.tk ? "&token=" + sv.tk : "");
+      "&dpi=96&format=png32&transparent=true&layers=show:" + this.ids.join(",") + "&f=image" + (sv.tk ? "&token=" + TK : "");
     const im = new Image(), self = this, tag = this._tag = Math.random();
     busy(1);
     im.onload = () => { busy(-1); if (tag !== self._tag) return; self._img.src = u; self._bbox = bbox; self._img.style.display = ""; self._place(); };
@@ -293,7 +295,8 @@ async function rq(url, params) {
   try { const r = await fetch(u); const j = await r.json(); if (j.error) throw new Error(j.error.message || "خطأ من الخادم"); return j; }
   finally { busy(-1); }
 }
-const qPLA = p => rq(REST + "Parcels_All_PLA/MapServer/0/query", Object.assign({ token: TK, returnGeometry: "false" }, p));
+const qPLA = async p => { try { return await rq(REST + "Parcels_All_PLA/MapServer/0/query", Object.assign({ token: TK, returnGeometry: "false" }, p)); }
+  catch (e) { if (!/token/i.test(e.message || "")) throw e; TK = await geoToken(true); return rq(REST + "Parcels_All_PLA/MapServer/0/query", Object.assign({ token: TK, returnGeometry: "false" }, p)); } };
 const qBLK = p => rq(REST + "Blocks_02/MapServer/0/query", Object.assign({ returnGeometry: "false" }, p));   // fast: same names as PLA
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const sq = s => String(s).replace(/'/g, "''");
@@ -489,7 +492,7 @@ async function identifyAt(x, y, append) {
   if (box()) box().innerHTML = '<p class="msg" style="color:var(--am-muted)">…جاري جلب المعلومات</p>';
   const jobs = Object.values(want).map(w => rq((w.cfg.base || REST) + w.cfg.svc + "/MapServer/identify", Object.assign({
     geometry: JSON.stringify({ x, y }), geometryType: "esriGeometryPoint", sr: 28191, layers: "all:" + w.ids.join(","), tolerance: 2,
-    mapExtent: [a[0], a[1], b[0], b[1]].join(","), imageDisplay: s.x + "," + s.y + ",96", returnGeometry: "true" }, w.cfg.tk ? { token: w.cfg.tk } : {}))
+    mapExtent: [a[0], a[1], b[0], b[1]].join(","), imageDisplay: s.x + "," + s.y + ",96", returnGeometry: "true" }, w.cfg.tk ? { token: TK } : {}))
     .then(j => ({ w, j })).catch(() => null));
   const out = (await Promise.all(jobs)).filter(Boolean);
   const groups = []; let parcelGeom = null, parcelAttrs = null;
@@ -565,6 +568,9 @@ $("#goX").addEventListener("click", () => {
 });
 
 loadGovs();
+function useToken(t) { if (t && t !== TK) { TK = t; setBase(st.base); Object.values(services).forEach(x => x.added && x.layer._update()); } }
+geoToken().then(useToken);
+setInterval(() => geoToken(true).then(useToken), 12 * 60e3);   // GeoMOLG keys expire after a short while
 </script>
 <script src="pdf.js"></script>
 </body>

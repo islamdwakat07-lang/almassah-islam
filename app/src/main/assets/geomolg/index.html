@@ -39,7 +39,9 @@ select:disabled{opacity:.55}
 .leaflet-container{font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
 .fab{position:absolute;z-index:500;border:2px solid var(--am-gold-400);border-radius:999px;background:var(--am-btn);color:#fff6d6;font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:9px 14px;box-shadow:0 6px 14px -6px rgba(0,0,0,.6);cursor:pointer}
 .mapwrap{flex:1;min-height:0;position:relative;display:flex}
-#fabLoc{top:10px;right:10px}
+.locBtn{display:block;width:34px;height:34px;background:#fff;border:0;cursor:pointer;padding:0;display:grid;place-items:center}
+.locBtn:hover{background:#f4f4f4}.locBtn.busy svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .tab.lay{flex:.8;background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;border-color:var(--am-gold-500)}
 #fabBase{top:56px;right:10px}
 .busy{position:absolute;z-index:500;top:10px;left:50%;transform:translateX(-50%);background:#fff8e1;border:1.5px solid var(--am-gold-500);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--am-green-800);display:none}
@@ -106,7 +108,6 @@ select:disabled{opacity:.55}
 
 <div class="mapwrap">
   <div id="map"></div>
-  <button class="fab" id="fabLoc" type="button" aria-label="تحديد موقعي">◎ موقعي</button>
   <div class="busy" id="busy">جاري التحميل…</div>
 </div>
 
@@ -512,11 +513,17 @@ map.on("click", e => { const [x, y] = toXY(e.latlng); dropPin(x, y); clearHi(); 
 
 /* ---------- my location (GPS) ---------- */
 let meDot = null, meAcc = null;
+const LocCtl = L.Control.extend({ options: { position: "topleft" }, onAdd() {
+  const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), b = L.DomUtil.create("button", "locBtn", box);
+  b.type = "button"; b.id = "fabLoc"; b.setAttribute("aria-label", "تحديد موقعي");
+  b.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#111" stroke-width="2.4"/><circle cx="11" cy="11" r="3.4" fill="#111"/></svg>';
+  L.DomEvent.disableClickPropagation(box); return box; } });
+new LocCtl().addTo(map);
 $("#fabLoc").addEventListener("click", () => {
   if (!navigator.geolocation) return;
-  const b = $("#fabLoc"); b.textContent = "…جاري التحديد"; b.disabled = true;
+  const b = $("#fabLoc"); b.classList.add("busy"); b.disabled = true;
   navigator.geolocation.getCurrentPosition(pos => {
-    b.textContent = "◎ موقعي"; b.disabled = false;
+    b.classList.remove("busy"); b.disabled = false;
     const [x, y] = proj4("EPSG:4326", "EPSG:28191", [pos.coords.longitude, pos.coords.latitude]), ll = toLL(x, y), acc = pos.coords.accuracy || 0;
     if (meDot) map.removeLayer(meDot); if (meAcc) map.removeLayer(meAcc);
     meAcc = L.circle(ll, { radius: acc, color: "#1a73e8", weight: 1, fillColor: "#1a73e8", fillOpacity: .12, interactive: false }).addTo(map);
@@ -526,7 +533,7 @@ $("#fabLoc").addEventListener("click", () => {
     showInfo("موقعي الحالي", [{ title: "دقة تحديد الموقع", attrs: { "الدقة التقريبية": "± " + Math.round(acc) + " م" } }], [x, y]);
     setTimeout(() => identifyAt(x, y, "keep"), 300);
   }, err => {
-    b.textContent = "◎ موقعي"; b.disabled = false;
+    b.classList.remove("busy"); b.disabled = false;
     showInfo("تعذّر تحديد الموقع", [{ title: "السبب", attrs: { "": err.code === 1 ? "لم يُسمح للتطبيق باستخدام الموقع. اسمح له من إعدادات الجوال." : "شغّل خدمة الموقع (GPS) في الجوال وحاول مرة أخرى." } }]);
   }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
 });

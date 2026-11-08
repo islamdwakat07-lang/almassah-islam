@@ -15,6 +15,9 @@ main{max-width:560px;margin:0 auto;padding:12px 14px 40px}
 .tabs button[aria-selected=true]{background:var(--am-btn);color:#fff6d6;box-shadow:0 0 0 1.5px var(--am-gold-400)}
 .card{background:var(--am-card);border:1.5px solid var(--am-line);border-radius:18px;padding:14px;box-shadow:0 10px 22px -16px rgba(8,42,27,.5),inset 0 1px 0 #fff;margin-bottom:12px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pair{display:grid;grid-template-columns:1fr 38px 1fr;gap:6px;align-items:end}
+.swap{height:44px;border:1.5px solid var(--am-gold-500);border-radius:12px;background:#fffaf0;color:var(--am-green-800);font:700 22px "IBM Plex Sans Arabic",sans-serif;cursor:pointer;padding:0;line-height:1}
+.swap:active{background:var(--am-gold-300)}
 .full{grid-column:1/-1}
 label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px;color:var(--am-green-800);min-width:0}
 label.f small{font-weight:500;color:var(--am-muted)}
@@ -58,12 +61,14 @@ tr:nth-child(even) td{background:#fbf5e4}
   <!-- 1) between two points -->
   <section class="pane" id="pp">
     <div class="card">
-      <div class="grid">
+      <div class="pair">
         <label class="f">منسوب النقطة الأولى<input id="z1" inputmode="decimal" value="512.40"></label>
+        <button class="swap" id="swap" type="button" aria-label="تبديل المنسوبين" title="تبديل المنسوبين">⇄</button>
         <label class="f">منسوب النقطة الثانية<input id="z2" inputmode="decimal" value="508.15"></label>
+      </div>
+      <div class="grid" style="margin-top:10px">
         <label class="f full">المسافة الأفقية بينهما (م)<input id="d" inputmode="decimal" value="85"></label>
       </div>
-      <button class="btn" id="swap" type="button" style="width:100%;margin-top:8px">⇅ تبديل منسوب النقطة الأولى والثانية</button>
       <div class="big" id="pRes"></div>
       <svg id="pSvg" viewBox="0 0 340 120"></svg>
     </div>

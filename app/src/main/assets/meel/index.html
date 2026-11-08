@@ -26,6 +26,8 @@ input:focus{outline:2px solid var(--am-gold-500)}
 .big span{font-size:13px;color:var(--am-muted)}
 .big .main{grid-column:1/-1;background:var(--am-btn);border-color:var(--am-gold-500)}
 .big .main b{color:#f3dc93;font-size:34px}.big .main span{color:#e7efe1}
+.big .main .per{display:block;font:700 18px "IBM Plex Sans Arabic";color:#fff6d6;margin-top:2px}
+.big .dz{grid-column:1/-1;background:#fde3e1;border-color:#d14b3f}.big .dz b{color:#b91c1c;font-size:28px}.big .dz span{color:#8a1c12}
 .note{font-size:13px;color:var(--am-muted);margin:8px 0 0}
 .warn{color:#9a3412;font-weight:700}
 .ok{color:#1e6b4a;font-weight:700}
@@ -61,6 +63,7 @@ tr:nth-child(even) td{background:#fbf5e4}
         <label class="f">منسوب النقطة الثانية<input id="z2" inputmode="decimal" value="508.15"></label>
         <label class="f full">المسافة الأفقية بينهما (م)<input id="d" inputmode="decimal" value="85"></label>
       </div>
+      <button class="btn" id="swap" type="button" style="width:100%;margin-top:8px">⇅ تبديل منسوب النقطة الأولى والثانية</button>
       <div class="big" id="pRes"></div>
       <svg id="pSvg" viewBox="0 0 340 120"></svg>
     </div>
@@ -128,11 +131,12 @@ document.querySelectorAll("main input[id]").forEach(i => { if (st["v_" + i.id] !
 /* 1) between two points */
 function calcP() {
   const z1 = n("#z1"), z2 = n("#z2"), d = n("#d"), dz = z2 - z1, g = dz / d * 100, ang = Math.atan2(Math.abs(dz), d) * 180 / Math.PI, slope = Math.hypot(d, dz);
+  const word = g > 0 ? "صعود" : g < 0 ? "نزول" : "مستوي", per = Math.abs(dz / d) * 100;
   $("#pRes").innerHTML = (d > 0 && isFinite(dz)) ?
-    `<div class="main"><b>${g >= 0 ? "+" : ""}${g.toFixed(2)} %</b><span>${g > 0 ? "صعود" : g < 0 ? "نزول" : "مستوي"}</span></div>
+    `<div class="main"><b>${g >= 0 ? "+" : ""}${g.toFixed(2)} %</b><span class="per">${g === 0 ? "مستوي" : `${word} <span style="direction:ltr;unicode-bidi:isolate;font:700 20px IBM Plex Mono,monospace;color:#f3dc93">${per.toFixed(2)}</span> سم لكل متر أفقي`}</span></div>
+     <div class="dz"><b>${dz >= 0 ? "+" : ""}${dz.toFixed(2)} م</b><span>فرق المنسوب (${word})</span></div>
      <div><b>${(g * 10).toFixed(1)} ‰</b><span>بالألف</span></div><div><b>${ang.toFixed(2)}°</b><span>بالدرجات</span></div>
-     <div><b>1:${Math.abs(dz) > 1e-9 ? (d / Math.abs(dz)).toFixed(1) : "∞"}</b><span>نسبة</span></div><div><b>${dz >= 0 ? "+" : ""}${dz.toFixed(2)}</b><span>فرق المنسوب (م)</span></div>
-     <div class="full" style="grid-column:1/-1"><b>${slope.toFixed(2)} م</b><span>المسافة المائلة (على الأرض)</span></div>` : '<p class="note">أدخل المنسوبين والمسافة.</p>';
+     <div><b>1:${Math.abs(dz) > 1e-9 ? (d / Math.abs(dz)).toFixed(1) : "∞"}</b><span>نسبة</span></div><div><b>${slope.toFixed(2)} م</b><span>المسافة المائلة (على الأرض)</span></div>` : '<p class="note">أدخل المنسوبين والمسافة.</p>';
   // little sketch
   const h = Math.max(-1, Math.min(1, dz / Math.max(d, 1) * 4)), y1 = 60 + 40 * h * .5 * (dz > 0 ? 1 : 1), yA = dz >= 0 ? 95 : 25, yB = dz >= 0 ? 95 - 70 * Math.min(1, Math.abs(h)) : 25 + 70 * Math.min(1, Math.abs(h));
   $("#pSvg").innerHTML = (d > 0 && isFinite(dz)) ? `<line x1="300" y1="${yA}" x2="40" y2="${yB}" stroke="#17613f" stroke-width="4" stroke-linecap="round"/>
@@ -171,6 +175,7 @@ function calcM() {
     `طول الخط ${pts[pts.length - 1].x.toFixed(1)} م` + (shallow ? ` · <span class="warn">${shallow} منهل عمقه أقل من 1 م</span>` : "");
   profile("#mSvg", pts.map(p => ({ x: p.x, d: p.inv, g: p.gr })), "قاع الخط", "الأرض", true);
 }
+$("#swap").addEventListener("click", () => { const a = $("#z1").value, b = $("#z2").value; $("#z1").value = b; $("#z2").value = a; st.v_z1 = b; st.v_z2 = a; save(); all(); });
 $("#mAdd").addEventListener("click", () => { const last = st.mh[st.mh.length - 1]; st.mh.push({ d: 30, g: last ? last.g : 0 }); save(); calcM(); });
 
 /* simple longitudinal profile */

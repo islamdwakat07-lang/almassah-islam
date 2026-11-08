@@ -179,7 +179,8 @@ const LAYERS = [
   { id: "cont", name: "خطوط الكنتور كل 5 م", svc: "ContourLines_02", ids: [1], c: "#92400e", on: false },
   { id: "cont1", name: "خطوط الكنتور كل 1 م", svc: "ContourLines_02", ids: [0], c: "#b45309", on: false },
   { id: "state", name: "أراضي الدولة", svc: "StateLand_02", ids: [0, 1], c: "#16a34a", on: false },
-  { id: "nat", name: "المحميات الطبيعية", svc: "NaturalReserves_03", base: SQL, ids: [0], tk: TK2, c: "#22d3ee", on: false }
+  { id: "agri", name: "تصنيف الأراضي حسب القيمة الزراعية", svc: "AgriculturalLandClassification_old_05", ids: [1], tk: TK, c: "#65a30d", on: false },
+  { id: "nat", name: "المحميات الطبيعية", svc: "NaturalReserves_old_03", ids: [0], tk: TK, c: "#22d3ee", on: false }
 ];
 
 /* ---------- state ---------- */
@@ -434,7 +435,7 @@ $("#goP").addEventListener("click", async () => {
 });
 
 /* ---------- identify (what's at a point) ---------- */
-const LABELS = { GOV_A: "المحافظة", VILLAGE_A: "البلدة", BLOCK_A: "اسم الحوض", BLOCK_NO: "رقم الحوض", SUB_BLOCK_A: "اسم الحي", SUB_BLOCK_NO: "رقم الحي", Plot_NO: "رقم القطعة", Shape_Area: "المساحة (م²)", SHAPE_Area: "المساحة (م²)", "Shape.STArea()": "المساحة (م²)",
+const LABELS = { AgriculturalValue_Arabic: "القيمة الزراعية", GOV_A: "المحافظة", VILLAGE_A: "البلدة", BLOCK_A: "اسم الحوض", BLOCK_NO: "رقم الحوض", SUB_BLOCK_A: "اسم الحي", SUB_BLOCK_NO: "رقم الحي", Plot_NO: "رقم القطعة", Shape_Area: "المساحة (م²)", SHAPE_Area: "المساحة (م²)", "Shape.STArea()": "المساحة (م²)",
   VILLAGE_NO: "رقم البلدة", BlockNumber: "رقم الحوض", BlockName_Arabic: "اسم الحوض", CommunityName_Arabic: "التجمع", SiteName_Arabic: "اسم الموقع", ParcelNumber: "رقم القطعة", QuarterNumber: "رقم الحي", QuarterName_Arabic: "اسم الحي", GovernorateName_Arabic: "المحافظة", RegistrationType_Arabic: "نوع التسجيل" };
 const SKIP = /OBJECTID|^FID$|^Shape$|SHAPE$|Shape_Length|SHAPE_Length|STLength|created|edited|English|_E$|Text|Ref_C|LayerName|GOV_NO|^Field$|Uploaded|^Code$|Allocation|_02$|Final_Plot|ParcelsNo_BlockNo|Era_|Physical|Percentage|^Era|Owner/i;
 function tidy(a) {
@@ -482,7 +483,7 @@ async function identifyAt(x, y, append) {
   const s = map.getSize(), a = toXY(map.containerPointToLatLng([0, s.y])), b = toXY(map.containerPointToLatLng([s.x, 0]));
   const want = {};
   // always ask the cadastral layers, plus whatever else is switched on
-  LAYERS.forEach(l => { if (append === true && l.id === "pla") return; if (st.on[l.id] || ["blkR", "blkN", "pla", "parR", "abc", "com"].includes(l.id)) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
+  LAYERS.forEach(l => { if (append === true && l.id === "pla") return; if (st.on[l.id] || ["blkR", "blkN", "pla", "parR", "abc", "com", "agri"].includes(l.id)) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
   if (!append) { showInfo("معلومات الموقع", [], [x, y]); }
   const box = () => $("#idMore");
   if (box()) box().innerHTML = '<p class="msg" style="color:var(--am-muted)">…جاري جلب المعلومات</p>';

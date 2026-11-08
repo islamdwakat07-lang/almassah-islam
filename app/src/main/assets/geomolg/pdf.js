@@ -30,11 +30,13 @@ async function analyzeParcel(geom) {
   const q = { geometry: g, geometryType: "esriGeometryPolygon", inSR: 28191, spatialRel: "esriSpatialRelIntersects", returnGeometry: "true", outSR: 28191 };
   const pm = toMP(geom.rings), total = mpArea(pm);
   const inter = f => { try { return mpArea(polygonClipping.intersection(pm, toMP(f.geometry.rings))); } catch (e) { return 0; } };
-  const [abc, ump] = await Promise.all([
+  const [abc, ump, agri] = await Promise.all([
     rqP(REST + "ABC_Areas_JurisdictionBorders_07/MapServer/0/query", Object.assign({ outFields: "LandClassificationValue_Arabic", maxAllowableOffset: 0.3 }, q)).catch(() => null),
-    rqP(REST + "UrbanMasterPlans_Approved_03/MapServer/4/query", Object.assign({ outFields: "*", maxAllowableOffset: 0.05 }, q)).catch(() => null)]);
+    rqP(REST + "UrbanMasterPlans_Approved_03/MapServer/4/query", Object.assign({ outFields: "*", maxAllowableOffset: 0.05 }, q)).catch(() => null),
+    rqP(REST + "AgriculturalLandClassification_old_05/MapServer/1/query", Object.assign({ outFields: "AgriculturalValue_Arabic", maxAllowableOffset: 0.3, token: TK }, q)).catch(() => null)]);
   if (!abc && !ump) throw new Error("no data");
-  const res = { total, abc: {}, ump: {}, regs: {} };
+  const res = { total, abc: {}, ump: {}, regs: {}, agri: agri ? {} : null };
+  if (agri) agri.features.forEach(f => { const k = (f.attributes.AgriculturalValue_Arabic || "").replace(/^اراضي\s*/, "").replace(/القيمه/g, "القيمة").trim() || "غير مصنفة"; const ar = inter(f); if (ar > .01) res.agri[k] = (res.agri[k] || 0) + ar; });
   if (abc) abc.features.forEach(f => { const k = (f.attributes.LandClassificationValue_Arabic || "").trim() || "غير مصنفة"; res.abc[k] = (res.abc[k] || 0) + inter(f); });
   if (ump) ump.features.forEach(f => { const a = f.attributes, lu = (a["A1_1_UMPs_Approved_03.LandUse_Arabic"] || a.LandUse_Arabic || "").trim() || "غير محدد", ar = inter(f); if (ar < .01) return; res.ump[lu] = (res.ump[lu] || 0) + ar; if (!res.regs[lu]) res.regs[lu] = a; });
   return res;
@@ -143,6 +145,10 @@ async function exportPDF(opts) {
       const abc = Object.entries(an.abc || {}).filter(e => e[1] > .05).sort((a, b) => b[1] - a[1]);
       rows.push(["مناطق أوسلو", abc.length ? abc.map(([k, v]) => `${k} ${pc(v / T)}`).join("  ·  ") + (abc.length > 1 ? "  (يمر خط التقسيم في القطعة)" : "") : "—"]);
       if (abc.length > 1) abc.forEach(([k, v]) => rows.push(["   " + k, fA(v) + "  " + ISO("(" + (v / T * 100).toFixed(1) + "%)")]));
+      if (an.agri) {
+        const ag = Object.entries(an.agri).filter(e => e[1] > .05).sort((a, b) => b[1] - a[1]);
+        rows.push(["القيمة الزراعية", ag.length ? ag.map(([k, v]) => `${k} ${pc(v / T)}`).join("  ·  ") : "غير مصنفة"]);
+      }
       const ump = Object.entries(an.ump || {}).filter(e => e[1] > .05);
       if (!ump.length) rows.push(["المخطط الهيكلي", "القطعة خارج حدود المخطط الهيكلي المصدق"]);
       else {

@@ -78,8 +78,10 @@ details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
         <li>ابدأ الخط وأنهِه على مركز نقطة الرصد بالضبط (استعمل التقاط Node).</li>
         <li><b>لا تستعمل اللون الأزرق لأي شيء آخر</b> في الملف، لأن كل خط أزرق يُعتبر لوح خشب.</li>
         <li>ركّب مخطط المعماري على الرصد بيدك (يمكن أن يبقى بلوك)، وليكن المقياس 1 على X و Y.</li>
-        <li>اترك خطوط المحاور وأسماءها (الأحرف والأرقام) كما أعطاها المعماري. لا داعي لمدّها حتى الخشب – التطبيق يمدّها وحده.</li>
-        <li>إذا كان محور بلا اسم، اكتب اسمه نصاً (Text) قرب طرفه.</li>
+        <li><b>خطوط سناتر الأعمدة باللون الأخضر</b> – اللون رقم 3 (Green). لا تستعمل الأخضر لأي شيء آخر، لأن كل خط أخضر يُعتبر سنتر.</li>
+        <li><b>دوائر الأحرف والأرقام وما بداخلها باللون الأبيض/الأسود</b> – اللون رقم 7 (يظهر أسود أو أبيض حسب خلفية الأوتوكاد).</li>
+        <li>ضع كل حرف أو رقم في دائرة على امتداد خط السنتر عند طرفه (أو طرفيه). لا داعي لمدّ الخطوط حتى الخشب – التطبيق يمدّها وحده.</li>
+        <li>إذا لم يكن في الملف أي خط أخضر، يحاول التطبيق التعرّف على المحاور من طبقاتها كما رسمها المعماري.</li>
         <li>اترك أرقام نقاط الرصد ظاهرة كنصوص قرب المسامير (أقرب من متر ونصف) لتظهر في الجدول بدل N1 و E1.</li>
         <li>احفظ الملف بصيغة <b>DXF</b> (Save As ← DXF). ملف DWG لا يُقرأ.</li>
       </ol>
@@ -207,16 +209,16 @@ function flatten(d) {
       let col = gn(e, 62, 256); if (col === 0) col = inhCol || 7; if (col === 256) col = d.layers[layer] != null ? d.layers[layer] : 7;
       const blue = trueBlue(e); const isBlue = blue != null ? blue : Math.abs(col) === 5;
       const lt = gv(e, 6, "");
-      if (e.t === "LINE") lines.push({ layer, blue: isBlue, lt, pts: [[...ap(M, gn(e, 10, 0), gn(e, 20, 0)), gn(e, 30, 0)], [...ap(M, gn(e, 11, 0), gn(e, 21, 0)), gn(e, 31, 0)]] });
+      if (e.t === "LINE") lines.push({ layer, col: Math.abs(col), blue: isBlue, lt, pts: [[...ap(M, gn(e, 10, 0), gn(e, 20, 0)), gn(e, 30, 0)], [...ap(M, gn(e, 11, 0), gn(e, 21, 0)), gn(e, 31, 0)]] });
       else if (e.t === "LWPOLYLINE") {
         const pts = []; let x = null; const el = gn(e, 38, 0);
         e.g.forEach(([k, v]) => { if (k === 10) x = +v; if (k === 20 && x != null) { pts.push([...ap(M, x, +v), el]); x = null; } });
         if (gn(e, 70, 0) & 1 && pts.length > 2) pts.push(pts[0]);
-        if (pts.length > 1) lines.push({ layer, blue: isBlue, lt, pts });
+        if (pts.length > 1) lines.push({ layer, col: Math.abs(col), blue: isBlue, lt, pts });
       } else if (e.t === "POLYLINE") {
         const pts = e.kids.filter(k => k.t === "VERTEX").map(k => [...ap(M, gn(k, 10, 0), gn(k, 20, 0)), gn(k, 30, 0)]);
         if (gn(e, 70, 0) & 1 && pts.length > 2) pts.push(pts[0]);
-        if (pts.length > 1) lines.push({ layer, blue: isBlue, lt, pts });
+        if (pts.length > 1) lines.push({ layer, col: Math.abs(col), blue: isBlue, lt, pts });
       } else if (e.t === "TEXT" || e.t === "MTEXT" || e.t === "ATTRIB") {
         let s = e.t === "MTEXT" ? e.g.filter(([k]) => k === 3 || k === 1).map(x => x[1]).join("") : gv(e, 1, "");
         s = s.replace(/\\[A-Za-z][^;\\]*;/g, "").replace(/\\P/g, " ").replace(/[{}]/g, "").replace(/%%[cdpCDP]/g, "").trim();
@@ -224,7 +226,7 @@ function flatten(d) {
         const al = e.t !== "MTEXT" && (gn(e, 72, 0) || gn(e, 73, 0) || gn(e, 74, 0)) && e.g.some(x => x[0] === 11);
         const p = al ? ap(M, gn(e, 11, 0), gn(e, 21, 0)) : ap(M, gn(e, 10, 0), gn(e, 20, 0));
         const h = gn(e, 40, 0.3) * scaleOf(M);
-        texts.push({ s, p, h, layer });
+        texts.push({ s, p, h, layer, col: Math.abs(col) });
       } else if (e.t === "INSERT") {
         const b = d.blocks[gv(e, 2, "")];
         const sx = gn(e, 41, 1), sy = gn(e, 42, sx), r = gn(e, 50, 0) * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
@@ -248,10 +250,15 @@ function flatten(d) {
 const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const isLabel = s => /^([A-Za-z]{1,2}'?|[A-Za-z]\d{1,2}|\d{1,2}[A-Za-z]?'?|[ء-ي]{1,2}\d?)$/.test(s);
 function findAxes(F, layerPick) {
-  const cand = F.lines.filter(l => !l.blue && l.pts.length === 2 && dist(l.pts[0], l.pts[1]) > 2);
+  // agreed drawing: column centre lines in GREEN (colour 3); if any exist, only they are axes
+  const greenMode = F.lines.some(l => !l.blue && l.col === 3 && l.pts.length >= 2 && dist(l.pts[0], l.pts[l.pts.length - 1]) > 2);
+  const cand = F.lines.filter(l => !l.blue && (!greenMode || l.col === 3)).flatMap(l => l.pts.length === 2 ? [l] : l.pts.slice(1).map((p, i) => ({ ...l, pts: [l.pts[i], p] }))).filter(l => dist(l.pts[0], l.pts[1]) > 2)
+    .map(l => greenMode ? { ...l, layer: "اللون الأخضر" } : l);
   const byLayer = {};
   cand.forEach(l => (byLayer[l.layer] = byLayer[l.layer] || []).push(l));
-  const labels = F.texts.filter(t => isLabel(t.s));
+  let labels = F.texts.filter(t => isLabel(t.s));
+  // agreed drawing: bubble letters/numbers in white/black (colour 7)
+  if (greenMode && labels.some(t => t.col === 7)) labels = labels.filter(t => t.col === 7);
   const nameOf = l => {
     const len = dist(l.pts[0], l.pts[1]); let best = null, bd = 1e9;
     for (const t of labels) for (const p of l.pts) { const R = Math.max(2.2, 6 * t.h, 0.06 * len); const d = dist(p, t.p); if (d < R && d < bd) { bd = d; best = t; } }
@@ -312,7 +319,7 @@ function findAxes(F, layerPick) {
     fam.sort((a, b) => (a.p[0] * nrm[0] + a.p[1] * nrm[1]) - (b.p[0] * nrm[0] + b.p[1] * nrm[1]));
     fam.forEach((a, i) => { a.off = a.p[0] * nrm[0] + a.p[1] * nrm[1]; if (!a.name) a.name = f === 0 ? String.fromCharCode(65 + i) + "?" : (i + 1) + "?"; });
   });
-  return { axes: out, layers: order, layer };
+  return { axes: out, layers: order, layer, greenMode };
 }
 function lineInter(p, u, a, b) {   // infinite line (p,u) with segment a-b -> t on segment
   const ex = b[0] - a[0], ey = b[1] - a[1], den = ex * u[1] - ey * u[0]; if (Math.abs(den) < 1e-12) return null;
@@ -499,7 +506,7 @@ function load(txt, name) {
     if (!AX.axes.length) msgs.push('<p class="msg bad">لم أجد خطوط المحاور. تأكد أنها في الملف، أو اختر طبقتها من الإعدادات.</p>');
     const auto = AX.axes.filter(a => /\?$/.test(a.name)).length;
     if (auto) msgs.push(`<p class="msg warn">${auto} محور بلا اسم في الملف، فسمّيتها تلقائياً (عليها علامة ؟).</p>`);
-    if (B.length && AX.axes.length) msgs.push(`<p class="msg ok">✓ ${esc(name || "الملف")}: ${B.length} ألواح، ${AX.axes.length} محاور (طبقة <b>${esc(AX.layer)}</b>).</p>`);
+    if (B.length && AX.axes.length) msgs.push(`<p class="msg ok">✓ ${esc(name || "الملف")}: ${B.length} ألواح، ${AX.axes.length} محاور (${AX.greenMode ? "الخطوط <b>الخضراء</b>" : "طبقة <b>" + esc(AX.layer) + "</b>"}).</p>`);
     $("#loadMsg").innerHTML = msgs.join("");
     $("#axLayer").innerHTML = AX.layers.map(l => `<option ${l === AX.layer ? "selected" : ""}>${esc(l)}</option>`).join("");
     $("#work").hidden = !B.length || !AX.axes.length;

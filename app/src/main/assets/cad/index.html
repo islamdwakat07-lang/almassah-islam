@@ -273,10 +273,18 @@ function convert(D) {
   }
   const blocks = D.blocks;
   walk(D.model, null, null, null, 0);
+  out.forEach(normP);
   return { ents: out, skipped: seen };
 }
 
 /* =============================== الهندسة =============================== */
+/* بوليلاين آخر نقطة فيه = أول نقطة يعتبر مغلقاً (كثير من الرسومات تُغلق هكذا بدون علامة Closed) */
+function normP(e) {
+  if (!e || e.t !== "P" || e.cl || !e.p || e.p.length < 4) return e;
+  const a = e.p[0], b = e.p[e.p.length - 1];
+  if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-3) { e.p = e.p.slice(0, -1); if (e.b) e.b = e.b.slice(0, e.p.length); if (e.zz) e.zz = e.zz.slice(0, e.p.length); e.cl = true; delete e._f; delete e._s; delete e._bb; }
+  return e;
+}
 const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 function bulgeArc(a, b, bu) {           // مركز ونصف قطر وزوايا قوس الانحناء
   const th = 4 * Math.atan(bu), ch = dist(a, b), r = ch / (2 * Math.sin(Math.abs(th) / 2));
@@ -676,7 +684,7 @@ function updPrompt() { updDyn();
   $("#closeBtn").hidden = !(cmd === "pline" && pts.length > 2);
 }
 document.querySelectorAll("#tools [data-c]").forEach(b => b.addEventListener("click", () => setCmd(b.dataset.c)));
-function addEnts(list) { list.forEach(e => { e.ly = e.ly || D.cur; ensureLayer(e.ly); D.ents.push(e); }); undo.push({ add: list }); paths = null; save(); redraw(); hideWelcome(); }
+function addEnts(list) { list.forEach(e => { normP(e); e.ly = e.ly || D.cur; ensureLayer(e.ly); D.ents.push(e); }); undo.push({ add: list }); paths = null; save(); redraw(); hideWelcome(); }
 function delEnt(e) { const i = D.ents.indexOf(e); if (i < 0) return; D.ents.splice(i, 1); undo.push({ del: [[i, e]] }); paths = null; save(); redraw(); }
 function doUndo() {
   const u = undo.pop(); if (!u) { toast("لا شيء للتراجع"); return; }
@@ -1104,7 +1112,7 @@ resize();
     D = { name: o.name || "رسم", t: Date.now(), ents: R.ents, layers: P.layers, cur: "0" }; R.ents.forEach(e => ensureLayer(e.ly)); hideWelcome(); setTitle(); fit(); save(); setCmd("sel"); redraw(); return; } } catch (e) {}
   let s = null; try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
   if (s && Array.isArray(s.ents) && (s.ents.length || s.name)) {
-    D = { name: s.name, t: s.t || Date.now(), ents: s.ents, layers: s.layers || {}, cur: s.cur || "0" }; D.ents.forEach(e => ensureLayer(e.ly));
+    D = { name: s.name, t: s.t || Date.now(), ents: s.ents, layers: s.layers || {}, cur: s.cur || "0" }; D.ents.forEach(e => { normP(e); ensureLayer(e.ly); });
     hideWelcome(); setTitle();
     if (s.view && s.view.O) { O = s.view.O; k = s.view.k; tx = s.view.tx; ty = s.view.ty; } else fit();
   }

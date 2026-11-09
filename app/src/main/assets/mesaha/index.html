@@ -81,11 +81,11 @@ details>summary{cursor:pointer;font-weight:700;color:#0c3b26}
   <div class="card">
     <h2><span class="no">1</span>معلومات المشروع والعقار</h2>
     <div class="g">
-      <label class="f">المحافظة<input id="iGov" placeholder="مثال: سلفيت"></label>
-      <label class="f">المدينة / القرية<input id="iVil" placeholder="مثال: خربة قيس"></label>
-      <label class="f">رقم الحوض<input id="iBlk" placeholder="مثال: 5"></label>
-      <label class="f">رقم الحي<input id="iHay" placeholder="مثال: 2"></label>
-      <label class="f">رقم القطعة<input id="iPlot" placeholder="مثال: 37"></label>
+      <label class="f">المحافظة<input id="iGov" placeholder="مثال: نابلس"></label>
+      <label class="f">المدينة / القرية<input id="iVil" placeholder="مثال: بلاطة"></label>
+      <label class="f">رقم الحوض<input id="iBlk" placeholder="مثال: 7"></label>
+      <label class="f">رقم الحي<input id="iHay" placeholder="مثال: 3"></label>
+      <label class="f">رقم القطعة<input id="iPlot" placeholder="مثال: 80"></label>
     </div>
     <div class="g" style="margin-top:8px;align-items:end">
       <label class="f">نوع المشروع<select id="iType">
@@ -263,7 +263,7 @@ const LAND = ["قسيمة", "رئيسية", "جزء مستثنى", "طريق", "
 let S = {}; try { S = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
 const blank = () => ({ info: { gov: "", vil: "", blk: "", hay: "", plot: "", type: "normal" }, pts: [], trav: [], parcels: [], so: { st: "", bs: "", list: [] }, t: Date.now() });
 if (!S.info) S = blank();
-S.pts = S.pts || []; S.trav = S.trav || []; S.parcels = S.parcels || []; S.so = S.so || { st: "", bs: "", list: [] };
+S.pts = S.pts || []; S.trav = S.trav || []; (S.parcels || []).forEach(P => { if (P.land === "رئيسية") P.main = true; }); S.parcels = S.parcels || []; S.so = S.so || { st: "", bs: "", list: [] };
 let saveT; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }, 400); };
 addEventListener("pagehide", () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} });
 
@@ -475,7 +475,7 @@ function renderParcels() {
   $("#parcelList").innerHTML = S.parcels.map((P, k) => `<div class="parcel ${P.open ? "" : "shut"}" data-pc="${k}">
     <div class="hd"><button type="button" class="tg" data-pa="tog">${P.open ? "▼" : "▶"}</button>
       <span class="fl"><b>رقم القطعة:</b><input data-pk="no" value="${esc(P.no)}" style="max-width:90px"></span>
-      ${type !== "normal" ? `<label class="chk"><input type="checkbox" data-pk="main" ${P.main ? "checked" : ""}>قطعة رئيسية</label>${P.main ? '<span class="pill">رئيسية</span>' : ""}` : ""}
+      <label class="chk"><input type="checkbox" data-pk="main" ${P.main ? "checked" : ""}>قطعة رئيسية</label>${P.main ? '<span class="pill">رئيسية</span>' : ""}
       <span class="fl"><b>نوع الأرض الناتجة:</b><select data-pk="land">${(LAND.includes(P.land) ? LAND : LAND.concat(P.land || [])).map(l => `<option ${P.land === l ? "selected" : ""}>${l}</option>`).join("")}</select></span>
       <span class="fl"><b>A.Reg (كوشان):</b><input class="num" data-pk="areg" value="${esc(P.areg)}" placeholder="المساحة المسجلة" style="max-width:120px" inputmode="decimal"></span>
       ${type === "both" && !P.main ? `<b>تنتمي إلى:</b><select data-pk="of"><option value="">—</option>${mainsList().map(m => `<option value="${esc(m.no)}" ${String(P.of) === String(m.no) ? "selected" : ""}>${esc(m.no)}</option>`).join("")}</select><b>مجموعة الدمج:</b><input data-pk="grp" value="${esc(P.grp)}" style="max-width:90px">` : ""}
@@ -489,7 +489,10 @@ function renderParcels() {
   S.parcels.forEach((P, k) => { if (P.open && P.seq) showParcel(k); });
 }
 $("#parcelList").addEventListener("input", e => { const box = e.target.closest("[data-pc]"); if (!box) return; const P = S.parcels[+box.dataset.pc], t = e.target;
-  if (t.dataset.pk) { P[t.dataset.pk] = t.type === "checkbox" ? t.checked : t.value; save(); if (t.type === "checkbox" || t.tagName === "SELECT") { if (t.dataset.pk === "main" || t.dataset.pk === "close") { renderParcels(); } } renderSummarySoon(); }
+  if (t.dataset.pk) { P[t.dataset.pk] = t.type === "checkbox" ? t.checked : t.value;
+    if (t.dataset.pk === "land") { if (P.land === "رئيسية") P.main = true; else if (P._autoMain) P.main = false; P._autoMain = P.land === "رئيسية"; if (S.info.type === "normal" || true) renderParcels(); }
+    if (t.dataset.pk === "main" && !t.checked && P.land === "رئيسية") P.land = "قسيمة";
+    save(); if (t.type === "checkbox" || t.tagName === "SELECT") { if (t.dataset.pk === "main" || t.dataset.pk === "close") { renderParcels(); } } renderSummarySoon(); }
   if (t.dataset.ak) { const i = +t.dataset.ai; P.arcs[i] = P.arcs[i] || { on: false, F: "", sign: "+" }; P.arcs[i][t.dataset.ak] = t.type === "checkbox" ? t.checked : t.value; save(); } });
 $("#parcelList").addEventListener("change", e => { const box = e.target.closest("[data-pc]"); if (!box) return; if (e.target.dataset.ak === "on" || e.target.dataset.ak === "sign") showParcel(+box.dataset.pc); });
 $("#parcelList").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset.pk === "seq") { e.preventDefault(); showParcel(+e.target.closest("[data-pc]").dataset.pc); } });
@@ -578,7 +581,7 @@ $("#drawAll").addEventListener("click", () => { const list = S.parcels.map(P => 
 let sumT; const renderSummarySoon = () => { clearTimeout(sumT); sumT = setTimeout(renderSummary, 500); };
 function summaryData() {
   const type = S.info.type || "normal", rows = S.parcels.map(P => ({ P, R: calcParcel(P) })), groups = [];
-  rows.forEach(x => { x.adj = NaN; x.status = x.P.main && type !== "normal" ? "رئيسية" : (type === "normal" ? "عادية" : "فرعية/عادية"); });
+  rows.forEach(x => { x.adj = NaN; x.status = x.P.main ? "رئيسية" : (type === "normal" ? "عادية" : "فرعية/عادية"); });
   const mains = rows.filter(x => x.P.main && type !== "normal");
   mains.forEach(m => {
     const kids = rows.filter(x => !x.P.main && (type === "both" ? String(x.P.of) === String(m.P.no) : true));
@@ -912,7 +915,7 @@ $("#csvOut").addEventListener("click", () => saveFile(projName() + " - نقاط.
 let toastT; function toast(m) { let t = $("#toast"); if (!t) { t = document.createElement("div"); t.id = "toast"; t.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;border:1.5px solid #e6c35f;border-radius:14px;padding:10px 16px;font:700 14px 'IBM Plex Sans Arabic';z-index:99;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:90vw;text-align:center"; document.body.appendChild(t); } t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
 function tab(t) { $$(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t)); $$("section[data-p]").forEach(s => s.hidden = s.dataset.p !== t); try { sessionStorage.setItem("mesaha-tab", t); } catch (e) {} if (t === "land") { renderParcels(); renderSummary(); } if (t === "so") ptOptions(); scrollTo({ top: 0 }); }
 $$(".tabs button").forEach(b => b.addEventListener("click", () => tab(b.dataset.t)));
-function boot() { fillInfo(); renderPts(); renderTrav(); renderParcels(); renderSummary(); let t = "proj"; try { t = sessionStorage.getItem("mesaha-tab") || "proj"; } catch (e) {} tab(t); }
+function boot() { (S.parcels || []).forEach(P => { if (P.land === "رئيسية") P.main = true; }); fillInfo(); renderPts(); renderTrav(); renderParcels(); renderSummary(); let t = "proj"; try { t = sessionStorage.getItem("mesaha-tab") || "proj"; } catch (e) {} tab(t); }
 boot();
 </script>
 </body>

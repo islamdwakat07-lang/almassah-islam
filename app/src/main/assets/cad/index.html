@@ -70,6 +70,7 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
 #dyn .ck input{width:18px;height:18px}
 #dyn button{border:1.5px solid #e6c35f;border-radius:10px;background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;font:700 14px "IBM Plex Sans Arabic";padding:8px 12px;cursor:pointer}
 #dyn button.g{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6}
+#selBtn{position:absolute;right:8px;bottom:92px}
 #busy{position:absolute;inset:0;background:rgba(10,20,15,.6);color:#fff6d6;display:none;align-items:center;justify-content:center;font:700 16px "IBM Plex Sans Arabic";z-index:9;text-align:center;padding:20px}
 #busy.on{display:flex}
 .hint{font-size:12.5px;color:#5d6458;margin-top:6px}
@@ -83,7 +84,8 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
 </head>
 <body>
 <div class="am-bar"><span class="am-title"><img src="../img/t-cad.png" alt=""><b id="ttl">أوتوكاد</b></span>
-  <button class="am-home" type="button" id="menuBtn" style="margin-inline-start:auto;border:0;cursor:pointer">☰ ملف</button>
+  <button class="am-home" type="button" id="saveBtn" style="margin-inline-start:auto;border:0;cursor:pointer">💾 حفظ</button>
+  <button class="am-home" type="button" id="menuBtn" style="margin-inline-start:0;border:0;cursor:pointer">☰ ملف</button>
   <a class="am-home" href="../home.html" style="margin-inline-start:0"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg></a></div>
 <div id="wrap">
   <div id="cmd"><div id="prompt"></div><input id="inp" inputmode="text" autocomplete="off" placeholder="X,Y"><button class="cb gold" id="okBtn" type="button">↵</button><button class="cb" id="endBtn" type="button" hidden>إنهاء</button><button class="cb" id="closeBtn" type="button" hidden>إغلاق</button></div>
@@ -91,6 +93,7 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
     <canvas id="cv"></canvas><canvas id="loupe" width="264" height="264"></canvas>
     <div id="coordHud"></div>
     <button class="fb" id="fitBtn" type="button">⛶ الكل</button>
+    <button class="fb" id="selBtn" type="button" aria-pressed="false">▭ تحديد متعدد</button>
     <button class="fb" id="snapBtn" type="button" aria-pressed="true">🧲 الالتقاط</button>
     <div id="menu">
       <label>📂 فتح ملف DWG أو DXF<input type="file" id="file" accept=".dwg,.dxf,*/*" hidden></label>
@@ -423,6 +426,7 @@ function draw() {
   if (!paths) buildPaths();
   ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * (tx), DPR * ty); ctx.lineWidth = 1.15 / k; ctx.lineJoin = "round";
   for (const [col, P] of paths) { ctx.strokeStyle = col; ctx.stroke(P); }
+  for (const e of pick) { const P = new Path2D(); addPath(P, e); ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 3.2 / k; ctx.setLineDash([7 / k, 4 / k]); ctx.stroke(P); ctx.setLineDash([]); }
   for (const e of selSet) { const P = new Path2D(); addPath(P, e); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.stroke(P); }
   if (sel) { const P = new Path2D(); addPath(P, sel); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.setLineDash([8 / k, 5 / k]); ctx.stroke(P); ctx.setLineDash([]);
     if (sel.t === "P") { ctx.restore(); ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.font = "700 12px 'IBM Plex Mono'"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
@@ -463,6 +467,9 @@ function draw() {
   if (cmd === "dim" && pts.length === 2) { ctx.strokeStyle = "#4fc3f7"; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(...w2s(pts[0])); ctx.lineTo(...w2s(pts[1])); ctx.stroke(); ctx.setLineDash([]); }
   coordList.forEach((c, i) => { const s = w2s(c); ctx.strokeStyle = "#ff6b6b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s[0], s[1], 5, 0, 7); ctx.stroke(); ctx.fillStyle = "#ffb3b3"; ctx.font = "bold 12px IBM Plex Mono"; ctx.textAlign = "left"; ctx.direction = "ltr"; ctx.fillText(c.n, s[0] + 7, s[1] - 6); });
   if (snapMark) drawSnap(ctx, w2s(snapMark), snapMark[2], true);
+  if (box) { const win = box[2] >= box[0], x = Math.min(box[0], box[2]), y = Math.min(box[1], box[3]), w = Math.abs(box[2] - box[0]), h = Math.abs(box[3] - box[1]);
+    ctx.fillStyle = win ? "rgba(59,107,255,.18)" : "rgba(50,224,74,.18)"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = win ? "#3b6bff" : "#32e04a"; ctx.lineWidth = 1.5; ctx.setLineDash(win ? [] : [6, 4]); ctx.strokeRect(x, y, w, h); ctx.setLineDash([]); }
+  for (const e of pick) if (e.t === "T" || e.t === "PT" || e.t === "X") { const s0 = w2s(e.p); ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 2; ctx.strokeRect(s0[0] - 6, s0[1] - 6, 12, 12); }
 }
 let snapMark = null;
 function drawSnap(c, s, kind, label) {
@@ -626,7 +633,8 @@ view.addEventListener("pointermove", e => {
   if (!q) { if (e.pointerType === "mouse") moveHover(e.offsetX, e.offsetY); return; }
   const px = q.x, py = q.y; q.x = e.offsetX; q.y = e.offsetY;
   if (!gest) return;
-  if (gest.mode === "tap" && Math.hypot(q.x - q.x0, q.y - q.y0) > 8) { gest.mode = "pan"; clearTimeout(holdT); }
+  if (gest.mode === "tap" && Math.hypot(q.x - q.x0, q.y - q.y0) > 8) { clearTimeout(holdT); if (cmd === "sel" && boxOn && ptrs.size === 1) { gest.mode = "box"; box = [q.x0, q.y0, q.x, q.y]; } else gest.mode = "pan"; }
+  if (gest.mode === "box") { box[2] = q.x; box[3] = q.y; redraw(); return; }
   if (gest.mode === "pan") { tx += q.x - px; ty += q.y - py; redraw(); }
   else if (gest.mode === "precise") moveHover(q.x, q.y);
   else if (gest.mode === "pinch" && ptrs.size === 2) {
@@ -637,11 +645,12 @@ view.addEventListener("pointermove", e => {
 });
 function endPtr(e) {
   const q = ptrs.get(e.pointerId); if (!q) return; ptrs.delete(e.pointerId); clearTimeout(holdT);
+  if (gest && gest.mode === "box" && ptrs.size === 0) { boxSelect(box); box = null; }
   if (gest && (gest.mode === "tap" || gest.mode === "precise") && ptrs.size === 0) { const sp = snapAt(q.x, q.y); loupe.style.display = "none"; tap(sp, q.x, q.y); }
   if (ptrs.size === 0) { gest = null; loupe.style.display = "none"; if (e.pointerType !== "mouse") { snapMark = null; } redraw(); }
   else if (gest && gest.mode === "pinch") gest = { mode: "pan" };
 }
-view.addEventListener("pointerup", endPtr); view.addEventListener("pointercancel", e => { ptrs.delete(e.pointerId); gest = null; loupe.style.display = "none"; });
+view.addEventListener("pointerup", endPtr); view.addEventListener("pointercancel", e => { ptrs.delete(e.pointerId); gest = null; box = null; loupe.style.display = "none"; redraw(); });
 view.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
 function moveHover(sx, sy) {
   const sp = snapAt(sx, sy); snapMark = sp[2] ? sp : null; hover = [sp[0], sp[1]];
@@ -651,7 +660,7 @@ function moveHover(sx, sy) {
 
 /* =============================== الأوامر =============================== */
 const PROMPTS = {
-  sel: () => "اضغط على أي خط أو شكل لترى طوله ومساحته وإحداثياته. <b>اسحب</b> للتحريك و<b>بإصبعين</b> للتكبير. <b>اضغط مطولاً</b> لعدسة دقيقة.",
+  sel: () => boxOn ? `محدد ${pick.length}. اسحب <b>يسار←يمين</b> (أزرق): ما بداخله كاملاً · <b>يمين←يسار</b> (أخضر): كل ما يلمسه. التحريك بإصبعين.` : "اضغط على أي خط أو شكل لترى طوله ومساحته وإحداثياته. <b>اسحب</b> للتحريك و<b>بإصبعين</b> للتكبير. <b>اضغط مطولاً</b> لعدسة دقيقة.",
   dist: () => pts.length ? "اختر <b>النقطة الثانية</b>" : "مسافة: اختر <b>النقطة الأولى</b>",
   area: () => pts.length ? `نقطة ${pts.length + 1} … ثم <b>إنهاء</b>` : "مساحة: اضغط <b>داخل شكل مغلق</b>، أو اختر رؤوس المساحة نقطة نقطة",
   coord: () => "إحداثي: اضغط على أي نقطة لتأخذ إحداثياتها (تُضاف للقائمة)",
@@ -666,10 +675,13 @@ const PROMPTS = {
   move: () => xStep === 0 ? `نقل: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الأساس</b>" : "اختر <b>المكان الجديد</b>، أو اكتب الإزاحة فوق",
   copy: () => xStep === 0 ? `نسخ: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الأساس</b>" : "اختر مكان <b>النسخة</b> (تقدر تنسخ أكثر من مرة) ثم إنهاء",
 };
+let pick = [], boxOn = false, box = null;
 let selSet = [], xStep = 0, xBase = null, lenLock = null, erN = 0;
 let offStep = 1, offEnt = null;
 function setCmd(c) {
   cmd = c; pts = []; hover = null; temp = null; offStep = 1; offEnt = null; if (c !== "sel") sel = null; selSet = []; xStep = 0; xBase = null; lenLock = null; erN = 0;
+  if (pick.length && (c === "rotate" || c === "move" || c === "copy")) { selSet = pick.slice(); pick = []; xStep = 1; }
+  if (c !== "sel") { boxOn = false; $("#selBtn").setAttribute("aria-pressed", false); }
   document.querySelectorAll("#tools [data-c]").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === c));
   $("#inp").value = c === "offset" ? offD : ""; $("#inp").placeholder = c === "circle" ? "نصف القطر" : c === "offset" ? "المسافة" : c === "text" ? "النص" : "X,Y";
   $("#inp").style.direction = c === "text" ? "rtl" : "ltr";
@@ -696,6 +708,7 @@ function doUndo() {
 
 function tap(sp, sx, sy) {
   const p = [sp[0], sp[1]];
+  if (cmd === "sel" && boxOn) { const e = pickEnt(sx, sy); if (e) { const i = pick.indexOf(e); i < 0 ? pick.push(e) : pick.splice(i, 1); } pickPanel(); updPrompt(); redraw(); return; }
   if (cmd === "sel") { sel = pickEnt(sx, sy); if (sel) infoPanel(sel); else hidePanel(); redraw(); return; }
   if (cmd === "dist") { pts.push(p); if (pts.length === 2) { distPanel(pts[0], pts[1]); pts = []; temp = { t: "L", p: [[...lastDist[0]], [...lastDist[1]]] }; } else temp = null; updPrompt(); redraw(); return; }
   if (cmd === "area") {
@@ -857,6 +870,45 @@ function doMove(dx, dy) {
   undo.push({ mod: selSet.map(e => [e, cloneE(e)]) }); selSet.forEach(e => xform(e, f)); paths = null; save(); toast("نُقل ✓"); setCmd("move");
 }
 
+/* ---------- التحديد المتعدد ---------- */
+function boxSelect(b) {
+  const win = b[2] >= b[0], p1 = s2w(Math.min(b[0], b[2]), Math.max(b[1], b[3])), p2 = s2w(Math.max(b[0], b[2]), Math.min(b[1], b[3]));
+  const X0 = p1[0], Y0 = p1[1], X1 = p2[0], Y1 = p2[1], inR = q => q[0] >= X0 && q[0] <= X1 && q[1] >= Y0 && q[1] <= Y1;
+  const edges = [[[X0, Y0], [X1, Y0]], [[X1, Y0], [X1, Y1]], [[X1, Y1], [X0, Y1]], [[X0, Y1], [X0, Y0]]];
+  let n = 0;
+  for (const e of D.ents) {
+    if (!vis(e) || pick.includes(e)) continue; const bb = bbox(e); if (!isFinite(bb[0])) continue;
+    let hit;
+    if (win) hit = bb[0] >= X0 && bb[2] <= X1 && bb[1] >= Y0 && bb[3] <= Y1;
+    else {
+      if (bb[2] < X0 || bb[0] > X1 || bb[3] < Y0 || bb[1] > Y1) continue;
+      if (e.t === "T" || e.t === "PT" || e.t === "X") hit = inR(e.p);
+      else { hit = false; for (const c of flat(e)) { for (let i = 0; i < c.length && !hit; i++) { if (inR(c[i])) hit = true; else if (i && edges.some(([a, b2]) => segX(c[i - 1], c[i], a, b2))) hit = true; } if (hit) break; }
+        if (!hit && e.t === "C") hit = dist(e.c, [(X0 + X1) / 2, (Y0 + Y1) / 2]) < e.r; }
+    }
+    if (hit) { pick.push(e); n++; }
+  }
+  toast(n ? `أُضيف ${n} عنصر (المجموع ${pick.length})` : "لم يُحدد شيء"); pickPanel(); updPrompt(); redraw();
+}
+function pickPanel() {
+  if (!pick.length) { hidePanel(); return; }
+  const cnt = {}; let L = 0, A = 0, nA = 0;
+  pick.forEach(e => { const nm = { L: "خط", P: "بوليلاين", C: "دائرة", A: "قوس", T: "نص", PT: "نقطة", X: "كتلة" }[e.t] || e.t; cnt[nm] = (cnt[nm] || 0) + 1;
+    if (e.t === "L") L += dist(e.p[0], e.p[1]); if (e.t === "P") { L += plLen(e); if (e.cl) { A += plArea(e); nA++; } } if (e.t === "C") { L += 2 * Math.PI * e.r; A += Math.PI * e.r * e.r; nA++; } if (e.t === "A") L += flatLen(e); });
+  showPanel(`<h3>محدد: ${pick.length} عنصر</h3><p class="hint" style="margin:0 0 6px">${Object.entries(cnt).map(([k2, v]) => `${k2} ${v}`).join(" · ")}</p>
+  <div class="kv"><b>مجموع الأطوال</b><span class="n">${f3(L)} م</span>${nA ? `<b>مجموع المساحات (${nA})</b><span class="n">${f2(A)} م²</span>` : ""}</div>
+  <div class="pb"><button type="button" class="red" data-act="pdel">🗑 حذف المحدد</button><button type="button" data-act="pmv">✥ نقل</button><button type="button" data-act="pcp">⧉ نسخ</button><button type="button" data-act="prot">🔄 تدوير</button>
+  <label style="display:inline-flex;gap:4px;align-items:center">طبقة: <select data-act="ply" style="font:600 13px 'IBM Plex Sans Arabic';padding:4px;border-radius:8px"><option value="">—</option>${Object.keys(D.layers).map(n => `<option>${esc(n)}</option>`).join("")}</select></label>
+  <button type="button" data-act="pclr">إلغاء التحديد</button></div>`);
+}
+function delMany(list) {
+  const idx = list.map(e => [D.ents.indexOf(e), e]).filter(x => x[0] >= 0).sort((a, b) => a[0] - b[0]);
+  for (let i = idx.length - 1; i >= 0; i--) D.ents.splice(idx[i][0], 1);
+  undo.push({ del: idx }); paths = null; save(); redraw();
+}
+$("#selBtn").addEventListener("click", e => { if (cmd !== "sel") setCmd("sel"); boxOn = !boxOn; e.currentTarget.setAttribute("aria-pressed", boxOn); sel = null; if (!boxOn) { pick = []; hidePanel(); } else pickPanel(); updPrompt(); redraw(); });
+$("#pBody").addEventListener("change", e => { if (e.target.dataset.act === "ply" && e.target.value) { const ly = e.target.value; undo.push({ mod: pick.map(x => [x, cloneE(x)]) }); pick.forEach(x => x.ly = ly); paths = null; save(); redraw(); toast(`نُقل ${pick.length} عنصر لطبقة ${ly}`); } });
+
 /* =============================== اللوحات =============================== */
 const panel = $("#panel");
 function showPanel(h) { $("#pBody").innerHTML = h; panel.classList.add("on"); panel._os = 0; }
@@ -919,6 +971,9 @@ $("#pBody").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act, en = panel._ent;
   if (a === "del" && en) { delEnt(en); sel = null; hidePanel(); }
   if (a === "verts" && en) vertsPanel(en);
+  if (a === "pdel") { const n = pick.length; delMany(pick); pick = []; hidePanel(); updPrompt(); toast(`حُذف ${n} عنصر — «تراجع» يرجعها`); }
+  if (a === "pmv" || a === "pcp" || a === "prot") setCmd({ pmv: "move", pcp: "copy", prot: "rotate" }[a]);
+  if (a === "pclr") { pick = []; hidePanel(); updPrompt(); redraw(); }
   if (a === "sidetxt" && en && en.t === "P") {
     const h = dimH || autoH(), out = [], ly = "أبعاد"; ensureLayer(ly, 3);
     segs(en).forEach(([p1, p2, bu]) => { const A = bu ? bulgeArc(p1, p2, bu) : null, Ln = A ? Math.abs(A.th) * A.r : dist(p1, p2); let ang = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / Math.PI; if (ang > 90.01 || ang <= -89.99) ang += 180;
@@ -1097,6 +1152,7 @@ function helpPanel() {
   <li><b>الحفظ:</b> عملك يُحفظ تلقائياً وفي الأرشيف. ☰ ملف ← حفظ DXF لفتحه في الأوتوكاد.</li></ol>`);
 }
 $("#fitBtn").addEventListener("click", fit);
+$("#saveBtn").addEventListener("click", () => { if (!D.ents.length) { toast("الرسم فارغ"); return; } saveText((D.name || "رسم") + ".dxf", toDXF(), "application/dxf"); toast("حُفظ «" + (D.name || "رسم") + ".dxf» في التنزيلات ✓"); });
 $("#snapBtn").addEventListener("click", () => { if (panel.classList.contains("on") && panel._os) hidePanel(); else osnapPanel(); });
 updSnapBtn();
 document.querySelector('#tools [data-a="layers"]').addEventListener("click", () => { if (panel.classList.contains("on") && $("#pBody h3") && $("#pBody h3").textContent === "الطبقات") hidePanel(); else layersPanel(); });

@@ -86,7 +86,7 @@ function northArrow(ctx, x, y, s) {
   ctx.beginPath(); ctx.moveTo(x, y - s * .6); ctx.lineTo(x - s * .25, y + s * .35); ctx.lineTo(x, y + s * .18); ctx.closePath(); ctx.fillStyle = GOLD_L; ctx.fill(); ctx.strokeStyle = GREEN; ctx.lineWidth = 2; ctx.stroke();
   txt(ctx, "N", x, y - s * 1.0, `700 ${Math.round(s * .4)}px ${MF}`, GREEN, "center"); ctx.restore();
 }
-function frameHeader(ctx, W, title, sub) {
+function frameHeader(ctx, W, title, sub, tag = "مخطط استرشادي") {
   ctx.fillStyle = "#fffdf6"; ctx.fillRect(0, 0, W, mm(297));
   ctx.strokeStyle = GREEN; ctx.lineWidth = mm(.9); ctx.strokeRect(mm(5), mm(5), W - mm(10), mm(287));
   ctx.strokeStyle = GOLD; ctx.lineWidth = mm(.35); ctx.strokeRect(mm(6.6), mm(6.6), W - mm(13.2), mm(283.8));
@@ -96,7 +96,7 @@ function frameHeader(ctx, W, title, sub) {
   txt(ctx, title, W - mm(14), mm(16.5), `700 ${mm(7)}px ${TF}`, "#f3dc93");
   txt(ctx, sub, W - mm(14), mm(25), `600 ${mm(4.1)}px ${AF}`, "#fff6d6");
   txt(ctx, "المهندس إسلام", mm(14), mm(16.5), `700 ${mm(5)}px ${TF}`, "#f3dc93", "left");
-  txt(ctx, "مخطط استرشادي", mm(14), mm(25), `500 ${mm(3.4)}px ${AF}`, "#e7efe1", "left");
+  if (tag) txt(ctx, tag, mm(14), mm(25), `500 ${mm(3.4)}px ${AF}`, "#e7efe1", "left");
 }
 function footer(ctx, W, page, pages) {
   const d = new Date(), ds = d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0");

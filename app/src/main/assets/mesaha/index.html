@@ -613,9 +613,17 @@ $("#xlsOne").addEventListener("click", () => {
 });
 
 /* ================= PDF ================= */
+function infoGrid(ctx, y, P) {
+  const I = info(), cells = [["المحافظة", I.gov], ["المدينة / القرية", I.vil], ["رقم الحوض", I.blk], ["رقم الحي", I.hay], ["رقم القطعة الأصل", I.plot], ["رقم هذه القطعة", P ? P.no : "—"], ["نوع الأرض", P ? P.land : TYPES[I.type || "normal"]], ["قطعة رئيسية؟", P ? (P.main ? "نعم" : "لا") : "—"]];
+  const cw = mm(47.5), ch = mm(8.5), x1 = mm(200);
+  cells.forEach(([k, v], i) => { const cx = x1 - (i % 4) * cw, cy = y + Math.floor(i / 4) * ch; ctx.fillStyle = i % 2 ? "#fbf5e4" : "#f3ead2"; ctx.fillRect(cx - cw + mm(.5), cy, cw - mm(1), ch - mm(1));
+    txt(ctx, k, cx - mm(2), cy + mm(2.6), `600 ${mm(2.4)}px ${AF}`, "#5d6458"); txt(ctx, String(v || "—"), cx - mm(2), cy + mm(5.8), `700 ${mm(3)}px ${AF}`, INK); });
+  txt(ctx, "إعداد: المهندس إسلام إسماعيل دويكات · 0598161862", x1, y + ch * 2 + mm(2.5), `500 ${mm(2.5)}px ${AF}`, "#5d6458");
+  return y + ch * 2 + mm(7);
+}
 async function fontsReady() { await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${MF}`, `700 20px ${TF}`].map(f => document.fonts.load(f).catch(() => 0))); }
 function pdfTable(pages, newPage, cols, rows, opt = {}) {
-  let { ctx, y } = newPage(); const W = mm(210), rh = mm(6.2), x0 = mm(10), x1 = W - mm(10), tw = cols.reduce((s, c) => s + c[1], 0), sc = (x1 - x0) / tw;
+  let { ctx, y } = newPage(); if (opt.pre) y = opt.pre(ctx, y); const W = mm(210), rh = mm(6.2), x0 = mm(10), x1 = W - mm(10), tw = cols.reduce((s, c) => s + c[1], 0), sc = (x1 - x0) / tw;
   const xs = []; let x = x1; cols.forEach(c => { xs.push([x - c[1] * sc, x]); x -= c[1] * sc; });
   const head = () => { ctx.fillStyle = GREEN_D; ctx.fillRect(x0, y, x1 - x0, rh); cols.forEach((c, i) => txt(ctx, c[0], (xs[i][0] + xs[i][1]) / 2, y + rh / 2, `700 ${mm(2.6)}px ${AF}`, "#f3dc93", "center")); y += rh; };
   head();
@@ -633,9 +641,10 @@ async function buildPdf(sections, name) {
   await fontsReady(); const W = mm(210), H = mm(297), pages = [], I = info();
   const sub = [I.gov, I.vil, I.blk && "حوض " + I.blk, I.hay && "حي " + I.hay, I.plot && "قطعة " + I.plot].filter(Boolean).join(" · ");
   let cur = null;
-  const newPage = title => () => { const c = document.createElement("canvas"); c.width = W; c.height = H; const ctx = c.getContext("2d"); frameHeader(ctx, W, title, sub || "حسابات دائرة المساحة"); pages.push(c); cur = { ctx, y: mm(38) }; return cur; };
+  const newPage = title => () => { const c = document.createElement("canvas"); c.width = W; c.height = H; const ctx = c.getContext("2d"); frameHeader(ctx, W, title, sub || "حسابات دائرة المساحة", "ملف الحسابات"); pages.push(c); cur = { ctx, y: mm(38) }; return cur; };
   for (const s of sections) await s(newPage, pages);
-  drawStamp(pages[pages.length - 1].getContext("2d"), mm(40), mm(258), mm(22));
+  { const c = pages[pages.length - 1].getContext("2d"); c.strokeStyle = "#9aa39c"; c.lineWidth = 2; c.setLineDash([10, 8]); rr(c, mm(12), mm(244), mm(62), mm(38), mm(3)); c.stroke(); c.setLineDash([]);
+    txt(c, "توقيع وختم المساح", mm(43), mm(249), `600 ${mm(3)}px ${AF}`, "#5d6458", "center"); }
   pages.forEach((c, i) => txt(c.getContext("2d"), `صفحة ${i + 1} من ${pages.length}`, mm(10), mm(290), `500 ${mm(2.8)}px ${AF}`, "#5d6458", "left"));
   const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   pages.forEach((c, i) => { if (i) doc.addPage(); doc.addImage(c.toDataURL("image/jpeg", .9), "JPEG", 0, 0, 210, 297); });
@@ -648,7 +657,7 @@ $("#pdfAll").addEventListener("click", async e => {
     S.parcels.forEach((P, i) => { const R = calcParcel(P); if (R.err) return; secs.push(async newPage => {
       const np = newPage(`قطعة ${P.no || i + 1}${P.main ? " (رئيسية)" : ""} — ${P.land}`);
       let { ctx, y } = pdfTable(null, np, [["From", 10], ["To", 10], ["Distance", 16], ["Azimuth°", 18], ["Azimuth DMS", 24], ["Bearing", 24], ["Arc R", 12], ["Arc Area", 14], ["Northing", 20], ["Easting", 20]],
-        R.rows.map(r => [r.from, r.to, f3(r.d), f4(r.az), dms(r.az), bearing(r.az), isFinite(r.R) ? f3(r.R) : "-", isFinite(r.aA) ? (r.sign === "-" ? "-" : "+") + f3(r.aA) : "-", f3(r.N), f3(r.E)]));
+        R.rows.map(r => [r.from, r.to, f3(r.d), f4(r.az), dms(r.az), bearing(r.az), isFinite(r.R) ? f3(r.R) : "-", isFinite(r.aA) ? (r.sign === "-" ? "-" : "+") + f3(r.aA) : "-", f3(r.N), f3(r.E)]), { pre: (c, yy) => infoGrid(c, yy, P) });
       y += mm(4);
       if (R.closed) { const L = [["مساحة المضلع", fA(R.poly) + " م²"], ["مساحة الأقواس", fA(R.arcs) + " م²"], ["المساحة المحسوبة", fA(R.total) + " م²"], ["المحيط", fA(R.per) + " م"]];
         if (isFinite(R.areg)) L.push(["A.Reg (كوشان)", fA(R.areg) + " م²"], ["الفرق المسموح ±", fA(R.allow) + " م²"], ["الفرق الفعلي", fA(R.diff) + " م²"]);
@@ -659,11 +668,11 @@ $("#pdfAll").addEventListener("click", async e => {
     secs.push(async newPage => {
       const D = summaryData(), np = newPage("الملخص العام لكل القطع — " + TYPES[D.type]);
       let { ctx, y } = pdfTable(null, np, [["#", 8], ["رقم القطعة", 18], ["النوع", 18], ["الحالة", 18], ["المساحة المحسوبة", 28], ["A.Reg", 22], ["المساحة المعدلة", 28]],
-        D.rows.map((x, i) => [i + 1, x.P.no, x.P.land, x.status, x.R.err ? "-" : fA(x.R.total), isFinite(num(x.P.areg)) ? fA(num(x.P.areg)) : "-", isFinite(x.adj) ? fA(x.adj) : "-"]));
+        D.rows.map((x, i) => [i + 1, x.P.no, x.P.land, x.status, x.R.err ? "-" : fA(x.R.total), isFinite(num(x.P.areg)) ? fA(num(x.P.areg)) : "-", isFinite(x.adj) ? fA(x.adj) : "-"]), { pre: (c, yy) => infoGrid(c, yy, null) });
       y += mm(5);
       D.groups.forEach(g => { [[`القطعة الرئيسية ${g.m.P.no}: المحسوبة ${fA(g.mainA)} م² · مجموع الباقي ${fA(g.sumK)} م² · الفرق ${fA(g.gap)} م²`, INK], isFinite(g.areg) ? [`A.Reg ${fA(g.areg)} · المسموح ±${fA(g.allow)} · الفعلي ${fA(g.diff)} → ${g.ok ? "ضمن المسموح، وُزّع الفرق" : "خارج المسموح"}`, g.ok ? "#1e6b4a" : "#b91c1c"] : null].filter(Boolean).forEach(([s, c]) => { txt(ctx, s, mm(200), y, `600 ${mm(3)}px ${AF}`, c); y += mm(6); }); });
       const list = S.parcels.map(P => ({ P, R: calcParcel(P) })).filter(x => !x.R.err && x.R.closed), sh = list.filter(x => !x.P.main || D.type === "normal");
-      const ch = Math.min(mm(232) - y, mm(120)); if (ch > mm(40) && sh.length) { const cv = document.createElement("canvas"); document.body.appendChild(cv); cv.getBoundingClientRect = () => ({ width: 900, height: 900 * ch / mm(190) }); drawParcels(cv, sh, false); ctx.drawImage(cv, mm(10), y, mm(190), ch); cv.remove(); }
+      const ch = Math.min(mm(238) - y, mm(120)); if (ch > mm(40) && sh.length) { const cv = document.createElement("canvas"); document.body.appendChild(cv); cv.getBoundingClientRect = () => ({ width: 900, height: 900 * ch / mm(190) }); drawParcels(cv, sh, false); ctx.drawImage(cv, mm(10), y, mm(190), ch); cv.remove(); }
     });
     await buildPdf(secs, projName() + ".pdf");
   } catch (err) { alert("تعذّر تجهيز PDF: " + err.message); } finally { b.disabled = false; b.textContent = old; }

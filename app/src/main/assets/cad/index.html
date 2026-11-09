@@ -62,6 +62,14 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
 #menu.on{display:block}
 #menu button,#menu label{display:block;width:100%;text-align:right;border:0;background:none;padding:10px 12px;border-radius:10px;font:700 15px "IBM Plex Sans Arabic";color:#0c3b26;cursor:pointer}
 #menu button:active,#menu label:active{background:#f3ead2}
+#dyn{position:absolute;top:8px;left:0;right:0;margin:0 auto;width:max-content;z-index:4;display:none;gap:6px;align-items:flex-end;background:rgba(8,42,27,.95);border:1.5px solid #e6c35f;border-radius:14px;padding:6px 8px;box-shadow:0 6px 16px rgba(0,0,0,.5);max-width:calc(100% - 16px);flex-wrap:wrap;justify-content:center}
+#dyn.on{display:flex}
+#dyn label{display:flex;flex-direction:column;gap:1px;color:#f3dc93;font:700 11.5px "IBM Plex Sans Arabic"}
+#dyn input[type=text]{width:86px;font:700 17px "IBM Plex Mono",monospace;direction:ltr;text-align:center;padding:6px 4px;border-radius:9px;border:1.5px solid #c99a2e;background:#fffdf6;color:#1d2a22}
+#dyn .ck{flex-direction:row;align-items:center;gap:4px;color:#fff6d6;font-size:12.5px;padding-bottom:8px}
+#dyn .ck input{width:18px;height:18px}
+#dyn button{border:1.5px solid #e6c35f;border-radius:10px;background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;font:700 14px "IBM Plex Sans Arabic";padding:8px 12px;cursor:pointer}
+#dyn button.g{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6}
 #busy{position:absolute;inset:0;background:rgba(10,20,15,.6);color:#fff6d6;display:none;align-items:center;justify-content:center;font:700 16px "IBM Plex Sans Arabic";z-index:9;text-align:center;padding:20px}
 #busy.on{display:flex}
 .hint{font-size:12.5px;color:#5d6458;margin-top:6px}
@@ -95,17 +103,22 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
     <div id="welcome"><div><h2>أوتوكاد المهندس إسلام</h2><p style="margin:0;font-size:14px;color:#5d6458">افتح ملف DWG أو DXF لتقيس وترسم وتحسب المساحات وتستخرج الإحداثيات.</p>
       <label>📂 فتح ملف DWG / DXF<input type="file" id="file2" accept=".dwg,.dxf,*/*" hidden></label><button type="button" id="blank">رسم جديد فارغ</button></div></div>
     <div id="panel"><button class="x" type="button" id="pX">✕</button><div id="pBody"></div></div>
+    <div id="dyn"></div>
     <div id="busy"><div id="busyT">…</div></div>
   </div>
   <div id="tools">
     <button type="button" data-c="sel" aria-pressed="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 8-6 1.5L16 20l-2.6 1.2-3.2-7.4L5 18z"/></svg>تحديد</button>
     <button type="button" data-c="dist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg>مسافة</button>
+    <button type="button" data-c="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18L18 5"/><path d="M3 18l3 3M18 5l3 3M6 21L21 8"/><text x="7" y="11" font-size="7" fill="currentColor" stroke="none" font-weight="700">12.5</text></svg>أبعاد</button>
     <button type="button" data-c="area"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18L7 5l12 3-2 11z" fill="currentColor" fill-opacity=".25"/></svg>مساحة</button>
     <button type="button" data-c="coord"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>إحداثي</button>
     <button type="button" data-c="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 20L20 4"/></svg>خط</button>
     <button type="button" data-c="pline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 19l5-12 7 9 6-11"/></svg>بوليلاين</button>
     <button type="button" data-c="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/></svg>دائرة</button>
     <button type="button" data-c="offset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 15l6-8 8 5"/><path d="M6 20l6-8 8 5" stroke-dasharray="3 2"/></svg>موازي</button>
+    <button type="button" data-c="rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 3v5h-5"/><rect x="9" y="9" width="6" height="6" fill="currentColor" stroke="none" opacity=".5"/></svg>تدوير</button>
+    <button type="button" data-c="move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/><path d="M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg>نقل</button>
+    <button type="button" data-c="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>نسخ</button>
     <button type="button" data-c="text"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3h-2V6h-4v12h2v2H9v-2h2V6H7v1H5z"/></svg>نص</button>
     <button type="button" data-a="layers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>الطبقات</button>
     <button type="button" data-a="undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 010 12h-2"/></svg>تراجع</button>
@@ -401,6 +414,7 @@ function draw() {
   if (!paths) buildPaths();
   ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * (tx), DPR * ty); ctx.lineWidth = 1.15 / k; ctx.lineJoin = "round";
   for (const [col, P] of paths) { ctx.strokeStyle = col; ctx.stroke(P); }
+  for (const e of selSet) { const P = new Path2D(); addPath(P, e); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.stroke(P); }
   if (sel) { const P = new Path2D(); addPath(P, sel); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.setLineDash([8 / k, 5 / k]); ctx.stroke(P); ctx.setLineDash([]); }
   ctx.restore();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -430,6 +444,8 @@ function draw() {
   else if (cmd === "circle" && pts.length === 1 && hover) { const c = w2s(pts[0]); ctx.strokeStyle = "#ffd54a"; ctx.beginPath(); ctx.arc(c[0], c[1], dist(pts[0], hover) * k, 0, 2 * Math.PI); ctx.stroke(); }
   if (temp) { const P = new Path2D(); addPath(P, temp); ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * tx, DPR * ty); ctx.strokeStyle = "#ff9f43"; ctx.lineWidth = 2 / k; ctx.setLineDash([6 / k, 4 / k]); ctx.stroke(P); ctx.restore(); }
   for (const p of pts) { const s = w2s(p); ctx.fillStyle = "#ffd54a"; ctx.fillRect(s[0] - 3, s[1] - 3, 6, 6); }
+  if (xBase) { const s = w2s(xBase); ctx.strokeStyle = "#ff6b6b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s[0], s[1], 8, 0, 7); ctx.moveTo(s[0] - 12, s[1]); ctx.lineTo(s[0] + 12, s[1]); ctx.moveTo(s[0], s[1] - 12); ctx.lineTo(s[0], s[1] + 12); ctx.stroke(); }
+  if (cmd === "dim" && pts.length === 2) { ctx.strokeStyle = "#4fc3f7"; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(...w2s(pts[0])); ctx.lineTo(...w2s(pts[1])); ctx.stroke(); ctx.setLineDash([]); }
   coordList.forEach((c, i) => { const s = w2s(c); ctx.strokeStyle = "#ff6b6b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s[0], s[1], 5, 0, 7); ctx.stroke(); ctx.fillStyle = "#ffb3b3"; ctx.font = "bold 12px IBM Plex Mono"; ctx.textAlign = "left"; ctx.direction = "ltr"; ctx.fillText(c.n, s[0] + 7, s[1] - 6); });
   if (snapMark) drawSnap(ctx, w2s(snapMark), snapMark[2], true);
 }
@@ -629,20 +645,26 @@ const PROMPTS = {
   circle: () => pts.length ? "اضغط على المحيط أو <b>اكتب نصف القطر</b>" : "دائرة: اختر <b>المركز</b>",
   offset: () => offStep === 0 ? `موازي: اكتب <b>المسافة</b> (الحالية ${offD}) ثم اختر الخط` : offStep === 1 ? `موازي بمسافة <b>${offD}</b>: اختر الخط أو البوليلاين أو الدائرة` : "اضغط في <b>الجهة</b> التي تريد الخط الموازي فيها",
   text: () => pts.length ? "اكتب النص ثم ↵" : "نص: اختر مكان النص",
+  dim: () => pts.length === 0 ? "أبعاد: اختر <b>النقطة الأولى</b> (نهاية الضلع)" : pts.length === 1 ? "اختر <b>النقطة الثانية</b>" : "اضغط في <b>الجهة</b> التي تريد كتابة البُعد فيها",
+  rotate: () => xStep === 0 ? `تدوير: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الارتكاز</b> (مركز الدوران)" : "اكتب <b>الزاوية</b> فوق، أو اضغط نقطة لتحديد الاتجاه الجديد",
+  move: () => xStep === 0 ? `نقل: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الأساس</b>" : "اختر <b>المكان الجديد</b>، أو اكتب الإزاحة فوق",
+  copy: () => xStep === 0 ? `نسخ: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الأساس</b>" : "اختر مكان <b>النسخة</b> (تقدر تنسخ أكثر من مرة) ثم إنهاء",
 };
+let selSet = [], xStep = 0, xBase = null, lenLock = null;
 let offStep = 1, offEnt = null;
 function setCmd(c) {
-  cmd = c; pts = []; hover = null; temp = null; offStep = 1; offEnt = null; if (c !== "sel") sel = null;
+  cmd = c; pts = []; hover = null; temp = null; offStep = 1; offEnt = null; if (c !== "sel") sel = null; selSet = []; xStep = 0; xBase = null; lenLock = null;
   document.querySelectorAll("#tools [data-c]").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === c));
   $("#inp").value = c === "offset" ? offD : ""; $("#inp").placeholder = c === "circle" ? "نصف القطر" : c === "offset" ? "المسافة" : c === "text" ? "النص" : "X,Y";
   $("#inp").style.direction = c === "text" ? "rtl" : "ltr";
   hidePanel();
   if (c === "coord" && coordList.length) coordPanel();
   updPrompt(); redraw();
+  if (c === "offset") setTimeout(() => { const i = $("#dOff"); if (i) { i.focus(); i.select(); } }, 60);
 }
-function updPrompt() {
+function updPrompt() { updDyn();
   $("#prompt").innerHTML = "<span>" + PROMPTS[cmd]() + "</span>";
-  $("#endBtn").hidden = !((cmd === "line" || cmd === "pline" || cmd === "area") && pts.length);
+  $("#endBtn").hidden = !(((cmd === "line" || cmd === "pline" || cmd === "area") && pts.length) || (cmd === "copy" && xStep === 2));
   $("#closeBtn").hidden = !(cmd === "pline" && pts.length > 2);
 }
 document.querySelectorAll("#tools [data-c]").forEach(b => b.addEventListener("click", () => setCmd(b.dataset.c)));
@@ -652,6 +674,7 @@ function doUndo() {
   const u = undo.pop(); if (!u) { toast("لا شيء للتراجع"); return; }
   if (u.add) u.add.forEach(e => { const i = D.ents.indexOf(e); if (i >= 0) D.ents.splice(i, 1); });
   if (u.del) u.del.forEach(([i, e]) => D.ents.splice(i, 0, e));
+  if (u.mod) u.mod.forEach(([e, o]) => { Object.keys(e).forEach(k2 => delete e[k2]); Object.assign(e, o); });
   sel = null; paths = null; save(); redraw(); hidePanel();
 }
 
@@ -664,8 +687,23 @@ function tap(sp, sx, sy) {
     pts.push(p); sel = null; if (pts.length > 2) areaPanel(polyArea(pts), polyLen(pts, true)); updPrompt(); redraw(); return;
   }
   if (cmd === "coord") { addCoord(sp); return; }
-  if (cmd === "line" || cmd === "pline") { addPt(p); return; }
-  if (cmd === "circle") { if (!pts.length) { pts.push(p); updPrompt(); redraw(); } else { addEnts([{ t: "C", c: pts[0], r: dist(pts[0], p) }]); pts = []; updPrompt(); } return; }
+  if (cmd === "line" || cmd === "pline") {
+    const last = pts[pts.length - 1];
+    if (last && lenLock) { const d = dist(last, p); if (d) { addPt([last[0] + (p[0] - last[0]) / d * lenLock, last[1] + (p[1] - last[1]) / d * lenLock]); lenLock = null; return; } }
+    addPt(p); return;
+  }
+  if (cmd === "dim") {
+    pts.push(p);
+    if (pts.length === 3) { addEnts(makeDim(pts[0], pts[1], pts[2])); pts = []; }
+    updPrompt(); redraw(); return;
+  }
+  if (cmd === "rotate" || cmd === "move" || cmd === "copy") {
+    if (xStep === 0) { const e = pickEnt(sx, sy); if (e) { const i = selSet.indexOf(e); i < 0 ? selSet.push(e) : selSet.splice(i, 1); } updPrompt(); redraw(); return; }
+    if (xStep === 1) { xBase = p; xStep = 2; updPrompt(); redraw(); return; }
+    if (cmd === "rotate") { const a = Math.atan2(p[1] - xBase[1], p[0] - xBase[0]) * 180 / Math.PI; doRotate(a); return; }
+    doMove(p[0] - xBase[0], p[1] - xBase[1]); return;
+  }
+  if (cmd === "circle") { if (!pts.length) { pts.push(p); updPrompt(); redraw(); setTimeout(() => { const i = $("#dR"); if (i) i.focus(); }, 60); } else { addEnts([{ t: "C", c: pts[0], r: dist(pts[0], p) }]); pts = []; updPrompt(); } return; }
   if (cmd === "offset") {
     if (offStep <= 1) { const e = pickEnt(sx, sy); if (!e || !["L", "P", "C", "A"].includes(e.t)) { toast("اختر خطاً أو بوليلاين أو دائرة"); return; } offEnt = e; sel = e; offStep = 2; updPrompt(); redraw(); return; }
     const r = makeOffset(offEnt, s2w(sx, sy)); if (r) addEnts([r]); sel = null; offEnt = null; offStep = 1; updPrompt(); return;
@@ -681,7 +719,7 @@ function finish(close) {
   if (cmd === "area" && pts.length > 2) { lastArea = pts.slice(); areaPanel(polyArea(pts), polyLen(pts, true), null, pts.slice()); }
   pts = []; hover = null; updPrompt(); redraw();
 }
-$("#endBtn").addEventListener("click", () => finish(false));
+$("#endBtn").addEventListener("click", () => { if (cmd === "copy") { setCmd("copy"); return; } finish(false); });
 $("#closeBtn").addEventListener("click", () => finish(true));
 
 /* الإدخال بالكتابة: X,Y أو @dx,dy أو @طول<زاوية أو رقم */
@@ -701,7 +739,7 @@ function typed() {
   $("#inp").value = "";
   if (!D.ents.length && !pts.length) { O = p.slice(); tx = W / 2; ty = H / 2; paths = null; }
   if (cmd === "sel") { setCmd("pline"); }
-  if (cmd === "dist" || cmd === "area" || cmd === "circle" || cmd === "coord") { tap([p[0], p[1], "t"], ...w2s(p)); return; }
+  if (["dist", "area", "circle", "coord", "dim", "rotate", "move", "copy"].includes(cmd)) { tap([p[0], p[1], "t"], ...w2s(p)); return; }
   addPt(p);
   const s = w2s(p); if (s[0] < 0 || s[1] < 0 || s[0] > W || s[1] > H) { tx += W / 2 - s[0]; ty += H / 2 - s[1]; redraw(); }
 }
@@ -721,6 +759,87 @@ function makeOffset(e, w) {
   return e.t === "L" ? { t: "L", p: q, ly: e.ly, col: e.col } : { t: "P", p: q, b: q.map(() => 0), cl, ly: e.ly, col: e.col };
 }
 
+/* ---------- شريط الإدخال الديناميكي ---------- */
+const dynEl = $("#dyn");
+let dimH = null, dimLines = true;
+try { const v = JSON.parse(localStorage.getItem("cad-dim") || "null"); if (v) { dimH = v.h; dimLines = v.l !== false; } } catch (e) {}
+const autoH = () => { const h = 16 / k, m = Math.pow(10, Math.floor(Math.log10(h))); return Math.max(0.01, Math.round(h / m * 2) / 2 * m); };
+function updDyn() {
+  let h = "";
+  const fld = (id, lab, val, ph) => `<label>${lab}<input type="text" inputmode="decimal" id="${id}" value="${val == null ? "" : val}" placeholder="${ph || ""}" autocomplete="off"></label>`;
+  if ((cmd === "line" || cmd === "pline") && pts.length) h = fld("dLen", "الطول (م)", lenLock || "", "") + fld("dAng", "الزاوية° (اختياري)", "", "") + `<button type="button" data-dyn="line">ارسم</button>`;
+  else if (cmd === "circle" && pts.length) h = fld("dR", "نصف القطر (م)", "", "") + fld("dDia", "أو القطر", "", "") + `<button type="button" data-dyn="circle">ارسم</button>`;
+  else if (cmd === "offset") h = fld("dOff", "مسافة الموازي (م)", offD, "") + `<button type="button" class="g" data-dyn="off">✓</button>`;
+  else if (cmd === "dim") h = fld("dH", "ارتفاع النص", dimH || autoH(), "") + `<label class="ck"><input type="checkbox" id="dL" ${dimLines ? "checked" : ""}>خطوط الأبعاد</label>` + (pts.length === 2 ? `<button type="button" data-dyn="dimhere">اكتبه فوق الخط</button>` : "");
+  else if ((cmd === "rotate" || cmd === "move" || cmd === "copy") && xStep === 0) h = `<button type="button" data-dyn="next" ${selSet.length ? "" : "disabled style='opacity:.5'"}>التالي ← (${selSet.length})</button><button type="button" class="g" data-dyn="selall">الكل</button>`;
+  else if (cmd === "rotate" && xStep === 2) h = fld("dRot", "الزاوية° (موجب = عكس عقارب الساعة)", "", "90") + `<label class="ck"><input type="checkbox" id="dKeep">احتفظ بالأصل</label><button type="button" data-dyn="rot">دوّر</button>`;
+  else if ((cmd === "move" || cmd === "copy") && xStep === 2) h = fld("dDx", "ΔX", "", "0") + fld("dDy", "ΔY", "", "0") + `<button type="button" data-dyn="mv">${cmd === "copy" ? "انسخ" : "انقل"}</button>`;
+  dynEl.innerHTML = h; dynEl.classList.toggle("on", !!h);
+}
+dynEl.addEventListener("click", e => {
+  const b = e.target.closest("[data-dyn]"); if (!b) return; const a = b.dataset.dyn, v = id => { const el = $("#" + id); return el ? parseFloat(numA(el.value)) : NaN; };
+  if (a === "line") {
+    const L = v("dLen"), A = v("dAng"), last = pts[pts.length - 1]; if (!(L > 0)) { $("#dLen").focus(); return; }
+    if (isFinite(A)) { const r = A * Math.PI / 180; lenLock = null; addPt([last[0] + L * Math.cos(r), last[1] + L * Math.sin(r)]); setTimeout(() => $("#dLen") && $("#dLen").focus(), 30); }
+    else { lenLock = L; toast("الطول " + L + " م: اضغط على الشاشة باتجاه الخط"); }
+  }
+  if (a === "circle") { let r = v("dR"); if (!(r > 0)) r = v("dDia") / 2; if (!(r > 0)) { $("#dR").focus(); return; } addEnts([{ t: "C", c: pts[0], r }]); pts = []; updPrompt(); }
+  if (a === "off") { const d = v("dOff"); if (d > 0) { offD = d; toast("مسافة الموازي = " + d + " م · اختر الخط"); updPrompt(); } }
+  if (a === "dimhere" && pts.length === 2) { addEnts(makeDim(pts[0], pts[1], null)); pts = []; updPrompt(); redraw(); }
+  if (a === "next" && selSet.length) { xStep = 1; updPrompt(); }
+  if (a === "selall") { selSet = D.ents.filter(vis); updPrompt(); redraw(); }
+  if (a === "rot") { const A = v("dRot"); if (!isFinite(A)) { $("#dRot").focus(); return; } doRotate(A); }
+  if (a === "mv") { const dx = v("dDx") || 0, dy = v("dDy") || 0; doMove(dx, dy); }
+});
+dynEl.addEventListener("input", e => {
+  if (e.target.id === "dOff") { const d = parseFloat(numA(e.target.value)); if (d > 0) offD = d; }
+  if (e.target.id === "dH") { const d = parseFloat(numA(e.target.value)); dimH = d > 0 ? d : null; try { localStorage.setItem("cad-dim", JSON.stringify({ h: dimH, l: dimLines })); } catch (er) {} }
+  if (e.target.id === "dLen") lenLock = null;
+});
+dynEl.addEventListener("change", e => { if (e.target.id === "dL") { dimLines = e.target.checked; try { localStorage.setItem("cad-dim", JSON.stringify({ h: dimH, l: dimLines })); } catch (er) {} } });
+dynEl.addEventListener("keydown", e => { if (e.key !== "Enter") return; e.preventDefault(); const b = dynEl.querySelector("[data-dyn]:not([data-dyn=selall])"); if (b) b.click(); });
+
+/* البُعد المائل: خط أبعاد + أسهم + الطول مكتوب بموازاة الضلع */
+function makeDim(a, b, side) {
+  const L = dist(a, b); if (!L) return [];
+  const h = dimH || autoH(), u = [(b[0] - a[0]) / L, (b[1] - a[1]) / L], n = [-u[1], u[0]];
+  let d = side ? (side[0] - a[0]) * n[0] + (side[1] - a[1]) * n[1] : h * 1.2;
+  const sg = d < 0 ? -1 : 1; if (!dimLines) d = 0; else if (Math.abs(d) < h * .8) d = sg * h * .8;
+  const sn = [n[0] * sg, n[1] * sg], P = (q, t) => [q[0] + n[0] * t, q[1] + n[1] * t], ly = "أبعاد", out = [];
+  ensureLayer(ly, 3);
+  const A = P(a, d), B = P(b, d);
+  if (dimLines) {
+    out.push({ t: "L", p: [P(a, sg * h * .3), P(a, d + sg * h * .4)], ly }, { t: "L", p: [P(b, sg * h * .3), P(b, d + sg * h * .4)], ly }, { t: "L", p: [A, B], ly });
+    const tk = [(u[0] + n[0]) * h * .35, (u[1] + n[1]) * h * .35];
+    [A, B].forEach(q => out.push({ t: "L", p: [[q[0] - tk[0], q[1] - tk[1]], [q[0] + tk[0], q[1] + tk[1]]], ly }));
+  }
+  let ang = Math.atan2(u[1], u[0]) * 180 / Math.PI, up = n;
+  if (ang > 90.01 || ang <= -89.99) { ang += 180; up = [-n[0], -n[1]]; }
+  const mid = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], gap = up[0] * sn[0] + up[1] * sn[1] > 0 ? h * .3 : h * 1.3;
+  out.push({ t: "T", p: [mid[0] + sn[0] * gap, mid[1] + sn[1] * gap], h, s: L.toFixed(2), r: ang, al: 1, ly });
+  return out;
+}
+/* تدوير ونقل ونسخ */
+const cloneE = e => JSON.parse(JSON.stringify(e, clean));
+function xform(e, f, dang) {
+  if (Array.isArray(e.p)) e.p = Array.isArray(e.p[0]) ? e.p.map(f) : f(e.p);
+  if (Array.isArray(e.c)) e.c = f(e.c);
+  if (dang) { if (e.t === "A") { e.a0 += dang; e.a1 += dang; } if (e.t === "T") e.r = (e.r || 0) + dang; }
+  delete e._f; delete e._s; delete e._bb;
+}
+function doRotate(A) {
+  const r = A * Math.PI / 180, c = Math.cos(r), s2 = Math.sin(r), o = xBase, f = q => [o[0] + (q[0] - o[0]) * c - (q[1] - o[1]) * s2, o[1] + (q[0] - o[0]) * s2 + (q[1] - o[1]) * c];
+  const keep = $("#dKeep") && $("#dKeep").checked;
+  if (keep) { const cp = selSet.map(cloneE); cp.forEach(e => xform(e, f, A)); addEnts(cp); }
+  else { undo.push({ mod: selSet.map(e => [e, cloneE(e)]) }); selSet.forEach(e => xform(e, f, A)); paths = null; save(); }
+  toast("دُوّر " + (+A.toFixed(4)) + "°"); setCmd("rotate");
+}
+function doMove(dx, dy) {
+  const f = q => [q[0] + dx, q[1] + dy];
+  if (cmd === "copy") { const cp = selSet.map(cloneE); cp.forEach(e => xform(e, f)); addEnts(cp); toast("نُسخ ✓ — اختر مكاناً آخر أو إنهاء"); redraw(); return; }
+  undo.push({ mod: selSet.map(e => [e, cloneE(e)]) }); selSet.forEach(e => xform(e, f)); paths = null; save(); toast("نُقل ✓"); setCmd("move");
+}
+
 /* =============================== اللوحات =============================== */
 const panel = $("#panel");
 function showPanel(h) { $("#pBody").innerHTML = h; panel.classList.add("on"); panel._os = 0; }
@@ -732,7 +851,7 @@ function distPanel(a, b) {
   showPanel(`<h3>📏 المسافة</h3><div class="big">${f3(Math.hypot(dx, dy))} م</div>
   <div class="kv" style="margin-top:6px"><b>ΔX</b><span class="n">${f3(dx)}</span><b>ΔY</b><span class="n">${f3(dy)}</span><b>الاتجاه من الشمال</b><span class="n">${dms(azim(a, b))}</span>
   <b>من</b><span class="n">${f3(a[0])} , ${f3(a[1])}</span><b>إلى</b><span class="n">${f3(b[0])} , ${f3(b[1])}</span></div>
-  <div class="pb"><button type="button" data-copy="${f3(Math.hypot(dx, dy))}">نسخ المسافة</button><button type="button" class="pri" data-act="dimline">ارسمها خطاً</button></div>`);
+  <div class="pb"><button type="button" data-copy="${f3(Math.hypot(dx, dy))}">نسخ المسافة</button><button type="button" class="pri" data-act="dimtext">اكتبها في الرسم</button><button type="button" data-act="dimline">ارسمها خطاً</button></div>`);
 }
 function areaPanel(A, Pm, ent, poly) {
   showPanel(`<h3>📐 المساحة</h3><div class="big">${f2(A)} م²</div>
@@ -779,6 +898,7 @@ $("#pBody").addEventListener("click", e => {
   if (a === "verts" && en) vertsPanel(en);
   if (a === "vcsv" && en) saveText((D.name || "رسم") + " – رؤوس.csv", "﻿الرقم,X,Y\r\n" + en.p.map((q, i) => `${i + 1},${f3(q[0])},${f3(q[1])}`).join("\r\n"), "text/csv");
   if (a === "vcopy" && en) copy(en.p.map((q, i) => `${i + 1}\t${f3(q[0])}\t${f3(q[1])}`).join("\n"));
+  if (a === "dimtext" && lastDist) { addEnts(makeDim(lastDist[0], lastDist[1], null)); temp = null; hidePanel(); }
   if (a === "dimline" && lastDist) { addEnts([{ t: "L", p: lastDist.map(q => q.slice()) }]); temp = null; }
   if (a === "areatext") {
     let c0; if (en && en.t === "C") c0 = en.c; else { const p = (en && en.p) || panel._poly || []; c0 = p.reduce((s, q) => [s[0] + q[0] / p.length, s[1] + q[1] / p.length], [0, 0]); }
@@ -849,7 +969,7 @@ function saveText(name, txt, mime) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u8], { type: mime })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
 function copy(t) { try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else navigator.clipboard.writeText(t); toast("نُسخ ✓"); } catch (e) { toast("تعذّر النسخ"); } }
-let toastT; function toast(m) { const b = $("#busy"); $("#busyT").textContent = m; b.classList.add("on"); b.style.background = "transparent"; b.style.pointerEvents = "none"; $("#busyT").style.cssText = "background:rgba(12,59,38,.95);padding:10px 16px;border-radius:14px;border:1.5px solid #e6c35f;align-self:flex-start;margin-top:12px"; clearTimeout(toastT); toastT = setTimeout(() => { b.classList.remove("on"); b.style.cssText = ""; $("#busyT").style.cssText = ""; }, 1800); }
+let toastT; function toast(m) { const b = $("#busy"); $("#busyT").textContent = m; b.classList.add("on"); b.style.background = "transparent"; b.style.pointerEvents = "none"; $("#busyT").style.cssText = "background:rgba(12,59,38,.95);padding:10px 16px;border-radius:14px;border:1.5px solid #e6c35f;align-self:flex-end;margin-bottom:60px"; clearTimeout(toastT); toastT = setTimeout(() => { b.classList.remove("on"); b.style.cssText = ""; $("#busyT").style.cssText = ""; }, 1800); }
 function busy(m) { const b = $("#busy"); b.style.cssText = ""; $("#busyT").style.cssText = ""; $("#busyT").textContent = m; b.classList.toggle("on", !!m); }
 
 let eng = null;
@@ -933,7 +1053,11 @@ function helpPanel() {
   <li><b>الالتقاط 🧲:</b> اضغط زر الالتقاط واختر ما تريد: نهاية، منتصف، مركز، ربع الدائرة، نقطة، إدراج، تقاطع، عمودي، أقرب نقطة، مركز القطعة. اسم الالتقاط يظهر بجانب الرمز.</li>
   <li><b>الكتابة:</b> في أي أمر اكتب <span class="n">X,Y</span> لنقطة بإحداثياتها، أو <span class="n">@10,5</span> للإزاحة من النقطة السابقة، أو <span class="n">@25&lt;90</span> لطول وزاوية.</li>
   <li><b>المساحة:</b> اضغط داخل أي شكل مغلق فتظهر مساحته، أو اختر الرؤوس واحدة واحدة ثم إنهاء.</li>
-  <li><b>موازي:</b> اكتب المسافة ↵، اختر الخط، ثم اضغط في الجهة المطلوبة.</li>
+  <li><b>خط/بوليلاين:</b> بعد أول نقطة يظهر فوق مربع <b>الطول</b> و<b>الزاوية</b>. اكتب الطول فقط ثم اضغط باتجاه الخط، أو اكتب الاثنين واضغط ارسم.</li>
+  <li><b>دائرة:</b> اختر المركز ثم اكتب نصف القطر أو القطر.</li>
+  <li><b>موازي:</b> اكتب المسافة فوق، اختر الخط، ثم اضغط في الجهة المطلوبة.</li>
+  <li><b>أبعاد:</b> اختر طرفي الضلع ثم اضغط في الجهة، فيُكتب طوله مائلاً بموازاته مع خطوط الأبعاد (أو النص فقط).</li>
+  <li><b>تدوير / نقل / نسخ:</b> اختر العناصر ثم التالي، ثم نقطة الأساس، ثم اكتب الزاوية أو الإزاحة أو اضغط المكان الجديد.</li>
   <li><b>استخراج الإحداثيات:</b> ☰ ملف ← استخراج، اختر النقاط أو الكتل أو الرؤوس والطبقات، واحفظها CSV تفتح في Excel.</li>
   <li><b>الحفظ:</b> عملك يُحفظ تلقائياً وفي الأرشيف. ☰ ملف ← حفظ DXF لفتحه في الأوتوكاد.</li></ol>`);
 }

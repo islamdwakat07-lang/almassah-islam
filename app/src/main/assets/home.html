@@ -85,6 +85,10 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
     <a class="hit" href="jarf/index.html" aria-label="حاسبة الجرف" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
   </div>
   <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
+  <div class="ui"><img src="img/ui-p10.jpg" alt="">
+    <a class="hit" href="mesaha/index.html" aria-label="حسابات دائرة المساحة" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
+  </div>
+  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
   <div class="ui"><img src="img/ui-p7.jpg" alt="">
     <a class="hit" href="meel/index.html" aria-label="حاسبة الميل" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
   </div>
@@ -99,14 +103,6 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
   <div class="ui"><img src="img/ui-p9.jpg" alt="">
     <a class="hit" href="level/index.html" aria-label="دفتر الليفل" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
-  </div>
-  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
-  <div class="ui"><img src="img/ui-p10.jpg" alt="">
-    <a class="hit" href="mesaha/index.html" aria-label="حسابات دائرة المساحة" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
-  </div>
-  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
-  <div class="ui"><img src="img/ui-p10.jpg" alt="">
-    <a class="hit" href="hisabat/index.html" aria-label="حسابات دائرة المساحة" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
   </div>
   <img class="sky" src="img/ui-sky.jpg" alt="دقة .. احترافية .. لنتائج أفضل">
   <div class="fill"></div>
@@ -218,9 +214,6 @@ function projects() {
   const kh = read("khanzira-v1");
   if (kh && kh.file && kh.file.name)
     out.push({ key: "khanzira-v1", img: "img/c-kh.jpg", href: "khanzira/index.html", title: kh.file.name, sub: "الخنزيرة" });
-  const hs = read("hisabat-v1");
-  if (hs && hs.pts && hs.pts.length) { const I = hs.info || {};
-    out.push({ key: "hisabat-v1", img: "img/c-hisabat.jpg", href: "hisabat/index.html", title: [I.vil, I.blk ? "حوض " + I.blk : "", I.plot ? "قطعة " + I.plot : ""].filter(Boolean).join(" – ") || "مشروع حسابات", sub: "حسابات المساحة · " + hs.pts.length + " نقطة · " + (hs.par || []).length + " قطعة" }); }
   const ms = read("mesaha-v1");
   if (ms && ms.pts && ms.pts.length)
     out.push({ key: "mesaha-v1", img: "img/c-mesaha.jpg", href: "mesaha/index.html", title: ["مشروع", ms.info && ms.info.vil, ms.info && ms.info.plot && "قطعة " + ms.info.plot].filter(Boolean).join(" "), sub: "حسابات دائرة المساحة · " + ms.pts.length + " نقطة · " + (ms.parcels || []).length + " قطعة" });

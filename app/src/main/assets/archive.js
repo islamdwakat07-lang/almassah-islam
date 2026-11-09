@@ -30,10 +30,6 @@
       if (!d.bm || !Array.isArray(d.rows) || !d.rows.length) return null;
       return { id: String(d.t || d.bm.name + "|" + d.bm.z), title: "ميزانية من " + d.bm.name + " (" + Number(d.bm.z).toFixed(3) + ")", sub: d.rows.filter(r => r.k !== "BS").length + " قراءة · " + d.rows.filter(r => r.k === "BS").length + " محطات" };
     } },
-    "hisabat-v1": { name: "حسابات المساحة", img: "img/c-hisabat.jpg", href: "hisabat/index.html", info(d) {
-      if (!Array.isArray(d.pts) || !d.pts.length) return null; const I = d.info || {};
-      return { id: String(d.t || "x"), title: [I.vil, I.blk ? "حوض " + I.blk : "", I.plot ? "قطعة " + I.plot : ""].filter(Boolean).join(" – ") || "مشروع حسابات", sub: d.pts.length + " نقطة · " + (d.par || []).length + " قطعة" };
-    } },
     "mesaha-v1": { name: "حسابات دائرة المساحة", img: "img/c-mesaha.jpg", href: "mesaha/index.html", info(d) {
       if (!Array.isArray(d.pts) || !d.pts.length) return null; const I = d.info || {};
       return { id: String(d.t || "") , title: ["مشروع", I.vil, I.blk && "حوض " + I.blk, I.plot && "قطعة " + I.plot].filter(Boolean).join(" "), sub: d.pts.length + " نقطة · " + (d.parcels || []).length + " قطعة" };

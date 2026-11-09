@@ -65,7 +65,7 @@ ol{padding-inline-start:20px;margin:6px 0}
     <div class="guide" id="guide"><div class="ic">👉</div><div><b id="gT"></b><p id="gP"></p></div></div>
 
     <div class="card" id="cStart">
-      <h2>1) نقطة البداية (الروبير)</h2>
+      <h2>1) نقطة البداية (BM)</h2>
       <div class="grid">
         <label class="f">اسمها<input class="t" id="bmName" placeholder="BM1"></label>
         <label class="f">منسوبها (م)<input id="bmZ" inputmode="decimal" placeholder="500.000"></label>
@@ -108,7 +108,7 @@ ol{padding-inline-start:20px;margin:6px 0}
     <div class="card" id="cEnd" hidden>
       <h2>التدقيق والإغلاق</h2>
       <label class="f">آخر نقطة رصدتها<select id="endPt" style="font:600 16px 'IBM Plex Sans Arabic';padding:10px;border:1.5px solid #e2cf98;border-radius:12px;background:#fffdf6"></select></label>
-      <label class="f" style="margin-top:8px">منسوبها المعروف (م)<small>إذا رجعت لنفس الروبير اكتب منسوبه</small><input id="endZ" inputmode="decimal"></label>
+      <label class="f" style="margin-top:8px">منسوبها المعروف (م)<small>إذا رجعت لنفس الـ BM اكتب منسوبه</small><input id="endZ" inputmode="decimal"></label>
       <label class="f" style="margin-top:8px">الخطأ المسموح لكل محطة (ملم)<small>المسموح = هذا الرقم × √عدد المحطات (غيّره إن أردت)</small><input id="tolMm" inputmode="decimal" value="10"></label>
       <button class="btn pri" id="closeBtn" type="button">احسب الخطأ</button>
       <div id="closeRes"></div>
@@ -198,7 +198,7 @@ function render() {
   $("#cWork").hidden = st.mode === "start";
   $("#wBS").hidden = st.mode !== "bs"; $("#wPts").hidden = st.mode !== "pts"; $("#wTP").hidden = st.mode !== "tp";
   $("#hiV").textContent = st.mode === "pts" || st.mode === "tp" ? f3(C.hi) : "—";
-  if (st.mode === "start") guide("ابدأ من نقطة منسوبها معروف", "اكتب اسم الروبير (نقطة الثبات) ومنسوبه. إذا لم يكن عندك روبير، افترض منسوباً مثل 100.000.");
+  if (st.mode === "start") guide("ابدأ من نقطة منسوبها معروف", "اكتب اسم الـ BM ومنسوبه. إذا لم يكن عندك BM، افترض منسوباً مثل 100.000.");
   if (st.mode === "bs") {
     const on = st.bsOn || (st.bm && st.bm.name);
     $("#bsOn").textContent = on;
@@ -264,7 +264,7 @@ $("#tpOk").addEventListener("click", () => {
   const n = $("#tpName").value.trim() || nextTP();
   st.rows.push({ k: "FS", pt: n, r }); st.bsOn = n; st.mode = "bs"; $("#tpR").value = ""; $("#tpName").value = ""; save(); render();
 });
-$("#endBtn").addEventListener("click", () => { $("#cEnd").hidden = false; $("#cEnd").scrollIntoView({ behavior: "smooth" }); guide("التدقيق", "اختر آخر نقطة واكتب منسوبها الحقيقي (أو منسوب الروبير إذا رجعت إليه)، فأحسب الخطأ وأوزّعه."); });
+$("#endBtn").addEventListener("click", () => { $("#cEnd").hidden = false; $("#cEnd").scrollIntoView({ behavior: "smooth" }); guide("التدقيق", "اختر آخر نقطة واكتب منسوبها الحقيقي (أو منسوب الـ BM إذا رجعت إليه)، فأحسب الخطأ وأوزّعه."); });
 $("#closeBtn").addEventListener("click", () => {
   const C = compute(), p = $("#endPt").value, zk = num($("#endZ").value), tol = num($("#tolMm").value) || 10;
   if (!isFinite(zk)) { $("#endZ").focus(); return; }
@@ -338,7 +338,7 @@ $("#pdf").addEventListener("click", async () => {
   try {
     await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0)));
     const C = compute(), W = mm(210), H = mm(297), pages = []; let ctx, y;
-    const page = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; ctx = c.getContext("2d"); frameHeader(ctx, W, "دفتر الليفل – الميزانية", `الروبير ${st.bm.name} = ${f3(num(st.bm.z))} م · ${C.setups} محطات`); pages.push(c); y = mm(38); head(); };
+    const page = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; ctx = c.getContext("2d"); frameHeader(ctx, W, "دفتر الليفل – الميزانية", `${st.bm.name} = ${f3(num(st.bm.z))} م · ${C.setups} محطات`); pages.push(c); y = mm(38); head(); };
     const cols = [["النقطة", 34], ["BS", 26], ["IS", 26], ["FS", 26], ["خط النظر", 34], ["المنسوب", 34]], rh = mm(7);
     const xr = []; let x = W - mm(14); cols.forEach(([t, w]) => { xr.push([x - mm(w), x]); x -= mm(w); });
     function head() { ctx.fillStyle = GREEN_D; ctx.fillRect(xr[xr.length - 1][0], y, xr[0][1] - xr[xr.length - 1][0], rh); cols.forEach(([t], i) => txt(ctx, t, (xr[i][0] + xr[i][1]) / 2, y + rh / 2, `700 ${mm(3.4)}px ${AF}`, "#f3dc93", "center")); y += rh; }

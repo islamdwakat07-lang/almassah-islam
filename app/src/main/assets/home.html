@@ -100,6 +100,14 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <div class="ui"><img src="img/ui-p9.jpg" alt="">
     <a class="hit" href="level/index.html" aria-label="دفتر الليفل" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
   </div>
+  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
+  <div class="ui"><img src="img/ui-p10.jpg" alt="">
+    <a class="hit" href="mesaha/index.html" aria-label="حسابات دائرة المساحة" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
+  </div>
+  <div class="gap" style="background-image:url(img/ui-g3.png)"></div>
+  <div class="ui"><img src="img/ui-p10.jpg" alt="">
+    <a class="hit" href="hisabat/index.html" aria-label="حسابات دائرة المساحة" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
+  </div>
   <img class="sky" src="img/ui-sky.jpg" alt="دقة .. احترافية .. لنتائج أفضل">
   <div class="fill"></div>
   <div class="spacer"></div>
@@ -166,7 +174,7 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <h3 id="t-about">حول التطبيق</h3>
   <div class="about">
     <b style="font:700 22px var(--f-title);color:var(--green-2)">المهندس إسلام</b><br>
-    حاسب الكواشين · الإفراز · حاسبة الجرف · GOV إسلام · GEO إسلام · حاسبة الميل · الخنزيرة · دفتر الليفل · أوتوكاد<br>
+    حاسب الكواشين · الإفراز · حاسبة الجرف · GOV إسلام · GEO إسلام · حاسبة الميل · الخنزيرة · دفتر الليفل · أوتوكاد · حسابات دائرة المساحة<br>
     صاحب ومطور التطبيق: <b>إسلام إسماعيل دويكات</b><br>
     <span class="phone">0598161862</span><br>
     <span id="ver2" style="color:var(--muted)"></span><br>
@@ -210,6 +218,12 @@ function projects() {
   const kh = read("khanzira-v1");
   if (kh && kh.file && kh.file.name)
     out.push({ key: "khanzira-v1", img: "img/c-kh.jpg", href: "khanzira/index.html", title: kh.file.name, sub: "الخنزيرة" });
+  const hs = read("hisabat-v1");
+  if (hs && hs.pts && hs.pts.length) { const I = hs.info || {};
+    out.push({ key: "hisabat-v1", img: "img/c-hisabat.jpg", href: "hisabat/index.html", title: [I.vil, I.blk ? "حوض " + I.blk : "", I.plot ? "قطعة " + I.plot : ""].filter(Boolean).join(" – ") || "مشروع حسابات", sub: "حسابات المساحة · " + hs.pts.length + " نقطة · " + (hs.par || []).length + " قطعة" }); }
+  const ms = read("mesaha-v1");
+  if (ms && ms.pts && ms.pts.length)
+    out.push({ key: "mesaha-v1", img: "img/c-mesaha.jpg", href: "mesaha/index.html", title: ["مشروع", ms.info && ms.info.vil, ms.info && ms.info.plot && "قطعة " + ms.info.plot].filter(Boolean).join(" "), sub: "حسابات دائرة المساحة · " + ms.pts.length + " نقطة · " + (ms.parcels || []).length + " قطعة" });
   const cad = read("cad-v1");
   if (cad && cad.name && cad.ents && cad.ents.length)
     out.push({ key: "cad-v1", img: "img/c-cad.jpg", href: "cad/index.html", title: cad.name, sub: "أوتوكاد · " + cad.ents.length + " عنصر" });

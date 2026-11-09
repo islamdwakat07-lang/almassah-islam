@@ -148,7 +148,7 @@ function aci(i) {
 /* =============================== DXF → عناصر =============================== */
 function parseDXF(txt) {
   const L = txt.split(/\r?\n/), P = [];
-  for (let i = 0; i + 1 < L.length; i += 2) P.push([parseInt(L[i], 10), L[i + 1].replace(/\s+$/, "")]);
+  for (let i = 0; i + 1 < L.length; i += 2) { const c = parseInt(L[i], 10); let v = L[i + 1].replace(/\s+$/, ""); if ((c === 8 || c === 2) && v.includes("\\U+")) v = uni(v); P.push([c, v]); }
   const layers = {}, blocks = {}, model = [];
   let sec = null, i = 0;
   const readEnt = () => { const e = { t: P[i][1], g: [] }; i++; while (i < P.length && P[i][0] !== 0) { e.g.push(P[i]); i++; } return e; };
@@ -998,13 +998,18 @@ async function openFile(f) {
     if (String.fromCharCode(...u8.subarray(0, 4)) === "AC10") { busy("…تحويل DWG (أول مرة تأخذ ثوانٍ)"); u8 = await dwg2dxf(u8); }
     const txt = decode(u8);
     if (/^AutoCAD Binary DXF/.test(txt)) throw new Error("ملف DXF ثنائي. احفظه بصيغة DXF نصية (ASCII).");
+    loadText(txt, f.name.replace(/\.(dwg|dxf)$/i, ""));
+    busy(""); toast(`فُتح ${D.ents.length.toLocaleString("en")} عنصر · ${Object.keys(D.layers).length} طبقة`);
+  } catch (e) { busy(""); alert(e.message || "تعذّر فتح الملف"); }
+}
+function loadText(txt, name) {
+  {
     const P = parseDXF(txt), R = convert(P);
     if (!R.ents.length) throw new Error("لم أجد رسومات في هذا الملف.");
-    D = { name: f.name.replace(/\.(dwg|dxf)$/i, ""), t: Date.now(), ents: R.ents, layers: P.layers, cur: "0" };
+    D = { name, t: Date.now(), ents: R.ents, layers: P.layers, cur: "0" };
     R.ents.forEach(e => ensureLayer(e.ly));
     undo = []; sel = null; coordList = []; paths = null; hideWelcome(); setTitle(); fit(); save(); setCmd("sel");
-    busy(""); toast(`فُتح ${R.ents.length.toLocaleString("en")} عنصر · ${Object.keys(D.layers).length} طبقة`);
-  } catch (e) { busy(""); alert(e.message || "تعذّر فتح الملف"); }
+  }
 }
 $("#file").addEventListener("change", e => { openFile(e.target.files[0]); e.target.value = ""; });
 $("#file2").addEventListener("change", e => { openFile(e.target.files[0]); e.target.value = ""; });
@@ -1076,6 +1081,8 @@ const onResize = () => { const r = view.getBoundingClientRect(); if (Math.abs(r.
 addEventListener("resize", onResize); try { new ResizeObserver(onResize).observe(view); } catch (e) {}
 resize();
 (function restore() {
+  try { const o = JSON.parse(sessionStorage.getItem("cad-open") || "null"); if (o && o.txt) { sessionStorage.removeItem("cad-open"); const P = parseDXF(o.txt), R = convert(P);
+    D = { name: o.name || "رسم", t: Date.now(), ents: R.ents, layers: P.layers, cur: "0" }; R.ents.forEach(e => ensureLayer(e.ly)); hideWelcome(); setTitle(); fit(); save(); setCmd("sel"); redraw(); return; } } catch (e) {}
   let s = null; try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
   if (s && Array.isArray(s.ents) && (s.ents.length || s.name)) {
     D = { name: s.name, t: s.t || Date.now(), ents: s.ents, layers: s.layers || {}, cur: s.cur || "0" }; D.ents.forEach(e => ensureLayer(e.ly));
@@ -1083,6 +1090,7 @@ resize();
     if (s.view && s.view.O) { O = s.view.O; k = s.view.k; tx = s.view.tx; ty = s.view.ty; } else fit();
   }
   setCmd("sel"); redraw();
+  if (/import=1/.test(location.search)) { try { const o = JSON.parse(sessionStorage.getItem("cad-import") || "null"); sessionStorage.removeItem("cad-import"); if (o && o.txt) { loadText(o.txt, o.name || "حسابات"); toast("فُتح من حسابات المساحة"); } } catch (e) {} }
 })();
 addEventListener("pagehide", () => { clearTimeout(saveT); try { localStorage.setItem(KEY, JSON.stringify({ name: D.name, t: D.t, ents: D.ents, layers: D.layers, cur: D.cur, view: { O, k, tx, ty } }, clean)); } catch (e) {} });
 </script>

@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="hisabat">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>حسابات دائرة المساحة</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<script src="../archive.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#1d2a22}
+main{max-width:980px;margin:0 auto;padding:8px 10px 70px}
+.n,td.m{font-family:"IBM Plex Mono",monospace;direction:ltr;unicode-bidi:isolate}
+.tabs{position:sticky;top:calc(58px + env(safe-area-inset-top,0px));z-index:30;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:5px;background:#0c3b26;border:1.5px solid #c99a2e;border-radius:16px;padding:6px;margin:6px 0 12px;box-shadow:0 8px 16px -10px rgba(0,0,0,.5)}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;white-space:nowrap;padding-inline:12px!important;border:1.5px solid #2c6b4c;border-radius:11px;background:none;color:#fff6d6;font:700 13.5px "IBM Plex Sans Arabic";padding:7px 4px;cursor:pointer}
+.tabs button[aria-selected=true]{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;border-color:#c99a2e}
+.card{background:#fffcf3;border:1.5px solid #e2cf98;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 8px 18px -14px rgba(8,42,27,.5),inset 0 1px 0 #fff}
+h2{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid #e2cf98;font:700 18px "Reem Kufi","IBM Plex Sans Arabic";color:#0c3b26}
+h2 .no{flex:none;width:30px;height:30px;border-radius:50%;background:#0c3b26;color:#f3dc93;display:grid;place-items:center;font:700 15px "IBM Plex Mono"}
+.muted{color:#5d6458;font-size:13px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+label.f{display:flex;flex-direction:column;gap:3px;font-weight:700;font-size:13px;color:#0c3b26}
+input,select,textarea{font:600 15px "IBM Plex Sans Arabic";padding:8px 10px;border:1.5px solid #e2cf98;border-radius:10px;background:#fffdf6;color:#1d2a22;min-width:0;width:100%}
+input.n{font:600 14px "IBM Plex Mono",monospace;text-align:left}
+input:focus,select:focus{outline:2px solid #c99a2e}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.btn{border:1.5px solid #c99a2e;border-radius:12px;background:#fffaf0;color:#0c3b26;font:700 14px "IBM Plex Sans Arabic";padding:9px 12px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;border-color:#e6c35f}
+.btn.or{background:linear-gradient(180deg,#c4583a,#9a3b22);color:#fff;border-color:#e6c35f}
+.btn.red{background:#fff;color:#b91c1c;border-color:#e3a39c}
+.btn.sm{padding:5px 9px;font-size:12.5px;border-radius:9px}
+.file{position:relative;overflow:hidden}.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.tw{overflow-x:auto;margin-top:8px;border:1.5px solid #e2cf98;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0c3b26;color:#f3dc93;padding:6px 5px;font-weight:700;white-space:nowrap;position:sticky;top:0}
+td{padding:4px 5px;border-bottom:1px solid #eadfbf;text-align:center;white-space:nowrap}
+tr:nth-child(even) td{background:#fbf6e8}
+td input{padding:4px 6px;font-size:13px;border-radius:7px}
+td input.n{width:118px}
+td input.pn{width:64px}
+td select{padding:3px 4px;font-size:12px;width:auto}
+.ok{background:#e3efe2;border:1px solid #9cc5a5;color:#1e6b4a;border-radius:10px;padding:8px 10px;margin-top:8px;font-weight:700;font-size:13.5px}
+.bad{background:#fde3e1;border:1px solid #e3a39c;color:#8a1c12;border-radius:10px;padding:8px 10px;margin-top:8px;font-weight:700;font-size:13.5px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:10px}
+.kc{background:linear-gradient(180deg,#155a3a,#0c3b26);color:#fff6d6;border-radius:12px;padding:8px 12px;border:1px solid #c99a2e}
+.kc.o{background:linear-gradient(180deg,#c4583a,#9a3b22)}
+.kc small{display:block;color:#f3dc93;font-size:12px;font-weight:700}
+.kc b{font:700 21px "IBM Plex Mono",monospace;direction:ltr;display:block;text-align:left}
+.pc{border:1.5px solid #c99a2e;border-radius:14px;margin-top:10px;background:#fff}
+.pc>.hd{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:#f3ead2;border-radius:13px 13px 0 0}
+.pc>.hd .tg{cursor:pointer;font-size:18px;color:#0c3b26;border:0;background:none}
+.pc>.hd input{width:auto}
+.pc>.bd{padding:10px}
+.pc.shut>.bd{display:none}
+.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#c4583a;color:#fff}
+.badge.s{background:#dfe9dc;color:#1e6b4a}
+.hint{font-size:12.5px;color:#5d6458;margin-top:6px}
+canvas.dr{display:block;width:100%;background:#fffdf6;border:1.5px solid #e2cf98;border-radius:12px;margin-top:10px;touch-action:none}
+[hidden]{display:none!important}
+details>summary{cursor:pointer;font-weight:700;color:#0c3b26;margin:6px 0}
+.chk{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;color:#0c3b26}
+.chk input{width:18px;height:18px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;border:1.5px solid #e6c35f;border-radius:14px;padding:10px 16px;font-weight:700;z-index:99;display:none}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-hisabat.png" alt=""><b>حسابات دائرة المساحة</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+<nav class="tabs" role="tablist">
+  <button type="button" data-t="proj" aria-selected="true">المشروع والنقاط</button>
+  <button type="button" data-t="land" aria-selected="false">الأراضي (إفراز وتوحيد)</button>
+  <button type="button" data-t="so" aria-selected="false">Stakeout</button>
+  <button type="button" data-t="xy" aria-selected="false">الإحداثيات</button>
+  <button type="button" data-t="lvl" aria-selected="false">المناسيب والتسوية</button>
+  <button type="button" data-t="dxf" aria-selected="false">DXF / KML</button>
+</nav>
+
+<!-- ================= المشروع والنقاط ================= -->
+<section data-p="proj">
+  <div class="card">
+    <h2><span class="no">1</span>معلومات المشروع والعقار</h2>
+    <div class="g">
+      <label class="f">المحافظة<input data-i="gov" placeholder="مثال: نابلس"></label>
+      <label class="f">المدينة / القرية<input data-i="vil" placeholder="مثال: عصيرة الشمالية"></label>
+      <label class="f">رقم الحوض<input data-i="blk" placeholder="مثال: 5"></label>
+      <label class="f">رقم الحي<input data-i="hay" placeholder="مثال: 2"></label>
+      <label class="f">رقم القطعة<input data-i="plot" placeholder="مثال: 37"></label>
+    </div>
+    <label class="f" style="margin-top:8px">نوع المشروع
+      <select data-i="type">
+        <option value="normal">عادي (بدون علاقة بين القطع)</option>
+        <option value="ifraz">إفراز (تقسيم قطعة رئيسية إلى عدة قطع)</option>
+        <option value="tawhid">توحيد (دمج عدة قطع في قطعة واحدة)</option>
+        <option value="both">إفراز وتوحيد (تقسيم عدة قطع رئيسية ودمج أجزاء منها)</option>
+      </select></label>
+    <p class="hint" id="typeHint"></p>
+    <div class="btns">
+      <button type="button" class="btn pri" id="saveProj">💾 حفظ المشروع</button>
+      <label class="btn file">📂 فتح مشروع محفوظ<input type="file" id="openProj" accept=".json,application/json,*/*"></label>
+      <button type="button" class="btn red" id="newProj">مشروع جديد</button>
+    </div>
+    <p class="hint">يحفظ كل النقاط والقطع والحسابات بملف واحد تقدر تفتحه لاحقاً لتكمل نفس المشروع. والمشروع يُحفظ تلقائياً في الأرشيف.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="no">2</span>استيراد / إدخال النقاط (مصدر مشترك لكل القطع)</h2>
+    <div class="g">
+      <label class="f">رفع ملف CSV (رقم النقطة، Northing، Easting)<span class="btn file" style="text-align:center">اختيار ملف<input type="file" id="csvIn" accept=".csv,.txt,text/*,*/*"></span></label>
+      <label class="f">استيراد نقاط من ملف DXF<span class="btn file" style="text-align:center">اختيار ملف<input type="file" id="dxfIn" accept=".dxf,*/*"></span></label>
+      <label class="f">ترتيب الأعمدة في الملف
+        <select id="colOrd">
+          <option value="pne">النقطة، ثم Northing، ثم Easting</option>
+          <option value="pen">النقطة، ثم Easting، ثم Northing</option>
+          <option value="ne">Northing، Easting (بدون رقم)</option>
+          <option value="en">Easting، Northing (بدون رقم)</option>
+        </select></label>
+    </div>
+    <div class="btns">
+      <button type="button" class="btn" id="addPt">+ إضافة نقطة يدوياً</button>
+      <button type="button" class="btn" id="swapNE">🔁 تبديل N↔E</button>
+      <button type="button" class="btn red" id="clrPts">مسح الكل</button>
+    </div>
+    <details open id="ptsBox"><summary id="ptsSum">عرض/طي جدول النقاط</summary>
+      <div class="tw" style="max-height:420px"><table><thead><tr><th></th><th>رقم النقطة</th><th>Northing (N)</th><th>Easting (E)</th></tr></thead><tbody id="ptsT"></tbody></table></div>
+    </details>
+    <p class="hint">يمكنك تعديل القيم مباشرة داخل الجدول. صيغة CSV: كل سطر = رقم النقطة، Northing، Easting (سطر العناوين يُتجاهل تلقائياً). لو طلعت الإحداثيات معكوسة اختر ترتيب الأعمدة الصحيح قبل الرفع، أو اضغط «تبديل N↔E».</p>
+    <p class="hint">استيراد DXF: يقرأ الأرقام المكتوبة (TEXT) عند كل نقطة كرقم لها، ويعمل تلقائياً مع ملفات DXF المصدّرة من هذه الأداة. لو الملف بدون أرقام، تُستورد نقاط POINT وتُرقّم P1, P2…</p>
+  </div>
+</section>
+
+<!-- ================= الأراضي ================= -->
+<section data-p="land" hidden>
+  <div class="card">
+    <h2><span class="no">3</span>حساب الترافيرس (Traverse) — مغلق أو مفتوح</h2>
+    <p class="muted">احسب إحداثيات نقاط جديدة انطلاقاً من نقطة معروفة باستخدام الأزيموثات أو زوايا الانعطاف والمسافات، مع حساب خطأ الإغلاق وتوزيعه (Bowditch)، ثم أضف النقاط الناتجة إلى جدول النقاط.</p>
+    <div id="travs"></div>
+    <button type="button" class="btn pri" id="addTrav">+ إضافة ترافيرس جديد</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="no">4</span>القطع</h2>
+    <button type="button" class="btn pri" id="addPar1">+ إضافة قطعة جديدة</button>
+    <div id="pars"></div>
+    <div class="btns"><button type="button" class="btn pri" id="addPar2">+ إضافة قطعة جديدة</button><button type="button" class="btn" id="calcAll">احسب كل القطع ▷</button></div>
+    <p class="hint">لكل قطعة: أدخل تسلسل أرقام النقاط بالترتيب (مثال: 1,2,3,4,1) ثم اضغط «احسب». فعّل مربع «قطعة رئيسية» على القطعة المرجعية (الأصل قبل الإفراز، أو الناتجة عن التوحيد).</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="no">5</span>الملخص العام لكل القطع</h2>
+    <div id="summ"></div>
+    <button type="button" class="btn pri" id="drawAll" style="margin-top:10px">🗺️ رسم مخطط المشروع بالكامل (ودمج القطع)</button>
+    <div id="mapBox" hidden>
+      <canvas class="dr" id="mapCv" height="420"></canvas>
+      <p class="hint">اضغط على قطعتين أو أكثر لتحديدها، ثم «دمج المحدد» لتصير قطعة جديدة (يُلغى الخط الفاصل بينها تلقائياً إذا كانت متجاورة).</p>
+      <div class="btns"><button type="button" class="btn pri" id="mergeSel" disabled>دمج المحدد</button><button type="button" class="btn" id="clearSel">إلغاء التحديد</button></div>
+    </div>
+    <div class="btns" style="margin-top:12px">
+      <button type="button" class="btn or" id="xlsAll">⬇ تصدير Excel (ملف بكل القطع)</button>
+      <button type="button" class="btn or" id="xlsOne">⬇ تصدير الكل بصفحة واحدة</button>
+      <button type="button" class="btn or" id="pdfAll">⬇ تصدير / طباعة PDF</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Stakeout ================= -->
+<section data-p="so" hidden>
+  <div class="card">
+    <h2><span class="no">6</span>تنزيل ميداني بالمحطة الشاملة (Stakeout)</h2>
+    <p class="muted">اختر نقطة المحطة (Station) ونقطة الرجوع (Backsight) من نقاط المشروع، وأضف نقاط التنزيل. لكل نقطة: الزاوية الأفقية من اتجاه الرجوع (درجات-دقائق-ثواني) والمسافة الأفقية — جاهزة للجهاز مباشرة.</p>
+    <div class="g">
+      <label class="f">نقطة المحطة (Station)<select id="soSt"></select></label>
+      <label class="f">نقطة الرجوع / التوجيه (Backsight)<select id="soBs"></select></label>
+    </div>
+    <div id="soInfo"></div>
+    <div class="tw"><table><thead><tr><th>#</th><th>نقطة التنزيل</th><th>الزاوية من الرجوع</th><th>المسافة الأفقية (م)</th><th>الأزيموث</th><th></th></tr></thead><tbody id="soT"></tbody></table></div>
+    <div class="btns">
+      <button type="button" class="btn pri" id="soAdd">+ إضافة نقطة تنزيل</button>
+      <button type="button" class="btn pri" id="soAll">➕ إضافة كل نقاط المشروع دفعة واحدة</button>
+      <button type="button" class="btn red" id="soClr">🗑 إفراغ جدول التنزيل</button>
+      <button type="button" class="btn or" id="soPdf">⬇ طباعة جدول التنزيل</button>
+      <button type="button" class="btn or" id="soXls">⬇ تصدير جدول التنزيل Excel</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= الإحداثيات ================= -->
+<section data-p="xy" hidden>
+  <div class="card">
+    <h2><span class="no">7</span>تحويل الإحداثيات (فلسطيني ↔ ITM ↔ UTM ↔ خط الطول/العرض)</h2>
+    <p class="muted">تحويل دقيق بإزاحة الإسناد الجيوديسي الكاملة (Palestine 1923 و ITM و WGS84)، وليس تقريبياً.</p>
+    <div class="g">
+      <label class="f">من نظام<select id="cFrom"></select></label>
+      <label class="f">إلى نظام<select id="cTo"></select></label>
+      <label class="f">منطقة UTM<input id="cZone" class="n" value="36"></label>
+      <label class="f">نصف الكرة<select id="cHem"><option value="n">شمالي</option><option value="s">جنوبي</option></select></label>
+    </div>
+    <div class="g" style="margin-top:8px">
+      <label class="f" id="cAl">N / Y<input id="cA" class="n"></label>
+      <label class="f" id="cBl">E / X<input id="cB" class="n"></label>
+    </div>
+    <div class="btns"><button type="button" class="btn or" id="cGo">⬇ تحويل</button></div>
+    <div id="cRes"></div>
+    <h3 style="margin:16px 0 4px;color:#0c3b26;font-size:15px">تحويل جماعي لكل نقاط المشروع</h3>
+    <p class="hint">يفترض أن نقاط المشروع الحالية بالنظام المختار في «من نظام».</p>
+    <div class="btns"><button type="button" class="btn pri" id="cAll">تحويل كل النقاط</button><button type="button" class="btn" id="cCsv" hidden>⬇ CSV</button><button type="button" class="btn red" id="cRep" hidden>استبدال نقاط المشروع بالناتج</button></div>
+    <div id="cAllRes"></div>
+  </div>
+</section>
+
+<!-- ================= المناسيب ================= -->
+<section data-p="lvl" hidden>
+  <div class="card">
+    <h2><span class="no">8</span>المناسيب والتسوية (Leveling)</h2>
+    <p class="muted">حساب المناسيب بطريقة ارتفاع الجهاز مع التدقيق وتوزيع خطأ الإغلاق، والشاخص المقلوب، والمنسوب المطلوب، وفحص الجهاز — كلها في دفتر الليفل.</p>
+    <a class="btn pri" href="../level/index.html" style="display:inline-block;text-decoration:none;margin-top:6px">📒 افتح دفتر الليفل</a>
+  </div>
+</section>
+
+<!-- ================= DXF / KML ================= -->
+<section data-p="dxf" hidden>
+  <div class="card">
+    <h2><span class="no">9</span>تصدير للأوتوكاد وجوجل إيرث (DXF / KML)</h2>
+    <p class="muted">DXF يفتح مباشرة في AutoCAD/Civil 3D (القطع بطبقات حسب النوع، ورقم كل نقطة مكتوب عندها، ورقم ومساحة كل قطعة). KML يفتح في Google Earth ويحتاج نظام الإحداثيات الصحيح.</p>
+    <div class="g">
+      <label class="f">نظام إحداثيات النقاط<select id="kSys"></select></label>
+      <label class="f">منطقة UTM (لـ KML)<input id="kZone" class="n" value="36"></label>
+      <label class="f">نصف الكرة<select id="kHem"><option value="n">شمالي</option><option value="s">جنوبي</option></select></label>
+      <label class="f">ارتفاع النص في DXF (م)<input id="kH" class="n" value="0.5"></label>
+    </div>
+    <div class="btns"><button type="button" class="btn or" id="dxfOut">⬇ تصدير كل القطع DXF</button><button type="button" class="btn or" id="kmlOut">⬇ تصدير كل القطع KML</button><button type="button" class="btn" id="toCad">فتح في أوتوكاد التطبيق</button></div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="../geomolg/lib/proj4.js"></script>
+<script src="../xlsx.full.min.js"></script>
+<script src="../jspdf.umd.min.js"></script>
+<script src="../geomolg/pdf.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const numA = s => String(s == null ? "" : s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[٫]/g, ".").trim();
+const num = s => { const v = parseFloat(numA(s).replace(/,/g, ".")); return isFinite(v) ? v : NaN; };
+const f3 = v => isFinite(v) ? v.toFixed(3) : "-", f4 = v => isFinite(v) ? v.toFixed(4) : "-", f2 = v => isFinite(v) ? v.toFixed(2) : "-";
+const fa = v => isFinite(v) ? v.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : "-";
+let toastT; const toast = m => { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = "none", 2200); };
+const KEY = "hisabat-v1";
+const TYPES = { normal: "عادي", ifraz: "إفراز", tawhid: "توحيد", both: "إفراز وتوحيد" };
+const TYPE_EN = { normal: "Normal", ifraz: "Subdivision (Ifraz)", tawhid: "Merge (Tawhid)", both: "Subdivision + Merge" };
+const HINTS = {
+  normal: "كل قطعة تُحسب لوحدها، بدون مقارنة أو توزيع فرق.",
+  ifraz: "ضع علامة «قطعة رئيسية» على القطعة الأصلية قبل التقسيم؛ باقي القطع تُعتبر القطع الناتجة عن الإفراز.",
+  tawhid: "ضع علامة «قطعة رئيسية» على القطعة الناتجة عن التوحيد؛ باقي القطع تُعتبر القطع الأصلية قبل الدمج.",
+  both: "ضع علامة «قطعة رئيسية» على كل قطعة أصل. لكل قطعة فرعية اختر «تنتمي إلى» أصلها. لدمج قطع من أصول مختلفة أعطها نفس اسم «مجموعة الدمج».",
+};
+const LAND = ["قسيمة", "طريق", "فضلة", "حديقة عامة", "موقف", "مرافق عامة", "مقبرة", "أخرى"];
+
+/* ============================ الحالة ============================ */
+let S;
+const blank = () => ({ name: "", t: Date.now(), info: { gov: "", vil: "", blk: "", hay: "", plot: "", type: "ifraz" }, pts: [], trav: [], par: [], so: { st: "", bs: "", rows: [] }, sys: "pg" });
+try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+if (!S || !Array.isArray(S.pts)) S = blank();
+let saveT; const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }, 400); };
+const P = n => S.pts.find(p => String(p.n) === String(n));
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+/* ============================ الهندسة ============================ */
+const RAD = Math.PI / 180;
+const azim = (a, b) => { let t = Math.atan2(b.E - a.E, b.N - a.N) / RAD; if (t < 0) t += 360; return t; };   // أزيموث شبكي من الشمال
+const dms = d => { d = ((d % 360) + 360) % 360; let D = Math.floor(d), m = Math.floor((d - D) * 60), s = ((d - D) * 60 - m) * 60; s = Math.round(s * 100) / 100; if (s >= 60) { s -= 60; m++; } if (m >= 60) { m -= 60; D++; } return `${D}° ${String(m).padStart(2, "0")}' ${s.toFixed(2).padStart(5, "0")}"`; };
+const bearing = az => { const q = az <= 90 ? ["N", az, "E"] : az <= 180 ? ["S", 180 - az, "E"] : az <= 270 ? ["S", az - 180, "W"] : ["N", 360 - az, "W"]; return `${q[0]} ${q[1].toFixed(4)} ${q[2]}`; };
+const allow = A => 0.8 * Math.sqrt(A) + 0.002 * A;         // الفرق المسموح بين المحسوب والمسجل
+function parseAng(s) {          // 123.4567 أو 123 27 15 أو 123-27-15 أو 123°27'15"
+  const t = numA(s).replace(/[°'"’″′]/g, " ").replace(/[-:,]/g, " ").trim(); if (!t) return NaN;
+  const a = t.split(/\s+/).map(Number); if (a.some(x => !isFinite(x))) return NaN;
+  return a.length === 1 ? a[0] : a[0] + (a[1] || 0) / 60 + (a[2] || 0) / 3600;
+}
+function seqOf(par) { return String(par.seq || "").split(/[,\s،;]+/).map(x => x.trim()).filter(Boolean); }
+function calcParcel(par) {
+  const names = seqOf(par); let closedIn = names.length > 2 && names[0] === names[names.length - 1];
+  if (par.close && !closedIn && names.length > 2) { names.push(names[0]); closedIn = true; }
+  const miss = names.filter(n => !P(n));
+  if (miss.length) return { err: "نقاط غير موجودة في الجدول: " + [...new Set(miss)].join("، ") };
+  if (names.length < 3) return { err: "أدخل تسلسل 3 نقاط على الأقل." };
+  const pts = names.map(P), segs = [];
+  par.arcs = par.arcs || {};
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], d = Math.hypot(b.E - a.E, b.N - a.N), az = azim(a, b), key = a.n + ">" + b.n, arc = par.arcs[key] || {};
+    let R = NaN, A = NaN;
+    if (arc.on && arc.f > 0 && d > 0) { R = (d * d / 4 + arc.f * arc.f) / (2 * arc.f); const th = 2 * Math.asin(Math.min(1, d / (2 * R))); A = R * R / 2 * (th - Math.sin(th)) * (arc.sign === "-" ? -1 : 1); }
+    segs.push({ from: a.n, to: b.n, a, b, d, az, key, arc: !!arc.on, f: arc.f || 0, sign: arc.sign || "+", R, A });
+  }
+  const ring = closedIn ? pts.slice(0, -1) : pts;
+  let sh = 0; for (let i = 0; i < ring.length; i++) { const a = ring[i], b = ring[(i + 1) % ring.length]; sh += a.E * b.N - b.E * a.N; }
+  const ccw = sh > 0; sh = Math.abs(sh / 2);
+  segs.forEach(s => { const dE = s.b.E - s.a.E, dN = s.b.N - s.a.N, L = s.d || 1, o = (ccw ? 1 : -1) * (s.sign === "-" ? -1 : 1); s.out = [dN / L * o, -dE / L * o]; });   // اتجاه انتفاخ القوس
+  const arcSum = segs.reduce((t, s) => t + (isFinite(s.A) ? s.A : 0), 0), total = closedIn ? sh + arcSum : NaN;
+  const areg = num(par.areg), al = isFinite(areg) ? allow(areg) : NaN, diff = total - areg;
+  return { closed: closedIn, ccw, segs, ring, shoelace: closedIn ? sh : NaN, arcSum, total, areg, allow: al, diff, within: isFinite(diff) ? Math.abs(diff) <= al : null, perim: segs.reduce((t, s) => t + s.d, 0) };
+}
+
+/* ============================ التبويبات ============================ */
+$$(".tabs button").forEach(b => b.addEventListener("click", () => {
+  $$(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  $$("section[data-p]").forEach(s => s.hidden = s.dataset.p !== b.dataset.t);
+  S.tab = b.dataset.t; save(); if (b.dataset.t === "so") renderSO(); if (b.dataset.t === "land") renderLand();
+  scrollTo({ top: 0 });
+}));
+
+/* ============================ المشروع ============================ */
+function renderInfo() {
+  $$("[data-i]").forEach(i => i.value = S.info[i.dataset.i] || "");
+  $("#typeHint").textContent = HINTS[S.info.type] || "";
+}
+$$("[data-i]").forEach(i => i.addEventListener("input", () => { S.info[i.dataset.i] = i.value; if (i.dataset.i === "type") { $("#typeHint").textContent = HINTS[i.value]; renderLand(); } S.name = projName(); save(); }));
+const projName = () => [S.info.vil, S.info.blk ? "حوض " + S.info.blk : "", S.info.plot ? "قطعة " + S.info.plot : ""].filter(Boolean).join(" – ") || "مشروع حسابات";
+function dl(name, data, mime) {
+  const u8 = typeof data === "string" ? new TextEncoder().encode(data) : data;
+  if (window.AndroidBridge && AndroidBridge.saveFile) { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); AndroidBridge.saveFile(name, btoa(s), mime); toast("حُفظ في التنزيلات ✓"); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u8], { type: mime })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+const fname = ext => (projName().replace(/[\\/:*?"<>|]/g, "-")) + ext;
+$("#saveProj").addEventListener("click", () => dl(fname(".json"), JSON.stringify({ app: "hisabat", v: 1, S }), "application/json"));
+$("#openProj").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const o = JSON.parse(await f.text()); if (!o || !o.S || !Array.isArray(o.S.pts)) throw 0; S = o.S; S.t = S.t || Date.now(); save(); renderAll(); toast("فُتح المشروع ✓"); }
+  catch (er) { alert("هذا ليس ملف مشروع من هذه الأداة."); }
+});
+$("#newProj").addEventListener("click", e => {
+  const b = e.currentTarget; if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "اضغط مرة ثانية للتأكيد"; setTimeout(() => { delete b.dataset.ok; b.textContent = "مشروع جديد"; }, 3000); return; }
+  S = blank(); save(); renderAll(); toast("مشروع جديد — القديم محفوظ في الأرشيف");
+});
+
+/* ============================ النقاط ============================ */
+function renderPts() {
+  $("#ptsSum").textContent = `عرض/طي جدول النقاط (${S.pts.length} نقطة) — يُفضّل الطي عند وجود عدد كبير من النقاط`;
+  $("#ptsT").innerHTML = S.pts.map((p, i) => `<tr><td><button class="btn red sm" data-dp="${i}" type="button">حذف</button></td><td><input class="pn" data-pi="${i}" data-k="n" value="${esc(p.n)}"></td><td><input class="n" data-pi="${i}" data-k="N" value="${p.N}" inputmode="decimal"></td><td><input class="n" data-pi="${i}" data-k="E" value="${p.E}" inputmode="decimal"></td></tr>`).join("") || `<tr><td colspan="4" class="muted">لا توجد نقاط بعد.</td></tr>`;
+}
+$("#ptsT").addEventListener("change", e => { const i = e.target.dataset.pi; if (i == null) return; const k = e.target.dataset.k; S.pts[i][k] = k === "n" ? e.target.value.trim() : num(e.target.value); save(); });
+$("#ptsT").addEventListener("click", e => { const b = e.target.closest("[data-dp]"); if (!b) return; S.pts.splice(+b.dataset.dp, 1); save(); renderPts(); });
+$("#addPt").addEventListener("click", () => { let i = S.pts.length + 1; while (P(i)) i++; S.pts.push({ n: String(i), N: 0, E: 0 }); save(); renderPts(); $("#ptsBox").open = true; const r = $("#ptsT").lastElementChild; r && r.querySelector("[data-k=N]").focus(); });
+$("#swapNE").addEventListener("click", () => { S.pts.forEach(p => { const t = p.N; p.N = p.E; p.E = t; }); save(); renderPts(); toast("تم تبديل N و E"); });
+$("#clrPts").addEventListener("click", e => { const b = e.currentTarget; if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "تأكيد المسح"; setTimeout(() => { delete b.dataset.ok; b.textContent = "مسح الكل"; }, 3000); return; } S.pts = []; save(); renderPts(); });
+function addPts(list) {
+  let add = 0, upd = 0;
+  list.forEach(q => { const o = P(q.n); if (o) { o.N = q.N; o.E = q.E; upd++; } else { S.pts.push(q); add++; } });
+  save(); renderPts(); toast(`أُضيفت ${add} نقطة${upd ? ` وحُدّثت ${upd}` : ""}`);
+}
+$("#csvIn").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const ord = $("#colOrd").value, out = []; let k = 1;
+  for (const ln of (await f.text()).split(/\r?\n/)) {
+    const c = numA(ln).split(/[,;\t ]+/).filter(Boolean); if (c.length < 2) continue;
+    let n, N, E;
+    if (ord === "pne" || ord === "pen") { if (c.length < 3) continue; n = c[0]; N = +c[ord === "pne" ? 1 : 2]; E = +c[ord === "pne" ? 2 : 1]; }
+    else { N = +c[ord === "ne" ? 0 : 1]; E = +c[ord === "ne" ? 1 : 0]; n = String(k); }
+    if (!isFinite(N) || !isFinite(E)) continue;   // سطر عناوين
+    out.push({ n: String(n), N, E }); k++;
+  }
+  if (!out.length) { alert("لم أجد نقاطاً في الملف. تأكد من الصيغة: رقم، N، E"); return; }
+  addPts(out);
+});
+$("#dxfIn").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const L = (await f.text()).split(/\r?\n/), ents = []; let cur = null, sec = "";
+  for (let i = 0; i + 1 < L.length; i += 2) {
+    const c = parseInt(L[i], 10), v = L[i + 1].trim();
+    if (c === 0) { if (cur) ents.push(cur); cur = v === "SECTION" || v === "ENDSEC" ? null : { t: v, sec }; continue; }
+    if (c === 2 && !cur) sec = v;
+    if (cur) { if (c === 10) cur.x = +v; else if (c === 20) cur.y = +v; else if (c === 11) cur.x2 = +v; else if (c === 21) cur.y2 = +v; else if (c === 1) cur.s = v; else if (c === 72 || c === 73) cur.al = (cur.al || 0) + +v; }
+  }
+  const model = ents.filter(x => x.sec === "ENTITIES"), pts = model.filter(x => (x.t === "POINT" || x.t === "INSERT") && isFinite(x.x));
+  const txts = model.filter(x => (x.t === "TEXT" || x.t === "MTEXT") && x.s && /^[A-Za-z]?\d+[A-Za-z]?$/.test(x.s.replace(/\\P|[{}]/g, "").trim())).map(x => ({ s: x.s.replace(/\\P|[{}]/g, "").trim(), x: x.al && isFinite(x.x2) ? x.x2 : x.x, y: x.al && isFinite(x.y2) ? x.y2 : x.y }));
+  const out = [];
+  if (pts.length) {
+    pts.forEach((p, i) => { let best = null, bd = Infinity; txts.forEach(t => { const d = Math.hypot(t.x - p.x, t.y - p.y); if (d < bd) { bd = d; best = t; } }); out.push({ n: best && bd < 5 ? best.s : "P" + (i + 1), N: p.y, E: p.x }); });
+  } else txts.forEach(t => out.push({ n: t.s, N: t.y, E: t.x }));
+  if (!out.length) { alert("لم أجد نقاطاً (POINT) أو أرقاماً (TEXT) في هذا الملف."); return; }
+  addPts(out);
+});
+
+/* ============================ الترافيرس ============================ */
+function ptOpts(sel, withBlank) { return (withBlank ? `<option value="">— اختر نقطة —</option>` : "") + S.pts.map(p => `<option value="${esc(p.n)}" ${String(p.n) === String(sel) ? "selected" : ""}>${esc(p.n)} (N:${f3(p.N)}, E:${f3(p.E)})</option>`).join(""); }
+function renderTravs() {
+  $("#travs").innerHTML = S.trav.map((t, ti) => `<div class="pc ${t.shut ? "shut" : ""}" data-tv="${ti}">
+    <div class="hd"><button class="tg" type="button" data-ta="tog">${t.shut ? "◀" : "▼"}</button><b>اسم الترافيرس:</b><input data-tk="name" value="${esc(t.name)}" style="max-width:160px"><button type="button" class="btn red sm" data-ta="del" style="margin-inline-start:auto">حذف الترافيرس</button></div>
+    <div class="bd">
+      <div class="g">
+        <label class="f">نوع الترافيرس<select data-tk="kind"><option value="closed" ${t.kind === "closed" ? "selected" : ""}>مغلق (يعود لنقطة البداية)</option><option value="known" ${t.kind === "known" ? "selected" : ""}>مفتوح ينتهي بنقطة معروفة</option><option value="open" ${t.kind === "open" ? "selected" : ""}>مفتوح تماماً (بدون تحقق إغلاق)</option></select></label>
+        <label class="f">طريقة إدخال الاتجاه<select data-tk="mode"><option value="az" ${t.mode === "az" ? "selected" : ""}>أزيموث مباشر لكل ضلع</option><option value="defl" ${t.mode === "defl" ? "selected" : ""}>زاوية انعطاف (يمين/يسار) من الضلع السابق</option></select></label>
+        <label class="f" ${t.mode === "defl" ? "" : "hidden"}>أزيموث الضلع الأول°<input class="n" data-tk="az0" value="${esc(t.az0 || "")}" placeholder="0"></label>
+        <label class="f">نقطة البداية<select data-tk="startMode"><option value="tbl" ${t.startMode !== "man" ? "selected" : ""}>من جدول النقاط</option><option value="man" ${t.startMode === "man" ? "selected" : ""}>إدخال يدوي</option></select></label>
+        ${t.startMode === "man" ? `<label class="f">N البداية<input class="n" data-tk="sN" value="${esc(t.sN || "")}"></label><label class="f">E البداية<input class="n" data-tk="sE" value="${esc(t.sE || "")}"></label>` : `<label class="f">اختر النقطة<select data-tk="start">${ptOpts(t.start, true)}</select></label>`}
+        ${t.kind === "known" ? `<label class="f">نقطة النهاية المعروفة<select data-tk="end">${ptOpts(t.end, true)}</select></label>` : ""}
+      </div>
+      <b style="display:block;margin-top:10px;color:#0c3b26">أضلاع الترافيرس</b>
+      <div class="tw"><table><thead><tr><th>#</th><th>اسم النقطة الجديدة</th><th>${t.mode === "defl" ? "زاوية الانعطاف°" : "الأزيموث°"}</th><th>الاتجاه</th><th>المسافة</th><th></th></tr></thead><tbody>
+      ${t.legs.map((l, li) => `<tr><td>${li + 1}</td><td><input class="pn" data-lg="${li}" data-lk="n" value="${esc(l.n)}"></td><td><input class="n" style="width:110px" data-lg="${li}" data-lk="a" value="${esc(l.a)}" placeholder="0"></td><td>${t.mode === "defl" && li > 0 ? `<select data-lg="${li}" data-lk="dir"><option value="R" ${l.dir !== "L" ? "selected" : ""}>يمين</option><option value="L" ${l.dir === "L" ? "selected" : ""}>يسار</option></select>` : "-"}</td><td><input class="n" style="width:100px" data-lg="${li}" data-lk="d" value="${esc(l.d)}" placeholder="0"></td><td><button class="btn red sm" type="button" data-ta="dl" data-lg="${li}">حذف</button></td></tr>`).join("")}
+      </tbody></table></div>
+      ${t.kind === "closed" ? `<p class="hint">آخر ضلع يرجع لنقطة البداية — اسمه يكون نقطة البداية نفسها.</p>` : ""}
+      <div class="btns"><button type="button" class="btn" data-ta="leg">+ إضافة ضلع</button><button type="button" class="btn pri" data-ta="calc">احسب الترافيرس ▷</button></div>
+      <div data-tres></div>
+    </div></div>`).join("");
+  S.trav.forEach((t, i) => { if (t.res) showTrav(i); });
+}
+$("#addTrav").addEventListener("click", () => { S.trav.push({ id: uid(), name: "ترافيرس " + (S.trav.length + 1), kind: "closed", mode: "az", startMode: "tbl", start: S.pts[0] ? S.pts[0].n : "", legs: [{ n: "T1", a: "", d: "" }, { n: "T2", a: "", d: "" }] }); save(); renderTravs(); });
+$("#travs").addEventListener("change", e => {
+  const box = e.target.closest("[data-tv]"); if (!box) return; const t = S.trav[box.dataset.tv];
+  if (e.target.dataset.tk) { t[e.target.dataset.tk] = e.target.value; save(); if (["kind", "mode", "startMode"].includes(e.target.dataset.tk)) renderTravs(); return; }
+  if (e.target.dataset.lk) { t.legs[e.target.dataset.lg][e.target.dataset.lk] = e.target.value; save(); }
+});
+$("#travs").addEventListener("click", e => {
+  const b = e.target.closest("[data-ta]"); if (!b) return; const ti = +b.closest("[data-tv]").dataset.tv, t = S.trav[ti], a = b.dataset.ta;
+  if (a === "tog") { t.shut = !t.shut; save(); renderTravs(); }
+  if (a === "del") { if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "تأكيد؟"; return; } S.trav.splice(ti, 1); save(); renderTravs(); }
+  if (a === "leg") { let k = t.legs.length + 1, nm; do { nm = "T" + k++; } while (t.legs.some(l => l.n === nm) || P(nm)); t.legs.push({ n: nm, a: "", d: "" }); save(); renderTravs(); }
+  if (a === "dl") { t.legs.splice(+b.dataset.lg, 1); save(); renderTravs(); }
+  if (a === "calc") { t.res = calcTrav(t); save(); showTrav(ti); }
+  if (a === "add") { const r = t.res; if (!r || r.err) return; addPts(r.newPts.map(q => ({ n: q.n, N: +q.N.toFixed(4), E: +q.E.toFixed(4) }))); }
+});
+function calcTrav(t) {
+  let s;
+  if (t.startMode === "man") { const N = num(t.sN), E = num(t.sE); if (!isFinite(N) || !isFinite(E)) return { err: "أدخل إحداثيات نقطة البداية." }; s = { n: "S", N, E }; }
+  else { s = P(t.start); if (!s) return { err: "اختر نقطة البداية." }; }
+  const legs = t.legs.filter(l => String(l.d).trim() !== ""); if (!legs.length) return { err: "أدخل الأضلاع." };
+  let az = NaN; const raw = [{ n: s.n, N: s.N, E: s.E }]; let cum = 0; const cums = [0];
+  for (let i = 0; i < legs.length; i++) {
+    const l = legs[i], d = num(l.d), a = parseAng(l.a);
+    if (!isFinite(d)) return { err: `المسافة في الضلع ${i + 1} غير صحيحة.` };
+    if (t.mode === "az") az = a;
+    else if (i === 0) az = parseAng(t.az0 || "0") + (isFinite(a) ? a : 0);
+    else az = az + (l.dir === "L" ? -a : a);
+    if (!isFinite(az)) return { err: `الزاوية في الضلع ${i + 1} غير صحيحة.` };
+    az = ((az % 360) + 360) % 360; legs[i]._az = az;
+    const q = raw[raw.length - 1]; raw.push({ n: l.n, N: q.N + d * Math.cos(az * RAD), E: q.E + d * Math.sin(az * RAD) }); cum += d; cums.push(cum);
+  }
+  let target = null; if (t.kind === "closed") target = s; if (t.kind === "known") { target = P(t.end); if (!target) return { err: "اختر نقطة النهاية المعروفة." }; }
+  const last = raw[raw.length - 1]; let eN = 0, eE = 0, lin = 0, prec = NaN;
+  if (target) { eN = last.N - target.N; eE = last.E - target.E; lin = Math.hypot(eN, eE); prec = lin > 0 ? cum / lin : Infinity; }
+  const adj = raw.map((q, i) => ({ n: q.n, N: q.N - (target ? eN * cums[i] / cum : 0), E: q.E - (target ? eE * cums[i] / cum : 0), rN: q.N, rE: q.E, az: i ? legs[i - 1]._az : NaN, d: i ? cums[i] - cums[i - 1] : NaN }));
+  const newPts = adj.slice(1, target ? -1 : undefined).filter(q => q.n);
+  if (t.kind === "open" || !target) newPts.push(adj[adj.length - 1]);
+  return { adj, eN, eE, lin, prec, cum, target: target ? target.n : "", newPts: [...new Map(newPts.map(q => [q.n, q])).values()] };
+}
+function showTrav(ti) {
+  const t = S.trav[ti], r = t.res, box = $(`[data-tv="${ti}"] [data-tres]`); if (!box) return;
+  if (!r) { box.innerHTML = ""; return; } if (r.err) { box.innerHTML = `<div class="bad">${esc(r.err)}</div>`; return; }
+  const good = !r.target || r.prec >= 5000;
+  box.innerHTML = (r.target ? `<div class="${good ? "ok" : "bad"}">خطأ الإغلاق: ΔN = <span class="n">${f3(r.eN)}</span> · ΔE = <span class="n">${f3(r.eE)}</span> · الخطي = <span class="n">${f3(r.lin)}</span> م · الدقة <span class="n">1:${isFinite(r.prec) ? Math.round(r.prec).toLocaleString("en") : "∞"}</span> · طول المسار <span class="n">${f3(r.cum)}</span> م<br>${good ? "تم توزيع الخطأ بطريقة Bowditch (حسب طول الأضلاع)." : "الدقة أقل من 1:5000 — راجع القياسات قبل الاعتماد."}</div>` : `<div class="ok">ترافيرس مفتوح — بدون تحقق إغلاق.</div>`) +
+    `<div class="tw"><table><thead><tr><th>النقطة</th><th>الأزيموث</th><th>المسافة</th><th>N قبل التصحيح</th><th>E قبل التصحيح</th><th>N المصحح</th><th>E المصحح</th></tr></thead><tbody>${r.adj.map(q => `<tr><td>${esc(q.n)}</td><td class="m">${isFinite(q.az) ? dms(q.az) : "-"}</td><td class="m">${f3(q.d)}</td><td class="m">${f4(q.rN)}</td><td class="m">${f4(q.rE)}</td><td class="m"><b>${f4(q.N)}</b></td><td class="m"><b>${f4(q.E)}</b></td></tr>`).join("")}</tbody></table></div>
+    <div class="btns"><button type="button" class="btn pri" data-ta="add">+ أضف النقاط الناتجة إلى جدول النقاط (${r.newPts.length})</button></div>`;
+}
+
+/* ============================ القطع ============================ */
+const isMain = p => !!p.main;
+function newPar() { const no = S.par.length ? "" : (S.info.plot || ""); S.par.push({ id: uid(), no, main: !S.par.length && S.info.type !== "normal", land: "قسيمة", areg: "", seq: "", close: true, arcs: {}, belongs: "", group: "" }); save(); renderPars(); renderSumm(); }
+$("#addPar1").addEventListener("click", newPar); $("#addPar2").addEventListener("click", newPar);
+$("#calcAll").addEventListener("click", () => { S.par.forEach(p => p.res = calcParcel(p)); save(); renderPars(); renderSumm(); toast("حُسبت كل القطع"); });
+function mainsOpts(sel) { return `<option value="">—</option>` + S.par.filter(isMain).map(m => `<option value="${m.id}" ${m.id === sel ? "selected" : ""}>${esc(m.no || "?")}</option>`).join(""); }
+function renderPars() {
+  const both = S.info.type === "both";
+  $("#pars").innerHTML = S.par.map((p, i) => `<div class="pc ${p.shut ? "shut" : ""}" data-pr="${i}">
+    <div class="hd"><button class="tg" type="button" data-pa="tog">${p.shut ? "◀" : "▼"}</button>
+      <b>رقم القطعة:</b><input data-pk="no" value="${esc(p.no)}" style="max-width:90px">
+      ${S.info.type !== "normal" ? `<label class="chk"><input type="checkbox" data-pk="main" ${p.main ? "checked" : ""}>قطعة رئيسية</label>${p.main ? `<span class="badge">رئيسية</span>` : ""}` : ""}
+      <b>نوع الأرض الناتجة:</b><select data-pk="land" style="width:auto">${LAND.map(l => `<option ${l === p.land ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <b>A.Reg (كوشان):</b><input class="n" data-pk="areg" value="${esc(p.areg)}" placeholder="المساحة المسجلة" style="max-width:120px" inputmode="decimal">
+      ${both && !p.main ? `<b>تنتمي إلى:</b><select data-pk="belongs" style="width:auto">${mainsOpts(p.belongs)}</select><b>مجموعة الدمج:</b><input data-pk="group" value="${esc(p.group)}" style="max-width:90px" placeholder="مثلاً A">` : ""}
+      ${p.merged ? `<span class="badge s">دُمجت في ${esc((S.par.find(q => q.id === p.merged) || {}).no || "")} — لا تدخل في المجموع</span>` : ""}${p.from ? `<span class="badge s">قطعة مدموجة — احذفها لفك الدمج</span>` : ""}
+      <button type="button" class="btn red sm" data-pa="del" style="margin-inline-start:auto">حذف القطعة</button></div>
+    <div class="bd">
+      <label class="f">تسلسل النقاط بالترتيب (مثال: 1,2,3,4,1)<input class="n" data-pk="seq" value="${esc(p.seq)}" placeholder="1,2,3,4"></label>
+      <div class="btns" style="align-items:center"><label class="chk"><input type="checkbox" data-pk="close" ${p.close ? "checked" : ""}>إغلاق تلقائي (عودة لأول نقطة)</label><button type="button" class="btn pri" data-pa="calc">احسب ▷</button></div>
+      <div data-pres></div>
+    </div></div>`).join("");
+  S.par.forEach((p, i) => showPar(i));
+}
+$("#pars").addEventListener("change", e => {
+  const box = e.target.closest("[data-pr]"); if (!box) return; const i = +box.dataset.pr, p = S.par[i], k = e.target.dataset.pk;
+  if (k) { p[k] = e.target.type === "checkbox" ? e.target.checked : e.target.value; if (k === "areg" && p.res && !p.res.err) p.res = calcParcel(p); save(); if (["main"].includes(k)) renderPars(); else showPar(i); renderSumm(); return; }
+  const ak = e.target.dataset.ak; if (ak) { const key = e.target.dataset.key; p.arcs[key] = p.arcs[key] || {}; const v = e.target.type === "checkbox" ? e.target.checked : ak === "f" ? num(e.target.value) : e.target.value; p.arcs[key][ak] = v; save(); }
+});
+$("#pars").addEventListener("click", e => {
+  const b = e.target.closest("[data-pa]"); if (!b) return; const i = +b.closest("[data-pr]").dataset.pr, p = S.par[i], a = b.dataset.pa;
+  if (a === "tog") { p.shut = !p.shut; save(); renderPars(); }
+  if (a === "del") { if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "تأكيد؟"; return; } S.par.forEach(q => { if (q.merged === p.id) delete q.merged; }); S.par.splice(i, 1); save(); renderPars(); renderSumm(); if (!$("#mapBox").hidden) drawMap(); }
+  if (a === "calc" || a === "arcs") { p.res = calcParcel(p); save(); showPar(i); renderSumm(); }
+});
+function showPar(i) {
+  const p = S.par[i], r = p.res, box = $(`[data-pr="${i}"] [data-pres]`); if (!box) return;
+  if (!r) { box.innerHTML = ""; return; } if (r.err) { box.innerHTML = `<div class="bad">${esc(r.err)}</div>`; return; }
+  let h = r.closed ? `<div class="ok">المسار مغلق: تم اعتباره مغلقاً ويمكن حساب المساحة.</div>` : `<div class="bad">المسار مفتوح: لا يمكن حساب المساحة — أغلق التسلسل أو فعّل الإغلاق التلقائي.</div>`;
+  h += `<div class="tw"><table><thead><tr><th>From</th><th>To</th><th>Distance</th><th>Azimuth (Grid)°</th><th>Azimuth DMS</th><th>Bearing</th><th>Arc?</th><th>Sagitta F</th><th>Sign</th><th>Radius R</th><th>Arc Area</th><th>Northing</th><th>Easting</th></tr></thead><tbody>` +
+    r.segs.map(s => `<tr><td>${esc(s.from)}</td><td>${esc(s.to)}</td><td class="m">${f3(s.d)}</td><td class="m">${f4(s.az)}</td><td class="m">${dms(s.az)}</td><td class="m">${bearing(s.az)}</td>
+      <td><input type="checkbox" data-ak="on" data-key="${esc(s.key)}" ${s.arc ? "checked" : ""}></td>
+      <td><input class="n" style="width:70px" data-ak="f" data-key="${esc(s.key)}" value="${s.f || 0}" inputmode="decimal"></td>
+      <td><select data-ak="sign" data-key="${esc(s.key)}"><option value="+" ${s.sign !== "-" ? "selected" : ""}>+ إضافة</option><option value="-" ${s.sign === "-" ? "selected" : ""}>− طرح</option></select></td>
+      <td class="m">${isFinite(s.R) ? f3(s.R) : "-"}</td><td class="m">${isFinite(s.A) ? (s.A > 0 ? "+" : "") + f3(s.A) : "-"}</td><td class="m">${f3(s.a.N)}</td><td class="m">${f3(s.a.E)}</td></tr>`).join("") + `</tbody></table></div>
+    <p class="hint">* الأزيموث محسوب مباشرة كأزيموث شبكي (Grid Azimuth) من الإحداثيات، بدون تصحيح تقارب الزوال. للقوس: علّم Arc? واكتب الحدبة F (أبعد مسافة بين القوس والوتر) واختر إضافة إذا القوس للخارج أو طرح إذا للداخل.</p>
+    <div class="btns"><button type="button" class="btn" data-pa="arcs">↻ تحديث الأقواس والمساحة</button></div>`;
+  if (r.closed) {
+    h += `<div class="cards"><div class="kc"><small>مساحة المضلع (Shoelace)</small><b>${fa(r.shoelace)} م²</b></div><div class="kc"><small>مجموع مساحات الأقواس</small><b>${fa(r.arcSum)} م²</b></div><div class="kc o"><small>المساحة الإجمالية (المحسوبة)</small><b>${fa(r.total)} م²</b></div>`;
+    if (isFinite(r.areg)) h += `<div class="kc"><small>المساحة المسجلة A.Reg (كوشان)</small><b>${fa(r.areg)} م²</b></div><div class="kc"><small>الفرق المسموح ± A.Allow</small><b>${fa(r.allow)} م²</b></div><div class="kc ${r.within ? "" : "o"}"><small>الفرق الفعلي (محسوب − مسجل)</small><b>${fa(r.diff)} م²</b></div>`;
+    h += `</div><div class="muted" style="margin-top:4px">المحيط: <span class="n">${f3(r.perim)}</span> م · بالدونم: <span class="n">${(r.total / 1000).toFixed(3)}</span></div>`;
+    if (isFinite(r.areg)) h += r.within ? `<div class="ok">الفرق ضمن الحد المسموح — يمكن اعتماد المساحة وتوزيع الفرق على القطع.</div>` : `<div class="bad">الفرق أكبر من المسموح (${fa(r.allow)} م²) — راجع النقاط أو حدود القطعة قبل الاعتماد.</div>`;
+    h += `<canvas class="dr" data-pcv height="300"></canvas>`;
+  }
+  box.innerHTML = h;
+  const cv = box.querySelector("[data-pcv]"); if (cv) drawParcels(cv, [{ p, r, col: "#d9e8dc" }], true);
+}
+
+/* ============================ الملخص والتوزيع ============================ */
+function summary() {
+  const T = S.info.type, rows = S.par.filter(p => !p.merged).map(p => ({ p, r: p.res && !p.res.err && p.res.closed ? p.res : null }));
+  rows.forEach(x => { x.calc = x.r ? x.r.total : NaN; x.adj = NaN; x.areg = num(x.p.areg); });
+  const groups = [];   // [{main, kids, ref, diff, allow, within, mainCalc, sumKids}]
+  if (T === "ifraz" || T === "both" || T === "tawhid") {
+    const mains = rows.filter(x => x.p.main);
+    mains.forEach(m => {
+      let kids = T === "both" ? rows.filter(x => !x.p.main && x.p.belongs === m.p.id) : rows.filter(x => !x.p.main);
+      if (T === "both" && mains.length === 1) kids = rows.filter(x => !x.p.main && (!x.p.belongs || x.p.belongs === m.p.id));
+      const sumKids = kids.reduce((t, x) => t + (isFinite(x.calc) ? x.calc : 0), 0);
+      let ref = m.areg; if (T === "tawhid" && !isFinite(ref)) { const s = kids.reduce((t, x) => t + (isFinite(x.areg) ? x.areg : NaN), 0); if (isFinite(s)) ref = s; }
+      const g = { m, kids, sumKids, mainCalc: m.calc, ref, boundDiff: m.calc - sumKids };
+      if (isFinite(ref) && isFinite(m.calc)) {
+        g.diff = ref - m.calc; g.allow = allow(ref); g.within = Math.abs(g.diff) <= g.allow;
+        if (g.within) {
+          if (T === "tawhid") m.adj = m.calc + g.diff;   // الموحّدة تُعتمد على المسجل
+          else kids.forEach(x => { if (isFinite(x.calc) && sumKids > 0) x.adj = x.calc + g.diff * x.calc / sumKids; });
+        }
+      }
+      groups.push(g);
+    });
+  }
+  const merges = {};
+  if (T === "both") rows.forEach(x => { const k = String(x.p.group || "").trim(); if (!k) return; (merges[k] = merges[k] || []).push(x); });
+  return { T, rows, groups, merges };
+}
+function renderSumm() {
+  const Z = summary(), T = Z.T;
+  let h = `<div class="tw"><table><thead><tr><th>#</th><th>رقم القطعة</th><th>النوع</th><th>الحالة</th><th>المساحة المحسوبة (م²)</th><th>A.Reg (م²)</th><th>المساحة المعدلة (بعد التوزيع)</th>${T === "both" ? "<th>مجموعة الدمج</th>" : ""}</tr></thead><tbody>` +
+    Z.rows.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.p.no)}</td><td>${esc(x.p.land)}</td><td>${T === "normal" ? "—" : x.p.main ? `<span class="badge">رئيسية</span>` : `<span class="badge s">${T === "tawhid" ? "أصلية" : "فرعية/ناتجة"}</span>`}</td><td class="m">${fa(x.calc)}</td><td class="m">${isFinite(x.areg) ? fa(x.areg) : "-"}</td><td class="m"><b>${isFinite(x.adj) ? fa(x.adj) : "-"}</b></td>${T === "both" ? `<td>${esc(x.p.group || "")}</td>` : ""}</tr>`).join("") + `</tbody></table></div>`;
+  if (T !== "normal") {
+    if (!Z.groups.length) h += `<div class="bad">لم يتم تحديد القطعة الرئيسية بعد — فعّل مربع «قطعة رئيسية» على القطعة المناسبة (${T === "tawhid" ? "القطعة الناتجة عن التوحيد" : "مثلاً القطعة الأصل قبل الإفراز"}) لعرض المقارنة وتوزيع الفرق.</div>`;
+    Z.groups.forEach(g => {
+      const lblK = T === "tawhid" ? "مجموع مساحات القطع الأصلية (محسوبة)" : "مجموع مساحات باقي القطع (محسوبة)";
+      h += `<h3 style="margin:14px 0 4px;color:#0c3b26;font-size:15px">القطعة الرئيسية ${esc(g.m.p.no)}</h3>
+      <div class="cards"><div class="kc"><small>مساحة القطعة الرئيسية (محسوبة)</small><b>${fa(g.mainCalc)} م²</b></div><div class="kc"><small>${lblK}</small><b>${fa(g.sumKids)} م²</b></div><div class="kc o"><small>الفرق (تحقيق مساحي بين الحدود)</small><b>${fa(g.boundDiff)} م²</b></div></div>`;
+      if (isFinite(g.boundDiff) && Math.abs(g.boundDiff) >= 0.01) h += `<div class="bad">هناك فرق بين حدود القطعة الرئيسية ومجموع ${T === "tawhid" ? "القطع الأصلية" : "باقي القطع"} — تحقق من النقاط المشتركة.</div>`;
+      else if (isFinite(g.boundDiff)) h += `<div class="ok">حدود القطعة الرئيسية تطابق مجموع القطع.</div>`;
+      if (isFinite(g.ref)) {
+        h += `<b style="display:block;margin-top:10px;color:#0c3b26">مقارنة المساحة المسجلة (A.Reg) بالمساحة المحسوبة للقطعة الرئيسية${T === "tawhid" && !isFinite(g.m.areg) ? " (A.Reg = مجموع كواشين القطع الأصلية)" : " فقط"}</b>
+        <div class="cards"><div class="kc"><small>A.Reg للقطعة الرئيسية (كوشان)</small><b>${fa(g.ref)} م²</b></div><div class="kc"><small>مساحة القطعة الرئيسية المحسوبة</small><b>${fa(g.mainCalc)} م²</b></div><div class="kc"><small>الفرق المسموح ± A.Allow</small><b>${fa(g.allow)} م²</b></div><div class="kc o"><small>الفرق الفعلي (A.Reg − المحسوبة)</small><b>${fa(g.diff)} م²</b></div></div>` +
+          (g.within ? `<div class="ok">الفرق ضمن المسموح — ${T === "tawhid" ? "تُعتمد مساحة القطعة الموحّدة على المسجل (عمود «المساحة المعدلة»)." : "تم توزيعه تلقائياً على باقي القطع كل حسب نسبة مساحتها (عمود «المساحة المعدلة» في الجدول أعلاه)."}</div>` : `<div class="bad">الفرق خارج المسموح — لم يتم التوزيع. راجع الحدود أو الكوشان.</div>`);
+      } else h += `<p class="hint">اكتب A.Reg (مساحة الكوشان) للقطعة الرئيسية لعرض المقارنة وتوزيع الفرق.</p>`;
+    });
+    const mk = Object.keys(Z.merges);
+    if (mk.length) h += `<h3 style="margin:14px 0 4px;color:#0c3b26;font-size:15px">مجموعات الدمج</h3><div class="tw"><table><thead><tr><th>المجموعة</th><th>القطع</th><th>المحسوبة</th><th>المعدلة</th></tr></thead><tbody>${mk.map(k => { const L = Z.merges[k]; return `<tr><td><b>${esc(k)}</b></td><td>${L.map(x => esc(x.p.no)).join(" + ")}</td><td class="m">${fa(L.reduce((t, x) => t + (x.calc || 0), 0))}</td><td class="m"><b>${fa(L.reduce((t, x) => t + (isFinite(x.adj) ? x.adj : x.calc || 0), 0))}</b></td></tr>`; }).join("")}</tbody></table></div>`;
+  }
+  $("#summ").innerHTML = h;
+  if (!$("#mapBox").hidden) drawMap();
+}
+
+/* ============================ الرسم ============================ */
+const COLS = ["#dfe9dc", "#f3dcd2", "#e3dcf1", "#f6eccb", "#d7e6ee", "#efd9e4", "#e1eccd", "#f1e0c9"];
+function drawParcels(cv, list, labels, selIds) {
+  if (!cv.dataset.h) cv.dataset.h = cv.getAttribute("height"); const W = cv.clientWidth || 600, H = +cv.dataset.h, dpr = devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + "px";
+  const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; list.forEach(o => o.r.ring.forEach(q => { x0 = Math.min(x0, q.E); x1 = Math.max(x1, q.E); y0 = Math.min(y0, q.N); y1 = Math.max(y1, q.N); }));
+  if (!isFinite(x0)) return null;
+  const k = Math.min((W - 60) / Math.max(x1 - x0, 1e-6), (H - 50) / Math.max(y1 - y0, 1e-6)), ox = (W - (x1 - x0) * k) / 2, oy = (H - (y1 - y0) * k) / 2;
+  const T = q => [ox + (q.E - x0) * k, H - oy - (q.N - y0) * k];
+  list.forEach((o, i) => {
+    c.beginPath(); o.r.ring.forEach((q, j) => { const s = T(q); j ? c.lineTo(...s) : c.moveTo(...s); }); c.closePath();
+    c.fillStyle = selIds && selIds.includes(o.p.id) ? "#ffe08a" : (o.col || COLS[i % COLS.length]); c.fill(); c.strokeStyle = o.p.main && list.length > 1 ? "#0c3b26" : "#5a6b60"; c.lineWidth = o.p.main && list.length > 1 ? 1 : 1.6; c.stroke();
+    // الأقواس كخط منحني بسيط
+    o.r.segs.forEach(s => { if (!isFinite(s.A) || !s.out) return; const ctl = T({ E: (s.a.E + s.b.E) / 2 + s.out[0] * s.f * 2, N: (s.a.N + s.b.N) / 2 + s.out[1] * s.f * 2 }); c.beginPath(); c.moveTo(...T(s.a)); c.quadraticCurveTo(ctl[0], ctl[1], ...T(s.b)); c.strokeStyle = "#c4583a"; c.lineWidth = 1.8; c.stroke(); });
+  });
+  // أرقام القطع
+  list.forEach(o => { if (o.p.main && list.length > 1) return; let cx = 0, cy = 0; o.r.ring.forEach(q => { const s = T(q); cx += s[0]; cy += s[1]; }); cx /= o.r.ring.length; cy /= o.r.ring.length; c.direction = "ltr"; c.font = "700 13px 'IBM Plex Sans Arabic'"; c.textAlign = "center"; c.fillStyle = "#0c3b26"; c.fillText(o.p.no || "?", cx, cy); if (list.length === 1) { c.font = "600 11px 'IBM Plex Mono'"; c.fillText(fa(o.r.total) + " m²", cx, cy + 15); } });
+  if (labels) {
+    const seen = new Set();
+    list.forEach(o => o.r.ring.forEach(q => { if (seen.has(q.n)) return; seen.add(q.n); const s = T(q); c.fillStyle = "#c4583a"; c.beginPath(); c.arc(s[0], s[1], 2.6, 0, 7); c.fill(); c.font = "700 11px 'IBM Plex Mono'"; c.fillStyle = "#1d2a22"; c.textAlign = "left"; c.fillText(q.n, s[0] + 4, s[1] - 4); }));
+    if (list.length === 1) list[0].r.segs.forEach(s => { const a = T(s.a), b = T(s.b); let ang = Math.atan2(b[1] - a[1], b[0] - a[0]); if (ang > Math.PI / 2 || ang < -Math.PI / 2) ang += Math.PI; c.save(); c.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2); c.rotate(ang); c.font = "600 10px 'IBM Plex Mono'"; c.fillStyle = "#0f5a37"; c.textAlign = "center"; c.fillText(f2(s.d), 0, -4); c.restore(); });
+  }
+  return { T, k };
+}
+let mapSel = [], mapGeo = null;
+function mapList() { return S.par.filter(p => !p.merged && p.res && !p.res.err && p.res.closed).map((p, i) => ({ p, r: p.res })); }
+function drawMap() { const L = mapList(); mapGeo = L.length ? drawParcels($("#mapCv"), L, true, mapSel) : null; $("#mergeSel").disabled = mapSel.length < 2; $("#mergeSel").textContent = `دمج المحدد (${mapSel.length})`; }
+$("#drawAll").addEventListener("click", () => { S.par.forEach(p => { if (seqOf(p).length > 2) p.res = calcParcel(p); }); save(); if (!mapList().length) { toast("احسب القطع أولاً"); return; } $("#mapBox").hidden = false; drawMap(); renderPars(); renderSumm(); $("#mapBox").scrollIntoView({ behavior: "smooth" }); });
+$("#mapCv").addEventListener("click", e => {
+  if (!mapGeo) return; const r = e.currentTarget.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const hits = mapList().filter(o => { const pts = o.r.ring.map(q => mapGeo.T(q)); let ins = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) if ((pts[i][1] > y) !== (pts[j][1] > y) && x < (pts[j][0] - pts[i][0]) * (y - pts[i][1]) / (pts[j][1] - pts[i][1]) + pts[i][0]) ins = !ins; return ins; });
+  const hit = hits.filter(o => !o.p.main)[0] || hits[0]; if (!hit) return;
+  const i = mapSel.indexOf(hit.p.id); i < 0 ? mapSel.push(hit.p.id) : mapSel.splice(i, 1); drawMap();
+});
+$("#clearSel").addEventListener("click", () => { mapSel = []; drawMap(); });
+$("#mergeSel").addEventListener("click", () => {
+  const L = S.par.filter(p => mapSel.includes(p.id) && p.res && p.res.closed);
+  if (L.length < 2 || !window.polygonClipping) return;
+  // الدمج بالإحداثيات ثم مطابقة الرؤوس مع نقاط الجدول
+  let U; try { U = polygonClipping.union(...L.map(p => [p.res.ring.map(q => [q.E, q.N])])); } catch (er) { toast("تعذّر الدمج"); return; }
+  if (U.length !== 1) { alert("القطع المختارة غير متجاورة — لا يمكن دمجها في قطعة واحدة."); return; }
+  const ring = U[0][0].slice(0, -1), names = [];
+  ring.forEach(([E, N]) => {
+    let p = S.pts.find(q => Math.abs(q.E - E) < 0.002 && Math.abs(q.N - N) < 0.002);
+    if (!p) { let k = 1; while (P("M" + k)) k++; p = { n: "M" + k, N: +N.toFixed(4), E: +E.toFixed(4) }; S.pts.push(p); }
+    if (names[names.length - 1] !== p.n) names.push(p.n);
+  });
+  // نحذف الرؤوس الواقعة على استقامة واحدة (الخط الفاصل الملغى)
+  const clean = names.filter((n, i) => { const a = P(names[(i - 1 + names.length) % names.length]), b = P(n), c = P(names[(i + 1) % names.length]); return Math.abs((b.E - a.E) * (c.N - a.N) - (b.N - a.N) * (c.E - a.E)) > 1e-4; });
+  const np = { id: uid(), no: L.map(p => p.no).join("+"), main: false, land: L[0].land, areg: "", seq: clean.join(","), close: true, arcs: {}, belongs: L[0].belongs, group: "", from: L.map(p => p.id) };
+  np.res = calcParcel(np); S.par.push(np); L.forEach(p => { p.merged = np.id; p.shut = true; }); mapSel = []; save(); renderPts(); renderPars(); renderSumm(); toast(`قطعة جديدة ${np.no} = ${fa(np.res.total)} م²`);
+});
+
+/* ============================ Stakeout ============================ */
+function renderSO() {
+  $("#soSt").innerHTML = ptOpts(S.so.st, true); $("#soBs").innerHTML = ptOpts(S.so.bs, true);
+  const st = P(S.so.st), bs = P(S.so.bs), ok = st && bs && st !== bs, azb = ok ? azim(st, bs) : NaN;
+  $("#soInfo").innerHTML = ok ? `<div class="ok">أزيموث الرجوع ${esc(st.n)}→${esc(bs.n)} = <span class="n">${dms(azb)}</span> · المسافة <span class="n">${f3(Math.hypot(bs.E - st.E, bs.N - st.N))}</span> م — صفّر الجهاز على الرجوع ثم دوّر بالزاوية.</div>` : `<p class="hint">اختر المحطة والرجوع.</p>`;
+  $("#soT").innerHTML = S.so.rows.map((n, i) => { const q = P(n); let ang = "-", d = "-", az = "-"; if (ok && q) { const a = azim(st, q); az = dms(a); ang = dms(a - azb); d = f3(Math.hypot(q.E - st.E, q.N - st.N)); } return `<tr><td>${i + 1}</td><td><select data-so="${i}">${ptOpts(n, true)}</select></td><td class="m"><b>${ang}</b></td><td class="m"><b>${d}</b></td><td class="m">${az}</td><td><button class="btn red sm" type="button" data-sod="${i}">حذف</button></td></tr>`; }).join("");
+}
+function soRows() { const st = P(S.so.st), bs = P(S.so.bs); if (!st || !bs) return []; const azb = azim(st, bs); return S.so.rows.map(P).filter(Boolean).map((q, i) => { const a = azim(st, q); return { i: i + 1, n: q.n, ang: dms(a - azb), d: Math.hypot(q.E - st.E, q.N - st.N), az: dms(a), N: q.N, E: q.E }; }); }
+$("#soSt").addEventListener("change", e => { S.so.st = e.target.value; save(); renderSO(); });
+$("#soBs").addEventListener("change", e => { S.so.bs = e.target.value; save(); renderSO(); });
+$("#soT").addEventListener("change", e => { const i = e.target.dataset.so; if (i == null) return; S.so.rows[i] = e.target.value; save(); renderSO(); });
+$("#soT").addEventListener("click", e => { const b = e.target.closest("[data-sod]"); if (!b) return; S.so.rows.splice(+b.dataset.sod, 1); save(); renderSO(); });
+$("#soAdd").addEventListener("click", () => { S.so.rows.push(""); save(); renderSO(); });
+$("#soAll").addEventListener("click", () => { S.so.rows = S.pts.map(p => p.n).filter(n => n !== S.so.st && n !== S.so.bs); save(); renderSO(); });
+$("#soClr").addEventListener("click", () => { S.so.rows = []; save(); renderSO(); });
+$("#soXls").addEventListener("click", () => {
+  const R = soRows(); if (!R.length) { toast("اختر المحطة والرجوع وأضف نقاطاً"); return; }
+  const aoa = [["STAKEOUT TABLE — جدول التنزيل"], ["Station", S.so.st, "Backsight", S.so.bs], [], ["#", "Point", "Angle from BS", "Horizontal Dist (m)", "Azimuth", "Northing", "Easting"], ...R.map(r => [r.i, r.n, r.ang, +r.d.toFixed(3), r.az, +r.N.toFixed(3), +r.E.toFixed(3)])];
+  const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(aoa); ws["!cols"] = [{ wch: 5 }, { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 }]; XLSX.utils.book_append_sheet(wb, ws, "Stakeout");
+  dl(fname(" – تنزيل.xlsx"), new Uint8Array(XLSX.write(wb, { type: "array", bookType: "xlsx" })), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+});
+
+/* ============================ الإحداثيات ============================ */
+proj4.defs("PG", "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs");
+proj4.defs("ITM", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs");
+const SYS = { pg: "الشبكة الفلسطينية (Palestine Grid 1923)", itm: "الشبكة الإسرائيلية الجديدة (ITM)", utm: "UTM (WGS84)", ll: "خط العرض/الطول (WGS84)" };
+const sysOpts = sel => Object.entries(SYS).map(([k, v]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${v}</option>`).join("");
+$("#cFrom").innerHTML = sysOpts("pg"); $("#cTo").innerHTML = sysOpts("ll"); $("#kSys").innerHTML = sysOpts(S.sys || "pg");
+const projOf = (s, z, h) => s === "pg" ? "PG" : s === "itm" ? "ITM" : s === "utm" ? `+proj=utm +zone=${z} ${h === "s" ? "+south " : ""}+datum=WGS84 +units=m +no_defs` : "EPSG:4326";
+function conv(from, to, a, b, z, h) {   // a = N أو Lat ، b = E أو Lon
+  const src = from === "ll" ? [b, a] : [b, a], out = proj4(projOf(from, z, h), projOf(to, z, h), src);
+  return to === "ll" ? { a: out[1], b: out[0] } : { a: out[1], b: out[0] };
+}
+function cLabels() { const f = $("#cFrom").value; $("#cAl").firstChild.textContent = f === "ll" ? "خط العرض (Latitude)" : "Northing (N / Y)"; $("#cBl").firstChild.textContent = f === "ll" ? "خط الطول (Longitude)" : "Easting (E / X)"; }
+$("#cFrom").addEventListener("change", cLabels); cLabels();
+$("#cGo").addEventListener("click", () => {
+  const a = num($("#cA").value), b = num($("#cB").value), f = $("#cFrom").value, t = $("#cTo").value, z = $("#cZone").value, h = $("#cHem").value;
+  if (!isFinite(a) || !isFinite(b)) { $("#cRes").innerHTML = `<div class="bad">أدخل القيمتين.</div>`; return; }
+  const r = conv(f, t, a, b, z, h), d = t === "ll" ? 8 : 3;
+  $("#cRes").innerHTML = `<div class="ok">${SYS[t]}<br>${t === "ll" ? "Lat" : "N"} = <span class="n">${r.a.toFixed(d)}</span> · ${t === "ll" ? "Lon" : "E"} = <span class="n">${r.b.toFixed(d)}</span>${t === "ll" ? `<br><a href="https://maps.google.com/?q=${r.a.toFixed(7)},${r.b.toFixed(7)}" target="_blank">فتح على خرائط جوجل</a>` : ""}</div>`;
+});
+let cOut = [];
+$("#cAll").addEventListener("click", () => {
+  const f = $("#cFrom").value, t = $("#cTo").value, z = $("#cZone").value, h = $("#cHem").value, d = t === "ll" ? 8 : 4;
+  if (!S.pts.length) { toast("لا توجد نقاط"); return; }
+  cOut = S.pts.map(p => { const r = conv(f, t, p.N, p.E, z, h); return { n: p.n, a: +r.a.toFixed(d), b: +r.b.toFixed(d) }; });
+  $("#cAllRes").innerHTML = `<div class="tw" style="max-height:360px"><table><thead><tr><th>النقطة</th><th>${t === "ll" ? "Lat" : "N"}</th><th>${t === "ll" ? "Lon" : "E"}</th></tr></thead><tbody>${cOut.map(q => `<tr><td>${esc(q.n)}</td><td class="m">${q.a}</td><td class="m">${q.b}</td></tr>`).join("")}</tbody></table></div>`;
+  $("#cCsv").hidden = false; $("#cRep").hidden = t === "ll";
+});
+$("#cCsv").addEventListener("click", () => dl(fname(" – محول.csv"), "﻿" + cOut.map(q => `${q.n},${q.a},${q.b}`).join("\r\n"), "text/csv"));
+$("#cRep").addEventListener("click", e => { const b = e.currentTarget; if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "تأكيد الاستبدال"; return; } cOut.forEach(q => { const p = P(q.n); if (p) { p.N = q.a; p.E = q.b; } }); S.sys = $("#cTo").value; save(); renderPts(); S.par.forEach(p => { if (p.res) p.res = calcParcel(p); }); toast("استُبدلت إحداثيات النقاط"); delete b.dataset.ok; b.textContent = "استبدال نقاط المشروع بالناتج"; });
+
+/* ============================ DXF / KML ============================ */
+$("#kSys").addEventListener("change", e => { S.sys = e.target.value; save(); });
+function computed() { return S.par.filter(p => !p.merged).map(p => ({ p, r: p.res && !p.res.err && p.res.closed ? p.res : null })).filter(x => x.r); }
+function makeDXF() {
+  const o = [], w = (c, v) => o.push(c, v), n = v => (Math.round(v * 1e4) / 1e4).toString(), H = num($("#kH").value) || 0.5;
+  const enc = s => String(s).replace(/[^\x20-\x7e]/g, ch => "\\U+" + ch.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0"));
+  const LY = { "النقاط": 7, "أرقام النقاط": 3, "القطع الرئيسية": 1, "أرقام القطع": 2 }; LAND.forEach((l, i) => LY[l] = [4, 6, 3, 3, 5, 5, 8, 7][i]);
+  w(0, "SECTION"); w(2, "HEADER"); w(9, "$ACADVER"); w(1, "AC1009"); w(0, "ENDSEC");
+  w(0, "SECTION"); w(2, "TABLES"); w(0, "TABLE"); w(2, "LAYER"); w(70, Object.keys(LY).length); Object.entries(LY).forEach(([k, c]) => { w(0, "LAYER"); w(2, enc(k)); w(70, 0); w(62, c); w(6, "CONTINUOUS"); }); w(0, "ENDTAB"); w(0, "ENDSEC");
+  w(0, "SECTION"); w(2, "ENTITIES");
+  S.pts.forEach(p => { w(0, "POINT"); w(8, enc("النقاط")); w(10, n(p.E)); w(20, n(p.N)); w(30, 0); w(0, "TEXT"); w(8, enc("أرقام النقاط")); w(10, n(p.E + H * .3)); w(20, n(p.N + H * .3)); w(30, 0); w(40, n(H)); w(1, enc(p.n)); });
+  computed().forEach(({ p, r }) => {
+    const ly = enc(p.main ? "القطع الرئيسية" : p.land);
+    w(0, "POLYLINE"); w(8, ly); w(66, 1); w(10, 0); w(20, 0); w(30, 0); w(70, 1);
+    r.ring.forEach((q, i) => { const s = r.segs[i]; let bu = 0; if (s && isFinite(s.A)) { const th = 2 * Math.asin(Math.min(1, s.d / (2 * s.R))); bu = Math.tan(th / 4) * (r.ccw ? 1 : -1) * (s.sign === "-" ? -1 : 1); } w(0, "VERTEX"); w(8, ly); w(10, n(q.E)); w(20, n(q.N)); w(30, 0); if (bu) w(42, n(bu)); });
+    w(0, "SEQEND"); w(8, ly);
+    let cx = 0, cy = 0; r.ring.forEach(q => { cx += q.E; cy += q.N; }); cx /= r.ring.length; cy /= r.ring.length;
+    w(0, "TEXT"); w(8, enc("أرقام القطع")); w(10, n(cx)); w(20, n(cy)); w(30, 0); w(40, n(H * 1.6)); w(1, enc(p.no || "")); w(72, 1); w(11, n(cx)); w(21, n(cy)); w(31, 0);
+    w(0, "TEXT"); w(8, enc("أرقام القطع")); w(10, n(cx)); w(20, n(cy - H * 2.2)); w(30, 0); w(40, n(H)); w(1, enc(f3(r.total) + " m2")); w(72, 1); w(11, n(cx)); w(21, n(cy - H * 2.2)); w(31, 0);
+  });
+  w(0, "ENDSEC"); w(0, "EOF");
+  let s = ""; for (let i = 0; i < o.length; i += 2) s += o[i] + "\r\n" + o[i + 1] + "\r\n"; return s;
+}
+$("#dxfOut").addEventListener("click", () => { if (!S.pts.length) { toast("لا توجد نقاط"); return; } dl(fname(".dxf"), makeDXF(), "application/dxf"); });
+$("#toCad").addEventListener("click", () => { try { sessionStorage.setItem("cad-import", JSON.stringify({ name: projName(), txt: makeDXF() })); } catch (e) { toast("الملف كبير — صدّره DXF وافتحه من أوتوكاد"); return; } location.href = "../cad/index.html?import=1"; });
+$("#kmlOut").addEventListener("click", () => {
+  const L = computed(); if (!L.length) { toast("احسب القطع أولاً"); return; }
+  const sys = $("#kSys").value, z = $("#kZone").value, h = $("#kHem").value;
+  if (sys === "ll") { alert("اختر نظام إحداثيات النقاط (فلسطيني أو ITM أو UTM)."); return; }
+  const ll = q => { const r = conv(sys, "ll", q.N, q.E, z, h); return r.b.toFixed(8) + "," + r.a.toFixed(8) + ",0"; };
+  const pm = L.map(({ p, r }) => `<Placemark><name>${esc(p.no)}</name><description>${esc(p.land)} — ${f3(r.total)} m²</description><styleUrl>#${p.main ? "m" : "k"}</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>${r.ring.concat([r.ring[0]]).map(ll).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`).join("");
+  const pt = S.pts.map(p => `<Placemark><name>${esc(p.n)}</name><styleUrl>#p</styleUrl><Point><coordinates>${ll(p)}</coordinates></Point></Placemark>`).join("");
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(projName())}</name><Style id="m"><LineStyle><color>ff0000ff</color><width>3</width></LineStyle><PolyStyle><color>220000ff</color></PolyStyle></Style><Style id="k"><LineStyle><color>ff00ffff</color><width>2</width></LineStyle><PolyStyle><color>3300ffff</color></PolyStyle></Style><Style id="p"><IconStyle><scale>.6</scale></IconStyle></Style><Folder><name>القطع</name>${pm}</Folder><Folder><name>النقاط</name>${pt}</Folder></Document></kml>`;
+  dl(fname(".kml"), kml, "application/vnd.google-earth.kml+xml");
+});
+
+/* ============================ Excel ============================ */
+function parcelAoa(p, r, adj) {
+  const I = S.info, a = [[`PARCEL SURVEY REPORT — PARCEL NO. ${p.no}${p.main ? "  (MAIN PARCEL)" : ""}`], ["Province", I.gov, "City/Village", I.vil], ["Block No.", I.blk, "District No.", I.hay], ["Parcel No.", I.plot, "This Parcel No.", p.no], ["Land Type", p.land, "Main Parcel?", p.main ? "Yes" : "No"], ["Prepared by", "Eng. Islam Ismail Dweikat"], [],
+    ["From", "To", "Distance", "Azimuth (Grid)°", "Azimuth DMS", "Bearing", "Arc?", "Sagitta F", "Radius R", "Arc Area", "Point No.", "Northing", "Easting"]];
+  r.segs.forEach(s => a.push([s.from, s.to, +s.d.toFixed(3), +s.az.toFixed(4), dms(s.az), bearing(s.az), s.arc ? "Yes" : "No", s.arc ? s.f : "", isFinite(s.R) ? +s.R.toFixed(3) : "", isFinite(s.A) ? +s.A.toFixed(3) : "", s.to, +s.b.N.toFixed(3), +s.b.E.toFixed(3)]));
+  a.push([], ["", "", "", "", "", "", "", "", "POLYGON AREA (Shoelace)", "", +r.shoelace.toFixed(3)], ["", "", "", "", "", "", "", "", "ARC AREA SUM", "", +r.arcSum.toFixed(3)], ["", "", "", "", "", "", "", "", "TOTAL AREA (Calculated)", "", +r.total.toFixed(3)]);
+  if (isFinite(r.areg)) a.push(["", "", "", "", "", "", "", "", "A.Reg (Kushan)", "", +r.areg.toFixed(3)], ["", "", "", "", "", "", "", "", "A.Allow (±)", "", +r.allow.toFixed(3)], ["", "", "", "", "", "", "", "", "Difference (Calc − Reg)", "", +r.diff.toFixed(3)]);
+  if (isFinite(adj)) a.push([], ["", "", "", "", "", "", "", "", "Adjustment from Main Parcel Correction", "", +(adj - r.total).toFixed(3)], ["", "", "", "", "", "", "", "", "ADJUSTED AREA (Final)", "", +adj.toFixed(3)]);
+  return a;
+}
+function summaryAoa() {
+  const Z = summary(), I = S.info, a = [["PROJECT SUMMARY"], ["Province", I.gov, "City/Village", I.vil], ["Block No.", I.blk, "District No.", I.hay], ["Parcel No.", I.plot], ["Project Type", TYPE_EN[Z.T]], ["Prepared by", "Eng. Islam Ismail Dweikat"], [], ["#", "Parcel No.", "Land Type", "Main?", "Calculated Area (m²)", "A.Reg (m²)", "Adjusted Area (m²)"]];
+  Z.rows.forEach((x, i) => a.push([i + 1, x.p.no, x.p.land, x.p.main ? "Yes" : "No", isFinite(x.calc) ? +x.calc.toFixed(3) : "", isFinite(x.areg) ? +x.areg.toFixed(3) : "", isFinite(x.adj) ? +x.adj.toFixed(3) : ""]));
+  Z.groups.forEach(g => { a.push([], [`Main Parcel ${g.m.p.no}`], ["Main Parcel Area (Calculated)", "", "", "", +(+g.mainCalc).toFixed(3)], [Z.T === "tawhid" ? "Sum of Original Parcels (Calculated)" : "Sum of Other Parcels (Calculated)", "", "", "", +g.sumKids.toFixed(3)]); if (isFinite(g.ref)) a.push(["Main Parcel A.Reg (Kushan)", "", "", "", +g.ref.toFixed(3)], ["A.Allow (±)", "", "", "", +g.allow.toFixed(3)], ["Difference (A.Reg − Main Calculated)", "", "", "", +g.diff.toFixed(3)], ["Within Tolerance / Distributed?", "", "", "", g.within ? "YES" : "NO"]); });
+  return { a, Z };
+}
+const sheetCols = ws => { ws["!cols"] = [8, 8, 11, 14, 17, 15, 7, 10, 12, 12, 10, 14, 14].map(w => ({ wch: w })); return ws; };
+$("#xlsAll").addEventListener("click", () => {
+  const L = computed(); if (!L.length) { toast("احسب القطع أولاً"); return; }
+  const { a, Z } = summaryAoa(), wb = XLSX.utils.book_new(), used = {};
+  L.forEach(({ p, r }) => { const x = Z.rows.find(y => y.p === p); let nm = ("Parcel " + (p.no || "?")).replace(/[\\/?*[\]:]/g, "-").slice(0, 28); while (used[nm]) nm += "_"; used[nm] = 1; XLSX.utils.book_append_sheet(wb, sheetCols(XLSX.utils.aoa_to_sheet(parcelAoa(p, r, x && x.adj))), nm); });
+  const ws = XLSX.utils.aoa_to_sheet(a); ws["!cols"] = [36, 12, 12, 8, 20, 14, 20].map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, "Summary");
+  dl(fname(".xlsx"), new Uint8Array(XLSX.write(wb, { type: "array", bookType: "xlsx" })), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+});
+$("#xlsOne").addEventListener("click", () => {
+  const L = computed(); if (!L.length) { toast("احسب القطع أولاً"); return; }
+  const { a, Z } = summaryAoa(); let all = [];
+  L.forEach(({ p, r }) => { const x = Z.rows.find(y => y.p === p); all = all.concat(parcelAoa(p, r, x && x.adj), [[], []]); });
+  all = all.concat(a); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, sheetCols(XLSX.utils.aoa_to_sheet(all)), "All");
+  dl(fname(" – صفحة واحدة.xlsx"), new Uint8Array(XLSX.write(wb, { type: "array", bookType: "xlsx" })), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+});
+
+/* ============================ PDF ============================ */
+async function fontsReady() { await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`, `700 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0))); }
+function pdfTable(pg, cols, rows, opts) {   // cols: [title, widthMm, isNum]
+  const rh = mm(opts.rh || 5.6), fs = mm(opts.fs || 2.7);
+  const xr = []; let x = pg.W - mm(12); cols.forEach(([, w]) => { xr.push([x - mm(w), x]); x -= mm(w); });
+  const left = xr[xr.length - 1][0], right = xr[0][1];
+  const head = () => { const c = pg.ctx; c.fillStyle = GREEN_D; c.fillRect(left, pg.y, right - left, rh); cols.forEach(([t], i) => txt(c, t, (xr[i][0] + xr[i][1]) / 2, pg.y + rh / 2, `700 ${fs}px ${AF}`, "#f3dc93", "center")); pg.y += rh; };
+  head();
+  rows.forEach((r, ri) => {
+    if (pg.y + rh > mm(270)) { pg.next(); head(); }
+    const c = pg.ctx; if (r._bg || ri % 2) { c.fillStyle = r._bg || "#fbf6e8"; c.fillRect(left, pg.y, right - left, rh); }
+    r.forEach((v, i) => fitT(c, String(v), (xr[i][0] + xr[i][1]) / 2, pg.y + rh / 2, xr[i][1] - xr[i][0] - mm(1), fs, r._b ? 700 : 500, cols[i][2] ? MF : AF, INK, cols[i][2] ? "ltr" : "rtl"));
+    c.strokeStyle = "#eadfbf"; c.lineWidth = 1; c.beginPath(); c.moveTo(left, pg.y + rh); c.lineTo(right, pg.y + rh); c.stroke(); pg.y += rh;
+  });
+}
+function fitT(c, s, x, y, maxW, size, wt, fam, color, dir) {
+  let fs = size; c.font = `${wt} ${fs}px ${fam}`; while (c.measureText(s).width > maxW && fs > size * .55) { fs *= .93; c.font = `${wt} ${fs}px ${fam}`; }
+  c.fillStyle = color; c.textAlign = "center"; c.textBaseline = "middle"; c.direction = dir; c.fillText(s, x, y);
+}
+function pdfCards(pg, items) {   // [label, value, orange]
+  const n = Math.min(3, items.length), gap = mm(3), w = (pg.W - mm(24) - gap * (n - 1)) / n, h = mm(14);
+  items.forEach((it, i) => {
+    if (i % 3 === 0 && i) pg.y += h + gap; if (pg.y + h > mm(272)) pg.next();
+    const c = pg.ctx, x = pg.W - mm(12) - (i % 3 + 1) * w - (i % 3) * gap;
+    rr(c, x, pg.y, w, h, mm(2)); c.fillStyle = it[2] ? "#b34a2e" : GREEN_D; c.fill();
+    txt(c, it[0], x + w - mm(2.5), pg.y + mm(4), `700 ${mm(2.6)}px ${AF}`, "#f3dc93");
+    c.font = `700 ${mm(4.2)}px ${MF}`; c.fillStyle = "#fff"; c.textAlign = "left"; c.textBaseline = "middle"; c.direction = "ltr"; c.fillText(it[1] + " m²", x + mm(2.5), pg.y + mm(10));
+  });
+  pg.y += h + mm(4);
+}
+function newPdf(title, sub) {
+  const W = mm(210), H = mm(297), pages = [];
+  const pg = { W, pages, y: 0, ctx: null, next() { const c = document.createElement("canvas"); c.width = W; c.height = H; this.ctx = c.getContext("2d"); frameHeader(this.ctx, W, title, sub); pages.push(c); this.y = mm(37); } };
+  pg.next(); return pg;
+}
+function pdfInfo(pg, extra) {
+  const I = S.info, items = [["المحافظة", I.gov], ["المدينة/القرية", I.vil], ["الحوض", I.blk], ["الحي", I.hay], ["القطعة", I.plot], ["نوع المشروع", TYPES[I.type]]].concat(extra || []).filter(x => x[1]);
+  const c = pg.ctx; let x = pg.W - mm(12);
+  items.forEach(([k, v]) => { const s = `${k}: ${v}`; c.font = `600 ${mm(3)}px ${AF}`; const w = c.measureText(s).width + mm(5); if (x - w < mm(12)) { x = pg.W - mm(12); pg.y += mm(6); } txt(c, s, x, pg.y, `600 ${mm(3)}px ${AF}`, INK); x -= w; });
+  pg.y += mm(7);
+}
+function pdfDraw(pg, list, hmm) {
+  if (pg.y + mm(hmm) > mm(270)) pg.next();
+  const cv = document.createElement("canvas"); cv.setAttribute("height", 500); cv.style.width = "800px"; Object.defineProperty(cv, "clientWidth", { value: 800 });
+  const tmp = drawParcels(cv, list, true); if (!tmp) return;
+  const w = pg.W - mm(24), h = mm(hmm), r = Math.min(w / cv.width, h / cv.height), dw = cv.width * r, dh = cv.height * r;
+  pg.ctx.strokeStyle = "#e2cf98"; pg.ctx.lineWidth = 2; pg.ctx.strokeRect(mm(12), pg.y, w, h);
+  pg.ctx.drawImage(cv, mm(12) + (w - dw) / 2, pg.y + (h - dh) / 2, dw, dh); northArrow(pg.ctx, mm(20), pg.y + mm(10), mm(7)); pg.y += h + mm(5);
+}
+async function finishPdf(pg, name) {
+  const last = pg.pages[pg.pages.length - 1].getContext("2d"); drawStamp(last, mm(38), mm(255), mm(20));
+  pg.pages.forEach((c, i) => txt(c.getContext("2d"), `صفحة ${i + 1} من ${pg.pages.length}`, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left"));
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  pg.pages.forEach((c, i) => { if (i) doc.addPage(); doc.addImage(c.toDataURL("image/jpeg", .9), "JPEG", 0, 0, 210, 297); });
+  window.__pdfPages = pg.pages;
+  dl(name, new Uint8Array(doc.output("arraybuffer")), "application/pdf");
+}
+$("#pdfAll").addEventListener("click", async e => {
+  const L = computed(); if (!L.length) { toast("احسب القطع أولاً"); return; }
+  const btn = e.currentTarget, old = btn.textContent; btn.disabled = true; btn.textContent = "…";
+  try {
+    await fontsReady(); const Z = summary(), pg = newPdf("حسابات المساحة – " + TYPES[Z.T], projName());
+    pdfInfo(pg);
+    // الملخص
+    txt(pg.ctx, "الملخص العام لكل القطع", pg.W - mm(12), pg.y, `700 ${mm(4.4)}px ${TF}`, GREEN_D); pg.y += mm(5);
+    pdfTable(pg, [["#", 10], ["رقم القطعة", 26], ["النوع", 28], ["الحالة", 26], ["المساحة المحسوبة", 32, 1], ["A.Reg", 30, 1], ["المساحة المعدلة", 34, 1]],
+      Z.rows.map((x, i) => Object.assign([i + 1, x.p.no, x.p.land, Z.T === "normal" ? "—" : x.p.main ? "رئيسية" : Z.T === "tawhid" ? "أصلية" : "فرعية", fa(x.calc), isFinite(x.areg) ? fa(x.areg) : "-", isFinite(x.adj) ? fa(x.adj) : "-"], x.p.main ? { _bg: "#f6e3dc" } : {})), {});
+    pg.y += mm(4);
+    Z.groups.forEach(g => { const it = [["مساحة الرئيسية " + g.m.p.no + " (محسوبة)", fa(g.mainCalc)], [Z.T === "tawhid" ? "مجموع القطع الأصلية" : "مجموع باقي القطع", fa(g.sumKids)], ["الفرق بين الحدود", fa(g.boundDiff), 1]]; if (isFinite(g.ref)) it.push(["A.Reg (كوشان)", fa(g.ref)], ["المسموح ± A.Allow", fa(g.allow)], ["الفرق (A.Reg − المحسوبة)", fa(g.diff), 1]); pdfCards(pg, it); if (isFinite(g.ref)) { txt(pg.ctx, g.within ? "الفرق ضمن المسموح — تم توزيعه على القطع حسب نسبة مساحتها." : "الفرق خارج المسموح — لم يتم التوزيع.", pg.W - mm(12), pg.y, `700 ${mm(3.1)}px ${AF}`, g.within ? "#1e6b4a" : "#b91c1c"); pg.y += mm(6); } });
+    pdfDraw(pg, L, 95);
+    // صفحة لكل قطعة
+    L.forEach(({ p, r }) => {
+      const x = Z.rows.find(y => y.p === p); pg.next();
+      txt(pg.ctx, `القطعة رقم ${p.no}${p.main ? " (الرئيسية)" : ""} — ${p.land}`, pg.W - mm(12), pg.y, `700 ${mm(4.6)}px ${TF}`, GREEN_D); pg.y += mm(6);
+      pdfTable(pg, [["من", 12], ["إلى", 12], ["المسافة", 19, 1], ["الأزيموث DMS", 30, 1], ["Bearing", 27, 1], ["قوس", 23, 1], ["N", 26, 1], ["E", 26, 1]],
+        r.segs.map(s => [s.from, s.to, f3(s.d), dms(s.az), bearing(s.az), isFinite(s.A) ? `R ${f2(s.R)} / ${(s.A > 0 ? "+" : "") + f2(s.A)}` : "-", f3(s.a.N), f3(s.a.E)]), { rh: 5.2, fs: 2.6 });
+      pg.y += mm(4);
+      const it = [["مساحة المضلع (Shoelace)", fa(r.shoelace)], ["مجموع الأقواس", fa(r.arcSum)], ["المساحة المحسوبة", fa(r.total), 1]];
+      if (isFinite(r.areg)) it.push(["A.Reg (كوشان)", fa(r.areg)], ["المسموح ± A.Allow", fa(r.allow)], ["الفرق (محسوب − مسجل)", fa(r.diff), 1]);
+      if (x && isFinite(x.adj)) it.push(["التصحيح من القطعة الرئيسية", fa(x.adj - r.total)], ["المساحة المعدلة النهائية", fa(x.adj), 1]);
+      pdfCards(pg, it);
+      pdfDraw(pg, [{ p, r, col: "#d9e8dc" }], Math.max(60, Math.min(110, (mm(268) - pg.y) / mm(1) - 4)));
+    });
+    await finishPdf(pg, fname(".pdf"));
+  } catch (er) { alert("تعذّر تجهيز PDF: " + er.message); }
+  finally { btn.disabled = false; btn.textContent = old; }
+});
+$("#soPdf").addEventListener("click", async () => {
+  const R = soRows(); if (!R.length) { toast("اختر المحطة والرجوع وأضف نقاطاً"); return; }
+  await fontsReady(); const st = P(S.so.st), bs = P(S.so.bs), pg = newPdf("جدول التنزيل (Stakeout)", `المحطة ${st.n} · الرجوع ${bs.n} · أزيموث الرجوع ${dms(azim(st, bs))}`);
+  pdfInfo(pg);
+  pdfTable(pg, [["#", 10], ["النقطة", 20], ["الزاوية من الرجوع", 38, 1], ["المسافة الأفقية", 30, 1], ["الأزيموث", 34, 1], ["N", 27, 1], ["E", 27, 1]], R.map(r => Object.assign([r.i, r.n, r.ang, f3(r.d), r.az, f3(r.N), f3(r.E)], { _b: 1 })), { rh: 6.2, fs: 3 });
+  await finishPdf(pg, fname(" – تنزيل.pdf"));
+});
+
+/* ============================ البداية ============================ */
+function renderLand() { renderTravs(); renderPars(); renderSumm(); }
+function renderAll() { renderInfo(); renderPts(); renderLand(); renderSO(); $("#kSys").innerHTML = sysOpts(S.sys || "pg"); }
+window.__back = () => 0;
+renderAll();
+if (S.tab && S.tab !== "proj") { const b = $(`.tabs [data-t="${S.tab}"]`); b && b.click(); }
+</script>
+<script src="../polygon-clipping.umd.min.js"></script>
+</body>
+</html>

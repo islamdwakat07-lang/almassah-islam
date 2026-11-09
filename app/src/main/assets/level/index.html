@@ -39,6 +39,8 @@ td{padding:6px 3px;border-bottom:1px solid #eadfbf;text-align:center}
 td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
 td.z{font:700 15px "IBM Plex Mono",monospace;color:#0c3b26;direction:ltr}
 tr.tp td{background:#fbf5e4}
+.inv{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;border:1.5px dashed #c99a2e;border-radius:12px;padding:7px;background:#fffaf0;color:#0c3b26;font:700 14px "IBM Plex Sans Arabic";cursor:pointer;width:100%}
+.inv[aria-pressed=true]{background:#1565c0;border:1.5px solid #0d47a1;color:#fff}
 .del{border:0;background:none;color:#b91c1c;font-size:16px;cursor:pointer}
 .tip{font-size:13px;color:#5d6458;margin-top:6px}
 .tabs{display:flex;gap:6px;background:#f3ead2;border:1.5px solid #e2cf98;border-radius:999px;padding:4px;margin-bottom:12px}
@@ -49,6 +51,7 @@ tr.tp td{background:#fbf5e4}
 details summary{cursor:pointer;font-weight:700;color:#0c3b26}
 ol{padding-inline-start:20px;margin:6px 0}
 </style>
+<script src="../archive.js"></script>
 </head>
 <body>
 <div class="am-bar"><span class="am-title"><img src="../img/t-level.png" alt=""><b>دفتر الليفل</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
@@ -86,6 +89,7 @@ ol{padding-inline-start:20px;margin:6px 0}
           <label class="f">اسم النقطة<input class="t" id="pName"></label>
           <label class="f">القراءة على الشاخص<input id="pR" inputmode="decimal" placeholder="1.870"></label>
         </div>
+        <button type="button" class="inv" id="inv" aria-pressed="false">⇅ شاخص مقلوب (النقطة فوق خط النظر: سقف، جسر)</button>
         <div id="live"></div>
         <button class="btn pri" id="isBtn" type="button">➕ سجّل النقطة</button>
         <div class="row2">
@@ -175,6 +179,28 @@ ol{padding-inline-start:20px;margin:6px 0}
           <li>اقرأ دائماً على <b>الخط الأفقي الأوسط</b>، وليس الخطين القصيرين فوقه وتحته (هذان لقياس المسافة).</li>
           <li>اكتب القراءة بالمتر بثلاث خانات: 1.427 وليس 142.7.</li>
         </ol>
+        <h3 style="margin:14px 0 4px;color:#0c3b26;font-size:16px">⇅ الشاخص المقلوب</h3>
+        <svg viewBox="0 0 360 170" style="width:100%;display:block;margin:6px 0" direction="ltr" role="img" aria-label="شاخص مقلوب تحت سقف">
+          <rect x="230" y="10" width="130" height="18" fill="#9aa0a6"/><path d="M230 28 H360" stroke="#555" stroke-width="2"/>
+          <text x="295" y="23" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="IBM Plex Sans Arabic">سقف</text>
+          <rect x="286" y="28" width="18" height="100" fill="#fff" stroke="#333"/>
+          <g fill="#d11"><rect x="286" y="34" width="9" height="6"/><rect x="286" y="46" width="9" height="6"/></g><g fill="#111"><rect x="295" y="58" width="9" height="6"/><rect x="295" y="70" width="9" height="6"/><rect x="295" y="82" width="9" height="6"/></g>
+          <text x="312" y="40" font-size="11" font-weight="700" fill="#0c3b26" font-family="IBM Plex Mono">0</text>
+          <path d="M318 30 V104" stroke="#1565c0" stroke-width="1.5" marker-end="url(#ar2)" marker-start="url(#ar2)"/>
+          <text x="322" y="74" font-size="12" font-weight="700" fill="#1565c0" font-family="IBM Plex Mono">R</text>
+          <defs><marker id="ar2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1565c0"/></marker></defs>
+          <g stroke="#3b2a14" stroke-width="4" stroke-linecap="round"><path d="M70 120 L45 165"/><path d="M70 120 L95 165"/><path d="M70 120 L71 165"/></g>
+          <rect x="50" y="94" width="44" height="20" rx="4" fill="#f1c232" stroke="#4a3600" stroke-width="2"/>
+          <path d="M94 104 H300" stroke="#e11d2a" stroke-width="2" stroke-dasharray="7 5"/><text x="150" y="98" font-size="12" font-weight="700" fill="#e11d2a" font-family="IBM Plex Mono">HI</text>
+          <text x="120" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#0c3b26" font-family="IBM Plex Mono">Z = HI + R</text>
+          <path d="M0 165 H360" stroke="#7f5e33" stroke-width="3"/>
+        </svg>
+        <ol>
+          <li>تستعمله لنقطة <b>أعلى من خط النظر</b>: سقف، بطنية جسر، عتبة عالية.</li>
+          <li>اقلب الشاخص بحيث يكون <b>الصفر ملاصقاً للنقطة</b> من تحت، واقرأ عادي على الخط الأوسط.</li>
+          <li>في الدفتر اضغط <b>«⇅ شاخص مقلوب»</b> قبل أن تسجّل، فتُحفظ القراءة بالسالب تلقائياً.</li>
+          <li>الحساب: المنسوب = خط النظر <b>+</b> القراءة. مثال: 501.425 + 1.250 = <b>502.675</b>.</li>
+        </ol>
       </details>
     </div>
   </section>
@@ -186,6 +212,7 @@ ol{padding-inline-start:20px;margin:6px 0}
       <label class="f">منسوب خط النظر (HI)<input id="dHI" inputmode="decimal"></label>
       <label class="f" style="margin-top:8px">المنسوب المطلوب (م)<input id="dZ" inputmode="decimal"></label>
       <label class="f" style="margin-top:8px">القراءة الحالية على الشاخص (اختياري)<small>لأعرف كم تحفر أو تطمّ عند هذه النقطة</small><input id="dR" inputmode="decimal"></label>
+      <button type="button" class="inv" id="dInv" aria-pressed="false">⇅ القراءة على شاخص مقلوب</button>
       <div id="dRes"></div>
     </div>
     <div class="card">
@@ -286,9 +313,13 @@ function render() {
   if (st.mode === "tp") { if (!$("#tpName").value) $("#tpName").value = nextTP(); guide("نقل الجهاز", "اقرأ نقطة الدوران قبل أن تحمل الجهاز. بعد نقله ستقرأ نفس النقطة مرة ثانية."); }
   drawTable(C); $("#closeRes").innerHTML = ""; fillEnd(C);
 }
+const tog = b => { const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", on); return on; };
+const isInv = id => $(id).getAttribute("aria-pressed") === "true";
+const effR = (inp, btn) => { const v = num($(inp).value); return !isFinite(v) ? NaN : isInv(btn) ? -Math.abs(v) : v; };
+const rd = r => r < 0 ? `${f3(-r)} ⇅` : f3(r);   // inverted readings show with ⇅
 function live() {
-  const C = compute(), r = num($("#pR").value);
-  $("#live").innerHTML = isFinite(r) ? `<div class="res">منسوب ${esc($("#pName").value || "النقطة")} = <span class="n">${f3(C.hi - r)}</span></div>` : "";
+  const C = compute(), r = effR("#pR", "#inv");
+  $("#live").innerHTML = isFinite(r) ? `<div class="res">منسوب ${esc($("#pName").value || "النقطة")} = <span class="n">${f3(C.hi - r)}</span>${r < 0 ? `<br><small>شاخص مقلوب: خط النظر + القراءة = ${f3(C.hi)} + ${f3(-r)}</small>` : ""}</div>` : "";
 }
 function drawTable(C) {
   if (!st.bm) { $("#tbl").innerHTML = '<p class="tip">لا توجد قراءات بعد.</p>'; $("#arith").innerHTML = ""; return; }
@@ -297,7 +328,7 @@ function drawTable(C) {
   C.out.forEach(r => {
     if (r.k === "BS") { // the back sight sits on the row of the point it reads
       h += `<tr class="tp"><td>${esc(r.pt)} <small>(محطة ${r.st})</small></td><td class="m">${f3(r.r)}</td><td></td><td></td><td class="m">${f3(r.hi)}</td><td class="z">${f3(r.z)}</td><td><button class="del" data-d="${r.i}" title="حذف">✕</button></td></tr>`;
-    } else h += `<tr class="${r.k === "FS" ? "tp" : ""}"><td>${esc(r.pt)}</td><td></td><td class="m">${r.k === "IS" ? f3(r.r) : ""}</td><td class="m">${r.k === "FS" ? f3(r.r) : ""}</td><td class="m">${f3(r.hi)}</td><td class="z">${f3(r.z)}</td><td><button class="del" data-d="${r.i}" title="حذف">✕</button></td></tr>`;
+    } else h += `<tr class="${r.k === "FS" ? "tp" : ""}"><td>${esc(r.pt)}</td><td></td><td class="m">${r.k === "IS" ? rd(r.r) : ""}</td><td class="m">${r.k === "FS" ? rd(r.r) : ""}</td><td class="m">${f3(r.hi)}</td><td class="z">${f3(r.z)}</td><td><button class="del" data-d="${r.i}" title="حذف">✕</button></td></tr>`;
   });
   $("#tbl").innerHTML = h + "</tbody></table>";
   // arithmetic check: ΣBS − ΣFS (the book's last reading counts as a fore sight) = last − first
@@ -319,16 +350,17 @@ function fillEnd(C) {
 /* ---------------- events ---------------- */
 $("#startBtn").addEventListener("click", () => {
   const z = num($("#bmZ").value); if (!isFinite(z)) { $("#bmZ").focus(); return; }
-  st.bm = { name: $("#bmName").value.trim() || "BM1", z }; st.rows = []; st.mode = "bs"; st.bsOn = st.bm.name; save(); render();
+  st.bm = { name: $("#bmName").value.trim() || "BM1", z }; st.t = Date.now(); st.rows = []; st.close = null; st.mode = "bs"; st.bsOn = st.bm.name; save(); render();
 });
 $("#bsBtn").addEventListener("click", () => {
   const r = num($("#bsR").value); if (!isFinite(r)) { $("#bsR").focus(); return; }
   st.rows.push({ k: "BS", pt: st.bsOn || st.bm.name, r }); st.mode = "pts"; $("#bsR").value = ""; save(); render();
 });
+$("#inv").addEventListener("click", e => { tog(e.currentTarget); live(); $("#pR").focus(); });
 $("#pR").addEventListener("input", live); $("#pName").addEventListener("input", live);
 $("#isBtn").addEventListener("click", () => {
-  const r = num($("#pR").value); if (!isFinite(r)) { $("#pR").focus(); return; }
-  st.rows.push({ k: "IS", pt: $("#pName").value.trim() || nextName(), r }); $("#pR").value = ""; $("#pName").value = ""; save(); render(); $("#pR").focus();
+  const r = effR("#pR", "#inv"); if (!isFinite(r)) { $("#pR").focus(); return; }
+  st.rows.push({ k: "IS", pt: $("#pName").value.trim() || nextName(), r }); $("#pR").value = ""; $("#pName").value = ""; $("#inv").setAttribute("aria-pressed", false); save(); render(); $("#pR").focus();
 });
 $("#tpBtn").addEventListener("click", () => { st.mode = "tp"; save(); render(); });
 $("#tpCancel").addEventListener("click", () => { st.mode = "pts"; save(); render(); });
@@ -374,15 +406,18 @@ document.querySelectorAll("input").forEach(i => i.addEventListener("keydown", e 
 
 /* design reading */
 function design() {
-  const hi = num($("#dHI").value), z = num($("#dZ").value), r = num($("#dR").value);
+  const hi = num($("#dHI").value), z = num($("#dZ").value), r = effR("#dR", "#dInv");
   if (!isFinite(hi) || !isFinite(z)) { $("#dRes").innerHTML = ""; return; }
   const need = hi - z;
   let h = `<div class="res">اقرأ على الشاخص: <span class="n">${f3(need)}</span> م</div>`;
-  if (need < 0) h = `<div class="res bad">المنسوب المطلوب أعلى من خط النظر بـ <span class="n">${f3(-need)}</span> م – ارفع الجهاز أو انقله.</div>`;
-  if (isFinite(r)) { const d = r - need; h += `<div class="res ${Math.abs(d) < 0.0005 ? "" : "bad"}">${Math.abs(d) < 0.0005 ? "تماماً على المنسوب ✓" : d > 0 ? `النقطة أوطى من المطلوب: <b>طمّ <span class="n">${(d * 100).toFixed(1)}</span> سم</b>` : `النقطة أعلى من المطلوب: <b>احفر <span class="n">${(-d * 100).toFixed(1)}</span> سم</b>`}</div>`; }
+  if (need < 0) h = `<div class="res" style="background:#e3edfb;border-color:#90b4e8;color:#0d47a1">المنسوب المطلوب أعلى من خط النظر بـ <span class="n">${f3(-need)}</span> م<br>⇅ <b>اقلب الشاخص</b> وحرّكه حتى تقرأ <span class="n">${f3(-need)}</span>، ثم علّم عند <b>رأسه</b> (الصفر الملاصق للسقف أو الحائط).</div><p class="tip">أو ارفع الجهاز لمكان أعلى إن أردت قراءة عادية.</p>`;
+  if (isFinite(r) && (r < 0 || need < 0)) { const d = r - need;
+    h += `<div class="res ${Math.abs(d) < 0.0005 ? "" : "bad"}">${Math.abs(d) < 0.0005 ? "تماماً على المنسوب ✓" : d > 0 ? `النقطة أوطى من المطلوب بـ <b><span class="n">${(d * 100).toFixed(1)}</span> سم</b>` : `النقطة أعلى من المطلوب بـ <b><span class="n">${(-d * 100).toFixed(1)}</span> سم</b>`}</div>`;
+  } else if (isFinite(r)) { const d = r - need; h += `<div class="res ${Math.abs(d) < 0.0005 ? "" : "bad"}">${Math.abs(d) < 0.0005 ? "تماماً على المنسوب ✓" : d > 0 ? `النقطة أوطى من المطلوب: <b>طمّ <span class="n">${(d * 100).toFixed(1)}</span> سم</b>` : `النقطة أعلى من المطلوب: <b>احفر <span class="n">${(-d * 100).toFixed(1)}</span> سم</b>`}</div>`; }
   $("#dRes").innerHTML = h;
 }
 ["#dHI", "#dZ", "#dR"].forEach(s => $(s).addEventListener("input", design));
+$("#dInv").addEventListener("click", e => { tog(e.currentTarget); design(); });
 
 /* two-peg test */
 function peg() {
@@ -403,7 +438,7 @@ const utf8b64 = s => btoa(unescape(encodeURIComponent(s)));
 $("#csv").addEventListener("click", () => {
   if (!st.bm) return; const C = compute();
   const L = ["﻿النقطة,BS,IS,FS,خط النظر,المنسوب", `${st.bm.name},,,,,${f3(num(st.bm.z))}`];
-  C.out.forEach(r => L.push([r.pt, r.k === "BS" ? f3(r.r) : "", r.k === "IS" ? f3(r.r) : "", r.k === "FS" ? f3(r.r) : "", f3(r.hi), f3(r.z)].join(",")));
+  C.out.forEach(r => L.push([r.pt, r.k === "BS" ? f3(r.r) : "", r.k === "IS" ? rd(r.r) : "", r.k === "FS" ? rd(r.r) : "", f3(r.hi), f3(r.z)].join(",")));
   saveFile("دفتر الليفل.csv", utf8b64(L.join("\r\n")), "text/csv");
 });
 $("#pdf").addEventListener("click", async () => {
@@ -420,7 +455,7 @@ $("#pdf").addEventListener("click", async () => {
       ctx.strokeStyle = "#eadfbf"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(xr[xr.length - 1][0], y + rh); ctx.lineTo(xr[0][1], y + rh); ctx.stroke(); y += rh; };
     page();
     line([st.bm.name, "", "", "", "", f3(num(st.bm.z))], "#f3ead2", 1);
-    C.out.forEach(r => line([r.pt, r.k === "BS" ? f3(r.r) : "", r.k === "IS" ? f3(r.r) : "", r.k === "FS" ? f3(r.r) : "", f3(r.hi), f3(r.z)], r.k === "IS" ? null : "#fbf5e4", 1));
+    C.out.forEach(r => line([r.pt, r.k === "BS" ? f3(r.r) : "", r.k === "IS" ? rd(r.r) : "", r.k === "FS" ? rd(r.r) : "", f3(r.hi), f3(r.z)], r.k === "IS" ? null : "#fbf5e4", 1));
     y += mm(6);
     const A = arith(C);
     if (A) { txt(ctx, `التدقيق الحسابي: مجموع الخلفية ${f3(A.sBS)} − مجموع الأمامية ${f3(A.sFS)} = ${f3(A.d)}  ·  فرق المنسوب = ${f3(A.dz)}  ${A.ok ? "✓" : "✗"}`, W - mm(14), y, `600 ${mm(3.4)}px ${AF}`, INK); y += mm(7); }

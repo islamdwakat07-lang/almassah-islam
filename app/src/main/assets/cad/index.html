@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="cad">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>أوتوكاد</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{font:15px/1.5 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#1d2a22;background:#1b1f24!important}
+.n{font-family:"IBM Plex Mono",monospace;direction:ltr;unicode-bidi:isolate}
+#wrap{position:fixed;left:0;right:0;top:calc(58px + env(safe-area-inset-top,0px));bottom:0;display:flex;flex-direction:column}
+#cmd{flex:none;display:flex;gap:6px;align-items:center;padding:6px 8px;background:#0c3b26;border-bottom:1px solid #c99a2e;color:#fff6d6}
+#prompt{flex:1;min-width:0;font-size:13.5px;line-height:1.35;height:3.9em;overflow:hidden;display:flex;align-items:center}
+#prompt>span{display:block}
+#prompt b{color:#f3dc93}
+#inp{width:118px;flex:none;font:600 15px "IBM Plex Mono",monospace;direction:ltr;padding:7px 8px;border-radius:10px;border:1.5px solid #c99a2e;background:#fffdf6;color:#1d2a22}
+.cb{flex:none;border:1.5px solid #e6c35f;border-radius:10px;background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;font:700 13px "IBM Plex Sans Arabic";padding:7px 9px;cursor:pointer}
+.cb.gold{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00}
+#view{position:relative;flex:1;min-height:0;touch-action:none}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#loupe{position:absolute;width:132px;height:132px;border-radius:50%;border:3px solid #e6c35f;box-shadow:0 6px 18px rgba(0,0,0,.6);pointer-events:none;display:none;background:#1b1f24}
+#coordHud{position:absolute;left:8px;bottom:8px;background:rgba(12,59,38,.88);color:#f3dc93;font:600 12px "IBM Plex Mono",monospace;padding:3px 8px;border-radius:8px;direction:ltr;pointer-events:none}
+#snapBtn{position:absolute;right:8px;bottom:8px}
+#fitBtn{position:absolute;right:8px;bottom:50px}
+.fb{border:1.5px solid #e6c35f;border-radius:12px;background:rgba(12,59,38,.92);color:#fff6d6;font:700 12.5px "IBM Plex Sans Arabic";padding:6px 9px;cursor:pointer}
+.fb[aria-pressed=false]{opacity:.55}
+#tools{flex:none;display:flex;gap:4px;overflow-x:auto;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:#082a1b;border-top:2px solid #c99a2e;scrollbar-width:none}
+#tools::-webkit-scrollbar{display:none}
+#tools button{flex:none;min-width:60px;display:flex;flex-direction:column;align-items:center;gap:1px;border:1.5px solid transparent;border-radius:12px;background:none;color:#fff6d6;font:700 11.5px "IBM Plex Sans Arabic";padding:4px 6px;cursor:pointer}
+#tools button svg{width:24px;height:24px}
+#tools button[aria-pressed=true]{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;border-color:#c99a2e}
+#panel{position:absolute;left:0;right:0;bottom:0;max-height:44%;overflow:auto;background:#fffcf3;border-top:3px solid #c99a2e;border-radius:18px 18px 0 0;padding:10px 12px 12px;box-shadow:0 -10px 24px rgba(0,0,0,.45);display:none;color:#1d2a22}
+#panel.on{display:block}
+#panel h3{margin:0 0 6px;font:700 17px "Reem Kufi","IBM Plex Sans Arabic";color:#0c3b26}
+#panel .x{position:absolute;top:8px;left:10px;width:30px;height:30px;border-radius:50%;border:1.5px solid #e6c35f;background:#fff;cursor:pointer}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}
+.kv b{color:#0c3b26}
+.big{font:700 22px "IBM Plex Mono",monospace;color:#0c3b26;direction:ltr;display:inline-block}
+.pb{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pb button,.pb label{border:1.5px solid #c99a2e;border-radius:999px;background:#fffaf0;color:#0c3b26;font:700 13.5px "IBM Plex Sans Arabic";padding:7px 12px;cursor:pointer}
+.pb .pri{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;border-color:#e6c35f}
+.pb .red{color:#b91c1c;border-color:#e3a39c;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+th{background:#0c3b26;color:#f3dc93;padding:4px;font-weight:700}
+td{padding:4px;border-bottom:1px solid #eadfbf;text-align:center}
+td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
+.ly{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid #eadfbf}
+.ly .sw{width:16px;height:16px;border-radius:4px;border:1px solid #0003;flex:none}
+.ly .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right}
+.ly input{width:20px;height:20px}
+.chk{display:flex;align-items:center;gap:6px;font-size:14px;margin:3px 0}
+.chk input{width:18px;height:18px}
+#menu{position:absolute;top:4px;left:8px;z-index:5;background:#fffcf3;border:1.5px solid #c99a2e;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.5);padding:6px;display:none;min-width:220px}
+#menu.on{display:block}
+#menu button,#menu label{display:block;width:100%;text-align:right;border:0;background:none;padding:10px 12px;border-radius:10px;font:700 15px "IBM Plex Sans Arabic";color:#0c3b26;cursor:pointer}
+#menu button:active,#menu label:active{background:#f3ead2}
+#busy{position:absolute;inset:0;background:rgba(10,20,15,.6);color:#fff6d6;display:none;align-items:center;justify-content:center;font:700 16px "IBM Plex Sans Arabic";z-index:9;text-align:center;padding:20px}
+#busy.on{display:flex}
+.hint{font-size:12.5px;color:#5d6458;margin-top:6px}
+#welcome{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#welcome div{pointer-events:auto;background:rgba(255,252,243,.97);border:1.5px solid #c99a2e;border-radius:18px;padding:16px;max-width:320px;text-align:center}
+#welcome h2{margin:0 0 6px;font:700 20px "Reem Kufi";color:#0c3b26}
+#welcome label{display:block;margin-top:10px;border:1.5px solid #e6c35f;border-radius:999px;padding:11px;background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;font-weight:700;cursor:pointer}
+#welcome button{margin-top:8px;border:1.5px solid #c99a2e;border-radius:999px;padding:9px;background:#fffaf0;color:#0c3b26;font:700 14px "IBM Plex Sans Arabic";width:100%;cursor:pointer}
+</style>
+<script src="../archive.js"></script>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-cad.png" alt=""><b id="ttl">أوتوكاد</b></span>
+  <button class="am-home" type="button" id="menuBtn" style="margin-inline-start:auto;border:0;cursor:pointer">☰ ملف</button>
+  <a class="am-home" href="../home.html" style="margin-inline-start:0"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg></a></div>
+<div id="wrap">
+  <div id="cmd"><div id="prompt"></div><input id="inp" inputmode="text" autocomplete="off" placeholder="X,Y"><button class="cb gold" id="okBtn" type="button">↵</button><button class="cb" id="endBtn" type="button" hidden>إنهاء</button><button class="cb" id="closeBtn" type="button" hidden>إغلاق</button></div>
+  <div id="view">
+    <canvas id="cv"></canvas><canvas id="loupe" width="264" height="264"></canvas>
+    <div id="coordHud"></div>
+    <button class="fb" id="fitBtn" type="button">⛶ الكل</button>
+    <button class="fb" id="snapBtn" type="button" aria-pressed="true">🧲 الالتقاط</button>
+    <div id="menu">
+      <label>📂 فتح ملف DWG أو DXF<input type="file" id="file" accept=".dwg,.dxf,*/*" hidden></label>
+      <button type="button" data-m="new">📄 رسم جديد</button>
+      <button type="button" data-m="save">💾 حفظ DXF</button>
+      <button type="button" data-m="extract">📍 استخراج الإحداثيات</button>
+      <button type="button" onclick="location.href='../dwg/index.html'">🔁 تحويل ملفات DWG إلى DXF</button>
+      <button type="button" data-m="help">❓ طريقة الاستعمال</button>
+    </div>
+    <div id="welcome"><div><h2>أوتوكاد المهندس إسلام</h2><p style="margin:0;font-size:14px;color:#5d6458">افتح ملف DWG أو DXF لتقيس وترسم وتحسب المساحات وتستخرج الإحداثيات.</p>
+      <label>📂 فتح ملف DWG / DXF<input type="file" id="file2" accept=".dwg,.dxf,*/*" hidden></label><button type="button" id="blank">رسم جديد فارغ</button></div></div>
+    <div id="panel"><button class="x" type="button" id="pX">✕</button><div id="pBody"></div></div>
+    <div id="busy"><div id="busyT">…</div></div>
+  </div>
+  <div id="tools">
+    <button type="button" data-c="sel" aria-pressed="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 8-6 1.5L16 20l-2.6 1.2-3.2-7.4L5 18z"/></svg>تحديد</button>
+    <button type="button" data-c="dist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg>مسافة</button>
+    <button type="button" data-c="area"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18L7 5l12 3-2 11z" fill="currentColor" fill-opacity=".25"/></svg>مساحة</button>
+    <button type="button" data-c="coord"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>إحداثي</button>
+    <button type="button" data-c="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 20L20 4"/></svg>خط</button>
+    <button type="button" data-c="pline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 19l5-12 7 9 6-11"/></svg>بوليلاين</button>
+    <button type="button" data-c="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><path d="M12 12h8"/></svg>دائرة</button>
+    <button type="button" data-c="offset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 15l6-8 8 5"/><path d="M6 20l6-8 8 5" stroke-dasharray="3 2"/></svg>موازي</button>
+    <button type="button" data-c="text"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3h-2V6h-4v12h2v2H9v-2h2V6H7v1H5z"/></svg>نص</button>
+    <button type="button" data-a="layers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>الطبقات</button>
+    <button type="button" data-a="undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 010 12h-2"/></svg>تراجع</button>
+  </div>
+</div>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const f3 = v => (Math.round(v * 1000) / 1000).toFixed(3), f2 = v => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const numA = s => String(s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/،/g, ",");
+const KEY = "cad-v1";
+
+/* =============================== الألوان ACI =============================== */
+const ACI_BASE = { 1: "#ff3b30", 2: "#ffee33", 3: "#32e04a", 4: "#33e6e6", 5: "#3b6bff", 6: "#ff40ff", 7: "#f2f2f2", 8: "#8a8a8a", 9: "#c8c8c8" };
+function aci(i) {
+  i = Math.abs(i | 0);
+  if (ACI_BASE[i]) return ACI_BASE[i];
+  if (i >= 250) { const g = Math.round(51 + (i - 250) * 40.8); return `rgb(${g},${g},${g})`; }
+  if (i < 10) return "#f2f2f2";
+  const h = Math.floor((i - 10) / 10) * 15, k = i % 10, v = [1, 1, .8, .8, .65, .65, .5, .5, .35, .35][k], s = k % 2 ? .5 : 1;
+  const f = n => { const kk = (n + h / 60) % 6; return Math.round(255 * (v - v * s * Math.max(0, Math.min(kk, 4 - kk, 1)))); };
+  return `rgb(${f(5)},${f(3)},${f(1)})`;
+}
+
+/* =============================== DXF → عناصر =============================== */
+function parseDXF(txt) {
+  const L = txt.split(/\r?\n/), P = [];
+  for (let i = 0; i + 1 < L.length; i += 2) P.push([parseInt(L[i], 10), L[i + 1].replace(/\s+$/, "")]);
+  const layers = {}, blocks = {}, model = [];
+  let sec = null, i = 0;
+  const readEnt = () => { const e = { t: P[i][1], g: [] }; i++; while (i < P.length && P[i][0] !== 0) { e.g.push(P[i]); i++; } return e; };
+  while (i < P.length) {
+    const [c, v] = P[i];
+    if (c === 0 && v === "SECTION") { sec = P[i + 1] && P[i + 1][1]; i += 2; continue; }
+    if (c === 0 && v === "ENDSEC") { sec = null; i++; continue; }
+    if (sec === "TABLES" && c === 0 && v === "LAYER") {
+      const e = readEnt(); let n = "", col = 7; e.g.forEach(([k, x]) => { if (k === 2) n = x; if (k === 62) col = +x; });
+      if (n) layers[n] = { c: Math.abs(col) || 7, on: col >= 0 }; continue;
+    }
+    if (sec === "BLOCKS" && c === 0 && v === "BLOCK") {
+      const h = readEnt(); let name = "", bx = 0, by = 0; h.g.forEach(([k, x]) => { if (k === 2) name = x; if (k === 10) bx = +x; if (k === 20) by = +x; });
+      const ents = [];
+      while (i < P.length && !(P[i][0] === 0 && P[i][1] === "ENDBLK")) { if (P[i][0] === 0) ents.push(readEnt()); else i++; }
+      if (i < P.length) readEnt();
+      blocks[name] = { bx, by, ents: group(ents) }; continue;
+    }
+    if (sec === "ENTITIES" && c === 0) { model.push(readEnt()); continue; }
+    i++;
+  }
+  return { layers, blocks, model: group(model) };
+}
+function group(list) {
+  const out = []; let cur = null;
+  for (const e of list) {
+    if ((e.t === "VERTEX" || e.t === "ATTRIB") && cur) { cur.kids.push(e); continue; }
+    if (e.t === "SEQEND") { cur = null; continue; }
+    e.kids = []; out.push(e);
+    cur = (e.t === "POLYLINE" || (e.t === "INSERT" && e.g.some(([k, v]) => k === 66 && +v === 1))) ? e : null;
+  }
+  return out;
+}
+const gv = (e, k, d) => { const p = e.g.find(x => x[0] === k); return p ? p[1] : d; };
+const gn = (e, k, d = 0) => { const v = gv(e, k, null); return v == null ? d : +v; };
+const uni = s => String(s).replace(/\\U\+([0-9A-Fa-f]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
+const mtextPlain = s => uni(s).replace(/\\P/g, "\n").replace(/\\[ACcFfHhQTWp][^;]*;/g, "").replace(/\\[LlOoKkNn]/g, "").replace(/[{}]/g, "").replace(/\\S([^;]*);/g, "$1").replace(/%%[cC]/g, "Ø").replace(/%%[dD]/g, "°").replace(/%%[pP]/g, "±");
+
+/* تحويل كتلة: p' = R·S·(p − base) + ins */
+const T0 = { sx: 1, sy: 1, r: 0, bx: 0, by: 0, x: 0, y: 0 };
+function tp(T, x, y) {
+  const X = (x - T.bx) * T.sx, Y = (y - T.by) * T.sy, c = Math.cos(T.r), s = Math.sin(T.r);
+  return [X * c - Y * s + T.x, X * s + Y * c + T.y];
+}
+function convert(D) {
+  const out = [], seen = {};
+  const layerOf = (e, pl) => { const l = gv(e, 8, "0"); return l === "0" && pl ? pl : l; };
+  const colorOf = (e, pc) => { const c = gn(e, 62, 256); return c === 0 ? (pc == null ? 7 : pc) : c === 256 ? null : Math.abs(c); };
+  function walk(list, X, pl, pc, depth) {
+    const P = (x, y) => X ? X(x, y) : [x, y];
+    const sc = X ? X.k : 1, rot = X ? X.rot : 0, mir = X ? X.mir : false;
+    for (const e of list) {
+      const ly = layerOf(e, pl), c = colorOf(e, pc), base = { ly, col: c };
+      const ex = gn(e, 230, 1) < 0;  // OCS مقلوب
+      const O = (x, y) => P(ex ? -x : x, y);
+      try {
+        switch (e.t) {
+          case "LINE": out.push({ ...base, t: "L", p: [P(gn(e, 10), gn(e, 20)), P(gn(e, 11), gn(e, 21))], z: [gn(e, 30), gn(e, 31)] }); break;
+          case "LWPOLYLINE": {
+            const p = [], b = []; let cur = null;
+            for (const [k, v] of e.g) { if (k === 10) { cur = [+v, 0]; p.push(cur); b.push(0); } else if (k === 20 && cur) cur[1] = +v; else if (k === 42 && cur) b[b.length - 1] = +v; }
+            if (p.length < 2) break;
+            const fl = (ex !== mir) ? -1 : 1;
+            out.push({ ...base, t: "P", p: p.map(q => O(q[0], q[1])), b: b.map(x => x * fl), cl: !!(gn(e, 70) & 1), el: gn(e, 38) }); break;
+          }
+          case "POLYLINE": {
+            const fl0 = gn(e, 70); if (fl0 & (16 | 64)) break;
+            const vs = e.kids.filter(k => k.t === "VERTEX" && !(gn(k, 70) & 16));
+            if (vs.length < 2) break;
+            const fl = (ex !== mir) ? -1 : 1;
+            out.push({ ...base, t: "P", p: vs.map(k => O(gn(k, 10), gn(k, 20))), b: vs.map(k => gn(k, 42) * fl), zz: vs.map(k => gn(k, 30)), cl: !!(fl0 & 1) }); break;
+          }
+          case "CIRCLE": out.push({ ...base, t: "C", c: O(gn(e, 10), gn(e, 20)), r: gn(e, 40) * sc }); break;
+          case "ARC": {
+            let a0 = gn(e, 50), a1 = gn(e, 51); if (ex) [a0, a1] = [180 - a1, 180 - a0];
+            if (mir) [a0, a1] = [180 - a1, 180 - a0];
+            out.push({ ...base, t: "A", c: O(gn(e, 10), gn(e, 20)), r: gn(e, 40) * sc, a0: a0 + rot, a1: a1 + rot }); break;
+          }
+          case "ELLIPSE": {
+            const cx = gn(e, 10), cy = gn(e, 20), mx = gn(e, 11), my = gn(e, 21), ra = gn(e, 40, 1); let t0 = gn(e, 41, 0), t1 = gn(e, 42, 2 * Math.PI);
+            if (t1 <= t0) t1 += 2 * Math.PI; const n = 64, p = [];
+            for (let k = 0; k <= n; k++) { const t = t0 + (t1 - t0) * k / n, ct = Math.cos(t), st = Math.sin(t); p.push(P(cx + mx * ct - my * ra * st, cy + my * ct + mx * ra * st)); }
+            out.push({ ...base, t: "P", p, b: p.map(() => 0), cl: false }); break;
+          }
+          case "SPLINE": {
+            const pick = (kx, ky) => { const p = []; let cur = null; for (const [k, v] of e.g) { if (k === kx) { cur = [+v, 0]; p.push(cur); } else if (k === ky && cur) cur[1] = +v; } return p; };
+            let p = pick(11, 21); if (p.length < 2) p = pick(10, 20); if (p.length < 2) break;
+            out.push({ ...base, t: "P", p: p.map(q => P(q[0], q[1])), b: p.map(() => 0), cl: !!(gn(e, 70) & 1) }); break;
+          }
+          case "POINT": out.push({ ...base, t: "PT", p: P(gn(e, 10), gn(e, 20)), z: gn(e, 30) }); break;
+          case "TEXT": case "ATTDEF": {
+            if (e.t === "ATTDEF") break;
+            const al = gn(e, 72) || gn(e, 73), x = al ? gn(e, 11, gn(e, 10)) : gn(e, 10), y = al ? gn(e, 21, gn(e, 20)) : gn(e, 20);
+            const s = uni(gv(e, 1, "")); if (!s.trim()) break;
+            out.push({ ...base, t: "T", p: P(x, y), h: gn(e, 40, 1) * sc, s, r: gn(e, 50) + rot, al: gn(e, 72), z: gn(e, 30) }); break;
+          }
+          case "MTEXT": {
+            let s = ""; e.g.forEach(([k, v]) => { if (k === 3) s += v; }); s += gv(e, 1, "");
+            s = mtextPlain(s); if (!s.trim()) break;
+            let r = gn(e, 50); const dx = gn(e, 11, 0), dy = gn(e, 21, 0); if (dx || dy) r = Math.atan2(dy, dx) * 180 / Math.PI;
+            out.push({ ...base, t: "T", p: P(gn(e, 10), gn(e, 20)), h: gn(e, 40, 1) * sc, s, r: r + rot, mt: 1 }); break;
+          }
+          case "DIMENSION": case "INSERT": {
+            const name = gv(e, 2, ""), B = blocks[name]; if (!B || depth > 5) { if (e.t === "INSERT") out.push({ ...base, t: "X", p: P(gn(e, 10), gn(e, 20)), z: gn(e, 30), n: name }); break; }
+            let X2;
+            if (e.t === "DIMENSION") X2 = X;
+            else {
+              const ix = gn(e, 10), iy = gn(e, 20), sx = gn(e, 41, 1), sy = gn(e, 42, 1), r = gn(e, 50) * Math.PI / 180;
+              const loc = (x, y) => { const XX = (x - B.bx) * sx, YY = (y - B.by) * sy, c = Math.cos(r), s = Math.sin(r); return [XX * c - YY * s + ix, XX * s + YY * c + iy]; };
+              X2 = (x, y) => { const q = loc(x, y); return X ? X(q[0], q[1]) : q; };
+              X2.k = sc * Math.abs(sx); X2.rot = rot + gn(e, 50); X2.mir = mir !== (sx * sy < 0);
+              out.push({ ...base, t: "X", p: P(ix, iy), z: gn(e, 30), n: name });
+            }
+            walk(B.ents, X2, ly, c == null ? (pc == null ? null : pc) : c, depth + 1);
+            for (const a of e.kids) if (a.t === "ATTRIB") { const s = uni(gv(a, 1, "")); if (s.trim()) { const al = gn(a, 72) || gn(a, 74); out.push({ ...base, ly: layerOf(a, ly), col: colorOf(a, c), t: "T", p: P(al ? gn(a, 11, gn(a, 10)) : gn(a, 10), al ? gn(a, 21, gn(a, 20)) : gn(a, 20)), h: gn(a, 40, 1) * sc, s, r: gn(a, 50) + rot, al: gn(a, 72) }); } }
+            break;
+          }
+          default: seen[e.t] = (seen[e.t] || 0) + 1;
+        }
+      } catch (err) {}
+    }
+  }
+  const blocks = D.blocks;
+  walk(D.model, null, null, null, 0);
+  return { ents: out, skipped: seen };
+}
+
+/* =============================== الهندسة =============================== */
+const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+function bulgeArc(a, b, bu) {           // مركز ونصف قطر وزوايا قوس الانحناء
+  const th = 4 * Math.atan(bu), ch = dist(a, b), r = ch / (2 * Math.sin(Math.abs(th) / 2));
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, d = Math.sqrt(Math.max(0, r * r - ch * ch / 4));
+  const ux = (b[0] - a[0]) / ch, uy = (b[1] - a[1]) / ch, sg = (bu > 0) === (Math.abs(th) < Math.PI) ? 1 : -1;
+  const cx = mx - uy * d * sg, cy = my + ux * d * sg;
+  return { cx, cy, r, a0: Math.atan2(a[1] - cy, a[0] - cx), a1: Math.atan2(b[1] - cy, b[0] - cx), ccw: bu > 0, th };
+}
+function segs(e) { // كل أضلاع البوليلاين [a, b, bulge]
+  const n = e.p.length, out = [];
+  for (let i = 0; i < n - 1 + (e.cl ? 1 : 0); i++) out.push([e.p[i], e.p[(i + 1) % n], (e.b && e.b[i]) || 0]);
+  return out;
+}
+function flat(e) {          // تقريب العنصر بخطوط للالتقاط والقياس
+  if (e._f) return e._f;
+  let f = [];
+  if (e.t === "L") f = [e.p];
+  else if (e.t === "P") {
+    const c = [e.p[0]];
+    for (const [a, b, bu] of segs(e)) {
+      if (!bu) { c.push(b); continue; }
+      const A = bulgeArc(a, b, bu), n = Math.max(4, Math.ceil(Math.abs(A.th) / 0.15));
+      for (let k = 1; k <= n; k++) { const t = A.a0 + A.th * k / n; c.push(k === n ? b : [A.cx + A.r * Math.cos(t), A.cy + A.r * Math.sin(t)]); }
+    }
+    f = [c];
+  } else if (e.t === "C" || e.t === "A") {
+    let a0 = e.t === "C" ? 0 : e.a0 * Math.PI / 180, a1 = e.t === "C" ? 2 * Math.PI : e.a1 * Math.PI / 180;
+    if (a1 <= a0) a1 += 2 * Math.PI; const n = Math.max(8, Math.ceil((a1 - a0) / 0.1)), c = [];
+    for (let k = 0; k <= n; k++) { const t = a0 + (a1 - a0) * k / n; c.push([e.c[0] + e.r * Math.cos(t), e.c[1] + e.r * Math.sin(t)]); }
+    f = [c];
+  }
+  return (e._f = f);
+}
+function bbox(e) {
+  if (e._bb) return e._bb;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = p => { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; };
+  if (e.t === "PT" || e.t === "X") add(e.p);
+  else if (e.t === "T") { add(e.p); add([e.p[0] + e.h * e.s.length * .6, e.p[1] + e.h]); }
+  else flat(e).forEach(c => c.forEach(add));
+  return (e._bb = [x0, y0, x1, y1]);
+}
+function snaps(e) {           // نقاط الالتقاط: نهايات، منتصفات، مراكز، نقاط
+  if (e._s) return e._s; const s = [];
+  if (e.t === "L") { s.push([...e.p[0], "e"], [...e.p[1], "e"], [(e.p[0][0] + e.p[1][0]) / 2, (e.p[0][1] + e.p[1][1]) / 2, "m"]); }
+  else if (e.t === "P") { e.p.forEach(p => s.push([...p, "e"])); segs(e).forEach(([a, b, bu]) => { if (!bu) s.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, "m"]); else { const A = bulgeArc(a, b, bu), t = A.a0 + A.th / 2; s.push([A.cx + A.r * Math.cos(t), A.cy + A.r * Math.sin(t), "m"]); } }); }
+  else if (e.t === "C") s.push([...e.c, "c"], [e.c[0] + e.r, e.c[1], "q"], [e.c[0] - e.r, e.c[1], "q"], [e.c[0], e.c[1] + e.r, "q"], [e.c[0], e.c[1] - e.r, "q"]);
+  else if (e.t === "A") { const f = flat(e)[0]; s.push([...e.c, "c"], [...f[0], "e"], [...f[f.length - 1], "e"], [...f[f.length >> 1], "m"]); }
+  else if (e.t === "PT" || e.t === "X") s.push([...e.p, "n"]);
+  else if (e.t === "T") s.push([...e.p, "n"]);
+  return (e._s = s);
+}
+function segDist(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy; let t = L2 ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+function entDist(e, p) {
+  if (e.t === "PT" || e.t === "X") return dist(e.p, p);
+  if (e.t === "T") { const b = bbox(e); return (p[0] >= b[0] && p[0] <= b[2] && p[1] >= b[1] && p[1] <= b[3]) ? 0 : dist(e.p, p); }
+  let m = Infinity; for (const c of flat(e)) for (let i = 0; i < c.length - 1; i++) { const d = segDist(p, c[i], c[i + 1]); if (d < m) m = d; } return m;
+}
+function plArea(e) {          // مساحة بوليلاين مغلق مع الأقواس
+  let s = 0; const n = e.p.length;
+  for (let i = 0; i < n; i++) { const a = e.p[i], b = e.p[(i + 1) % n]; s += a[0] * b[1] - b[0] * a[1]; }
+  s /= 2;
+  for (const [a, b, bu] of segs(e)) if (bu) { const A = bulgeArc(a, b, bu), th = Math.abs(A.th); s += Math.sign(bu) * A.r * A.r / 2 * (th - Math.sin(th)); }
+  return Math.abs(s);
+}
+function plLen(e) { let L = 0; for (const [a, b, bu] of segs(e)) { if (!bu) L += dist(a, b); else { const A = bulgeArc(a, b, bu); L += Math.abs(A.th) * A.r; } } return L; }
+const polyArea = p => { let s = 0; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s / 2); };
+const polyLen = (p, cl) => { let L = 0; for (let i = 0; i < p.length - (cl ? 0 : 1); i++) L += dist(p[i], p[(i + 1) % p.length]); return L; };
+const azim = (a, b) => { let t = Math.atan2(b[0] - a[0], b[1] - a[1]) * 180 / Math.PI; if (t < 0) t += 360; return t; };
+const dms = d => { const D = Math.floor(d), m = Math.floor((d - D) * 60), s = Math.round(((d - D) * 60 - m) * 60); return `${D}° ${String(m).padStart(2, "0")}' ${String(s).padStart(2, "0")}"`; };
+function lineX(p1, d1, p2, d2) { const den = d1[0] * d2[1] - d1[1] * d2[0]; if (Math.abs(den) < 1e-12) return null; const t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den; return [p1[0] + d1[0] * t, p1[1] + d1[1] * t]; }
+function offsetPts(p, cl, d) {   // إزاحة مضلع/خط مفتوح بمسافة d (موجب = يسار اتجاه الرسم)
+  const n = p.length, segsN = cl ? n : n - 1, L = [];
+  for (let i = 0; i < segsN; i++) {
+    const a = p[i], b = p[(i + 1) % n], len = dist(a, b); if (!len) continue;
+    const u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len], nn = [-u[1], u[0]];
+    L.push({ a: [a[0] + nn[0] * d, a[1] + nn[1] * d], b: [b[0] + nn[0] * d, b[1] + nn[1] * d], u });
+  }
+  if (!L.length) return null;
+  const out = [];
+  if (!cl) out.push(L[0].a);
+  for (let i = cl ? 0 : 1; i < L.length; i++) { const A = L[(i - 1 + L.length) % L.length], B = L[i]; out.push(lineX(A.a, A.u, B.a, B.u) || B.a); }
+  if (!cl) out.push(L[L.length - 1].b);
+  return out;
+}
+
+/* =============================== الحالة =============================== */
+let D = { name: "", t: 0, ents: [], layers: {}, cur: "0" };
+let undo = [], sel = null, cmd = "sel", pts = [], hover = null, temp = null, coordList = [], offD = 1, lastArea = null;
+const cv = $("#cv"), ctx = cv.getContext("2d"), view = $("#view");
+let W = 0, H = 0, DPR = 1, O = [0, 0], k = 20, tx = 0, ty = 0, snapOn = true;
+const clean = (key, v) => key[0] === "_" ? undefined : v;
+let saveT = null;
+function save() {
+  clearTimeout(saveT); saveT = setTimeout(() => {
+    try { localStorage.setItem(KEY, JSON.stringify({ name: D.name, t: D.t, ents: D.ents, layers: D.layers, cur: D.cur, view: { O, k, tx, ty } }, clean)); D.big = false; }
+    catch (e) { D.big = true; }
+  }, 600);
+}
+function ensureLayer(n, c) { if (!D.layers[n]) D.layers[n] = { c: c || 7, on: true }; }
+function colOf(e) { return aci(e.col != null ? e.col : (D.layers[e.ly] || {}).c || 7); }
+const vis = e => { const L = D.layers[e.ly]; return !L || L.on !== false; };
+
+/* ---------- العرض ---------- */
+const w2s = p => [(p[0] - O[0]) * k + tx, ty - (p[1] - O[1]) * k];
+const s2w = (x, y) => [(x - tx) / k + O[0], (ty - y) / k + O[1]];
+let paths = null;
+function buildPaths() {
+  paths = new Map();
+  for (const e of D.ents) {
+    if (!vis(e) || e.t === "T" || e.t === "PT" || e.t === "X") continue;
+    const col = colOf(e); let P = paths.get(col); if (!P) paths.set(col, P = new Path2D());
+    addPath(P, e);
+  }
+}
+function addPath(P, e) {
+  const q = p => [p[0] - O[0], p[1] - O[1]];
+  if (e.t === "L") { const a = q(e.p[0]), b = q(e.p[1]); P.moveTo(a[0], a[1]); P.lineTo(b[0], b[1]); }
+  else if (e.t === "P") {
+    const a = q(e.p[0]); P.moveTo(a[0], a[1]);
+    for (const [s, t, bu] of segs(e)) { const b = q(t); if (!bu) P.lineTo(b[0], b[1]); else { const A = bulgeArc(s, t, bu); P.arc(A.cx - O[0], A.cy - O[1], A.r, A.a0, A.a1, !A.ccw); } }
+  } else if (e.t === "C") { const c = q(e.c); P.moveTo(c[0] + e.r, c[1]); P.arc(c[0], c[1], e.r, 0, 2 * Math.PI); }
+  else if (e.t === "A") { const c = q(e.c), a0 = e.a0 * Math.PI / 180, a1 = e.a1 * Math.PI / 180; P.moveTo(c[0] + e.r * Math.cos(a0), c[1] + e.r * Math.sin(a0)); P.arc(c[0], c[1], e.r, a0, a1, false); }
+}
+let raf = 0;
+const redraw = () => { if (!raf) raf = requestAnimationFrame(draw); };
+function draw() {
+  raf = 0;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = "#1b1f24"; ctx.fillRect(0, 0, W, H);
+  if (!paths) buildPaths();
+  ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * (tx), DPR * ty); ctx.lineWidth = 1.15 / k; ctx.lineJoin = "round";
+  for (const [col, P] of paths) { ctx.strokeStyle = col; ctx.stroke(P); }
+  if (sel) { const P = new Path2D(); addPath(P, sel); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.setLineDash([8 / k, 5 / k]); ctx.stroke(P); ctx.setLineDash([]); }
+  ctx.restore();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // نقاط وكتل ونصوص (بحجم الشاشة)
+  let nt = 0;
+  for (const e of D.ents) {
+    if (!vis(e)) continue;
+    if (e.t === "PT" || e.t === "X") {
+      const s = w2s(e.p); if (s[0] < -10 || s[1] < -10 || s[0] > W + 10 || s[1] > H + 10) continue;
+      ctx.strokeStyle = colOf(e); ctx.lineWidth = 1; ctx.beginPath();
+      if (e.t === "PT") { ctx.moveTo(s[0] - 3, s[1]); ctx.lineTo(s[0] + 3, s[1]); ctx.moveTo(s[0], s[1] - 3); ctx.lineTo(s[0], s[1] + 3); }
+      ctx.stroke();
+    } else if (e.t === "T") {
+      const hp = e.h * k; if (hp < 4 || nt > 4000) continue;
+      const s = w2s(e.p); if (s[0] < -W || s[1] < -50 || s[0] > W * 2 || s[1] > H + 50) continue;
+      nt++; ctx.save(); ctx.translate(s[0], s[1]); ctx.rotate(-e.r * Math.PI / 180); ctx.fillStyle = colOf(e);
+      ctx.font = `${hp}px "IBM Plex Sans Arabic",sans-serif`; ctx.textBaseline = e.mt ? "top" : "alphabetic"; ctx.direction = "ltr";
+      ctx.textAlign = e.al === 1 || e.al === 4 ? "center" : e.al === 2 ? "right" : "left";
+      e.s.split("\n").forEach((ln, i) => ctx.fillText(ln, 0, i * hp * 1.4)); ctx.restore();
+    }
+  }
+  // أدوات قيد العمل
+  ctx.lineWidth = 2;
+  const live = pts.concat(hover && pts.length ? [hover] : []);
+  if (cmd === "area" && live.length > 1) { ctx.fillStyle = "rgba(50,224,74,.18)"; ctx.strokeStyle = "#32e04a"; ctx.beginPath(); live.forEach((p, i) => { const s = w2s(p); i ? ctx.lineTo(...s) : ctx.moveTo(...s); }); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if ((cmd === "line" || cmd === "pline" || cmd === "dist") && live.length > 1) { ctx.strokeStyle = cmd === "dist" ? "#4fc3f7" : "#ffd54a"; ctx.setLineDash(cmd === "dist" ? [6, 4] : []); ctx.beginPath(); live.forEach((p, i) => { const s = w2s(p); i ? ctx.lineTo(...s) : ctx.moveTo(...s); }); ctx.stroke(); ctx.setLineDash([]); }
+  else if (cmd === "circle" && pts.length === 1 && hover) { const c = w2s(pts[0]); ctx.strokeStyle = "#ffd54a"; ctx.beginPath(); ctx.arc(c[0], c[1], dist(pts[0], hover) * k, 0, 2 * Math.PI); ctx.stroke(); }
+  if (temp) { const P = new Path2D(); addPath(P, temp); ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * tx, DPR * ty); ctx.strokeStyle = "#ff9f43"; ctx.lineWidth = 2 / k; ctx.setLineDash([6 / k, 4 / k]); ctx.stroke(P); ctx.restore(); }
+  for (const p of pts) { const s = w2s(p); ctx.fillStyle = "#ffd54a"; ctx.fillRect(s[0] - 3, s[1] - 3, 6, 6); }
+  coordList.forEach((c, i) => { const s = w2s(c); ctx.strokeStyle = "#ff6b6b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s[0], s[1], 5, 0, 7); ctx.stroke(); ctx.fillStyle = "#ffb3b3"; ctx.font = "bold 12px IBM Plex Mono"; ctx.textAlign = "left"; ctx.direction = "ltr"; ctx.fillText(c.n, s[0] + 7, s[1] - 6); });
+  if (snapMark) drawSnap(ctx, w2s(snapMark), snapMark[2]);
+}
+let snapMark = null;
+function drawSnap(c, s, kind) {
+  c.strokeStyle = "#00e5ff"; c.lineWidth = 2; c.beginPath();
+  if (kind === "e") c.rect(s[0] - 6, s[1] - 6, 12, 12);
+  else if (kind === "m") { c.moveTo(s[0], s[1] - 7); c.lineTo(s[0] + 7, s[1] + 5); c.lineTo(s[0] - 7, s[1] + 5); c.closePath(); }
+  else if (kind === "c") c.arc(s[0], s[1], 7, 0, 7);
+  else if (kind === "q") { c.moveTo(s[0], s[1] - 7); c.lineTo(s[0] + 7, s[1]); c.lineTo(s[0], s[1] + 7); c.lineTo(s[0] - 7, s[1]); c.closePath(); }
+  else if (kind === "n") { c.moveTo(s[0] - 6, s[1] - 6); c.lineTo(s[0] + 6, s[1] + 6); c.moveTo(s[0] + 6, s[1] - 6); c.lineTo(s[0] - 6, s[1] + 6); }
+  else { c.moveTo(s[0] - 7, s[1]); c.lineTo(s[0] + 7, s[1]); c.moveTo(s[0], s[1] - 7); c.lineTo(s[0], s[1] + 7); }
+  c.stroke();
+}
+function resize() {
+  const r = view.getBoundingClientRect(); DPR = window.devicePixelRatio || 1; W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); redraw();
+}
+function fit() {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; const xs = [], ys = [];
+  for (const e of D.ents) { if (!vis(e)) continue; const b = bbox(e); if (!isFinite(b[0])) continue; xs.push(b[0], b[2]); ys.push(b[1], b[3]); }
+  if (xs.length) {   // نتجاهل العناصر الشاردة البعيدة جداً (2٪ من كل طرف) حتى لا يصغر الرسم
+    xs.sort((a, b) => a - b); ys.sort((a, b) => a - b);
+    const q = (A, t) => A[Math.min(A.length - 1, Math.max(0, Math.round(t * (A.length - 1))))], cut = xs.length > 60 ? .02 : 0;
+    x0 = q(xs, cut); x1 = q(xs, 1 - cut); y0 = q(ys, cut); y1 = q(ys, 1 - cut);
+  }
+  if (!isFinite(x0)) { O = [0, 0]; k = 20; tx = W / 2; ty = H / 2; redraw(); return; }
+  O = [(x0 + x1) / 2, (y0 + y1) / 2]; paths = null;
+  k = Math.min(W / Math.max(x1 - x0, 1e-6), H / Math.max(y1 - y0, 1e-6)) * .9; if (!isFinite(k) || k <= 0) k = 20;
+  tx = W / 2; ty = H / 2; redraw();
+}
+function zoomAt(sx, sy, f) { const w = s2w(sx, sy); k *= f; tx = sx - (w[0] - O[0]) * k; ty = sy + (w[1] - O[1]) * k; redraw(); }
+
+/* ---------- الالتقاط ---------- */
+function snapAt(sx, sy) {
+  const w = s2w(sx, sy); if (!snapOn) return [w[0], w[1], ""];
+  const tol = 22 / k; let best = null, bd = tol;
+  for (const e of D.ents) {
+    if (!vis(e)) continue; const b = bbox(e);
+    if (w[0] < b[0] - tol || w[0] > b[2] + tol || w[1] < b[1] - tol || w[1] > b[3] + tol) { if (e.t !== "C") continue; }
+    for (const s of snaps(e)) { const d = Math.hypot(s[0] - w[0], s[1] - w[1]); if (d < bd) { bd = d; best = s; } }
+  }
+  for (const p of pts) { const d = dist(p, w); if (d < bd) { bd = d; best = [p[0], p[1], "e"]; } }
+  return best ? [best[0], best[1], best[2]] : [w[0], w[1], ""];
+}
+function pickEnt(sx, sy) {
+  const w = s2w(sx, sy), tol = 14 / k; let best = null, bd = tol;
+  for (let i = D.ents.length - 1; i >= 0; i--) {
+    const e = D.ents[i]; if (!vis(e)) continue; const b = bbox(e);
+    if (w[0] < b[0] - tol || w[0] > b[2] + tol || w[1] < b[1] - tol || w[1] > b[3] + tol) continue;
+    const d = entDist(e, w); if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function containing(w) {   // أصغر شكل مغلق يحتوي النقطة
+  let best = null, ba = Infinity;
+  for (const e of D.ents) {
+    if (!vis(e)) continue;
+    if (e.t === "C") { if (dist(e.c, w) <= e.r) { const a = Math.PI * e.r * e.r; if (a < ba) { ba = a; best = e; } } continue; }
+    if (e.t !== "P" || !e.cl) continue; const b = bbox(e); if (w[0] < b[0] || w[0] > b[2] || w[1] < b[1] || w[1] > b[3]) continue;
+    const f = flat(e)[0]; let ins = false; for (let i = 0, j = f.length - 1; i < f.length; j = i++) { if ((f[i][1] > w[1]) !== (f[j][1] > w[1]) && w[0] < (f[j][0] - f[i][0]) * (w[1] - f[i][1]) / (f[j][1] - f[i][1]) + f[i][0]) ins = !ins; }
+    if (ins) { const a = plArea(e); if (a < ba) { ba = a; best = e; } }
+  }
+  return best;
+}
+
+/* =============================== اللمس =============================== */
+const ptrs = new Map(); let gest = null, holdT = null, precise = false;
+const loupe = $("#loupe"), lctx = loupe.getContext("2d");
+function showLoupe(sx, sy) {
+  loupe.style.display = "block"; const L = 132, z = 2.2, hs = L / 2 / z;
+  let lx = sx - L / 2, ly = sy - L - 46; if (ly < 4) ly = sy + 46; lx = Math.max(4, Math.min(W - L - 4, lx));
+  loupe.style.left = lx + "px"; loupe.style.top = ly + "px";
+  lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.fillStyle = "#1b1f24"; lctx.fillRect(0, 0, 264, 264);
+  lctx.drawImage(cv, (sx - hs) * DPR, (sy - hs) * DPR, 2 * hs * DPR, 2 * hs * DPR, 0, 0, 264, 264);
+  lctx.strokeStyle = "#ff5252"; lctx.lineWidth = 2; lctx.beginPath(); lctx.moveTo(132, 108); lctx.lineTo(132, 156); lctx.moveTo(108, 132); lctx.lineTo(156, 132); lctx.stroke();
+}
+view.addEventListener("pointerdown", e => {
+  if (e.target !== cv) return; cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.offsetX, y: e.offsetY, x0: e.offsetX, y0: e.offsetY });
+  if (ptrs.size === 1) {
+    gest = { mode: "tap", t: Date.now() }; precise = false;
+    clearTimeout(holdT); holdT = setTimeout(() => { if (gest && gest.mode === "tap") { gest.mode = "precise"; precise = true; const p = ptrs.values().next().value; moveHover(p.x, p.y); } }, 320);
+    if (e.pointerType === "mouse") moveHover(e.offsetX, e.offsetY);
+  } else if (ptrs.size === 2) {
+    clearTimeout(holdT); const [a, b] = [...ptrs.values()]; gest = { mode: "pinch", d: Math.hypot(a.x - b.x, a.y - b.y), cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 }; loupe.style.display = "none";
+  }
+});
+view.addEventListener("pointermove", e => {
+  if (e.target !== cv && !ptrs.has(e.pointerId)) return;
+  const q = ptrs.get(e.pointerId);
+  if (!q) { if (e.pointerType === "mouse") moveHover(e.offsetX, e.offsetY); return; }
+  const px = q.x, py = q.y; q.x = e.offsetX; q.y = e.offsetY;
+  if (!gest) return;
+  if (gest.mode === "tap" && Math.hypot(q.x - q.x0, q.y - q.y0) > 8) { gest.mode = "pan"; clearTimeout(holdT); }
+  if (gest.mode === "pan") { tx += q.x - px; ty += q.y - py; redraw(); }
+  else if (gest.mode === "precise") moveHover(q.x, q.y);
+  else if (gest.mode === "pinch" && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    tx += cx - gest.cx; ty += cy - gest.cy; zoomAt(cx, cy, d / gest.d); gest.d = d; gest.cx = cx; gest.cy = cy;
+  }
+  if (e.pointerType === "mouse") moveHover(e.offsetX, e.offsetY);
+});
+function endPtr(e) {
+  const q = ptrs.get(e.pointerId); if (!q) return; ptrs.delete(e.pointerId); clearTimeout(holdT);
+  if (gest && (gest.mode === "tap" || gest.mode === "precise") && ptrs.size === 0) { const sp = snapAt(q.x, q.y); loupe.style.display = "none"; tap(sp, q.x, q.y); }
+  if (ptrs.size === 0) { gest = null; loupe.style.display = "none"; if (e.pointerType !== "mouse") { snapMark = null; } redraw(); }
+  else if (gest && gest.mode === "pinch") gest = { mode: "pan" };
+}
+view.addEventListener("pointerup", endPtr); view.addEventListener("pointercancel", e => { ptrs.delete(e.pointerId); gest = null; loupe.style.display = "none"; });
+view.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
+function moveHover(sx, sy) {
+  const sp = snapAt(sx, sy); snapMark = sp[2] ? sp : null; hover = [sp[0], sp[1]];
+  $("#coordHud").textContent = `X ${f3(sp[0])}   Y ${f3(sp[1])}`;
+  if (precise) { draw(); showLoupe(sx, sy); } else redraw();
+}
+
+/* =============================== الأوامر =============================== */
+const PROMPTS = {
+  sel: () => "اضغط على أي خط أو شكل لترى طوله ومساحته وإحداثياته. <b>اسحب</b> للتحريك و<b>بإصبعين</b> للتكبير. <b>اضغط مطولاً</b> لعدسة دقيقة.",
+  dist: () => pts.length ? "اختر <b>النقطة الثانية</b>" : "مسافة: اختر <b>النقطة الأولى</b>",
+  area: () => pts.length ? `نقطة ${pts.length + 1} … ثم <b>إنهاء</b>` : "مساحة: اضغط <b>داخل شكل مغلق</b>، أو اختر رؤوس المساحة نقطة نقطة",
+  coord: () => "إحداثي: اضغط على أي نقطة لتأخذ إحداثياتها (تُضاف للقائمة)",
+  line: () => pts.length ? "النقطة التالية، أو اكتب <b>@dx,dy</b> أو <b>@طول&lt;زاوية</b> … ثم <b>إنهاء</b>" : "خط: النقطة الأولى (أو اكتب X,Y)",
+  pline: () => pts.length ? `نقطة ${pts.length + 1}: اضغط أو اكتب، ثم <b>إنهاء</b> أو <b>إغلاق</b>` : "بوليلاين: النقطة الأولى (أو اكتب X,Y)",
+  circle: () => pts.length ? "اضغط على المحيط أو <b>اكتب نصف القطر</b>" : "دائرة: اختر <b>المركز</b>",
+  offset: () => offStep === 0 ? `موازي: اكتب <b>المسافة</b> (الحالية ${offD}) ثم اختر الخط` : offStep === 1 ? `موازي بمسافة <b>${offD}</b>: اختر الخط أو البوليلاين أو الدائرة` : "اضغط في <b>الجهة</b> التي تريد الخط الموازي فيها",
+  text: () => pts.length ? "اكتب النص ثم ↵" : "نص: اختر مكان النص",
+};
+let offStep = 1, offEnt = null;
+function setCmd(c) {
+  cmd = c; pts = []; hover = null; temp = null; offStep = 1; offEnt = null; if (c !== "sel") sel = null;
+  document.querySelectorAll("#tools [data-c]").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === c));
+  $("#inp").value = c === "offset" ? offD : ""; $("#inp").placeholder = c === "circle" ? "نصف القطر" : c === "offset" ? "المسافة" : c === "text" ? "النص" : "X,Y";
+  $("#inp").style.direction = c === "text" ? "rtl" : "ltr";
+  hidePanel();
+  if (c === "coord" && coordList.length) coordPanel();
+  updPrompt(); redraw();
+}
+function updPrompt() {
+  $("#prompt").innerHTML = "<span>" + PROMPTS[cmd]() + "</span>";
+  $("#endBtn").hidden = !((cmd === "line" || cmd === "pline" || cmd === "area") && pts.length);
+  $("#closeBtn").hidden = !(cmd === "pline" && pts.length > 2);
+}
+document.querySelectorAll("#tools [data-c]").forEach(b => b.addEventListener("click", () => setCmd(b.dataset.c)));
+function addEnts(list) { list.forEach(e => { e.ly = e.ly || D.cur; ensureLayer(e.ly); D.ents.push(e); }); undo.push({ add: list }); paths = null; save(); redraw(); hideWelcome(); }
+function delEnt(e) { const i = D.ents.indexOf(e); if (i < 0) return; D.ents.splice(i, 1); undo.push({ del: [[i, e]] }); paths = null; save(); redraw(); }
+function doUndo() {
+  const u = undo.pop(); if (!u) { toast("لا شيء للتراجع"); return; }
+  if (u.add) u.add.forEach(e => { const i = D.ents.indexOf(e); if (i >= 0) D.ents.splice(i, 1); });
+  if (u.del) u.del.forEach(([i, e]) => D.ents.splice(i, 0, e));
+  sel = null; paths = null; save(); redraw(); hidePanel();
+}
+
+function tap(sp, sx, sy) {
+  const p = [sp[0], sp[1]];
+  if (cmd === "sel") { sel = pickEnt(sx, sy); if (sel) infoPanel(sel); else hidePanel(); redraw(); return; }
+  if (cmd === "dist") { pts.push(p); if (pts.length === 2) { distPanel(pts[0], pts[1]); pts = []; temp = { t: "L", p: [[...lastDist[0]], [...lastDist[1]]] }; } else temp = null; updPrompt(); redraw(); return; }
+  if (cmd === "area") {
+    if (!pts.length) { const e = containing(s2w(sx, sy)); if (e && !sp[2]) { sel = e; areaPanel(e.t === "C" ? Math.PI * e.r * e.r : plArea(e), e.t === "C" ? 2 * Math.PI * e.r : plLen(e), e); redraw(); return; } }
+    pts.push(p); sel = null; if (pts.length > 2) areaPanel(polyArea(pts), polyLen(pts, true)); updPrompt(); redraw(); return;
+  }
+  if (cmd === "coord") { addCoord(sp); return; }
+  if (cmd === "line" || cmd === "pline") { addPt(p); return; }
+  if (cmd === "circle") { if (!pts.length) { pts.push(p); updPrompt(); redraw(); } else { addEnts([{ t: "C", c: pts[0], r: dist(pts[0], p) }]); pts = []; updPrompt(); } return; }
+  if (cmd === "offset") {
+    if (offStep <= 1) { const e = pickEnt(sx, sy); if (!e || !["L", "P", "C", "A"].includes(e.t)) { toast("اختر خطاً أو بوليلاين أو دائرة"); return; } offEnt = e; sel = e; offStep = 2; updPrompt(); redraw(); return; }
+    const r = makeOffset(offEnt, s2w(sx, sy)); if (r) addEnts([r]); sel = null; offEnt = null; offStep = 1; updPrompt(); return;
+  }
+  if (cmd === "text") { pts = [p]; updPrompt(); $("#inp").focus(); redraw(); return; }
+}
+function addPt(p) {
+  if (cmd === "line" && pts.length) addEnts([{ t: "L", p: [pts[pts.length - 1], p] }]);
+  pts.push(p); updPrompt(); redraw();
+}
+function finish(close) {
+  if (cmd === "pline" && pts.length > 1) addEnts([{ t: "P", p: pts.slice(), b: pts.map(() => 0), cl: !!close && pts.length > 2 }]);
+  if (cmd === "area" && pts.length > 2) { lastArea = pts.slice(); areaPanel(polyArea(pts), polyLen(pts, true), null, pts.slice()); }
+  pts = []; hover = null; updPrompt(); redraw();
+}
+$("#endBtn").addEventListener("click", () => finish(false));
+$("#closeBtn").addEventListener("click", () => finish(true));
+
+/* الإدخال بالكتابة: X,Y أو @dx,dy أو @طول<زاوية أو رقم */
+function typed() {
+  const raw = $("#inp").value.trim(); if (!raw) return;
+  if (cmd === "text") { if (!pts.length) { toast("اختر مكان النص أولاً"); return; } addEnts([{ t: "T", p: pts[0], h: Math.max(0.2, Math.round(30 / k * 100) / 100), s: raw, r: 0 }]); pts = []; $("#inp").value = ""; updPrompt(); return; }
+  const v = numA(raw).replace(/\s+/g, "");
+  if (cmd === "offset" && offStep <= 1 && /^[\d.]+$/.test(v)) { offD = +v; toast("مسافة الموازي = " + offD + " م"); updPrompt(); return; }
+  if (cmd === "circle" && pts.length && /^[\d.]+$/.test(v)) { addEnts([{ t: "C", c: pts[0], r: +v }]); pts = []; $("#inp").value = ""; updPrompt(); return; }
+  let p = null; const last = pts[pts.length - 1];
+  let m;
+  if ((m = v.match(/^@(-?[\d.]+)<(-?[\d.]+)$/)) && last) { const a = +m[2] * Math.PI / 180; p = [last[0] + +m[1] * Math.cos(a), last[1] + +m[1] * Math.sin(a)]; }
+  else if ((m = v.match(/^@(-?[\d.]+),(-?[\d.]+)$/)) && last) p = [last[0] + +m[1], last[1] + +m[2]];
+  else if ((m = v.match(/^(-?[\d.]+),(-?[\d.]+)$/))) p = [+m[1], +m[2]];
+  else if (/^[\d.]+$/.test(v) && last && hover) { const L = +v, d = dist(last, hover); if (d) p = [last[0] + (hover[0] - last[0]) / d * L, last[1] + (hover[1] - last[1]) / d * L]; }
+  if (!p) { toast("اكتب مثلاً 170250.5,650120.3 أو @10,0 أو @25<90"); return; }
+  $("#inp").value = "";
+  if (!D.ents.length && !pts.length) { O = p.slice(); tx = W / 2; ty = H / 2; paths = null; }
+  if (cmd === "sel") { setCmd("pline"); }
+  if (cmd === "dist" || cmd === "area" || cmd === "circle" || cmd === "coord") { tap([p[0], p[1], "t"], ...w2s(p)); return; }
+  addPt(p);
+  const s = w2s(p); if (s[0] < 0 || s[1] < 0 || s[0] > W || s[1] > H) { tx += W / 2 - s[0]; ty += H / 2 - s[1]; redraw(); }
+}
+$("#okBtn").addEventListener("click", typed);
+$("#inp").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); typed(); } });
+
+function makeOffset(e, w) {
+  const d = offD;
+  if (e.t === "C") { const r = dist(e.c, w) > e.r ? e.r + d : e.r - d; return r > 0 ? { t: "C", c: e.c.slice(), r, ly: e.ly, col: e.col } : null; }
+  if (e.t === "A") { const r = dist(e.c, w) > e.r ? e.r + d : e.r - d; return r > 0 ? { t: "A", c: e.c.slice(), r, a0: e.a0, a1: e.a1, ly: e.ly, col: e.col } : null; }
+  const p = e.t === "L" ? e.p : e.p, cl = e.t === "P" && e.cl;
+  // الجهة: يسار أقرب ضلع أم يمينه
+  let bi = 0, bd = Infinity; for (let i = 0; i < p.length - (cl ? 0 : 1); i++) { const dd = segDist(w, p[i], p[(i + 1) % p.length]); if (dd < bd) { bd = dd; bi = i; } }
+  const a = p[bi], b = p[(bi + 1) % p.length], side = Math.sign((b[0] - a[0]) * (w[1] - a[1]) - (b[1] - a[1]) * (w[0] - a[0])) || 1;
+  const q = offsetPts(p, cl, d * side); if (!q) return null;
+  if (e.b && e.b.some(x => x)) toast("ملاحظة: الأقواس في البوليلاين تُوازى كخطوط مستقيمة");
+  return e.t === "L" ? { t: "L", p: q, ly: e.ly, col: e.col } : { t: "P", p: q, b: q.map(() => 0), cl, ly: e.ly, col: e.col };
+}
+
+/* =============================== اللوحات =============================== */
+const panel = $("#panel");
+function showPanel(h) { $("#pBody").innerHTML = h; panel.classList.add("on"); }
+function hidePanel() { panel.classList.remove("on"); }
+$("#pX").addEventListener("click", () => { hidePanel(); if (cmd === "sel") { sel = null; redraw(); } });
+let lastDist = null;
+function distPanel(a, b) {
+  lastDist = [a, b]; const dx = b[0] - a[0], dy = b[1] - a[1];
+  showPanel(`<h3>📏 المسافة</h3><div class="big">${f3(Math.hypot(dx, dy))} م</div>
+  <div class="kv" style="margin-top:6px"><b>ΔX</b><span class="n">${f3(dx)}</span><b>ΔY</b><span class="n">${f3(dy)}</span><b>الاتجاه من الشمال</b><span class="n">${dms(azim(a, b))}</span>
+  <b>من</b><span class="n">${f3(a[0])} , ${f3(a[1])}</span><b>إلى</b><span class="n">${f3(b[0])} , ${f3(b[1])}</span></div>
+  <div class="pb"><button type="button" data-copy="${f3(Math.hypot(dx, dy))}">نسخ المسافة</button><button type="button" class="pri" data-act="dimline">ارسمها خطاً</button></div>`);
+}
+function areaPanel(A, Pm, ent, poly) {
+  showPanel(`<h3>📐 المساحة</h3><div class="big">${f2(A)} م²</div>
+  <div class="kv" style="margin-top:6px"><b>بالدونم</b><span class="n">${(A / 1000).toFixed(3)}</span><b>المحيط</b><span class="n">${f3(Pm)} م</span>${ent && ent.t === "P" ? `<b>عدد الرؤوس</b><span class="n">${ent.p.length}</span>` : ""}</div>
+  <div class="pb"><button type="button" data-copy="${A.toFixed(2)}">نسخ</button><button type="button" class="pri" data-act="areatext" data-a="${A.toFixed(2)}">اكتب المساحة في الرسم</button>${poly ? '<button type="button" data-act="areapoly">ارسمها بوليلاين</button>' : ""}${ent && ent.t === "P" ? '<button type="button" data-act="verts">إحداثيات الرؤوس</button>' : ""}</div>`);
+  panel._ent = ent; panel._poly = poly;
+}
+function infoPanel(e) {
+  const L = { L: "خط", P: e.cl ? "بوليلاين مغلق" : "بوليلاين", C: "دائرة", A: "قوس", T: "نص", PT: "نقطة", X: "كتلة" }[e.t];
+  let kv = `<b>الطبقة</b><span class="n">${esc(e.ly)}</span>`;
+  if (e.t === "L") kv += `<b>الطول</b><span class="n">${f3(dist(e.p[0], e.p[1]))}</span><b>الاتجاه</b><span class="n">${dms(azim(e.p[0], e.p[1]))}</span><b>البداية</b><span class="n">${f3(e.p[0][0])} , ${f3(e.p[0][1])}</span><b>النهاية</b><span class="n">${f3(e.p[1][0])} , ${f3(e.p[1][1])}</span>`;
+  if (e.t === "P") { kv += `<b>الطول</b><span class="n">${f3(plLen(e))}</span><b>الرؤوس</b><span class="n">${e.p.length}</span>`; if (e.cl) kv += `<b>المساحة</b><span class="n">${f2(plArea(e))} م²</span><b>بالدونم</b><span class="n">${(plArea(e) / 1000).toFixed(3)}</span>`; }
+  if (e.t === "C") kv += `<b>المركز</b><span class="n">${f3(e.c[0])} , ${f3(e.c[1])}</span><b>نصف القطر</b><span class="n">${f3(e.r)}</span><b>المحيط</b><span class="n">${f3(2 * Math.PI * e.r)}</span><b>المساحة</b><span class="n">${f2(Math.PI * e.r * e.r)} م²</span>`;
+  if (e.t === "A") kv += `<b>المركز</b><span class="n">${f3(e.c[0])} , ${f3(e.c[1])}</span><b>نصف القطر</b><span class="n">${f3(e.r)}</span><b>طول القوس</b><span class="n">${f3(flatLen(e))}</span>`;
+  if (e.t === "T") kv += `<b>النص</b><span>${esc(e.s)}</span><b>المكان</b><span class="n">${f3(e.p[0])} , ${f3(e.p[1])}</span>`;
+  if (e.t === "PT" || e.t === "X") kv += (e.n ? `<b>الاسم</b><span class="n">${esc(e.n)}</span>` : "") + `<b>X</b><span class="n">${f3(e.p[0])}</span><b>Y</b><span class="n">${f3(e.p[1])}</span><b>Z</b><span class="n">${f3(e.z || 0)}</span>`;
+  showPanel(`<h3>${L}</h3><div class="kv">${kv}</div><div class="pb">${e.t === "P" || e.t === "L" ? '<button type="button" data-act="verts">إحداثيات الرؤوس</button>' : ""}<button type="button" class="red" data-act="del">🗑 حذف</button></div>`);
+  panel._ent = e;
+}
+const flatLen = e => { const f = flat(e)[0]; let L = 0; for (let i = 0; i < f.length - 1; i++) L += dist(f[i], f[i + 1]); return L; };
+function vertsPanel(e) {
+  const p = e.t === "L" ? e.p : e.p;
+  const rows = p.map((q, i) => `<tr><td>${i + 1}</td><td class="m">${f3(q[0])}</td><td class="m">${f3(q[1])}</td><td class="m">${i < p.length - 1 || (e.cl) ? f3(dist(q, p[(i + 1) % p.length])) : ""}</td></tr>`).join("");
+  showPanel(`<h3>إحداثيات الرؤوس (${p.length})</h3><table><thead><tr><th>#</th><th>X</th><th>Y</th><th>الضلع التالي</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="pb"><button type="button" class="pri" data-act="vcsv">⬇ CSV</button><button type="button" data-act="vcopy">نسخ</button></div>`);
+  panel._ent = e;
+}
+function addCoord(sp) {
+  const n = String(coordList.length + 1); let z = 0;
+  if (sp[2] === "n") { const e = D.ents.find(e => (e.t === "PT" || e.t === "X") && e.p[0] === sp[0] && e.p[1] === sp[1]); if (e) z = e.z || 0; }
+  coordList.push(Object.assign([sp[0], sp[1]], { n, z })); coordPanel(); redraw();
+}
+function coordPanel() {
+  const last = coordList[coordList.length - 1];
+  const rows = coordList.slice().reverse().slice(0, 50).map(c => `<tr><td>${esc(c.n)}</td><td class="m">${f3(c[0])}</td><td class="m">${f3(c[1])}</td><td class="m">${f3(c.z || 0)}</td></tr>`).join("");
+  showPanel(`<h3>📍 الإحداثيات</h3>${last ? `<div class="big" style="font-size:18px">X ${f3(last[0])}<br>Y ${f3(last[1])}</div>` : ""}
+  <table><thead><tr><th>#</th><th>X</th><th>Y</th><th>Z</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="pb"><button type="button" class="pri" data-act="ccsv">⬇ CSV (${coordList.length})</button><button type="button" data-act="ccopy">نسخ</button><button type="button" data-act="cpts">ضعها نقاطاً في الرسم</button><button type="button" class="red" data-act="cclear">مسح القائمة</button></div>`);
+}
+$("#pBody").addEventListener("click", e => {
+  const c = e.target.closest("[data-copy]"); if (c) { copy(c.dataset.copy); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act, en = panel._ent;
+  if (a === "del" && en) { delEnt(en); sel = null; hidePanel(); }
+  if (a === "verts" && en) vertsPanel(en);
+  if (a === "vcsv" && en) saveText((D.name || "رسم") + " – رؤوس.csv", "﻿الرقم,X,Y\r\n" + en.p.map((q, i) => `${i + 1},${f3(q[0])},${f3(q[1])}`).join("\r\n"), "text/csv");
+  if (a === "vcopy" && en) copy(en.p.map((q, i) => `${i + 1}\t${f3(q[0])}\t${f3(q[1])}`).join("\n"));
+  if (a === "dimline" && lastDist) { addEnts([{ t: "L", p: lastDist.map(q => q.slice()) }]); temp = null; }
+  if (a === "areatext") {
+    let c0; if (en && en.t === "C") c0 = en.c; else { const p = (en && en.p) || panel._poly || []; c0 = p.reduce((s, q) => [s[0] + q[0] / p.length, s[1] + q[1] / p.length], [0, 0]); }
+    addEnts([{ t: "T", p: c0, h: Math.max(0.2, Math.round(28 / k * 100) / 100), s: b.dataset.a + " م²", r: 0, al: 1 }]);
+  }
+  if (a === "areapoly" && panel._poly) addEnts([{ t: "P", p: panel._poly, b: panel._poly.map(() => 0), cl: true }]);
+  if (a === "ccsv") saveText((D.name || "رسم") + " – إحداثيات.csv", "﻿الرقم,X,Y,Z\r\n" + coordList.map(c => `${c.n},${f3(c[0])},${f3(c[1])},${f3(c.z || 0)}`).join("\r\n"), "text/csv");
+  if (a === "ccopy") copy(coordList.map(c => `${c.n}\t${f3(c[0])}\t${f3(c[1])}`).join("\n"));
+  if (a === "cpts") { const h = Math.max(0.2, Math.round(22 / k * 100) / 100); addEnts(coordList.flatMap(c => [{ t: "PT", p: [c[0], c[1]], z: c.z || 0 }, { t: "T", p: [c[0] + h * .4, c[1] + h * .4], h, s: c.n, r: 0 }])); }
+  if (a === "cclear") { coordList = []; hidePanel(); redraw(); }
+  if (a === "lyon" || a === "lyoff") { Object.values(D.layers).forEach(L => L.on = a === "lyon"); paths = null; save(); redraw(); layersPanel(); }
+  if (a === "exrun") runExtract();
+  if (a === "exsave") saveText((D.name || "رسم") + " – إحداثيات.csv", "﻿" + exCSV, "text/csv");
+  if (a === "excopy") copy(exCSV.replace(/,/g, "\t"));
+});
+
+/* ---------- الطبقات ---------- */
+function layersPanel() {
+  const cnt = {}; D.ents.forEach(e => cnt[e.ly] = (cnt[e.ly] || 0) + 1);
+  const names = Object.keys(D.layers).sort((a, b) => (cnt[b] || 0) - (cnt[a] || 0));
+  showPanel(`<h3>الطبقات</h3><div class="pb" style="margin:0 0 6px"><button type="button" data-act="lyon">إظهار الكل</button><button type="button" data-act="lyoff">إخفاء الكل</button></div>
+  ${names.map(n => `<div class="ly"><input type="checkbox" data-ly="${esc(n)}" ${D.layers[n].on !== false ? "checked" : ""}><span class="sw" style="background:${aci(D.layers[n].c)}"></span><span class="nm">${esc(n)}</span><small>${cnt[n] || 0}</small><input type="radio" name="cur" data-cur="${esc(n)}" ${D.cur === n ? "checked" : ""} title="الرسم على هذه الطبقة"></div>`).join("")}
+  <p class="hint">☑ إظهار/إخفاء · ◉ الطبقة التي ترسم عليها</p>
+  <div class="pb" style="align-items:center"><input id="lyName" class="t" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid #e2cf98;border-radius:10px;font:600 15px 'IBM Plex Sans Arabic'" placeholder="اسم طبقة جديدة"><button type="button" class="pri" id="newLy">+ إضافة</button></div>`);
+  $("#pBody").querySelectorAll("[data-ly]").forEach(i => i.addEventListener("change", () => { D.layers[i.dataset.ly].on = i.checked; paths = null; save(); redraw(); }));
+  $("#pBody").querySelectorAll("[data-cur]").forEach(i => i.addEventListener("change", () => { D.cur = i.dataset.cur; save(); toast("الرسم الآن على طبقة " + D.cur); }));
+  $("#newLy").addEventListener("click", () => { const n = $("#lyName").value.trim(); if (!n) { $("#lyName").focus(); return; } ensureLayer(n, 1); D.cur = n; save(); layersPanel(); toast("الرسم الآن على طبقة " + n); });
+}
+
+/* ---------- استخراج الإحداثيات ---------- */
+let exCSV = "";
+function extractPanel() {
+  const cnt = {}; D.ents.forEach(e => cnt[e.ly] = (cnt[e.ly] || 0) + 1);
+  const ty = { PT: 0, X: 0, P: 0, L: 0, C: 0, T: 0 }; D.ents.forEach(e => { if (e.t in ty) ty[e.t]++; else if (e.t === "A") ty.C++; });
+  showPanel(`<h3>📍 استخراج الإحداثيات من الملف</h3>
+  <label class="chk"><input type="checkbox" data-ex="PT" ${ty.PT ? "checked" : ""}> النقاط POINT (${ty.PT})</label>
+  <label class="chk"><input type="checkbox" data-ex="X" ${ty.X && !ty.PT ? "checked" : ""}> الكتل (رموز النقاط) (${ty.X})</label>
+  <label class="chk"><input type="checkbox" data-ex="P" ${!ty.PT && !ty.X ? "checked" : ""}> رؤوس البوليلاين (${ty.P})</label>
+  <label class="chk"><input type="checkbox" data-ex="L"> نهايات الخطوط (${ty.L})</label>
+  <label class="chk"><input type="checkbox" data-ex="C"> مراكز الدوائر والأقواس (${ty.C})</label>
+  <label class="chk"><input type="checkbox" data-ex="T"> مواقع النصوص مع النص (${ty.T})</label>
+  <details style="margin-top:6px"><summary style="font-weight:700;color:#0c3b26">الطبقات (${Object.keys(D.layers).length})</summary>
+  ${Object.keys(D.layers).filter(n => cnt[n]).map(n => `<label class="chk"><input type="checkbox" data-exl="${esc(n)}" checked> <span class="n">${esc(n)}</span> <small>(${cnt[n]})</small></label>`).join("")}</details>
+  <div class="pb"><button type="button" class="pri" data-act="exrun">استخرج</button></div><div id="exOut"></div>`);
+}
+function runExtract() {
+  const T = new Set([...$("#pBody").querySelectorAll("[data-ex]:checked")].map(i => i.dataset.ex)), Ls = new Set([...$("#pBody").querySelectorAll("[data-exl]:checked")].map(i => i.dataset.exl));
+  const rows = [], seen = new Set(); let n = 0;
+  const add = (x, y, z, ly, typ, d) => { const key = x.toFixed(3) + "," + y.toFixed(3); if (typ !== "نص" && seen.has(key)) return; seen.add(key); rows.push([++n, f3(x), f3(y), f3(z || 0), ly, typ, d || ""]); };
+  for (const e of D.ents) {
+    if (!Ls.has(e.ly)) continue;
+    if (e.t === "PT" && T.has("PT")) add(e.p[0], e.p[1], e.z, e.ly, "نقطة");
+    if (e.t === "X" && T.has("X")) add(e.p[0], e.p[1], e.z, e.ly, "كتلة", e.n);
+    if (e.t === "P" && T.has("P")) e.p.forEach((q, i) => add(q[0], q[1], e.zz ? e.zz[i] : e.el, e.ly, "رأس"));
+    if (e.t === "L" && T.has("L")) e.p.forEach((q, i) => add(q[0], q[1], e.z ? e.z[i] : 0, e.ly, "نهاية خط"));
+    if ((e.t === "C" || e.t === "A") && T.has("C")) add(e.c[0], e.c[1], 0, e.ly, "مركز");
+    if (e.t === "T" && T.has("T")) add(e.p[0], e.p[1], e.z, e.ly, "نص", e.s.replace(/[\n,]/g, " "));
+  }
+  exCSV = "الرقم,X,Y,Z,الطبقة,النوع,الوصف\r\n" + rows.map(r => r.map(v => String(v).replace(/,/g, " ")).join(",")).join("\r\n");
+  $("#exOut").innerHTML = rows.length ? `<p style="margin:8px 0 0;font-weight:700;color:#0c3b26">${rows.length} نقطة</p><table><thead><tr><th>#</th><th>X</th><th>Y</th><th>Z</th><th>الطبقة</th><th>الوصف</th></tr></thead><tbody>${rows.slice(0, 30).map(r => `<tr><td>${r[0]}</td><td class="m">${r[1]}</td><td class="m">${r[2]}</td><td class="m">${r[3]}</td><td class="m">${esc(r[4])}</td><td>${esc(r[6] || r[5])}</td></tr>`).join("")}</tbody></table>${rows.length > 30 ? `<p class="hint">… و${rows.length - 30} غيرها في الملف</p>` : ""}<div class="pb"><button type="button" class="pri" data-act="exsave">⬇ حفظ CSV</button><button type="button" data-act="excopy">نسخ (للصق في Excel)</button></div>` : '<p class="hint">لم أجد نقاطاً بهذه الخيارات.</p>';
+}
+
+/* =============================== الملفات =============================== */
+const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+function saveText(name, txt, mime) {
+  const u8 = new TextEncoder().encode(txt);
+  if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, b64(u8), mime); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u8], { type: mime })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function copy(t) { try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else navigator.clipboard.writeText(t); toast("نُسخ ✓"); } catch (e) { toast("تعذّر النسخ"); } }
+let toastT; function toast(m) { const b = $("#busy"); $("#busyT").textContent = m; b.classList.add("on"); b.style.background = "transparent"; b.style.pointerEvents = "none"; $("#busyT").style.cssText = "background:rgba(12,59,38,.95);padding:10px 16px;border-radius:14px;border:1.5px solid #e6c35f;align-self:flex-start;margin-top:12px"; clearTimeout(toastT); toastT = setTimeout(() => { b.classList.remove("on"); b.style.cssText = ""; $("#busyT").style.cssText = ""; }, 1800); }
+function busy(m) { const b = $("#busy"); b.style.cssText = ""; $("#busyT").style.cssText = ""; $("#busyT").textContent = m; b.classList.toggle("on", !!m); }
+
+let eng = null;
+async function dwg2dxf(u8) {
+  if (!eng) { const { default: create } = await import("../dwg/lib/libredwg-web.js"); eng = await create({ locateFile: f => new URL("../dwg/lib/" + f, location.href).href }); }
+  eng.FS.writeFile("/in.dwg", u8); let out = null;
+  try { eng.dwg_write_dxf("/in.dwg", "/out.dxf"); out = eng.FS.readFile("/out.dxf"); } catch (e) { eng = null; }
+  try { eng && eng.FS.unlink("/in.dwg"); eng && eng.FS.unlink("/out.dxf"); } catch (e) {}
+  if (!out || !out.length) throw new Error("تعذّر قراءة ملف DWG هذا. احفظه من الأوتوكاد بصيغة DXF وافتحه.");
+  return out;
+}
+function decode(u8) {
+  let t = new TextDecoder("utf-8").decode(u8);
+  if (t.includes("�")) { try { t = new TextDecoder("windows-1256").decode(u8); } catch (e) {} }
+  return t;
+}
+async function openFile(f) {
+  if (!f) return; $("#menu").classList.remove("on");
+  busy("…جاري فتح " + f.name);
+  try {
+    await new Promise(r => setTimeout(r, 30));
+    let u8 = new Uint8Array(await f.arrayBuffer());
+    if (String.fromCharCode(...u8.subarray(0, 4)) === "AC10") { busy("…تحويل DWG (أول مرة تأخذ ثوانٍ)"); u8 = await dwg2dxf(u8); }
+    const txt = decode(u8);
+    if (/^AutoCAD Binary DXF/.test(txt)) throw new Error("ملف DXF ثنائي. احفظه بصيغة DXF نصية (ASCII).");
+    const P = parseDXF(txt), R = convert(P);
+    if (!R.ents.length) throw new Error("لم أجد رسومات في هذا الملف.");
+    D = { name: f.name.replace(/\.(dwg|dxf)$/i, ""), t: Date.now(), ents: R.ents, layers: P.layers, cur: "0" };
+    R.ents.forEach(e => ensureLayer(e.ly));
+    undo = []; sel = null; coordList = []; paths = null; hideWelcome(); setTitle(); fit(); save(); setCmd("sel");
+    busy(""); toast(`فُتح ${R.ents.length.toLocaleString("en")} عنصر · ${Object.keys(D.layers).length} طبقة`);
+  } catch (e) { busy(""); alert(e.message || "تعذّر فتح الملف"); }
+}
+$("#file").addEventListener("change", e => { openFile(e.target.files[0]); e.target.value = ""; });
+$("#file2").addEventListener("change", e => { openFile(e.target.files[0]); e.target.value = ""; });
+
+/* كتابة DXF (R12 بسيط يفتح في كل نسخ الأوتوكاد) */
+function toDXF() {
+  const o = [], w = (c, v) => o.push(c, v), n = v => (Math.round(v * 1e6) / 1e6).toString();
+  const enc = s => String(s).replace(/[^\x20-\x7e]/g, ch => "\\U+" + ch.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0"));
+  w(0, "SECTION"); w(2, "HEADER"); w(9, "$ACADVER"); w(1, "AC1009"); w(9, "$INSUNITS"); w(70, 6); w(0, "ENDSEC");
+  w(0, "SECTION"); w(2, "TABLES"); w(0, "TABLE"); w(2, "LAYER"); w(70, Object.keys(D.layers).length);
+  for (const [nm, L] of Object.entries(D.layers)) { w(0, "LAYER"); w(2, enc(nm)); w(70, 0); w(62, (L.on === false ? -1 : 1) * (L.c || 7)); w(6, "CONTINUOUS"); }
+  w(0, "ENDTAB"); w(0, "ENDSEC"); w(0, "SECTION"); w(2, "ENTITIES");
+  const hd = (t, e) => { w(0, t); w(8, enc(e.ly || "0")); if (e.col != null) w(62, e.col); };
+  for (const e of D.ents) {
+    if (e.t === "L") { hd("LINE", e); w(10, n(e.p[0][0])); w(20, n(e.p[0][1])); w(30, n(e.z ? e.z[0] : 0)); w(11, n(e.p[1][0])); w(21, n(e.p[1][1])); w(31, n(e.z ? e.z[1] : 0)); }
+    else if (e.t === "P") { hd("POLYLINE", e); w(66, 1); w(10, 0); w(20, 0); w(30, n(e.el || 0)); w(70, e.cl ? 1 : 0); e.p.forEach((q, i) => { w(0, "VERTEX"); w(8, enc(e.ly || "0")); w(10, n(q[0])); w(20, n(q[1])); w(30, n(e.zz ? e.zz[i] : 0)); if (e.b && e.b[i]) w(42, n(e.b[i])); }); w(0, "SEQEND"); w(8, enc(e.ly || "0")); }
+    else if (e.t === "C") { hd("CIRCLE", e); w(10, n(e.c[0])); w(20, n(e.c[1])); w(30, 0); w(40, n(e.r)); }
+    else if (e.t === "A") { hd("ARC", e); w(10, n(e.c[0])); w(20, n(e.c[1])); w(30, 0); w(40, n(e.r)); w(50, n(e.a0)); w(51, n(e.a1)); }
+    else if (e.t === "PT" || e.t === "X") { hd("POINT", e); w(10, n(e.p[0])); w(20, n(e.p[1])); w(30, n(e.z || 0)); }
+    else if (e.t === "T") { e.s.split("\n").forEach((ln, i) => { hd("TEXT", e); const dy = -i * e.h * 1.4; w(10, n(e.p[0])); w(20, n(e.p[1] + dy)); w(30, 0); w(40, n(e.h)); w(1, enc(ln)); if (e.r) w(50, n(e.r)); if (e.al) { w(72, e.al); w(11, n(e.p[0])); w(21, n(e.p[1] + dy)); w(31, 0); } }); }
+  }
+  w(0, "ENDSEC"); w(0, "EOF");
+  let s = ""; for (let i = 0; i < o.length; i += 2) s += o[i] + "\r\n" + o[i + 1] + "\r\n"; return s;
+}
+
+/* ---------- القائمة ---------- */
+$("#menuBtn").addEventListener("click", e => { e.stopPropagation(); $("#menu").classList.toggle("on"); });
+document.addEventListener("pointerdown", e => { if (!e.target.closest("#menu") && !e.target.closest("#menuBtn")) $("#menu").classList.remove("on"); });
+$("#menu").addEventListener("click", e => {
+  const b = e.target.closest("[data-m]"); if (!b) return; $("#menu").classList.remove("on");
+  if (b.dataset.m === "new") newDrawing();
+  if (b.dataset.m === "save") { if (!D.ents.length) { toast("الرسم فارغ"); return; } saveText((D.name || "رسم") + ".dxf", toDXF(), "application/dxf"); toast("حُفظ في التنزيلات ✓"); }
+  if (b.dataset.m === "extract") { if (!D.ents.length) { toast("افتح ملفاً أولاً"); return; } extractPanel(); }
+  if (b.dataset.m === "help") helpPanel();
+});
+function newDrawing() {
+  D = { name: "رسم جديد", t: Date.now(), ents: [], layers: { "0": { c: 7, on: true } }, cur: "0" };
+  undo = []; sel = null; coordList = []; paths = null; O = [0, 0]; k = 20; tx = W / 2; ty = H / 2; hideWelcome(); setTitle(); save(); setCmd("pline"); redraw();
+  toast("اكتب إحداثي أول نقطة X,Y أو اضغط على الشاشة");
+}
+$("#blank").addEventListener("click", newDrawing);
+function hideWelcome() { $("#welcome").style.display = "none"; }
+function setTitle() { $("#ttl").textContent = D.name || "أوتوكاد"; }
+function helpPanel() {
+  showPanel(`<h3>طريقة الاستعمال</h3><ol style="padding-inline-start:18px;margin:0;font-size:14px;line-height:1.8">
+  <li><b>فتح:</b> ☰ ملف ← فتح DWG أو DXF. ملف DWG يتحول تلقائياً على الجوال.</li>
+  <li><b>التحريك:</b> اسحب بإصبع، وكبّر/صغّر بإصبعين. ⛶ لرؤية الرسم كاملاً.</li>
+  <li><b>الدقة:</b> اضغط مطولاً فتظهر عدسة مكبّرة، حرّك إصبعك حتى يلتقط النقطة ثم ارفعه.</li>
+  <li><b>الالتقاط 🧲:</b> ⬜ نهاية · △ منتصف · ○ مركز · ◇ ربع دائرة · ✕ نقطة.</li>
+  <li><b>الكتابة:</b> في أي أمر اكتب <span class="n">X,Y</span> لنقطة بإحداثياتها، أو <span class="n">@10,5</span> للإزاحة من النقطة السابقة، أو <span class="n">@25&lt;90</span> لطول وزاوية.</li>
+  <li><b>المساحة:</b> اضغط داخل أي شكل مغلق فتظهر مساحته، أو اختر الرؤوس واحدة واحدة ثم إنهاء.</li>
+  <li><b>موازي:</b> اكتب المسافة ↵، اختر الخط، ثم اضغط في الجهة المطلوبة.</li>
+  <li><b>استخراج الإحداثيات:</b> ☰ ملف ← استخراج، اختر النقاط أو الكتل أو الرؤوس والطبقات، واحفظها CSV تفتح في Excel.</li>
+  <li><b>الحفظ:</b> عملك يُحفظ تلقائياً وفي الأرشيف. ☰ ملف ← حفظ DXF لفتحه في الأوتوكاد.</li></ol>`);
+}
+$("#fitBtn").addEventListener("click", fit);
+$("#snapBtn").addEventListener("click", e => { snapOn = !snapOn; e.currentTarget.setAttribute("aria-pressed", snapOn); });
+document.querySelector('#tools [data-a="layers"]').addEventListener("click", () => { if (panel.classList.contains("on") && $("#pBody h3") && $("#pBody h3").textContent === "الطبقات") hidePanel(); else layersPanel(); });
+document.querySelector('#tools [data-a="undo"]').addEventListener("click", doUndo);
+window.__back = () => { if ($("#menu").classList.contains("on")) { $("#menu").classList.remove("on"); return 1; } if (panel.classList.contains("on")) { hidePanel(); return 1; } if (pts.length) { pts = []; updPrompt(); redraw(); return 1; } if (cmd !== "sel") { setCmd("sel"); return 1; } return 0; };
+
+/* ---------- البداية ---------- */
+const onResize = () => { const r = view.getBoundingClientRect(); if (Math.abs(r.width - W) < .5 && Math.abs(r.height - H) < .5) return; const w = s2w(W / 2, H / 2); resize(); tx = W / 2 - (w[0] - O[0]) * k; ty = H / 2 + (w[1] - O[1]) * k; redraw(); };
+addEventListener("resize", onResize); try { new ResizeObserver(onResize).observe(view); } catch (e) {}
+resize();
+(function restore() {
+  let s = null; try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (s && Array.isArray(s.ents) && (s.ents.length || s.name)) {
+    D = { name: s.name, t: s.t || Date.now(), ents: s.ents, layers: s.layers || {}, cur: s.cur || "0" }; D.ents.forEach(e => ensureLayer(e.ly));
+    hideWelcome(); setTitle();
+    if (s.view && s.view.O) { O = s.view.O; k = s.view.k; tx = s.view.tx; ty = s.view.ty; } else fit();
+  }
+  setCmd("sel"); redraw();
+})();
+addEventListener("pagehide", () => { clearTimeout(saveT); try { localStorage.setItem(KEY, JSON.stringify({ name: D.name, t: D.t, ents: D.ents, layers: D.layers, cur: D.cur, view: { O, k, tx, ty } }, clean)); } catch (e) {} });
+</script>
+</body>
+</html>

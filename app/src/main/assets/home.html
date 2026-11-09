@@ -49,16 +49,23 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
 .k{display:inline-block;width:26px;height:6px;border-radius:4px;vertical-align:middle;margin-inline-end:6px}
 .about{text-align:center;line-height:1.9}
 .phone{font:700 18px var(--f-body);color:#17613f;direction:ltr;display:inline-block;user-select:all}
+.arc-q{width:100%;padding:10px 14px;border:1.5px solid var(--gold-2);border-radius:999px;font:600 15px var(--f-body);background:#fffdf7;margin-bottom:8px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px}
+.chips button{flex:none;border:1.5px solid var(--gold-2);border-radius:999px;background:#fffdf7;padding:5px 12px;font:700 13px var(--f-body);color:var(--green-2);cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--green-2);color:#fff6d6}
+.proj .acts{display:flex;flex-direction:column;gap:6px}
+.proj .acts .btn{padding:6px 12px;font-size:13px}
 .close{position:absolute;top:12px;inset-inline-end:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gold-2);background:#fff;color:var(--green-2);font-size:18px;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script src="archive.js"></script>
 </head>
 <body>
 <div class="screen">
   <div class="ui"><img src="img/ui-p1.jpg" alt="المهندس إسلام: أدوات المساحة في تطبيق واحد">
     <button class="hit" type="button" data-sheet="projects" aria-label="مشاريعي" style="left:73.54%;top:75.89%;width:22.64%;height:19.29%"></button>
-    <a class="hit" href="dwg/index.html" aria-label="تحويل DWG" style="left:49.52%;top:75.89%;width:23.38%;height:19.29%"></a>
-    <button class="hit" type="button" data-sheet="settings" aria-label="الإعدادات" style="left:27.21%;top:75.89%;width:21.47%;height:19.29%"></button>
+    <a class="hit" href="cad/index.html" aria-label="أوتوكاد" style="left:49.52%;top:75.89%;width:23.38%;height:19.29%"></a>
+    <button class="hit" type="button" data-sheet="archive" aria-label="الأرشيف" style="left:27.21%;top:75.89%;width:21.47%;height:19.29%"></button>
     <button class="hit" type="button" data-sheet="about" aria-label="حول التطبيق" style="left:3.83%;top:75.89%;width:22.74%;height:19.29%"></button>
   </div>
   <div class="gap" style="background-image:url(img/ui-g1.png)"></div>
@@ -103,8 +110,8 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
     <img src="img/ui-nav.jpg" alt="">
     <button class="hit" type="button" data-nav="home" aria-label="الرئيسية" style="left:74.81%;top:3.19%;width:22.53%;height:75.53%"></button>
     <button class="hit" type="button" data-sheet="projects" aria-label="مشاريعي" style="left:51.01%;top:3.19%;width:23.38%;height:75.53%"></button>
-    <a class="hit" href="dwg/index.html" aria-label="تحويل DWG" style="left:26.57%;top:3.19%;width:24.02%;height:75.53%"></a>
-    <button class="hit" type="button" data-sheet="settings" aria-label="الإعدادات" style="left:1.70%;top:3.19%;width:24.44%;height:75.53%"></button>
+    <a class="hit" href="cad/index.html" aria-label="أوتوكاد" style="left:26.57%;top:3.19%;width:24.02%;height:75.53%"></a>
+    <button class="hit" type="button" data-sheet="archive" aria-label="الأرشيف" style="left:1.70%;top:3.19%;width:24.44%;height:75.53%"></button>
   </div>
 </nav>
 
@@ -135,12 +142,21 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   </ul>
 </section>
 
-<section class="sheet" id="sh-settings" role="dialog" aria-modal="true" aria-labelledby="t-set">
+<section class="sheet" id="sh-archive" role="dialog" aria-modal="true" aria-labelledby="t-arc">
   <div class="grab"></div><button class="close" type="button" aria-label="إغلاق">✕</button>
-  <h3 id="t-set">الإعدادات</h3>
-  <h4>البيانات المحفوظة على هذا الهاتف</h4>
-  <p class="empty">كل أداة تحفظ عملك تلقائياً. احذف ما لا تحتاجه لتبدأ من جديد. الحذف لا يمكن التراجع عنه.</p>
-  <div id="dataList"></div>
+  <h3 id="t-arc">الأرشيف</h3>
+  <p class="empty" style="padding-bottom:6px">كل عمل تقوم به في أي أداة يُحفظ هنا تلقائياً، ويبقى محفوظاً حتى تحذفه أنت.</p>
+  <input id="arcQ" class="arc-q" type="search" placeholder="🔍 ابحث باسم البلدة، القطعة، الملف…">
+  <div id="arcChips" class="chips"></div>
+  <div id="arcList"></div>
+  <h4>نسخة احتياطية</h4>
+  <p class="empty">احفظ الأرشيف كله في ملف على الهاتف أو أرسله لنفسك، واسترجعه على أي هاتف.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="arcExp">⬇ حفظ نسخة</button><label class="btn" style="background:#fffaf0;color:var(--green-2)">⬆ استرجاع نسخة<input type="file" id="arcImp" accept=".json,application/json,*/*" hidden></label></div>
+  <p class="empty" id="arcMsg"></p>
+  <details style="margin-top:10px"><summary style="font-weight:700;color:var(--green-2);cursor:pointer">العمل المفتوح حالياً في الأدوات</summary>
+    <p class="empty">مسح العمل المفتوح لتبدأ من جديد. يبقى منه نسخة في الأرشيف.</p>
+    <div id="dataList"></div>
+  </details>
   <h4>النسخة</h4>
   <p class="empty" id="verSet">نسخة الويب</p>
 </section>
@@ -150,7 +166,7 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <h3 id="t-about">حول التطبيق</h3>
   <div class="about">
     <b style="font:700 22px var(--f-title);color:var(--green-2)">المهندس إسلام</b><br>
-    حاسب الكواشين · الإفراز · حاسبة الجرف · GOV إسلام · GEO إسلام · حاسبة الميل · الخنزيرة · دفتر الليفل<br>
+    حاسب الكواشين · الإفراز · حاسبة الجرف · GOV إسلام · GEO إسلام · حاسبة الميل · الخنزيرة · دفتر الليفل · أوتوكاد<br>
     صاحب ومطور التطبيق: <b>إسلام إسماعيل دويكات</b><br>
     <span class="phone">0598161862</span><br>
     <span id="ver2" style="color:var(--muted)"></span><br>
@@ -188,6 +204,15 @@ function projects() {
   const gmo = read("geomolg-v1");
   if (gmo && gmo.vil)
     out.push({ key: "geomolg-v1", img: "img/c-geomolg.jpg", href: "geomolg/index.html", title: gmo.vil + (gmo.blk ? " – حوض " + gmo.blk.split("/")[0] : "") + (gmo.plot ? " – قطعة " + gmo.plot : ""), sub: "GEO إسلام · آخر بحث" });
+  const lv = read("level-v1");
+  if (lv && lv.bm && lv.rows && lv.rows.length)
+    out.push({ key: "level-v1", img: "img/c-level.jpg", href: "level/index.html", title: "ميزانية من " + lv.bm.name, sub: "دفتر الليفل · " + lv.rows.filter(r => r.k !== "BS").length + " قراءة" });
+  const kh = read("khanzira-v1");
+  if (kh && kh.file && kh.file.name)
+    out.push({ key: "khanzira-v1", img: "img/c-kh.jpg", href: "khanzira/index.html", title: kh.file.name, sub: "الخنزيرة" });
+  const cad = read("cad-v1");
+  if (cad && cad.name && cad.ents && cad.ents.length)
+    out.push({ key: "cad-v1", img: "img/c-cad.jpg", href: "cad/index.html", title: cad.name, sub: "أوتوكاد · " + cad.ents.length + " عنصر" });
   return out;
 }
 function renderProjects() {
@@ -205,10 +230,49 @@ function renderData() {
   }));
 }
 
+/* ---------- الأرشيف ---------- */
+let arcItems = [], arcTool = "";
+const dt = t => { const d = new Date(t); return d.toLocaleDateString("en-GB") + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); };
+async function renderArchive() {
+  if (!window.Archive) { $("#arcList").innerHTML = '<p class="empty">الأرشيف غير متاح.</p>'; return; }
+  await Archive.snapAll(); arcItems = await Archive.list(); drawArchive();
+}
+function drawArchive() {
+  const tools = [...new Set(arcItems.map(i => i.tool))];
+  $("#arcChips").innerHTML = arcItems.length ? [`<button type="button" data-t="" aria-pressed="${!arcTool}">الكل (${arcItems.length})</button>`].concat(tools.map(t => `<button type="button" data-t="${esc(t)}" aria-pressed="${arcTool === t}">${esc(t)} (${arcItems.filter(i => i.tool === t).length})</button>`)).join("") : "";
+  const q = $("#arcQ").value.trim().toLowerCase();
+  const list = arcItems.filter(i => (!arcTool || i.tool === arcTool) && (!q || (i.title + " " + i.sub + " " + i.tool).toLowerCase().includes(q)));
+  const T = Archive.TOOLS;
+  $("#arcList").innerHTML = list.length ? list.map(i => `<div class="proj"><img src="${(T[i.key] || {}).img || "img/c-hisas.jpg"}" alt=""><div><b>${esc(i.title)}</b><small>${esc(i.tool)} · ${esc(i.sub)}</small><small dir="ltr" style="text-align:right">${dt(i.updated)}</small></div><div class="acts"><button class="btn" type="button" data-open="${esc(i.id)}">افتح</button><button class="btn warn" type="button" data-rm="${esc(i.id)}">حذف</button></div></div>`).join("")
+    : `<p class="empty">${arcItems.length ? "لا توجد نتائج." : "الأرشيف فارغ. ابدأ العمل في أي أداة ويُحفظ هنا تلقائياً."}</p>`;
+}
+$("#arcQ").addEventListener("input", drawArchive);
+$("#arcChips").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; arcTool = b.dataset.t; drawArchive(); });
+$("#arcList").addEventListener("click", async e => {
+  const o = e.target.closest("[data-open]"), r = e.target.closest("[data-rm]");
+  if (o) { const href = await Archive.open(o.dataset.open); if (href) location.href = href; }
+  if (r) {
+    if (!r.dataset.armed) { r.dataset.armed = 1; r.textContent = "تأكيد"; setTimeout(() => { if (r.isConnected) { delete r.dataset.armed; r.textContent = "حذف"; } }, 3500); return; }
+    await Archive.remove(r.dataset.rm); arcItems = await Archive.list(); drawArchive();
+  }
+});
+const b64u = s => btoa(unescape(encodeURIComponent(s)));
+$("#arcExp").addEventListener("click", async () => {
+  const txt = await Archive.exportAll(), name = "أرشيف المهندس إسلام " + new Date().toISOString().slice(0, 10) + ".json";
+  if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(name, b64u(txt), "application/json");
+  else { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "application/json" })); a.download = name; a.click(); }
+  $("#arcMsg").textContent = "✓ حُفظت النسخة في التنزيلات (" + arcItems.length + " عمل).";
+});
+$("#arcImp").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const n = await Archive.importAll(await f.text()); $("#arcMsg").textContent = "✓ استُرجع " + n + " عمل."; renderArchive(); }
+  catch (err) { $("#arcMsg").textContent = "✗ هذا ليس ملف نسخة احتياطية من التطبيق."; }
+});
+
 let cur = null;
 function openSheet(id) {
   if (id === "projects") renderProjects();
-  if (id === "settings") renderData();
+  if (id === "archive") { renderData(); renderArchive(); }
   if (cur) cur.classList.remove("on");
   cur = document.getElementById("sh-" + id); if (!cur) return;
   document.body.classList.add("open"); cur.classList.add("on");

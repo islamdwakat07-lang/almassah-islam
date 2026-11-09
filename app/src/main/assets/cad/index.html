@@ -120,6 +120,7 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
     <button type="button" data-c="move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/><path d="M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg>نقل</button>
     <button type="button" data-c="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>نسخ</button>
     <button type="button" data-c="text"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3h-2V6h-4v12h2v2H9v-2h2V6H7v1H5z"/></svg>نص</button>
+    <button type="button" data-c="erase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M15.5 3.5l5 5L10 19H5.5l-3-3z"/><path d="M9.5 9.5l5 5" /><path d="M10 19h11"/><path d="M15.5 3.5l5 5-5.9 5.9-5-5z" fill="currentColor" fill-opacity=".35"/></svg>ممحاة</button>
     <button type="button" data-a="layers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>الطبقات</button>
     <button type="button" data-a="undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 010 12h-2"/></svg>تراجع</button>
   </div>
@@ -645,15 +646,16 @@ const PROMPTS = {
   circle: () => pts.length ? "اضغط على المحيط أو <b>اكتب نصف القطر</b>" : "دائرة: اختر <b>المركز</b>",
   offset: () => offStep === 0 ? `موازي: اكتب <b>المسافة</b> (الحالية ${offD}) ثم اختر الخط` : offStep === 1 ? `موازي بمسافة <b>${offD}</b>: اختر الخط أو البوليلاين أو الدائرة` : "اضغط في <b>الجهة</b> التي تريد الخط الموازي فيها",
   text: () => pts.length ? "اكتب النص ثم ↵" : "نص: اختر مكان النص",
+  erase: () => `ممحاة: اضغط على أي خط أو نص أو نقطة <b>لمسحه</b>${erN ? ` (مُسح ${erN})` : ""} · <b>تراجع</b> يرجعه`,
   dim: () => pts.length === 0 ? "أبعاد: اختر <b>النقطة الأولى</b> (نهاية الضلع)" : pts.length === 1 ? "اختر <b>النقطة الثانية</b>" : "اضغط في <b>الجهة</b> التي تريد كتابة البُعد فيها",
   rotate: () => xStep === 0 ? `تدوير: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الارتكاز</b> (مركز الدوران)" : "اكتب <b>الزاوية</b> فوق، أو اضغط نقطة لتحديد الاتجاه الجديد",
   move: () => xStep === 0 ? `نقل: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الأساس</b>" : "اختر <b>المكان الجديد</b>، أو اكتب الإزاحة فوق",
   copy: () => xStep === 0 ? `نسخ: اضغط على العناصر لاختيارها (${selSet.length}) ثم <b>التالي</b>` : xStep === 1 ? "اختر <b>نقطة الأساس</b>" : "اختر مكان <b>النسخة</b> (تقدر تنسخ أكثر من مرة) ثم إنهاء",
 };
-let selSet = [], xStep = 0, xBase = null, lenLock = null;
+let selSet = [], xStep = 0, xBase = null, lenLock = null, erN = 0;
 let offStep = 1, offEnt = null;
 function setCmd(c) {
-  cmd = c; pts = []; hover = null; temp = null; offStep = 1; offEnt = null; if (c !== "sel") sel = null; selSet = []; xStep = 0; xBase = null; lenLock = null;
+  cmd = c; pts = []; hover = null; temp = null; offStep = 1; offEnt = null; if (c !== "sel") sel = null; selSet = []; xStep = 0; xBase = null; lenLock = null; erN = 0;
   document.querySelectorAll("#tools [data-c]").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === c));
   $("#inp").value = c === "offset" ? offD : ""; $("#inp").placeholder = c === "circle" ? "نصف القطر" : c === "offset" ? "المسافة" : c === "text" ? "النص" : "X,Y";
   $("#inp").style.direction = c === "text" ? "rtl" : "ltr";
@@ -692,6 +694,7 @@ function tap(sp, sx, sy) {
     if (last && lenLock) { const d = dist(last, p); if (d) { addPt([last[0] + (p[0] - last[0]) / d * lenLock, last[1] + (p[1] - last[1]) / d * lenLock]); lenLock = null; return; } }
     addPt(p); return;
   }
+  if (cmd === "erase") { const e = pickEnt(sx, sy); if (e) { delEnt(e); erN++; updPrompt(); } else toast("لا يوجد عنصر هنا"); return; }
   if (cmd === "dim") {
     pts.push(p);
     if (pts.length === 3) { addEnts(makeDim(pts[0], pts[1], pts[2])); pts = []; }

@@ -416,7 +416,13 @@ function draw() {
   ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * (tx), DPR * ty); ctx.lineWidth = 1.15 / k; ctx.lineJoin = "round";
   for (const [col, P] of paths) { ctx.strokeStyle = col; ctx.stroke(P); }
   for (const e of selSet) { const P = new Path2D(); addPath(P, e); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.stroke(P); }
-  if (sel) { const P = new Path2D(); addPath(P, sel); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.setLineDash([8 / k, 5 / k]); ctx.stroke(P); ctx.setLineDash([]); }
+  if (sel) { const P = new Path2D(); addPath(P, sel); ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 3.5 / k; ctx.setLineDash([8 / k, 5 / k]); ctx.stroke(P); ctx.setLineDash([]);
+    if (sel.t === "P") { ctx.restore(); ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.font = "700 12px 'IBM Plex Mono'"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+      segs(sel).forEach(([a, b, bu], i) => { const A = bu ? bulgeArc(a, b, bu) : null, Ln = A ? Math.abs(A.th) * A.r : dist(a, b), m = w2s(A ? [A.cx + A.r * Math.cos(A.a0 + A.th / 2), A.cy + A.r * Math.sin(A.a0 + A.th / 2)] : [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]), t = Ln.toFixed(2), w = ctx.measureText(t).width + 8;
+        ctx.fillStyle = "rgba(12,59,38,.92)"; ctx.fillRect(m[0] - w / 2, m[1] - 9, w, 18); ctx.fillStyle = "#ffd54a"; ctx.fillText(t, m[0], m[1]); });
+      sel.p.forEach((q, i) => { const s2 = w2s(q); ctx.fillStyle = "#ff6b6b"; ctx.beginPath(); ctx.arc(s2[0], s2[1], 4, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.fillText(String(i + 1), s2[0] + 10, s2[1] - 10); });
+      if (sel.cl) { const c = sel.p.reduce((s3, q) => [s3[0] + q[0] / sel.p.length, s3[1] + q[1] / sel.p.length], [0, 0]), cs = w2s(c), t = f2(plArea(sel)) + " m²", w = ctx.measureText(t).width + 12; ctx.fillStyle = "rgba(192,38,27,.92)"; ctx.fillRect(cs[0] - w / 2, cs[1] - 11, w, 22); ctx.fillStyle = "#fff"; ctx.fillText(t, cs[0], cs[1]); }
+    } }
   ctx.restore();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   // نقاط وكتل ونصوص (بحجم الشاشة)
@@ -871,7 +877,13 @@ function infoPanel(e) {
   if (e.t === "A") kv += `<b>المركز</b><span class="n">${f3(e.c[0])} , ${f3(e.c[1])}</span><b>نصف القطر</b><span class="n">${f3(e.r)}</span><b>طول القوس</b><span class="n">${f3(flatLen(e))}</span>`;
   if (e.t === "T") kv += `<b>النص</b><span>${esc(e.s)}</span><b>المكان</b><span class="n">${f3(e.p[0])} , ${f3(e.p[1])}</span>`;
   if (e.t === "PT" || e.t === "X") kv += (e.n ? `<b>الاسم</b><span class="n">${esc(e.n)}</span>` : "") + `<b>X</b><span class="n">${f3(e.p[0])}</span><b>Y</b><span class="n">${f3(e.p[1])}</span><b>Z</b><span class="n">${f3(e.z || 0)}</span>`;
-  showPanel(`<h3>${L}</h3><div class="kv">${kv}</div><div class="pb">${e.t === "P" || e.t === "L" ? '<button type="button" data-act="verts">إحداثيات الرؤوس</button>' : ""}<button type="button" class="red" data-act="del">🗑 حذف</button></div>`);
+  let sides = "";
+  if (e.t === "P") {
+    const sg = segs(e), n = e.p.length;
+    sides = `<table><thead><tr><th>الضلع</th><th>الطول (م)</th><th>الاتجاه</th></tr></thead><tbody>${sg.map(([a, b, bu], i) => { const A = bu ? bulgeArc(a, b, bu) : null; return `<tr><td class="m">${i + 1} → ${i + 2 > n ? 1 : i + 2}</td><td class="m"><b>${f3(A ? Math.abs(A.th) * A.r : dist(a, b))}</b>${A ? " ◠" : ""}</td><td class="m">${dms(azim(a, b))}</td></tr>`; }).join("")}</tbody></table>`;
+  }
+  const big = e.t === "P" && e.cl ? `<div class="big">${f2(plArea(e))} م²</div>` : "";
+  showPanel(`<h3>${L}</h3>${big}<div class="kv">${kv}</div>${sides}<div class="pb">${e.t === "P" ? '<button type="button" class="pri" data-act="sidetxt">اكتب الأطوال والمساحة في الرسم</button>' : ""}${e.t === "P" || e.t === "L" ? '<button type="button" data-act="verts">إحداثيات الرؤوس</button>' : ""}<button type="button" class="red" data-act="del">🗑 حذف</button></div>`);
   panel._ent = e;
 }
 const flatLen = e => { const f = flat(e)[0]; let L = 0; for (let i = 0; i < f.length - 1; i++) L += dist(f[i], f[i + 1]); return L; };
@@ -899,6 +911,13 @@ $("#pBody").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act, en = panel._ent;
   if (a === "del" && en) { delEnt(en); sel = null; hidePanel(); }
   if (a === "verts" && en) vertsPanel(en);
+  if (a === "sidetxt" && en && en.t === "P") {
+    const h = dimH || autoH(), out = [], ly = "أبعاد"; ensureLayer(ly, 3);
+    segs(en).forEach(([p1, p2, bu]) => { const A = bu ? bulgeArc(p1, p2, bu) : null, Ln = A ? Math.abs(A.th) * A.r : dist(p1, p2); let ang = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / Math.PI; if (ang > 90.01 || ang <= -89.99) ang += 180;
+      const m = A ? [A.cx + A.r * Math.cos(A.a0 + A.th / 2), A.cy + A.r * Math.sin(A.a0 + A.th / 2)] : [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]; out.push({ t: "T", p: m, h, s: Ln.toFixed(2), r: ang, al: 1, ly }); });
+    if (en.cl) { const c = en.p.reduce((s3, q) => [s3[0] + q[0] / en.p.length, s3[1] + q[1] / en.p.length], [0, 0]); out.push({ t: "T", p: c, h: h * 1.4, s: f2(plArea(en)) + " م²", r: 0, al: 1, ly }); }
+    addEnts(out); toast("كُتبت " + out.length + " قيمة في طبقة «أبعاد»");
+  }
   if (a === "vcsv" && en) saveText((D.name || "رسم") + " – رؤوس.csv", "﻿الرقم,X,Y\r\n" + en.p.map((q, i) => `${i + 1},${f3(q[0])},${f3(q[1])}`).join("\r\n"), "text/csv");
   if (a === "vcopy" && en) copy(en.p.map((q, i) => `${i + 1}\t${f3(q[0])}\t${f3(q[1])}`).join("\n"));
   if (a === "dimtext" && lastDist) { addEnts(makeDim(lastDist[0], lastDist[1], null)); temp = null; hidePanel(); }

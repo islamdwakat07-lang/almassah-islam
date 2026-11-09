@@ -51,6 +51,11 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
 .ly .sw{width:16px;height:16px;border-radius:4px;border:1px solid #0003;flex:none}
 .ly .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right}
 .ly input{width:20px;height:20px}
+.osg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.os{display:flex;align-items:center;gap:8px;border:1.5px solid #e2cf98;border-radius:12px;background:#fffdf6;padding:6px 8px;cursor:pointer;text-align:right;font-family:"IBM Plex Sans Arabic"}
+.os span{display:flex;flex-direction:column;line-height:1.2;min-width:0}.os b{font-size:13.5px;color:#0c3b26}.os small{font-size:11px;color:#5d6458;direction:ltr;text-align:right}
+.os svg{flex:none}.os[aria-pressed=false]{opacity:.5;filter:grayscale(.6)}
+.os[aria-pressed=true]{border-color:#c99a2e;background:#fff6d6;box-shadow:inset 0 0 0 1.5px #e6c35f}
 .chk{display:flex;align-items:center;gap:6px;font-size:14px;margin:3px 0}
 .chk input{width:18px;height:18px}
 #menu{position:absolute;top:4px;left:8px;z-index:5;background:#fffcf3;border:1.5px solid #c99a2e;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.5);padding:6px;display:none;min-width:220px}
@@ -306,8 +311,11 @@ function snaps(e) {           // نقاط الالتقاط: نهايات، من�
   else if (e.t === "P") { e.p.forEach(p => s.push([...p, "e"])); segs(e).forEach(([a, b, bu]) => { if (!bu) s.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, "m"]); else { const A = bulgeArc(a, b, bu), t = A.a0 + A.th / 2; s.push([A.cx + A.r * Math.cos(t), A.cy + A.r * Math.sin(t), "m"]); } }); }
   else if (e.t === "C") s.push([...e.c, "c"], [e.c[0] + e.r, e.c[1], "q"], [e.c[0] - e.r, e.c[1], "q"], [e.c[0], e.c[1] + e.r, "q"], [e.c[0], e.c[1] - e.r, "q"]);
   else if (e.t === "A") { const f = flat(e)[0]; s.push([...e.c, "c"], [...f[0], "e"], [...f[f.length - 1], "e"], [...f[f.length >> 1], "m"]); }
-  else if (e.t === "PT" || e.t === "X") s.push([...e.p, "n"]);
-  else if (e.t === "T") s.push([...e.p, "n"]);
+  else if (e.t === "PT") s.push([...e.p, "n"]);
+  else if (e.t === "X" || e.t === "T") s.push([...e.p, "i"]);
+  if (e.t === "P" && e.cl && e.p.length > 2) { let A = 0, cx = 0, cy = 0; const p = e.p, o = p[0];
+    for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length], ax = a[0] - o[0], ay = a[1] - o[1], bx = b[0] - o[0], by = b[1] - o[1], c = ax * by - bx * ay; A += c; cx += (ax + bx) * c; cy += (ay + by) * c; }
+    if (Math.abs(A) > 1e-12) s.push([o[0] + cx / (3 * A), o[1] + cy / (3 * A), "g"]); }
   return (e._s = s);
 }
 function segDist(p, a, b) {
@@ -423,18 +431,27 @@ function draw() {
   if (temp) { const P = new Path2D(); addPath(P, temp); ctx.save(); ctx.setTransform(DPR * k, 0, 0, -DPR * k, DPR * tx, DPR * ty); ctx.strokeStyle = "#ff9f43"; ctx.lineWidth = 2 / k; ctx.setLineDash([6 / k, 4 / k]); ctx.stroke(P); ctx.restore(); }
   for (const p of pts) { const s = w2s(p); ctx.fillStyle = "#ffd54a"; ctx.fillRect(s[0] - 3, s[1] - 3, 6, 6); }
   coordList.forEach((c, i) => { const s = w2s(c); ctx.strokeStyle = "#ff6b6b"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s[0], s[1], 5, 0, 7); ctx.stroke(); ctx.fillStyle = "#ffb3b3"; ctx.font = "bold 12px IBM Plex Mono"; ctx.textAlign = "left"; ctx.direction = "ltr"; ctx.fillText(c.n, s[0] + 7, s[1] - 6); });
-  if (snapMark) drawSnap(ctx, w2s(snapMark), snapMark[2]);
+  if (snapMark) drawSnap(ctx, w2s(snapMark), snapMark[2], true);
 }
 let snapMark = null;
-function drawSnap(c, s, kind) {
-  c.strokeStyle = "#00e5ff"; c.lineWidth = 2; c.beginPath();
-  if (kind === "e") c.rect(s[0] - 6, s[1] - 6, 12, 12);
-  else if (kind === "m") { c.moveTo(s[0], s[1] - 7); c.lineTo(s[0] + 7, s[1] + 5); c.lineTo(s[0] - 7, s[1] + 5); c.closePath(); }
-  else if (kind === "c") c.arc(s[0], s[1], 7, 0, 7);
-  else if (kind === "q") { c.moveTo(s[0], s[1] - 7); c.lineTo(s[0] + 7, s[1]); c.lineTo(s[0], s[1] + 7); c.lineTo(s[0] - 7, s[1]); c.closePath(); }
-  else if (kind === "n") { c.moveTo(s[0] - 6, s[1] - 6); c.lineTo(s[0] + 6, s[1] + 6); c.moveTo(s[0] + 6, s[1] - 6); c.lineTo(s[0] - 6, s[1] + 6); }
-  else { c.moveTo(s[0] - 7, s[1]); c.lineTo(s[0] + 7, s[1]); c.moveTo(s[0], s[1] - 7); c.lineTo(s[0], s[1] + 7); }
-  c.stroke();
+function drawSnap(c, s, kind, label) {
+  const x = s[0], y = s[1]; c.save(); c.strokeStyle = "#00e5ff"; c.lineWidth = 2.2; c.beginPath(); snapShape(c, x, y, kind, 7); c.stroke();
+  if (label && OSN[kind]) { c.font = "bold 12px 'IBM Plex Sans Arabic'"; c.direction = "rtl"; c.textAlign = "left"; const t = OSN[kind].ar, w = c.measureText(t).width + 10;
+    c.fillStyle = "rgba(8,42,27,.92)"; c.fillRect(x + 12, y + 10, w, 18); c.fillStyle = "#f3dc93"; c.textBaseline = "middle"; c.fillText(t, x + 17, y + 19.5); }
+  c.restore();
+}
+function snapShape(c, x, y, k, r) {   // رموز الالتقاط كما في الأوتوكاد
+  if (k === "e") c.rect(x - r, y - r, 2 * r, 2 * r);
+  else if (k === "m") { c.moveTo(x, y - r); c.lineTo(x + r, y + r * .75); c.lineTo(x - r, y + r * .75); c.closePath(); }
+  else if (k === "c") { c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); }
+  else if (k === "q") { c.moveTo(x, y - r); c.lineTo(x + r, y); c.lineTo(x, y + r); c.lineTo(x - r, y); c.closePath(); }
+  else if (k === "n") { c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); c.moveTo(x - r * .7, y - r * .7); c.lineTo(x + r * .7, y + r * .7); c.moveTo(x + r * .7, y - r * .7); c.lineTo(x - r * .7, y + r * .7); }
+  else if (k === "i") { c.rect(x - r, y - r * .2, r * 1.2, r * 1.2); c.rect(x - r * .2, y - r, r * 1.2, r * 1.2); }
+  else if (k === "x") { c.moveTo(x - r, y - r); c.lineTo(x + r, y + r); c.moveTo(x + r, y - r); c.lineTo(x - r, y + r); }
+  else if (k === "p") { c.moveTo(x - r, y - r); c.lineTo(x - r, y + r); c.lineTo(x + r, y + r); c.moveTo(x - r, y); c.lineTo(x, y); c.lineTo(x, y + r); }
+  else if (k === "r") { c.moveTo(x - r, y - r); c.lineTo(x + r, y - r); c.lineTo(x - r, y + r); c.lineTo(x + r, y + r); c.closePath(); }
+  else if (k === "g") { c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); c.moveTo(x - r * 1.5, y); c.lineTo(x + r * 1.5, y); c.moveTo(x, y - r * 1.5); c.lineTo(x, y + r * 1.5); }
+  else { c.moveTo(x - r, y); c.lineTo(x + r, y); c.moveTo(x, y - r); c.lineTo(x, y + r); }
 }
 function resize() {
   const r = view.getBoundingClientRect(); DPR = window.devicePixelRatio || 1; W = r.width; H = r.height;
@@ -456,17 +473,79 @@ function fit() {
 function zoomAt(sx, sy, f) { const w = s2w(sx, sy); k *= f; tx = sx - (w[0] - O[0]) * k; ty = sy + (w[1] - O[1]) * k; redraw(); }
 
 /* ---------- الالتقاط ---------- */
+/* أوضاع الالتقاط (Object Snap) */
+const OSN = {
+  e: { ar: "نهاية", en: "Endpoint", on: 1 }, m: { ar: "منتصف", en: "Midpoint", on: 1 }, c: { ar: "مركز", en: "Center", on: 1 },
+  q: { ar: "ربع الدائرة", en: "Quadrant", on: 1 }, n: { ar: "نقطة", en: "Node", on: 1 }, i: { ar: "إدراج كتلة/نص", en: "Insertion", on: 1 },
+  x: { ar: "تقاطع", en: "Intersection", on: 1 }, p: { ar: "عمودي", en: "Perpendicular", on: 0 }, r: { ar: "أقرب نقطة على الخط", en: "Nearest", on: 0 },
+  g: { ar: "مركز القطعة", en: "Centroid", on: 0 },
+};
+const OS_KEY = "cad-osnap";
+let OS = {}; Object.keys(OSN).forEach(k => OS[k] = !!OSN[k].on);
+try { const v = JSON.parse(localStorage.getItem(OS_KEY) || "null"); if (v) { Object.assign(OS, v.m || {}); snapOn = v.on !== false; } } catch (e) {}
+const saveOS = () => { try { localStorage.setItem(OS_KEY, JSON.stringify({ on: snapOn, m: OS })); } catch (e) {} };
+function nearSegs(w, tol, max) {   // الأضلاع القريبة من الإصبع
+  const out = [];
+  for (const e of D.ents) {
+    if (!vis(e) || e.t === "T" || e.t === "PT" || e.t === "X") continue; const b = bbox(e);
+    if (w[0] < b[0] - tol || w[0] > b[2] + tol || w[1] < b[1] - tol || w[1] > b[3] + tol) continue;
+    for (const c of flat(e)) for (let i = 0; i < c.length - 1; i++) if (segDist(w, c[i], c[i + 1]) < tol) { out.push([c[i], c[i + 1], e]); if (out.length >= max) return out; }
+  }
+  return out;
+}
+function segX(a, b, c, d) {
+  const r = [b[0] - a[0], b[1] - a[1]], q = [d[0] - c[0], d[1] - c[1]], den = r[0] * q[1] - r[1] * q[0]; if (Math.abs(den) < 1e-12) return null;
+  const t = ((c[0] - a[0]) * q[1] - (c[1] - a[1]) * q[0]) / den, u = ((c[0] - a[0]) * r[1] - (c[1] - a[1]) * r[0]) / den;
+  return t >= -1e-9 && t <= 1 + 1e-9 && u >= -1e-9 && u <= 1 + 1e-9 ? [a[0] + t * r[0], a[1] + t * r[1]] : null;
+}
+function foot(p, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy; if (!L2) return null; const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2; return [a[0] + t * dx, a[1] + t * dy, t]; }
 function snapAt(sx, sy) {
   const w = s2w(sx, sy); if (!snapOn) return [w[0], w[1], ""];
   const tol = 22 / k; let best = null, bd = tol;
+  const RANK = "exncigmqpr";   // عند التساوي: النهاية ثم التقاطع ثم النقطة…
+  const take = (x, y, kind) => { const d = Math.hypot(x - w[0], y - w[1]); if (d < bd - 1e-9 || (best && Math.abs(d - bd) < 1e-9 && RANK.indexOf(kind) < RANK.indexOf(best[2]))) { bd = d; best = [x, y, kind]; } };
   for (const e of D.ents) {
     if (!vis(e)) continue; const b = bbox(e);
-    if (w[0] < b[0] - tol || w[0] > b[2] + tol || w[1] < b[1] - tol || w[1] > b[3] + tol) { if (e.t !== "C") continue; }
-    for (const s of snaps(e)) { const d = Math.hypot(s[0] - w[0], s[1] - w[1]); if (d < bd) { bd = d; best = s; } }
+    if (w[0] < b[0] - tol || w[0] > b[2] + tol || w[1] < b[1] - tol || w[1] > b[3] + tol) { if (!(e.t === "C" || (e.t === "P" && e.cl))) continue; }
+    for (const s of snaps(e)) if (OS[s[2]]) take(s[0], s[1], s[2]);
   }
-  for (const p of pts) { const d = dist(p, w); if (d < bd) { bd = d; best = [p[0], p[1], "e"]; } }
+  if (OS.e) for (const p of pts) take(p[0], p[1], "e");
+  if (OS.x || OS.p || OS.r) {
+    const S = nearSegs(w, tol, 300);
+    if (OS.x) for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
+      if (S[i][2] === S[j][2] && (S[i][1] === S[j][0] || S[i][0] === S[j][1])) continue;   // ضلعان متتاليان من نفس الخط
+      const X = segX(S[i][0], S[i][1], S[j][0], S[j][1]); if (X) take(X[0], X[1], "x");
+    }
+    if (!best && OS.p && pts.length) { const L = pts[pts.length - 1]; for (const [a, b2] of S) { const f = foot(L, a, b2); if (f && f[2] >= 0 && f[2] <= 1) take(f[0], f[1], "p"); } }
+    if (!best && OS.r) for (const [a, b2] of S) { const f = foot(w, a, b2); if (f) { const t = Math.max(0, Math.min(1, f[2])); take(a[0] + t * (b2[0] - a[0]), a[1] + t * (b2[1] - a[1]), "r"); } }
+  }
   return best ? [best[0], best[1], best[2]] : [w[0], w[1], ""];
 }
+/* لوحة الالتقاط */
+const snapIcon = (k, sz = 34) => `<svg viewBox="0 0 34 34" width="${sz}" height="${sz}"><rect width="34" height="34" rx="8" fill="#1b1f24"/><path d="${snapPath(k)}" fill="none" stroke="#00e5ff" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
+function snapPath(k) {
+  const P = new Path2DRecorder(); snapShape(P, 17, 17, k, 9); return P.d;
+}
+function Path2DRecorder() { this.d = ""; }
+Path2DRecorder.prototype = {
+  moveTo(x, y) { this.d += `M${x} ${y}`; }, lineTo(x, y) { this.d += `L${x} ${y}`; }, closePath() { this.d += "Z"; },
+  rect(x, y, w, h) { this.d += `M${x} ${y}h${w}v${h}h${-w}Z`; },
+  arc(x, y, r) { this.d += `M${x + r} ${y}A${r} ${r} 0 1 0 ${x - r} ${y}A${r} ${r} 0 1 0 ${x + r} ${y}`; },
+};
+function osnapPanel() {
+  showPanel(`<h3>🧲 الالتقاط (Object Snap)</h3>
+  <label class="chk" style="font-weight:700;font-size:15px;margin-bottom:6px"><input type="checkbox" id="osOn" ${snapOn ? "checked" : ""}> تشغيل الالتقاط</label>
+  <div class="osg">${Object.keys(OSN).map(k => `<button type="button" class="os" data-os="${k}" aria-pressed="${!!OS[k]}">${snapIcon(k)}<span><b>${OSN[k].ar}</b><small>${OSN[k].en}</small></span></button>`).join("")}</div>
+  <div class="pb"><button type="button" data-osall="1">الكل</button><button type="button" data-osall="0">لا شيء</button><button type="button" data-osall="d">الافتراضي</button></div>
+  <p class="hint">«عمودي» يعمل بعد النقطة الأولى في الخط والمسافة. «أقرب نقطة» يلتقط أي نقطة على الخط عندما لا يوجد التقاط آخر.</p>`);
+  panel._os = 1;
+}
+$("#pBody").addEventListener("click", e => {
+  const b = e.target.closest("[data-os]"); if (b) { OS[b.dataset.os] = !OS[b.dataset.os]; b.setAttribute("aria-pressed", OS[b.dataset.os]); if (OS[b.dataset.os] && !snapOn) { snapOn = true; $("#osOn").checked = true; } saveOS(); updSnapBtn(); return; }
+  const a = e.target.closest("[data-osall]"); if (a) { Object.keys(OSN).forEach(k => OS[k] = a.dataset.osall === "d" ? !!OSN[k].on : a.dataset.osall === "1"); saveOS(); osnapPanel(); updSnapBtn(); }
+});
+$("#pBody").addEventListener("change", e => { if (e.target.id === "osOn") { snapOn = e.target.checked; saveOS(); updSnapBtn(); } });
+function updSnapBtn() { const n = Object.values(OS).filter(Boolean).length; $("#snapBtn").setAttribute("aria-pressed", snapOn && n > 0); $("#snapBtn").textContent = "🧲 الالتقاط" + (snapOn ? ` (${n})` : " ✕"); }
 function pickEnt(sx, sy) {
   const w = s2w(sx, sy), tol = 14 / k; let best = null, bd = tol;
   for (let i = D.ents.length - 1; i >= 0; i--) {
@@ -644,7 +723,7 @@ function makeOffset(e, w) {
 
 /* =============================== اللوحات =============================== */
 const panel = $("#panel");
-function showPanel(h) { $("#pBody").innerHTML = h; panel.classList.add("on"); }
+function showPanel(h) { $("#pBody").innerHTML = h; panel.classList.add("on"); panel._os = 0; }
 function hidePanel() { panel.classList.remove("on"); }
 $("#pX").addEventListener("click", () => { hidePanel(); if (cmd === "sel") { sel = null; redraw(); } });
 let lastDist = null;
@@ -851,7 +930,7 @@ function helpPanel() {
   <li><b>فتح:</b> ☰ ملف ← فتح DWG أو DXF. ملف DWG يتحول تلقائياً على الجوال.</li>
   <li><b>التحريك:</b> اسحب بإصبع، وكبّر/صغّر بإصبعين. ⛶ لرؤية الرسم كاملاً.</li>
   <li><b>الدقة:</b> اضغط مطولاً فتظهر عدسة مكبّرة، حرّك إصبعك حتى يلتقط النقطة ثم ارفعه.</li>
-  <li><b>الالتقاط 🧲:</b> ⬜ نهاية · △ منتصف · ○ مركز · ◇ ربع دائرة · ✕ نقطة.</li>
+  <li><b>الالتقاط 🧲:</b> اضغط زر الالتقاط واختر ما تريد: نهاية، منتصف، مركز، ربع الدائرة، نقطة، إدراج، تقاطع، عمودي، أقرب نقطة، مركز القطعة. اسم الالتقاط يظهر بجانب الرمز.</li>
   <li><b>الكتابة:</b> في أي أمر اكتب <span class="n">X,Y</span> لنقطة بإحداثياتها، أو <span class="n">@10,5</span> للإزاحة من النقطة السابقة، أو <span class="n">@25&lt;90</span> لطول وزاوية.</li>
   <li><b>المساحة:</b> اضغط داخل أي شكل مغلق فتظهر مساحته، أو اختر الرؤوس واحدة واحدة ثم إنهاء.</li>
   <li><b>موازي:</b> اكتب المسافة ↵، اختر الخط، ثم اضغط في الجهة المطلوبة.</li>
@@ -859,7 +938,8 @@ function helpPanel() {
   <li><b>الحفظ:</b> عملك يُحفظ تلقائياً وفي الأرشيف. ☰ ملف ← حفظ DXF لفتحه في الأوتوكاد.</li></ol>`);
 }
 $("#fitBtn").addEventListener("click", fit);
-$("#snapBtn").addEventListener("click", e => { snapOn = !snapOn; e.currentTarget.setAttribute("aria-pressed", snapOn); });
+$("#snapBtn").addEventListener("click", () => { if (panel.classList.contains("on") && panel._os) hidePanel(); else osnapPanel(); });
+updSnapBtn();
 document.querySelector('#tools [data-a="layers"]').addEventListener("click", () => { if (panel.classList.contains("on") && $("#pBody h3") && $("#pBody h3").textContent === "الطبقات") hidePanel(); else layersPanel(); });
 document.querySelector('#tools [data-a="undo"]').addEventListener("click", doUndo);
 window.__back = () => { if ($("#menu").classList.contains("on")) { $("#menu").classList.remove("on"); return 1; } if (panel.classList.contains("on")) { hidePanel(); return 1; } if (pts.length) { pts = []; updPrompt(); redraw(); return 1; } if (cmd !== "sel") { setCmd("sel"); return 1; } return 0; };

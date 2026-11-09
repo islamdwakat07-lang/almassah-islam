@@ -52,6 +52,7 @@ td.m{font-size:12.5px}
 .parcel>.hd input,.parcel>.hd select{width:auto;max-width:150px;padding:6px 8px}
 .parcel>.bd{padding:10px}
 .parcel.shut>.bd{display:none}
+.fl{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .tg{border:0;background:none;font-size:18px;cursor:pointer;color:#0c3b26;width:28px}
 canvas.dw{width:100%;height:300px;display:block;border:1.5px solid #eadfbf;border-radius:12px;background:#fff;margin-top:10px;touch-action:none}
 .chk{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:#0c3b26}
@@ -257,7 +258,7 @@ const HINT = {
   both: "ضع علامة «قطعة رئيسية» على كل قطعة أصل. لكل قطعة فرعية اختر «تنتمي إلى» أصلها. لدمج قطع من أصول مختلفة أعطها نفس اسم «مجموعة الدمج».",
   apt: "إفراز الشقق نجهّزه لاحقًا؛ احسب الأرض من تبويب الأراضي.",
 };
-const LAND = ["قسيمة", "طريق", "ممر", "فضلة", "منطقة خضراء", "مرفق عام", "موقف", "أخرى"];
+const LAND = ["قسيمة", "رئيسية", "جزء مستثنى", "طريق", "ممر", "فضلة", "منطقة خضراء", "مرفق عام", "موقف", "أخرى"];
 
 let S = {}; try { S = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
 const blank = () => ({ info: { gov: "", vil: "", blk: "", hay: "", plot: "", type: "normal" }, pts: [], trav: [], parcels: [], so: { st: "", bs: "", list: [] }, t: Date.now() });
@@ -473,10 +474,10 @@ function renderParcels() {
   const type = S.info.type || "normal";
   $("#parcelList").innerHTML = S.parcels.map((P, k) => `<div class="parcel ${P.open ? "" : "shut"}" data-pc="${k}">
     <div class="hd"><button type="button" class="tg" data-pa="tog">${P.open ? "▼" : "▶"}</button>
-      <b>رقم القطعة:</b><input data-pk="no" value="${esc(P.no)}" style="max-width:90px">
+      <span class="fl"><b>رقم القطعة:</b><input data-pk="no" value="${esc(P.no)}" style="max-width:90px"></span>
       ${type !== "normal" ? `<label class="chk"><input type="checkbox" data-pk="main" ${P.main ? "checked" : ""}>قطعة رئيسية</label>${P.main ? '<span class="pill">رئيسية</span>' : ""}` : ""}
-      <b>نوع الأرض الناتجة:</b><select data-pk="land">${LAND.map(l => `<option ${P.land === l ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <b>A.Reg (كوشان):</b><input class="num" data-pk="areg" value="${esc(P.areg)}" placeholder="المساحة المسجلة" style="max-width:120px" inputmode="decimal">
+      <span class="fl"><b>نوع الأرض الناتجة:</b><select data-pk="land">${(LAND.includes(P.land) ? LAND : LAND.concat(P.land || [])).map(l => `<option ${P.land === l ? "selected" : ""}>${l}</option>`).join("")}</select></span>
+      <span class="fl"><b>A.Reg (كوشان):</b><input class="num" data-pk="areg" value="${esc(P.areg)}" placeholder="المساحة المسجلة" style="max-width:120px" inputmode="decimal"></span>
       ${type === "both" && !P.main ? `<b>تنتمي إلى:</b><select data-pk="of"><option value="">—</option>${mainsList().map(m => `<option value="${esc(m.no)}" ${String(P.of) === String(m.no) ? "selected" : ""}>${esc(m.no)}</option>`).join("")}</select><b>مجموعة الدمج:</b><input data-pk="grp" value="${esc(P.grp)}" style="max-width:90px">` : ""}
       <button type="button" class="btn red sm" data-pa="del" style="margin-inline-start:auto">حذف القطعة</button></div>
     <div class="bd">
@@ -531,15 +532,41 @@ function drawParcels(cv, list, labelsAll) {
   cv.width = W * D; cv.height = H * D; const c = cv.getContext("2d"); c.setTransform(D, 0, 0, D, 0, 0); c.clearRect(0, 0, W, H);
   const all = list.flatMap(x => x.R.coords || []); if (!all.length) return;
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; all.forEach(p => { x0 = Math.min(x0, p.E); x1 = Math.max(x1, p.E); y0 = Math.min(y0, p.N); y1 = Math.max(y1, p.N); });
-  const k = Math.min((W - 60) / Math.max(x1 - x0, 1e-6), (H - 50) / Math.max(y1 - y0, 1e-6)), ox = (W - (x1 - x0) * k) / 2, oy = (H - (y1 - y0) * k) / 2;
+  const PAD = 46, k = Math.min((W - 2 * PAD) / Math.max(x1 - x0, 1e-6), (H - 2 * PAD) / Math.max(y1 - y0, 1e-6)), ox = (W - (x1 - x0) * k) / 2, oy = (H - (y1 - y0) * k) / 2;
   const T = p => [ox + (p.E - x0) * k, H - oy - (p.N - y0) * k];
+  const halo = (t, x, y, font, col, ang = 0, align = "center") => { c.save(); c.translate(x, y); c.rotate(ang); c.font = font; c.textAlign = align; c.textBaseline = "middle"; c.direction = "ltr"; c.lineJoin = "round"; c.strokeStyle = "rgba(255,255,255,.95)"; c.lineWidth = 4; c.strokeText(t, 0, 0); c.fillStyle = col; c.fillText(t, 0, 0); c.restore(); };
+  const fs = Math.max(9, Math.min(12, W / 60));
   list.forEach((x, i) => {
     const pts = x.R.coords; c.beginPath(); pts.forEach((p, j) => { const [a, b] = T(p); j ? c.lineTo(a, b) : c.moveTo(a, b); }); if (x.R.closed) c.closePath();
     c.fillStyle = list.length > 1 ? COLS[i % COLS.length] : "#e3e8e4"; if (x.R.closed) c.fill(); c.strokeStyle = x.P.main ? "#8a1c12" : "#2d5a46"; c.lineWidth = x.P.main ? 2.4 : 1.6; c.stroke();
-    if (x.R.closed) { const cx = pts.slice(0, -1).reduce((s, p) => s + T(p)[0], 0) / (pts.length - 1), cy = pts.slice(0, -1).reduce((s, p) => s + T(p)[1], 0) / (pts.length - 1);
-      c.font = "700 12px 'IBM Plex Sans Arabic'"; c.textAlign = "center"; c.fillStyle = "#0c3b26"; c.fillText((x.P.no || "") + (x.P.main ? " (رئيسية)" : ""), cx, cy); c.font = "600 11px 'IBM Plex Mono'"; c.fillText(fA(x.R.total) + " m²", cx, cy + 14); }
   });
-  if (labelsAll || list.length < 12) { const seen = new Set(); list.forEach(x => (x.R.seq || []).forEach((n, j) => { if (seen.has(n)) return; seen.add(n); const [a, b] = T(x.R.coords[j]); c.fillStyle = "#c0261b"; c.beginPath(); c.arc(a, b, 2.8, 0, 7); c.fill(); c.font = "600 10px 'IBM Plex Mono'"; c.fillStyle = "#333"; c.textAlign = "left"; c.fillText(n, a + 4, b - 4); })); }
+  /* أطوال الأضلاع: بجانب منتصف كل ضلع للخارج، وبموازاته */
+  const doneE = new Set();
+  list.forEach(x => {
+    const pts = x.R.coords, n = x.R.closed ? pts.length - 1 : pts.length; if (n < 2) return;
+    const cen = pts.slice(0, n).reduce((s2, p) => { const t = T(p); return [s2[0] + t[0] / n, s2[1] + t[1] / n]; }, [0, 0]);
+    x.R.rows.forEach(rw => {
+      const key = [rw.from, rw.to].sort().join("|"); if (doneE.has(key)) return; doneE.add(key);
+      const a = T(pts[rw.i]), b = T(pts[rw.i + 1]), L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 28) return;
+      let nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L; const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      if ((mx - cen[0]) * nx + (my - cen[1]) * ny < 0) { nx = -nx; ny = -ny; }
+      let ang = Math.atan2(b[1] - a[1], b[0] - a[0]); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
+      halo(rw.d.toFixed(2), mx + nx * (fs * .95), my + ny * (fs * .95), `600 ${fs}px 'IBM Plex Mono'`, "#1f4fa3", ang);
+    });
+  });
+  list.forEach(x => { if (!x.R.closed) return; const pts = x.R.coords, n = pts.length - 1; const cx = pts.slice(0, n).reduce((s2, p) => s2 + T(p)[0], 0) / n, cy = pts.slice(0, n).reduce((s2, p) => s2 + T(p)[1], 0) / n;
+    halo(String(x.P.no || "") + (x.P.main ? " (رئيسية)" : ""), cx, cy - 8, `700 ${fs + 1}px 'IBM Plex Sans Arabic'`, "#0c3b26"); halo(fA(x.R.total) + " m²", cx, cy + 9, `600 ${fs}px 'IBM Plex Mono'`, "#0c3b26"); });
+  /* أرقام النقاط: خارج الزاوية بعيداً عن الخطوط */
+  if (labelsAll || list.length < 12) {
+    const allP = new Map(); list.forEach(x => (x.R.seq || []).forEach((nm, j) => { if (!allP.has(nm)) allP.set(nm, { p: x.R.coords[j], nb: [] }); const me = allP.get(nm), sq = x.R.seq; if (j > 0) me.nb.push(x.R.coords[j - 1]); if (j < sq.length - 1) me.nb.push(x.R.coords[j + 1]); }));
+    allP.forEach((v, nm) => {
+      const [a, b] = T(v.p); let dx = 0, dy = 0;
+      v.nb.forEach(q => { const t = T(q), L = Math.hypot(t[0] - a, t[1] - b) || 1; dx += (t[0] - a) / L; dy += (t[1] - b) / L; });
+      let L = Math.hypot(dx, dy); if (L < 1e-3) { dx = 0; dy = -1; L = 1; } dx = -dx / L; dy = -dy / L;   // عكس اتجاه الأضلاع = خارج الزاوية
+      c.fillStyle = "#c0261b"; c.beginPath(); c.arc(a, b, 3, 0, 7); c.fill();
+      halo(String(nm), a + dx * (fs + 3), b + dy * (fs + 3), `700 ${fs}px 'IBM Plex Mono'`, "#8a1c12");
+    });
+  }
 }
 function familyOf(M) {
   const type = S.info.type; if (type === "both") return [M, ...S.parcels.filter(p => !p.main && String(p.of) === String(M.no))];
@@ -650,8 +677,8 @@ async function buildPdf(sections, name) {
   pages.forEach((c, i) => { if (i) doc.addPage(); doc.addImage(c.toDataURL("image/jpeg", .9), "JPEG", 0, 0, 210, 297); });
   window.__pdfPages = pages; saveFile(name, doc.output("datauristring").split(",")[1], "application/pdf"); toast("حُفظ PDF في التنزيلات ✓");
 }
-$("#pdfAll").addEventListener("click", async e => {
-  const b = e.currentTarget, old = b.textContent; b.disabled = true; b.textContent = "…";
+async function stylePdf() {
+  const b = $("#pdfAll"), old = b.textContent; b.disabled = true; b.textContent = "…";
   try {
     const secs = [];
     S.parcels.forEach((P, i) => { const R = calcParcel(P); if (R.err) return; secs.push(async newPage => {
@@ -676,6 +703,115 @@ $("#pdfAll").addEventListener("click", async e => {
     });
     await buildPdf(secs, projName() + ".pdf");
   } catch (err) { alert("تعذّر تجهيز PDF: " + err.message); } finally { b.disabled = false; b.textContent = old; }
+}
+
+/* ================= التقرير الكامل (Full Report) بثلاث لغات ================= */
+const L10N = {
+  ar: { dir: "rtl", title: "حسابات دائرة المساحة — التقرير الكامل", prov: "المحافظة", vil: "المدينة / القرية", blk: "رقم الحوض", hay: "رقم الحي", plot: "رقم القطعة", ptype: "نوع المشروع", by: "إعداد", byName: "م. إسلام إسماعيل دويكات · 0598161862",
+    parcel: "القطعة رقم", main: "(قطعة رئيسية)", land: "نوع الأرض", isMain: "قطعة رئيسية؟", yes: "نعم", no: "لا",
+    cols: ["من", "إلى", "المسافة", "الأزيموث°", "الأزيموث (د-د-ث)", "الاتجاه الربعي", "قوس؟", "السهم F", "نصف القطر R", "مساحة القوس", "رقم النقطة", "Northing", "Easting"],
+    poly: "مساحة المضلع (Shoelace)", arcs: "مجموع مساحات الأقواس", total: "المساحة الإجمالية (المحسوبة)", areg: "المساحة المسجلة A.Reg (كوشان)", allow: "الفرق المسموح ± A.Allow", diffP: "الفرق الفعلي (محسوب − مسجل)",
+    sum: "الملخص العام", scols: ["#", "رقم القطعة", "نوع الأرض", "رئيسية؟", "المساحة المحسوبة (م²)", "A.Reg (م²)", "المساحة المعدلة"],
+    mainA: "مساحة القطعة الرئيسية (محسوبة)", others: "مجموع مساحات باقي القطع (محسوبة)", mareg: "A.Reg للقطعة الرئيسية (كوشان)", allowS: "الفرق المسموح (±) A.Allow", diffS: "الفرق (A.Reg − المحسوبة للرئيسية)", within: "ضمن المسموح / تم التوزيع؟",
+    sign: "توقيع وختم المساح", page: (i, n) => `صفحة ${i} من ${n}`, unit: "م²",
+    types: { normal: "عادي", split: "إفراز", merge: "توحيد", both: "إفراز وتوحيد", apt: "إفراز شقق" }, lands: {} },
+  en: { dir: "ltr", title: "LAND SURVEY CALCULATIONS — FULL REPORT", prov: "Province", vil: "City/Village", blk: "Block No.", hay: "District No.", plot: "Parcel No.", ptype: "Project Type", by: "Prepared by", byName: "Eng. Islam Ismail Dweikat · 0598161862",
+    parcel: "PARCEL NO.", main: "(MAIN PARCEL)", land: "Land Type", isMain: "Main Parcel?", yes: "Yes", no: "No",
+    cols: ["From", "To", "Distance", "Azimuth (Grid)°", "Azimuth DMS", "Bearing", "Arc?", "Sagitta F", "Radius R", "Arc Area", "Point No.", "Northing", "Easting"],
+    poly: "POLYGON AREA (Shoelace)", arcs: "ARC AREA SUM", total: "TOTAL AREA (Calculated)", areg: "A.Reg (Kushan)", allow: "A.Allow (±)", diffP: "Difference (Calculated − Registered)",
+    sum: "SUMMARIES", scols: ["#", "Parcel No.", "Land Type", "Main?", "Calculated Area (m²)", "A.Reg (m²)", "Adjusted"],
+    mainA: "Main Parcel Area (Calculated)", others: "Sum of Other Parcels (Calculated)", mareg: "Main Parcel A.Reg (Kushan)", allowS: "A.Allow (±)", diffS: "Difference (A.Reg − Main Calculated)", within: "Within Tolerance / Distributed?",
+    sign: "Surveyor signature & stamp", page: (i, n) => `Page ${i} of ${n}`, unit: "m²",
+    types: { normal: "Normal", split: "Subdivision (Ifraz)", merge: "Consolidation (Merge)", both: "Subdivision & Consolidation", apt: "Apartments" },
+    lands: { "قسيمة": "Plot", "رئيسية": "Main", "جزء مستثنى": "Excluded part", "طريق": "Road", "ممر": "Passage", "فضلة": "Remnant", "منطقة خضراء": "Green area", "مرفق عام": "Public facility", "موقف": "Parking", "أخرى": "Other" } },
+  he: { dir: "rtl", title: "חישובי מדידה — דוח מלא", prov: "מחוז", vil: "יישוב", blk: "מס׳ גוש", hay: "מס׳ שכונה", plot: "מס׳ חלקה", ptype: "סוג הפרויקט", by: "הוכן ע״י", byName: "מהנדס איסלאם איסמאעיל דויכאת · 0598161862",
+    parcel: "חלקה מס׳", main: "(חלקה ראשית)", land: "סוג הקרקע", isMain: "חלקה ראשית?", yes: "כן", no: "לא",
+    cols: ["מ-", "אל", "מרחק", "אזימוט°", "אזימוט (מ-ד-ש)", "כיוון", "קשת?", "חץ F", "רדיוס R", "שטח קשת", "מס׳ נקודה", "Northing", "Easting"],
+    poly: "שטח המצולע (Shoelace)", arcs: "סה״כ שטחי קשתות", total: "שטח כולל (מחושב)", areg: "שטח רשום A.Reg (טאבו)", allow: "סטייה מותרת ± A.Allow", diffP: "הפרש (מחושב − רשום)",
+    sum: "סיכום", scols: ["#", "מס׳ חלקה", "סוג הקרקע", "ראשית?", "שטח מחושב (מ״ר)", "A.Reg (מ״ר)", "שטח מתוקן"],
+    mainA: "שטח החלקה הראשית (מחושב)", others: "סה״כ שאר החלקות (מחושב)", mareg: "A.Reg של החלקה הראשית (טאבו)", allowS: "סטייה מותרת (±) A.Allow", diffS: "הפרש (A.Reg − מחושב ראשית)", within: "בתוך הסטייה / חולק?",
+    sign: "חתימה וחותמת המודד", page: (i, n) => `עמוד ${i} מתוך ${n}`, unit: "מ״ר",
+    types: { normal: "רגיל", split: "פרצלציה", merge: "איחוד", both: "איחוד וחלוקה", apt: "דירות" },
+    lands: { "قسيمة": "מגרש", "رئيسية": "ראשית", "جزء مستثنى": "חלק מוחרג", "طريق": "דרך", "ممر": "מעבר", "فضلة": "שארית", "منطقة خضراء": "שטח ירוק", "مرفق عام": "מבנה ציבור", "موقف": "חניה", "أخرى": "אחר" } },
+};
+async function fullReport(lang) {
+  await fontsReady(); const t = L10N[lang], I = info(), D = summaryData();
+  const PW = 297, PH = 210, Wp = mm(PW), Hp = mm(PH), M = mm(10), CW = Wp - 2 * M, pages = []; let ctx, y;
+  const NAVY = "#1f3b4d", BEIGE = "#f4eee0", ORANGE = "#b5502b", LINE = "#d8ccae";
+  const hasRTL = sv => /[\u0590-\u05FF\u0600-\u06FF]/.test(sv);
+  const font = (sz, w = 500, sv = "") => `${w} ${mm(sz)}px ${hasRTL(sv) ? AF + ",'Noto Sans Hebrew','Arial Hebrew',sans-serif" : MF}`;
+  const tx = (sv, x, yy, al, sz, w, col) => { sv = String(sv == null ? "" : sv); ctx.font = font(sz, w, sv); ctx.fillStyle = col; ctx.textAlign = al; ctx.textBaseline = "middle"; ctx.direction = hasRTL(sv) ? "rtl" : "ltr"; ctx.fillText(sv, x, yy); };
+  const cell = (x, yy, w, h, sv, o = {}) => { if (o.bg) { ctx.fillStyle = o.bg; ctx.fillRect(x, yy, w, h); } ctx.strokeStyle = o.line || LINE; ctx.lineWidth = 1.2; ctx.strokeRect(x, yy, w, h);
+    if (sv !== undefined && sv !== "") { const al = o.al || "center", px = al === "center" ? x + w / 2 : al === "left" ? x + mm(1.5) : x + w - mm(1.5); ctx.save(); ctx.beginPath(); ctx.rect(x, yy, w, h); ctx.clip(); tx(sv, px, yy + h / 2, al, o.sz || 2.6, o.w || 500, o.col || "#1d2a22"); ctx.restore(); } };
+  const newPage = () => { const c = document.createElement("canvas"); c.width = Wp; c.height = Hp; ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, Wp, Hp); pages.push(c); y = M; };
+  const ensure = h => { if (y + h > Hp - mm(12)) { newPage(); return true; } return false; };
+  const bar = (sv, h = 9) => { ensure(mm(h) + mm(8)); ctx.fillStyle = NAVY; ctx.fillRect(M, y, CW, mm(h)); tx(sv, M + CW / 2, y + mm(h) / 2, "center", 4.2, 700, "#fff"); y += mm(h); };
+  const rtl = t.dir === "rtl";
+  /* أزواج (عنوان، قيمة): في العربية والعبرية يبدأ العنوان من اليمين */
+  const pairs = (rows, wL, wV) => rows.forEach(r => { ensure(mm(6)); let x = rtl ? M + CW : M; const wv = r.length === 1 ? wV * 2 + wL : wV; r.forEach(([k2, v]) => { if (rtl) { x -= mm(wL); cell(x, y, mm(wL), mm(6), k2, { bg: BEIGE, w: 700, al: "right" }); x -= mm(wv); cell(x, y, mm(wv), mm(6), v, { al: "right" }); } else { cell(x, y, mm(wL), mm(6), k2, { bg: BEIGE, w: 700, al: "left" }); x += mm(wL); cell(x, y, mm(wv), mm(6), v, { al: "left" }); x += mm(wv); } }); y += mm(6); });
+  const lt = l => t.lands[l] || l;
+  newPage();
+  /* الرأس */
+  ctx.fillStyle = NAVY; ctx.fillRect(M, y, CW, mm(10)); tx(t.title, M + CW / 2, y + mm(5), "center", 4.8, 700, "#fff"); y += mm(10);
+  pairs([[[t.prov, I.gov], [t.vil, I.vil]], [[t.blk, I.blk], [t.hay, I.hay]], [[t.plot, I.plot], [t.ptype, t.types[I.type || "normal"]]], [[t.by, t.byName]]], 30, 48);
+  y += mm(6);
+  /* أعمدة الجدول: ثابتة من اليسار لليمين كما في التقارير الهندسية */
+  const cw = [16, 16, 22, 24, 28, 26, 13, 18, 18, 20, 18, 29, 29].map(v => mm(v)), xs = []; { let x = M; cw.forEach(w => { xs.push(x); x += w; }); }
+  const head = () => { ensure(mm(8)); t.cols.forEach((h, i) => cell(xs[i], y, cw[i], mm(8), h, { bg: NAVY, col: "#fff", w: 700, sz: 2.5, line: "#2e5266" })); y += mm(8); };
+  const sumRow = (label, val, hi) => { ensure(mm(6)); const lw = xs[10] - M; cell(M, y, lw, mm(6), label, { bg: hi ? ORANGE : BEIGE, col: hi ? "#fff" : "#1d2a22", w: 700, al: "right" }); cell(xs[10], y, CW - lw, mm(6), val, { bg: hi ? ORANGE : BEIGE, col: hi ? "#fff" : "#1d2a22", w: 700 }); y += mm(6); };
+  D.rows.forEach(({ P, R }) => {
+    if (R.err) return;
+    bar(`${t.parcel} ${P.no || ""}  ${P.main ? t.main : ""}`.trim());
+    pairs([[[t.land, lt(P.land)], [t.isMain, P.main ? t.yes : t.no]]], 30, 48); y += mm(4);
+    head();
+    R.rows.forEach((r, k2) => { if (ensure(mm(5.6))) head(); const bg = k2 % 2 ? "#fff" : "#faf6ec";
+      [r.from, r.to, f3(r.d), f4(r.az), dms(r.az), bearing(r.az).replace(/(\.\d*?[1-9])0+ /, "$1 ").replace(/\.0+ /, " "), r.arc ? t.yes : t.no, r.arc ? (r.F || "") : "", isFinite(r.R) ? f3(r.R) : "", isFinite(r.aA) ? (r.sign === "-" ? "-" : "") + f3(r.aA) : "", r.to, f3(r.N), f3(r.E)]
+        .forEach((v, i) => cell(xs[i], y, cw[i], mm(5.6), v, { bg, sz: 2.5 })); y += mm(5.6); });
+    y += mm(3);
+    if (R.closed) { sumRow(t.poly, fA(R.poly) + " " + t.unit); sumRow(t.arcs, fA(R.arcs) + " " + t.unit); sumRow(t.total, fA(R.total) + " " + t.unit, true);
+      if (isFinite(R.areg)) { sumRow(t.areg, fA(R.areg) + " " + t.unit); sumRow(t.allow, fA(R.allow) + " " + t.unit); sumRow(t.diffP, fA(R.diff) + " " + t.unit); } }
+    y += mm(8);
+  });
+  /* الملخص */
+  bar(t.sum); y += mm(1);
+  const sw = [12, 24, 30, 24, 36, 30, 30].map(v => mm(v)), sx = []; { let x = M; sw.forEach(w => { sx.push(x); x += w; }); }
+  ensure(mm(9)); t.scols.forEach((h, i) => cell(sx[i], y, sw[i], mm(9), h, { bg: NAVY, col: "#fff", w: 700, sz: 2.5, line: "#2e5266" })); y += mm(9);
+  D.rows.forEach((x, i) => { ensure(mm(5.6)); [i + 1, x.P.no, lt(x.P.land), x.P.main ? t.yes : t.no, x.R.err ? "-" : fA(x.R.total), isFinite(num(x.P.areg)) ? fA(num(x.P.areg)) : "", isFinite(x.adj) ? fA(x.adj) : ""].forEach((v, j) => cell(sx[j], y, sw[j], mm(5.6), v, { bg: i % 2 ? "#fff" : "#faf6ec", sz: 2.5 })); y += mm(5.6); });
+  y += mm(5);
+  let groups = D.groups;
+  if (!groups.length) { const m = D.rows.find(x => x.P.main && !x.R.err) || D.rows.find(x => !x.R.err && isFinite(num(x.P.areg))); if (m) { const areg = num(m.P.areg); groups = [{ m, mainA: m.R.total, sumK: 0, areg, allow: isFinite(areg) ? allowA(areg) : NaN, diff: areg - m.R.total, ok: false }]; } }
+  groups.forEach(g => { sumRow(t.mainA + (groups.length > 1 ? ` — ${g.m.P.no}` : ""), fA(g.mainA) + " " + t.unit); sumRow(t.others, fA(g.sumK) + " " + t.unit);
+    sumRow(t.mareg, isFinite(g.areg) ? fA(g.areg) + " " + t.unit : "-"); sumRow(t.allowS, isFinite(g.allow) ? fA(g.allow) + " " + t.unit : "-"); sumRow(t.diffS, isFinite(g.diff) ? fA(g.diff) + " " + t.unit : "-"); sumRow(t.within, g.ok ? t.yes.toUpperCase() : t.no.toUpperCase(), true); y += mm(4); });
+  /* مكان الختم الحي */
+  ensure(mm(34)); y += mm(4); const bx = rtl ? M : M + CW - mm(70); ctx.strokeStyle = "#9aa39c"; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); ctx.strokeRect(bx, y, mm(70), mm(30)); ctx.setLineDash([]); tx(t.sign, bx + mm(35), y + mm(4), "center", 2.8, 600, "#5d6458");
+  pages.forEach((c, i) => { ctx = c.getContext("2d"); tx(t.page(i + 1, pages.length), M + CW / 2, Hp - mm(6), "center", 2.4, 500, "#7a7f78"); });
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape", compress: true });
+  pages.forEach((c, i) => { if (i) doc.addPage("a4", "landscape"); doc.addImage(c.toDataURL("image/jpeg", .92), "JPEG", 0, 0, PW, PH); });
+  window.__pdfPages = pages; saveFile(`${projName()} - ${lang === "ar" ? "تقرير" : lang === "he" ? "דוח" : "Report"}.pdf`, doc.output("datauristring").split(",")[1], "application/pdf"); toast("حُفظ التقرير PDF في التنزيلات ✓");
+}
+/* نافذة اختيار نوع التقرير واللغة */
+$("#pdfAll").addEventListener("click", () => {
+  let m = $("#pdfDlg"); if (!m) { m = document.createElement("div"); m.id = "pdfDlg"; document.body.appendChild(m); }
+  const lang = (() => { try { return localStorage.getItem("mesaha-pdf-lang") || "ar"; } catch (e) { return "ar"; } })();
+  m.innerHTML = `<div style="position:fixed;inset:0;background:rgba(5,25,15,.55);z-index:90;display:flex;align-items:flex-end;justify-content:center" data-x="1">
+    <div style="background:#fffcf3;border-top:3px solid #c99a2e;border-radius:20px 20px 0 0;padding:16px;width:100%;max-width:560px">
+      <h3 style="margin:0 0 8px">تصدير PDF</h3>
+      <b style="font-size:13px;color:#0c3b26">لغة التقرير</b>
+      <div class="row" style="margin-top:4px">${[["ar", "العربية"], ["en", "English"], ["he", "עברית"]].map(([k2, v]) => `<label class="btn" style="flex:1"><input type="radio" name="plang" value="${k2}" ${k2 === lang ? "checked" : ""} style="width:auto">${v}</label>`).join("")}</div>
+      <div class="row" style="margin-top:12px;flex-direction:column;align-items:stretch">
+        <button type="button" class="btn or" data-k="full">📄 التقرير الكامل (جداول مثل Excel) — الرئيسي</button>
+        <button type="button" class="btn" data-k="style">🎨 ملف الحسابات المصمم مع الرسومات (عربي)</button>
+        <button type="button" class="btn red" data-x="1">إلغاء</button>
+      </div></div></div>`;
+  m.onclick = async ev => {
+    if (ev.target.dataset.x) { m.innerHTML = ""; return; }
+    const b = ev.target.closest("[data-k]"); if (!b) return; const lg = (m.querySelector("input[name=plang]:checked") || {}).value || "ar";
+    try { localStorage.setItem("mesaha-pdf-lang", lg); } catch (er) {}
+    m.innerHTML = ""; if (!S.parcels.length) { toast("لا توجد قطع"); return; }
+    if (b.dataset.k === "style") return stylePdf();
+    const pb = $("#pdfAll"), old = pb.textContent; pb.disabled = true; pb.textContent = "…";
+    try { await fullReport(lg); } catch (er) { alert("تعذّر تجهيز PDF: " + er.message); } finally { pb.disabled = false; pb.textContent = old; }
+  };
 });
 
 /* ================= Stakeout ================= */

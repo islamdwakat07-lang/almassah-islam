@@ -346,24 +346,70 @@ public class MapActivity extends Activity {
             }), 120);
         }), 450));
     }
-    private Bitmap shotR1;
-    private float ccxA, ccyA;
+    private float ccxA, ccyA;            // map centre inside the printed picture (pixels)
+    private double fCx, fCy, fRes;       // final: ITM of the picture centre, metres per pixel
+    private boolean fCal;
+    private int[] pxA;
+    private static int[] pixels(Bitmap b) { int[] p = new int[b.getWidth() * b.getHeight()]; b.getPixels(p, 0, b.getWidth(), 0, 0, b.getWidth(), b.getHeight()); return p; }
+    private double resTable(double z) { return scaleOf(z) * 0.0254 / 96.0 / pk; }
+
     private void printShotA() {
         web.evaluateJavascript(IW_JS, iw -> {
             double cssW = 0; try { cssW = Double.parseDouble(iw); } catch (Exception ignored) { }
             pk = cssW > 0 ? web.getWidth() / cssW : getResources().getDisplayMetrics().density;
-            pRes0 = scaleOf(pz) * 0.0254 / 96.0 / pk;          // metres per screen pixel, from GovMap's zoom level
             hiddenShot(1, b -> {
                 if (b == null) { printFail("تعذّر أخذ صورة الخارطة"); return; }
-                shotA = b; aCrop = new float[]{cropL, cropT, cropR, cropB};
-                ccxA = (mapL + mapR) / 2f; ccyA = (mapT + mapB) / 2f;
-                pD = Math.max(1, Math.round(b.getWidth() * pRes0 * 0.3));
-                // 2) and 3): two reference views at known centres, to measure the scale and where the picture lies
-                say("…جاري معايرة الإحداثيات (1 من 2)");
-                printLoad(urlAt(pcx, pcy), () -> refShot(r1 -> {
-                    shotR1 = r1;
-                    say("…جاري معايرة الإحداثيات (2 من 2)");
-                    printLoad(urlAt(pcx + pD, pcy), () -> refShot(this::printMeasure));
+                shotA = b; aCrop = new float[]{cropL, cropT, cropR, cropB}; pxA = pixels(b);
+                ccxA = (mapL + mapR) / 2f - cropL; ccyA = (mapT + mapB) / 2f - cropT;
+                // step 1: a wider view around the last known place, to find roughly where (and how big) the picture is
+                final double z0 = Math.max(0, Math.floor(pz) - 1);
+                say("…جاري تحديد موقع الصورة (1 من 3)");
+                pz = z0;
+                printLoad(urlAt(pcx, pcy), () -> refShot(r0 -> {
+                    if (r0 == null) { printFail("تعذّر أخذ صورة المعايرة"); return; }
+                    final int[] p0 = pixels(r0); r0.recycle();
+                    final double res0 = resTable(z0);
+                    new Thread(() -> {
+                        double[] c = null; try { c = Reg.coarse(pxA, p0, shotA.getWidth(), shotA.getHeight()); } catch (Throwable ignored) { }
+                        final double[] fc = c;
+                        ui.post(() -> {
+                            if (fc == null || fc[3] < 0.15) { printFail("لم أستطع تحديد موقع الصورة. اضغط «تمركز» ثم اطبع مرة أخرى."); return; }
+                            double qx = fc[0] * ccxA + fc[1], qy = fc[0] * ccyA + fc[2];
+                            final double w0x = pcx + (qx - ccxA) * res0, w0y = pcy - (qy - ccyA) * res0, resAe = res0 * fc[0];
+                            // step 2: the GovMap zoom level nearest to the picture, centred on it, twice (to measure the scale exactly)
+                            double bz = 0, bd = 1e9; for (int L = 0; L <= 13; L++) { double d = Math.abs(Math.log(resTable(L) / resAe)); if (d < bd) { bd = d; bz = L; } }
+                            final double zf = bz;
+                            pz = zf; pcx = w0x; pcy = w0y;
+                            pD = Math.max(1, Math.round(shotA.getWidth() * resTable(zf) * 0.3));
+                            say("…جاري معايرة المقياس (2 من 3)");
+                            printLoad(urlAt(w0x, w0y), () -> refShot(r1 -> {
+                                if (r1 == null) { printFail("تعذّر أخذ صورة المعايرة"); return; }
+                                final int[] p1 = pixels(r1); r1.recycle();
+                                say("…جاري معايرة المقياس (3 من 3)");
+                                printLoad(urlAt(w0x + pD, w0y), () -> refShot(r2 -> {
+                                    if (r2 == null) { printFail("تعذّر أخذ صورة المعايرة"); return; }
+                                    final int[] p2 = pixels(r2); r2.recycle();
+                                    say("…جاري حساب الإحداثيات");
+                                    final double sEst = resAe / resTable(zf);
+                                    new Thread(() -> {
+                                        int W = shotA.getWidth(), H = shotA.getHeight();
+                                        double sh = -1; double[] f = null;
+                                        try { sh = Reg.shiftX(p1, p2, W, H); f = Reg.fine(pxA, p1, W, H, sEst); } catch (Throwable ignored) { }
+                                        final double fsh = sh; final double[] ff = f;
+                                        ui.post(() -> {
+                                            double resR = fsh > 0 ? pD / fsh : resTable(zf);
+                                            boolean ok = fsh > 0 && ff != null && ff[3] > 0.4 && Math.abs(resR / resTable(zf) - 1) < 0.5;
+                                            double s1 = ff != null ? ff[0] : sEst, tx = ff != null ? ff[1] : 0, ty = ff != null ? ff[2] : 0;
+                                            double qx1 = s1 * ccxA + tx, qy1 = s1 * ccyA + ty;
+                                            fCx = w0x + (qx1 - ccxA) * resR; fCy = w0y - (qy1 - ccyA) * resR; fRes = s1 * resR; fCal = ok;
+                                            markX = ccxA; markY = ccyA;
+                                            readInfo(resR);
+                                        });
+                                    }).start();
+                                }));
+                            }));
+                        });
+                    }).start();
                 }));
             });
         });
@@ -380,59 +426,9 @@ public class MapActivity extends Activity {
             }), 120);
         }, 450));
     }
-    private void printMeasure(final Bitmap r2) {
-        say("…جاري حساب الإحداثيات");
-        final Bitmap a = shotA, r1 = shotR1;
-        new Thread(() -> {
-            double res = pRes0; boolean cal = false; double ox = 0, oy = 0; boolean placed = false;
-            try {
-                if (r1 != null && r2 != null && r1.getWidth() == r2.getWidth() && r1.getHeight() == r2.getHeight()) {
-                    double sh = shift(r1, r2);
-                    if (sh > 0) { double r = pD / sh; if (r > pRes0 * 0.3 && r < pRes0 * 3) { res = r; cal = true; } }
-                }
-                if (r1 != null && a != null && r1.getWidth() == a.getWidth() && r1.getHeight() == a.getHeight()) {
-                    double[] m = match2D(a, r1);
-                    if (m != null) { ox = m[0]; oy = m[1]; placed = true; }
-                }
-            } catch (Throwable ignored) { }
-            final double fres = res, fox = ox, foy = oy; final boolean fcal = cal && placed;
-            ui.post(() -> {
-                // content at pixel p of the printed picture is at p + o in the reference view, whose centre is (pcx, pcy)
-                markX = ccxA - aCrop[0] - (float) fox; markY = ccyA - aCrop[1] - (float) foy;
-                if (r1 != null) r1.recycle(); if (r2 != null) r2.recycle(); shotR1 = null;
-                readInfo(fres, fcal);
-            });
-        }).start();
-    }
-    /** where picture a sits inside picture b (same size, same scale): returns {dx,dy} with a(x,y) ≈ b(x+dx,y+dy) */
-    private static double[] match2D(Bitmap a, Bitmap b) {
-        int f = 12, w = a.getWidth() / f, h = a.getHeight() / f;
-        float[] ga = gray(a, f, w, h), gb = gray(b, f, w, h);
-        int bx = 0, by = 0; double bs = 1e18, second = 1e18;
-        for (int dy = -h / 2; dy <= h / 2; dy++) for (int dx = -w / 2; dx <= w / 2; dx++) {
-            double sum = 0; int n = 0;
-            int x0 = Math.max(0, -dx), x1 = Math.min(w, w - dx), y0 = Math.max(0, -dy), y1 = Math.min(h, h - dy);
-            if ((x1 - x0) * (y1 - y0) < w * h / 4) continue;
-            for (int y = y0; y < y1; y += 2) for (int x = x0; x < x1; x += 2) { sum += Math.abs(ga[y * w + x] - gb[(y + dy) * w + x + dx]); n++; }
-            double m = sum / n;
-            if (m < bs) { if (Math.abs(dx - bx) > 2 || Math.abs(dy - by) > 2) second = bs; bs = m; bx = dx; by = dy; }
-            else if ((Math.abs(dx - bx) > 2 || Math.abs(dy - by) > 2) && m < second) second = m;
-        }
-        if (bs > 0.8 * second) return null;
-        int g = 3, W = a.getWidth() / g, H = a.getHeight() / g; float[] fa = gray(a, g, W, H), fb = gray(b, g, W, H);
-        int cx = bx * f / g, cy = by * f / g, rx = cx, ry = cy; double rs = 1e18;
-        for (int dy = cy - 6; dy <= cy + 6; dy++) for (int dx = cx - 6; dx <= cx + 6; dx++) {
-            double sum = 0; int n = 0;
-            int x0 = Math.max(0, -dx), x1 = Math.min(W, W - dx), y0 = Math.max(0, -dy), y1 = Math.min(H, H - dy);
-            if (x1 <= x0 || y1 <= y0) continue;
-            for (int y = y0; y < y1; y += 2) for (int x = x0; x < x1; x += 2) { sum += Math.abs(fa[y * W + x] - fb[(y + dy) * W + x + dx]); n++; }
-            double m = sum / n; if (m < rs) { rs = m; rx = dx; ry = dy; }
-        }
-        return new double[]{rx * g, ry * g};
-    }
     /** taps the GOV point so GovMap opens its own information (גוש / חלקה …), and reads its text */
     private static final String TEXT_JS = "(function(){try{return (document.body.innerText||'').slice(0,6000);}catch(e){return '';}})()";
-    private void readInfo(final double res, final boolean cal) {
+    private void readInfo(final double res) {
         say("…جاري قراءة معلومات GovMap");
         double[] g = cz(startUrl); double gx = g != null ? g[0] : pcx, gy = g != null ? g[1] : pcy;
         float px = (mapL + mapR) / 2f + (float) ((gx - (pcx + pD)) / res), py = (mapT + mapB) / 2f - (float) ((gy - pcy) / res);
@@ -443,7 +439,7 @@ public class MapActivity extends Activity {
                 String t = ""; try { t = new JSONObject("{\"v\":" + after + "}").getString("v"); } catch (Exception ignored) { }
                 String t0 = ""; try { t0 = new JSONObject("{\"v\":" + before + "}").getString("v"); } catch (Exception ignored) { }
                 infoText = t.equals(t0) ? "" : t;
-                finishPrint(res, cal);
+                finishPrint();
             }), in ? 3500 : 10);
         });
     }
@@ -478,14 +474,14 @@ public class MapActivity extends Activity {
         float[] g = new float[w * h]; for (int i = 0; i < px.length; i++) { int p = px[i]; g[i] = ((p >> 16) & 255) * .3f + ((p >> 8) & 255) * .59f + (p & 255) * .11f; }
         return g;
     }
-    private void finishPrint(double res, boolean cal) {
+    private void finishPrint() {
         try {
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
             shotA.compress(Bitmap.CompressFormat.JPEG, 90, out);
             String b64 = android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP);
             JSONObject o = new JSONObject();
             o.put("img", "data:image/jpeg;base64," + b64); o.put("w", shotA.getWidth()); o.put("h", shotA.getHeight());
-            o.put("cx", pcx); o.put("cy", pcy); o.put("mx", markX); o.put("my", markY); o.put("res", res); o.put("cal", cal); o.put("z", pz); o.put("info", infoText);
+            o.put("cx", fCx); o.put("cy", fCy); o.put("mx", markX); o.put("my", markY); o.put("res", fRes); o.put("cal", fCal); o.put("z", pz); o.put("info", infoText);
             printData = o.toString();
             shotA.recycle(); shotA = null;
             printing = false; say(null);

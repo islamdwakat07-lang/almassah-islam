@@ -35,6 +35,8 @@ import org.json.JSONObject;
 
 /** Shows GovMap inside the app, in its own WebView (no AndroidBridge exposed to the site). */
 public class MapActivity extends Activity {
+    /** set when the user taps «طباعة»: the GOV page then makes the PDF for the same point */
+    static boolean printRequested = false;
     private WebView web;
     private String startUrl;
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -361,6 +363,7 @@ public class MapActivity extends Activity {
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         tools.addView(greenPill("ℹ معلومات", v -> { if (mapR > mapL) { pinX = cx(); pinY = cy(); if (cross.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); } }));
         tools.addView(greenPill("🎯 تمركز", v -> loadPoint()));
+        tools.addView(greenPill("🖨 طباعة", v -> { printRequested = true; finish(); }));
         tools.addView(greenPill("المتصفح", v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
         }));

@@ -72,7 +72,7 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
 
 
   <section class="card" id="prCard">
-    <details id="prBox">
+    <details id="prBox" open>
       <summary>🖨️ طباعة مخطط الموقع PDF</summary>
       <div class="pset">
         <p class="note" style="margin:0">صفحة A4 فيها الصورة الجوية حول النقطة، والإحداثيات الحقيقية على إطار الصورة، وجدول بالحوض والقطعة والمنطقة (أ/ب/ج).</p>
@@ -303,6 +303,8 @@ async function exportGov() {
   finally { btn.disabled = false; btn.textContent = old; }
 }
 $("#pGo").addEventListener("click", exportGov);
+/* «طباعة» من شاشة الخارطة: يرجع هنا ويصدّر المخطط لنفس النقطة */
+window.govPrint = () => { $("#prBox").open = true; $("#prCard").scrollIntoView({ behavior: "smooth", block: "start" }); if (!$("#pGo").disabled) exportGov(); };
 ["#pS", "#pB", "#pT", "#pStamp", "#pL_blk", "#pL_pla", "#pL_abc", "#pL_com"].forEach(s => $(s).addEventListener("change", prRead));
 document.querySelectorAll('input[name=psys]').forEach(r => r.addEventListener("change", prRead));
 prApply();

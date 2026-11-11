@@ -573,6 +573,15 @@ public class MainActivity extends Activity {
     /* ---------- lifecycle ---------- */
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (MapActivity.printRequested && web != null) {
+            MapActivity.printRequested = false;
+            web.postDelayed(() -> web.evaluateJavascript("window.govPrint && govPrint()", null), 400);
+        }
+    }
+
+    @Override
     public void onBackPressed() {
         web.evaluateJavascript(
                 "(function(){return window.__back ? window.__back() : 0;})()",

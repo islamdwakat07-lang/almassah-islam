@@ -42,6 +42,10 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
 .h .del{border:0;background:#f3ead2;color:#8a3b12;border-radius:50%;width:32px;height:32px;cursor:pointer;flex:none}
 .empty{color:var(--am-muted);font-size:14px;margin:0}
 .note{color:var(--am-muted);font-size:13px;margin:6px 0 0}
+.pr{margin-top:12px;background:linear-gradient(180deg,#9a5a1c,#7a4512)}
+.chk{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--am-ink);font-size:15px;padding:4px 0}
+.chk input{width:20px;height:20px;accent-color:#0f5a37;flex:none}
+.pset{display:grid;gap:10px;margin-top:10px}
 </style>
 <script src="../archive.js"></script>
 </head>
@@ -66,6 +70,31 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
     <p class="msg" id="msg" role="status"></p>
   </section>
 
+
+  <section class="card" id="prCard">
+    <details id="prBox">
+      <summary>🖨️ طباعة مخطط الموقع PDF</summary>
+      <div class="pset">
+        <p class="note" style="margin:0">صفحة A4 فيها الصورة الجوية حول النقطة، والإحداثيات الحقيقية على إطار الصورة، وجدول بالحوض والقطعة والمنطقة (أ/ب/ج).</p>
+        <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <label class="f"><span>مقياس الرسم</span><select id="pS"><option value="500">1:500</option><option value="1000">1:1000</option><option value="2500">1:2500</option><option value="5000">1:5000</option><option value="10000">1:10000</option></select></label>
+          <label class="f"><span>الصورة الجوية</span><select id="pB"><option value="2025">2025</option><option value="2024">2024</option><option value="2022">2022</option><option value="2019">2019</option><option value="none">بدون</option></select></label>
+        </div>
+        <div><div class="f" style="margin-bottom:6px">الإحداثيات على الإطار</div>
+          <div class="seg"><label><input type="radio" name="psys" value="itm" checked>إسرائيلية ITM</label><label><input type="radio" name="psys" value="pg">فلسطينية</label></div></div>
+        <div class="f">الطبقات على الصورة</div>
+        <label class="chk"><input type="checkbox" id="pL_blk" checked>حدود الأحواض</label>
+        <label class="chk"><input type="checkbox" id="pL_pla" checked>قطع الأراضي (طابو)</label>
+        <label class="chk"><input type="checkbox" id="pL_abc" checked>مناطق أ، ب، ج</label>
+        <label class="chk"><input type="checkbox" id="pL_com">أسماء البلدات</label>
+        <label class="f"><span>عنوان المخطط <small>(اختياري)</small></span><input id="pT" style="font:500 16px 'IBM Plex Sans Arabic',Tahoma,sans-serif" placeholder="مخطط موقع نقطة"></label>
+        <label class="chk"><input type="checkbox" id="pStamp" checked>إضافة ختمي على المخطط</label>
+        <button class="go pr" id="pGo" type="button">🖨️ تصدير مخطط PDF</button>
+        <p class="msg" id="pMsg" role="status"></p>
+      </div>
+    </details>
+  </section>
+
   <section class="card">
     <details id="setBox">
       <summary>الإعدادات</summary>
@@ -88,6 +117,10 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
     <p class="note">اضغط على نقطة لإعادة عرضها. تُحفظ آخر 20 نقطة على هذا الجهاز.</p>
   </section>
 </main>
+<script src="../geotoken.js"></script>
+<script src="../geomolg/lib/proj4.js"></script>
+<script src="../jspdf.umd.min.js"></script>
+<script src="../geomolg/pdf.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const KEY = "govmap-xy-v1", DEF = { z: 9, lay: "189,188,181", b: "1", open: "app" };
@@ -154,6 +187,125 @@ $("#reset").addEventListener("click", () => { Object.assign(st, DEF); save(st); 
 document.querySelectorAll('input[name=open]').forEach(r => r.addEventListener("change", readSettings));
 [$("#y"), $("#x")].forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); i === $("#y") ? $("#x").focus() : $("#go").click(); } }));
 applySettings(); renderHist();
+
+/* ---------- طباعة مخطط الموقع (صورة جيومولج حول النقطة + إحداثيات على الإطار) ---------- */
+const GREST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
+const GBASES = { "2025": ["Orthophotos_WB_2025_15cm_tif_PG1923", 1], "2024": ["Orthophotos_WB_2024_15cm_tif_PG1923", 1], "2022": ["Orthophotos_WB_2022_15cm_tif_PG1923_05", 0], "2019": ["Orthophotos_WB_2019_Aerial_25cm_jpg_PG1923", 0] };
+const GLAY = { blk: ["Blocks_02", [0, 1], 0], pla: ["Parcels_All_PLA", [0], 1], abc: ["ABC_Areas_JurisdictionBorders_07", [0], 0], com: ["Communities_06", [1], 0] };
+proj4.defs("EPSG:28191", "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs");
+proj4.defs("EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs");
+function pMsg(t, k) { const m = $("#pMsg"); m.textContent = t || ""; m.className = "msg" + (t ? " on " + (k || "warn") : ""); }
+function prRead() {
+  st.pr = { S: +$("#pS").value, base: $("#pB").value, sys: (document.querySelector('input[name=psys]:checked') || {}).value || "itm", title: $("#pT").value.trim(), stamp: $("#pStamp").checked,
+    lay: Object.keys(GLAY).filter(k => $("#pL_" + k).checked) }; save(st); return st.pr;
+}
+function prApply() {
+  const o = st.pr || {}; if (o.S) $("#pS").value = o.S; else $("#pS").value = 1000; if (o.base) $("#pB").value = o.base;
+  document.querySelectorAll('input[name=psys]').forEach(r => r.checked = r.value === (o.sys || "itm"));
+  if (o.lay) Object.keys(GLAY).forEach(k => $("#pL_" + k).checked = o.lay.includes(k));
+  $("#pT").value = o.title || ""; if (o.stamp === false) $("#pStamp").checked = false;
+}
+const withT = (pr, ms) => Promise.race([pr, new Promise(r => setTimeout(() => r(null), ms))]);
+async function gq(svc, layer, pt, fields, tk) {
+  try {
+    const u = GREST + svc + "/MapServer/" + layer + "/query?geometry=" + pt[0] + "," + pt[1] + "&geometryType=esriGeometryPoint&inSR=28191&spatialRel=esriSpatialRelIntersects&returnGeometry=false&outFields=" + fields + "&f=json" + (tk ? "&token=" + tk : "");
+    const j = await (await fetch(u)).json(); return (j.features || [])[0] ? j.features[0].attributes : null;
+  } catch (e) { return null; }
+}
+async function exportGov() {
+  readSettings(); const p = check(); if (!p) return; const o = prRead();
+  const btn = $("#pGo"), old = btn.textContent; btn.disabled = true; btn.textContent = "…جاري تجهيز المخطط"; pMsg("");
+  try {
+    await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0)));
+    const tk = (window.geoToken ? await withT(geoToken(), 15000) : "") || "";
+    const pg = proj4("EPSG:2039", "EPSG:28191", [p.x, p.y]), ll = proj4("EPSG:2039", "WGS84", [p.x, p.y]);
+    const W = mm(210), H = mm(297), S = o.S || 1000;
+    const fx = 18, fy = 40, fwmm = 174, fhmm = 168;
+    const F = { x: mm(fx), y: mm(fy), w: mm(fwmm), h: mm(fhmm) };
+    const gw = fwmm * S / 1000, gh = fhmm * S / 1000, gx0 = pg[0] - gw / 2, gx1 = pg[0] + gw / 2, gy0 = pg[1] - gh / 2, gy1 = pg[1] + gh / 2;
+    const X = x => F.x + (x - gx0) / gw * F.w, Y = y => F.y + (gy1 - y) / gh * F.h;
+    const iw = Math.round(F.w), ih = Math.round(F.h), bbox = [gx0, gy0, gx1, gy1].join(",");
+    const exp = (svc, extra, t) => GREST + svc + "/MapServer/export?bbox=" + bbox + "&bboxSR=28191&imageSR=28191&size=" + iw + "," + ih + "&dpi=200&f=image" + extra + (t ? "&token=" + tk : "");
+    const b = GBASES[o.base];
+    let used = b ? o.base : "بدون";
+    const jobs = [b ? loadImg(exp(b[0], "&format=jpg", b[1])).catch(() => { used = "2022"; return loadImg(exp(GBASES["2022"][0], "&format=jpg")).catch(() => { used = "—"; return null; }); }) : Promise.resolve(null)]
+      .concat(o.lay.map(k => loadImg(exp(GLAY[k][0], "&format=png32&transparent=true&layers=show:" + GLAY[k][1].join(","), GLAY[k][2])).catch(() => null)));
+    const infoJobs = [gq("Blocks_02", 0, pg, "GOV_A,VILLAGE_A,BLOCK_NO,BLOCK_A,SUB_BLOCK_NO"), gq("Blocks_02", 1, pg, "BlockNumber,BlockName_Arabic,CommunityName_Arabic"),
+      tk ? gq("Parcels_All_PLA", 0, pg, "GOV_A,VILLAGE_A,BLOCK_NO,SUB_BLOCK_NO,Plot_NO,Shape_Area", tk) : null, gq("ABC_Areas_JurisdictionBorders_07", 0, pg, "LandClassificationValue_Arabic")];
+    const [imgs, info] = await Promise.all([Promise.all(jobs), withT(Promise.all(infoJobs), 20000)]);
+    const [blk, nat, pla, abc] = info || [];
+    if (b && !imgs[0]) pMsg("تعذّر جلب الصورة الجوية (تحقق من الإنترنت). سيُصدَّر المخطط بدونها.");
+
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const ctx = cv.getContext("2d");
+    const vil = (pla && pla.VILLAGE_A) || (blk && blk.VILLAGE_A) || (nat && nat.CommunityName_Arabic) || "", gov = (pla && pla.GOV_A) || (blk && blk.GOV_A) || "";
+    const bno = pla ? pla.BLOCK_NO : blk ? blk.BLOCK_NO : null, sb = +((pla && pla.SUB_BLOCK_NO) || (blk && blk.SUB_BLOCK_NO) || 0) || 0;
+    const sub = "\u2066ITM  X " + p.x + "   Y " + p.y + "\u2069" + (vil ? "  ·  " + vil : "") + (gov && gov !== vil ? "  ·  " + gov : "");
+    frameHeader(ctx, W, o.title || "مخطط موقع نقطة", sub);
+
+    ctx.save(); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.clip();
+    ctx.fillStyle = "#e9e3cf"; ctx.fillRect(F.x, F.y, F.w, F.h);
+    imgs.forEach(im => { if (im) ctx.drawImage(im, F.x, F.y, F.w, F.h); });
+    // the point: red cross with a ring, on a white halo
+    const px = X(pg[0]), py = Y(pg[1]), r = mm(4.2);
+    [["#fff", mm(1.4)], ["#d11b1b", mm(.6)]].forEach(([c, w]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.moveTo(px - r * 1.8, py); ctx.lineTo(px - r * .45, py); ctx.moveTo(px + r * .45, py); ctx.lineTo(px + r * 1.8, py); ctx.moveTo(px, py - r * 1.8); ctx.lineTo(px, py - r * .45); ctx.moveTo(px, py + r * .45); ctx.lineTo(px, py + r * 1.8); ctx.stroke(); });
+    ctx.beginPath(); ctx.arc(px, py, mm(.7), 0, 7); ctx.fillStyle = "#d11b1b"; ctx.fill();
+    const lab = `X ${p.x}  Y ${p.y}`; ctx.font = `700 ${mm(3)}px ${MF}`; const tw = ctx.measureText(lab).width + mm(4);
+    const lx = Math.min(F.x + F.w - tw - mm(2), px + r * 2), ly = py - r * 2.2;
+    rr(ctx, lx, ly - mm(2.6), tw, mm(5.2), mm(1.2)); ctx.fillStyle = "rgba(255,255,255,.93)"; ctx.fill(); ctx.strokeStyle = "#d11b1b"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#d11b1b"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.direction = "ltr"; ctx.fillText(lab, lx + mm(2), ly + mm(.2));
+    ctx.restore();
+    ctx.strokeStyle = GREEN; ctx.lineWidth = mm(.6); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.stroke();
+    drawGrid(ctx, F, { gx0, gx1, gy0, gy1, X, Y, gw }, o.sys !== "pg");
+    northArrow(ctx, F.x + mm(12), F.y + mm(16), mm(9));
+    const nice = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000], target = gw / 5, Lm = nice.reduce((a, c) => Math.abs(c - target) < Math.abs(a - target) ? c : a), Lp = Lm / gw * F.w;
+    const sx = F.x + mm(8), sy = F.y + F.h - mm(9);
+    rr(ctx, sx - mm(4), sy - mm(11.5), Math.max(Lp, mm(34)) + mm(8), mm(16.5), mm(1.5)); ctx.fillStyle = "rgba(255,255,255,.88)"; ctx.fill();
+    for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? "#fff" : GREEN; ctx.fillRect(sx + Lp / 4 * i, sy, Lp / 4, mm(1.6)); }
+    ctx.strokeStyle = GREEN; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, Lp, mm(1.6));
+    txt(ctx, "0", sx, sy - mm(2.6), `600 ${mm(2.6)}px ${MF}`, INK, "center"); txt(ctx, Lm + " م", sx + Lp, sy - mm(2.6), `600 ${mm(2.6)}px ${AF}`, INK, "center");
+    txt(ctx, "مقياس الرسم 1:" + S.toLocaleString("en-US"), sx + Math.max(Lp, mm(34)) / 2, sy - mm(8), `700 ${mm(2.8)}px ${AF}`, GREEN, "center");
+
+    // info table
+    const rows = [
+      ["المحافظة", gov || "—"], ["البلدة", vil || "—"],
+      ["حوض التسوية", bno != null ? bno + (blk && blk.BLOCK_A && blk.BLOCK_A.trim() && blk.BLOCK_A.trim() !== String(bno) ? " – " + blk.BLOCK_A.trim() : "") + (sb ? "  ·  حي " + sb : "") : "—"],
+      ...(nat && nat.BlockNumber != null ? [["الحوض الطبيعي", nat.BlockNumber + (nat.BlockName_Arabic ? " – " + nat.BlockName_Arabic : "")]] : []),
+      ["رقم القطعة", pla && pla.Plot_NO != null ? pla.Plot_NO + (pla.Shape_Area ? "   ·   مساحتها " + Math.round(pla.Shape_Area).toLocaleString("en-US") + " م²" : "") : "—"],
+      ["المنطقة", (abc && abc.LandClassificationValue_Arabic) || "—"],
+      ["النقطة – ITM", `X ${p.x.toFixed(2)}   Y ${p.y.toFixed(2)}`],
+      ["النقطة – فلسطين", `X ${pg[0].toFixed(2)}   Y ${pg[1].toFixed(2)}`],
+      ["خط العرض / الطول", `X ${ll[1].toFixed(6)}°N   ${ll[0].toFixed(6)}°E`.replace(/^X /, "")],
+      ["مقياس الرسم", "1:" + S.toLocaleString("en-US") + "   ·   الصورة الجوية " + used],
+      ["شبكة الإطار", o.sys === "pg" ? "فلسطينية (Palestine 1923 Grid)" : "إسرائيلية ITM (Israel TM Grid)"],
+    ];
+    const ty0 = mm(fy + fhmm + 10), rh = Math.min(mm(5.6), (mm(281) - ty0) / rows.length);
+    const tx0 = o.stamp ? mm(76) : mm(10), tx1 = mm(200), lw = mm(38), fsz = Math.min(mm(3.1), rh * .6);
+    rr(ctx, tx0, ty0, tx1 - tx0, rh * rows.length, mm(2)); ctx.fillStyle = "#fffaf0"; ctx.fill(); ctx.strokeStyle = "#d8c79a"; ctx.lineWidth = 2; ctx.stroke();
+    rows.forEach((rw, i) => {
+      const y = ty0 + rh * i;
+      if (i) { ctx.strokeStyle = "#eadfbf"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(tx0 + mm(1), y); ctx.lineTo(tx1 - mm(1), y); ctx.stroke(); }
+      if (i % 2 === 0) { ctx.fillStyle = "rgba(243,234,210,.55)"; ctx.fillRect(tx1 - lw, y + 1, lw - 2, rh - 2); }
+      fitTxt(ctx, rw[0], tx1 - mm(2.5), y + rh / 2, lw - mm(4), fsz, "600", AF, "#5d6458", "right");
+      const val = String(rw[1]), isNum = /^X |°N/.test(val), v2 = val.replace(/^X (?=\d+\.\d{6}°)/, "");
+      fitTxt(ctx, v2, isNum ? tx0 + mm(3) : tx1 - lw - mm(3), y + rh / 2, tx1 - tx0 - lw - mm(6), fsz * 1.03, "700", isNum ? MF : AF, INK, isNum ? "left" : "right");
+    });
+    if (o.stamp) drawStamp(ctx, mm(41), ty0 + rh * rows.length / 2, Math.min(mm(30), Math.max(mm(24), rh * rows.length / 2 - mm(1))));
+    footer(ctx, W, 1, 1);
+
+    const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+    doc.addImage(cv.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297);
+    const name = (`مخطط موقع ${vil ? vil + " " : ""}${pla && pla.Plot_NO != null ? "قطعة " + pla.Plot_NO + " " : ""}X${Math.round(p.x)} Y${Math.round(p.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
+    if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(name, doc.output("datauristring").split(",")[1], "application/pdf");
+    else doc.save(name);
+    window.__lastGovPdf = cv; remember(p);
+    if (!$("#pMsg").classList.contains("on")) pMsg("تم حفظ المخطط في التنزيلات: " + name, "ok");
+  } catch (e) { pMsg("تعذّر تجهيز المخطط: " + (e && e.message || e)); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+$("#pGo").addEventListener("click", exportGov);
+["#pS", "#pB", "#pT", "#pStamp", "#pL_blk", "#pL_pla", "#pL_abc", "#pL_com"].forEach(s => $(s).addEventListener("change", prRead));
+document.querySelectorAll('input[name=psys]').forEach(r => r.addEventListener("change", prRead));
+prApply();
 if (st.hist[0]) { $("#x").value = st.hist[0].x; $("#y").value = st.hist[0].y; }
 </script>
 </body>

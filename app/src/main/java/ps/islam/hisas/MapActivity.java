@@ -237,7 +237,7 @@ public class MapActivity extends Activity {
         double f = z - i; return sc[i] * Math.pow(sc[i + 1] / sc[i], f);
     }
     private String urlAt(double x, double y) {
-        Uri u = Uri.parse(startUrl); Uri.Builder b = u.buildUpon().clearQuery();
+        Uri u = Uri.parse(printBase != null ? printBase : startUrl); Uri.Builder b = u.buildUpon().clearQuery();
         for (String n : u.getQueryParameterNames()) {
             if (n.equals("c")) b.appendQueryParameter("c", String.format(java.util.Locale.US, "%.2f,%.2f", x, y));
             else if (n.equals("z")) b.appendQueryParameter("z", String.format(java.util.Locale.US, pz == Math.rint(pz) ? "%.0f" : "%.2f", pz));
@@ -247,15 +247,28 @@ public class MapActivity extends Activity {
     }
     private void say(String t) { banner.setText(t); banner.setVisibility(t == null ? View.GONE : View.VISIBLE); }
 
+    private String printBase;     // GovMap address with the layers that are on now
     private void startPrint() {
         if (printing) return;
         printing = true; if (cross != null) cross.setVisibility(View.GONE);
-        // the place and zoom now on screen (GovMap keeps them in its address), otherwise the coordinate it was opened on
-        double[] cz = cz(web.getUrl()); if (cz == null) cz = cz(startUrl);
-        if (cz == null) { printing = false; toastMsg("تعذّر معرفة موقع الخارطة"); return; }
-        pcx = cz[0]; pcy = cz[1]; pz = cz[2];
-        say("…جاري تجهيز صورة الطباعة (1 من 2)");
-        printLoad(urlAt(pcx, pcy), this::printShotA);
+        web.evaluateJavascript("(function(){return location.href;})()", hj -> {
+            String href = null; try { href = new JSONObject("{\"v\":" + hj + "}").getString("v"); } catch (Exception ignored) { }
+            double[] c = cz(href); printBase = href;
+            if (c == null) { c = cz(web.getUrl()); printBase = web.getUrl(); }
+            if (c == null) { c = cz(startUrl); printBase = startUrl; }
+            if (c == null) { printing = false; toastMsg("تعذّر معرفة موقع الخارطة"); return; }
+            pcx = c[0]; pcy = c[1]; pz = c[2];
+            // 1) the picture exactly as it is on the screen now
+            web.evaluateJavascript(FIND_JS, v -> {
+                try { String j = v; if (j != null && j.startsWith("\"")) j = new JSONObject("{\"v\":" + j + "}").getString("v");
+                    JSONObject o = new JSONObject(j);
+                    if (o.optInt("ok") == 1) { float k = web.getWidth() / (float) o.getDouble("w");
+                        mapL = (float) o.getDouble("l") * k; mapT = (float) o.getDouble("t") * k; mapR = (float) o.getDouble("r") * k; mapB = (float) o.getDouble("b") * k; }
+                } catch (Exception ignored) { }
+                if (mapR <= mapL) { mapL = 0; mapT = 0; mapR = web.getWidth(); mapB = web.getHeight(); }
+                printShotA();
+            });
+        });
     }
     private static double[] cz(String url) {
         try { Uri u = Uri.parse(url); String c = u.getQueryParameter("c"), z = u.getQueryParameter("z");
@@ -333,52 +346,105 @@ public class MapActivity extends Activity {
             }), 120);
         }), 450));
     }
+    private Bitmap shotR1;
+    private float ccxA, ccyA;
     private void printShotA() {
-        // where GovMap put its marker = the exact pixel of the centre coordinate
-        final float ccx = (mapL + mapR) / 2f, ccy = (mapT + mapB) / 2f;   // GovMap centres the coordinate on the map surface
         web.evaluateJavascript(IW_JS, iw -> {
             double cssW = 0; try { cssW = Double.parseDouble(iw); } catch (Exception ignored) { }
             pk = cssW > 0 ? web.getWidth() / cssW : getResources().getDisplayMetrics().density;
             pRes0 = scaleOf(pz) * 0.0254 / 96.0 / pk;          // metres per screen pixel, from GovMap's zoom level
             hiddenShot(1, b -> {
                 if (b == null) { printFail("تعذّر أخذ صورة الخارطة"); return; }
-                shotA = b; markX = ccx - cropL; markY = ccy - cropT; aCrop = new float[]{cropL, cropT, cropR, cropB};
-                pD = Math.max(1, Math.round(b.getWidth() * pRes0 * 0.3));   // move east by about a third of the picture
-                say("…جاري معايرة مقياس الرسم (2 من 2)");
-                printLoad(urlAt(pcx + pD, pcy), this::printShotB);
+                shotA = b; aCrop = new float[]{cropL, cropT, cropR, cropB};
+                ccxA = (mapL + mapR) / 2f; ccyA = (mapT + mapB) / 2f;
+                pD = Math.max(1, Math.round(b.getWidth() * pRes0 * 0.3));
+                // 2) and 3): two reference views at known centres, to measure the scale and where the picture lies
+                say("…جاري معايرة الإحداثيات (1 من 2)");
+                printLoad(urlAt(pcx, pcy), () -> refShot(r1 -> {
+                    shotR1 = r1;
+                    say("…جاري معايرة الإحداثيات (2 من 2)");
+                    printLoad(urlAt(pcx + pD, pcy), () -> refShot(this::printMeasure));
+                }));
             });
         });
     }
-    private void printShotB() {
+    /** a reference picture with the same window as the printed one */
+    private void refShot(java.util.function.Consumer<Bitmap> got) {
         web.evaluateJavascript(HIDE_JS, v -> ui.postDelayed(() -> {
-            cropL = aCrop[0]; cropT = aCrop[1]; cropR = aCrop[2]; cropB = aCrop[3];      // same window as the first picture
+            cropL = aCrop[0]; cropT = aCrop[1]; cropR = aCrop[2]; cropB = aCrop[3];
             banner.setVisibility(View.INVISIBLE);
             ui.postDelayed(() -> screenCopy(mapRectInWindow(), 1, b -> {
                 banner.setVisibility(View.VISIBLE);
                 web.evaluateJavascript(SHOW_JS, null);
-                double res = pRes0; boolean cal = false;
-                if (b != null && shotA != null && b.getWidth() == shotA.getWidth() && b.getHeight() == shotA.getHeight()) {
-                    double sh = shift(shotA, b);
-                    if (sh > 0) { double r = pD / sh; if (r > pRes0 * 0.3 && r < pRes0 * 3) { res = r; cal = true; } }
-                }
-                if (b != null) b.recycle();
-                readInfo(res, cal);
+                got.accept(b);
             }), 120);
         }, 450));
     }
-    /** taps the printed coordinate so GovMap opens its own information (גוש / חלקה …), and reads its text */
+    private void printMeasure(final Bitmap r2) {
+        say("…جاري حساب الإحداثيات");
+        final Bitmap a = shotA, r1 = shotR1;
+        new Thread(() -> {
+            double res = pRes0; boolean cal = false; double ox = 0, oy = 0; boolean placed = false;
+            try {
+                if (r1 != null && r2 != null && r1.getWidth() == r2.getWidth() && r1.getHeight() == r2.getHeight()) {
+                    double sh = shift(r1, r2);
+                    if (sh > 0) { double r = pD / sh; if (r > pRes0 * 0.3 && r < pRes0 * 3) { res = r; cal = true; } }
+                }
+                if (r1 != null && a != null && r1.getWidth() == a.getWidth() && r1.getHeight() == a.getHeight()) {
+                    double[] m = match2D(a, r1);
+                    if (m != null) { ox = m[0]; oy = m[1]; placed = true; }
+                }
+            } catch (Throwable ignored) { }
+            final double fres = res, fox = ox, foy = oy; final boolean fcal = cal && placed;
+            ui.post(() -> {
+                // content at pixel p of the printed picture is at p + o in the reference view, whose centre is (pcx, pcy)
+                markX = ccxA - aCrop[0] - (float) fox; markY = ccyA - aCrop[1] - (float) foy;
+                if (r1 != null) r1.recycle(); if (r2 != null) r2.recycle(); shotR1 = null;
+                readInfo(fres, fcal);
+            });
+        }).start();
+    }
+    /** where picture a sits inside picture b (same size, same scale): returns {dx,dy} with a(x,y) ≈ b(x+dx,y+dy) */
+    private static double[] match2D(Bitmap a, Bitmap b) {
+        int f = 12, w = a.getWidth() / f, h = a.getHeight() / f;
+        float[] ga = gray(a, f, w, h), gb = gray(b, f, w, h);
+        int bx = 0, by = 0; double bs = 1e18, second = 1e18;
+        for (int dy = -h / 2; dy <= h / 2; dy++) for (int dx = -w / 2; dx <= w / 2; dx++) {
+            double sum = 0; int n = 0;
+            int x0 = Math.max(0, -dx), x1 = Math.min(w, w - dx), y0 = Math.max(0, -dy), y1 = Math.min(h, h - dy);
+            if ((x1 - x0) * (y1 - y0) < w * h / 4) continue;
+            for (int y = y0; y < y1; y += 2) for (int x = x0; x < x1; x += 2) { sum += Math.abs(ga[y * w + x] - gb[(y + dy) * w + x + dx]); n++; }
+            double m = sum / n;
+            if (m < bs) { if (Math.abs(dx - bx) > 2 || Math.abs(dy - by) > 2) second = bs; bs = m; bx = dx; by = dy; }
+            else if ((Math.abs(dx - bx) > 2 || Math.abs(dy - by) > 2) && m < second) second = m;
+        }
+        if (bs > 0.8 * second) return null;
+        int g = 3, W = a.getWidth() / g, H = a.getHeight() / g; float[] fa = gray(a, g, W, H), fb = gray(b, g, W, H);
+        int cx = bx * f / g, cy = by * f / g, rx = cx, ry = cy; double rs = 1e18;
+        for (int dy = cy - 6; dy <= cy + 6; dy++) for (int dx = cx - 6; dx <= cx + 6; dx++) {
+            double sum = 0; int n = 0;
+            int x0 = Math.max(0, -dx), x1 = Math.min(W, W - dx), y0 = Math.max(0, -dy), y1 = Math.min(H, H - dy);
+            if (x1 <= x0 || y1 <= y0) continue;
+            for (int y = y0; y < y1; y += 2) for (int x = x0; x < x1; x += 2) { sum += Math.abs(fa[y * W + x] - fb[(y + dy) * W + x + dx]); n++; }
+            double m = sum / n; if (m < rs) { rs = m; rx = dx; ry = dy; }
+        }
+        return new double[]{rx * g, ry * g};
+    }
+    /** taps the GOV point so GovMap opens its own information (גוש / חלקה …), and reads its text */
     private static final String TEXT_JS = "(function(){try{return (document.body.innerText||'').slice(0,6000);}catch(e){return '';}})()";
     private void readInfo(final double res, final boolean cal) {
         say("…جاري قراءة معلومات GovMap");
-        float px = (mapL + mapR) / 2f - (float) (pD / res), py = (mapT + mapB) / 2f;
+        double[] g = cz(startUrl); double gx = g != null ? g[0] : pcx, gy = g != null ? g[1] : pcy;
+        float px = (mapL + mapR) / 2f + (float) ((gx - (pcx + pD)) / res), py = (mapT + mapB) / 2f - (float) ((gy - pcy) / res);
         web.evaluateJavascript(TEXT_JS, before -> {
-            if (px > mapL + dp(10)) { pinX = px; pinY = py; tapPoint(); }
+            boolean in = px > mapL + dp(10) && px < mapR - dp(10) && py > mapT + dp(10) && py < mapB - dp(10);
+            if (in) { pinX = px; pinY = py; tapPoint(); }
             ui.postDelayed(() -> web.evaluateJavascript(TEXT_JS, after -> {
                 String t = ""; try { t = new JSONObject("{\"v\":" + after + "}").getString("v"); } catch (Exception ignored) { }
                 String t0 = ""; try { t0 = new JSONObject("{\"v\":" + before + "}").getString("v"); } catch (Exception ignored) { }
                 infoText = t.equals(t0) ? "" : t;
                 finishPrint(res, cal);
-            }), 3500);
+            }), in ? 3500 : 10);
         });
     }
     /** how many pixels the picture moved to the left between a and b (moving the centre east) */

@@ -75,7 +75,7 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
     <details id="prBox" open>
       <summary>🖨️ طباعة مخطط الموقع PDF</summary>
       <div class="pset">
-        <p class="note" style="margin:0">تفتح خارطة GovMap على نقطتك، كبّر أو صغّر حتى يعجبك المنظر، ثم اضغط «🖨 طباعة» أسفل الخارطة. يأخذ التطبيق صورة GovMap نفسها (بالطبقات الظاهرة) ويضع حولها الإحداثيات الحقيقية في صفحة A4.</p>
+        <p class="note" style="margin:0">تفتح خارطة GovMap على نقطتك، كبّر أو صغّر حتى يعجبك المنظر، ثم اضغط «🖨 طباعة» أعلى الخارطة. يطبع التطبيق ما هو ظاهر على الشاشة لحظة الضغط بالضبط (بكل الطبقات المفتوحة) ويضع حولها الإحداثيات الحقيقية في صفحة A4.</p>
         <div><div class="f" style="margin-bottom:6px">الإحداثيات على الإطار</div>
           <div class="seg"><label><input type="radio" name="psys" value="itm" checked>إسرائيلية ITM</label><label><input type="radio" name="psys" value="pg">فلسطينية</label></div></div>
         <label class="f"><span>عنوان المخطط <small>(اختياري)</small></span><input id="pT" style="font:500 16px 'IBM Plex Sans Arabic',Tahoma,sans-serif" placeholder="مخطط موقع نقطة"></label>
@@ -191,7 +191,7 @@ const withT = (pr, ms) => Promise.race([pr, new Promise(r => setTimeout(() => r(
 /* زر الصفحة: يفتح GovMap داخل التطبيق، وزر «🖨 طباعة» هناك يلتقط الصورة ويرجع هنا */
 $("#pGo").addEventListener("click", () => {
   readSettings(); const p = check(); if (!p) return; remember(p); prRead();
-  if (window.AndroidBridge && AndroidBridge.openMap) { AndroidBridge.openMap(url(p) + "#almassah-print", false); pMsg("اضبط المنظر ثم اضغط «🖨 طباعة» أسفل الخارطة.", "ok"); }
+  if (window.AndroidBridge && AndroidBridge.openMap) { AndroidBridge.openMap(url(p) + "#almassah-print", false); pMsg("اضبط المنظر ثم اضغط «🖨 طباعة» أعلى الخارطة.", "ok"); }
   else pMsg("الطباعة من GovMap تعمل داخل تطبيق المهندس إسلام فقط.");
 });
 
@@ -236,7 +236,7 @@ window.govPrintImg = async function (d) {
     ctx.strokeStyle = GREEN; ctx.lineWidth = mm(.6); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.stroke();
     // the picture is in ITM: numbers on the frame in ITM, or converted to the Palestinian grid
     const pg = o.sys === "pg";
-    drawGrid(ctx, F, { gx0, gx1, gy0, gy1, X, Y, gw, to: (x, y) => pg ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y], from: (x, y) => pg ? proj4("EPSG:28191", "EPSG:2039", [x, y]) : [x, y] }, pg);
+    drawGrid(ctx, F, { gx0, gx1, gy0, gy1, X, Y, gw, light: true, to: (x, y) => pg ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y], from: (x, y) => pg ? proj4("EPSG:28191", "EPSG:2039", [x, y]) : [x, y] }, pg);
     northArrow(ctx, F.x + mm(12), F.y + mm(16), mm(9));
     const nice = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000], target = gw / 5, Lm = nice.reduce((a, c) => Math.abs(c - target) < Math.abs(a - target) ? c : a), Lp = Lm / gw * F.w;
     const sx = F.x + mm(8), sy = F.y + F.h - mm(9);
@@ -254,7 +254,6 @@ window.govPrintImg = async function (d) {
       ["النقطة – فلسطين", `X ${ctrPG[0].toFixed(2)}   Y ${ctrPG[1].toFixed(2)}`],
       ["خط العرض / الطول", `${ll[1].toFixed(6)}°N   ${ll[0].toFixed(6)}°E`],
       ["مقياس الرسم", "1:" + Sr.toLocaleString("en-US") + (d.cal ? "   ·   معايَر من الصورة" : "   ·   تقريبي")],
-      ["الصورة", "GovMap – govmap.gov.il"],
       ["شبكة الإطار", pg ? "فلسطينية (Palestine 1923 Grid)" : "إسرائيلية ITM (Israel TM Grid)"],
     ];
     const ty0 = mm(fy + fhmm + 10), rh = Math.min(mm(5.6), (mm(281) - ty0) / rows.length);
@@ -270,12 +269,12 @@ window.govPrintImg = async function (d) {
     });
     if (o.stamp) drawStamp(ctx, mm(41), ty0 + rh * rows.length / 2, Math.min(mm(30), Math.max(mm(22), rh * rows.length / 2 - mm(1))));
     const ds = new Date(), dstr = ds.getFullYear() + "/" + String(ds.getMonth() + 1).padStart(2, "0") + "/" + String(ds.getDate()).padStart(2, "0");
-    txt(ctx, "الصورة من موقع GovMap العام، والإحداثيات محسوبة للاستئناس، وليست مخططاً مساحياً رسمياً.", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458");
+    txt(ctx, "الإحداثيات محسوبة للاستئناس، وليست مخططاً مساحياً رسمياً.", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458");
     txt(ctx, `تاريخ الإصدار ${dstr}`, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
 
     const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
     doc.addImage(cv.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297);
-    const name = (`مخطط موقع GovMap ${gush ? "גוש " + gush + " " : ""}${helka ? "חלקה " + helka + " " : ""}X${Math.round(P.x)} Y${Math.round(P.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
+    const name = (`مخطط موقع ${gush ? "גוש " + gush + " " : ""}${helka ? "חלקה " + helka + " " : ""}X${Math.round(P.x)} Y${Math.round(P.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
     if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(name, doc.output("datauristring").split(",")[1], "application/pdf");
     else doc.save(name);
     window.__lastGovPdf = cv;

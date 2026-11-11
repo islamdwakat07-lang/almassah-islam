@@ -299,7 +299,7 @@ function drawGrid(ctx, F, G, itm) {
   ctx.save();
   const lab = (s, x, y, rot) => { ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr"; ctx.fillStyle = GREEN_D; ctx.fillText(s, 0, 0); ctx.restore(); };
   const out = (x1, y1, x2, y2) => { ctx.strokeStyle = GREEN_D; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
-  const bright = (x1, y1, x2, y2) => { ctx.lineCap = "round"; ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.strokeStyle = "rgba(255,244,190,.92)"; ctx.lineWidth = 2.6; ctx.stroke(); };
+  const bright = (x1, y1, x2, y2) => { if (G.light) { ctx.lineCap = "round"; ctx.strokeStyle = "rgba(255,255,255,.38)"; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); return; } ctx.lineCap = "round"; ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.strokeStyle = "rgba(255,244,190,.92)"; ctx.lineWidth = 2.6; ctx.stroke(); };
   const sys = itm ? "ITM" : "PG";
   cross([gx0, gy1], [gx1, gy1], 0).forEach(c => { const px = X(c.x); out(px, F.y, px, F.y - tick); bright(px, F.y, px, F.y + tick); lab(String(c.val), px, F.y - tick - gap - fs * .5); });
   cross([gx0, gy0], [gx1, gy0], 0).forEach(c => { const px = X(c.x); out(px, F.y + F.h, px, F.y + F.h + tick); bright(px, F.y + F.h, px, F.y + F.h - tick); lab(String(c.val), px, F.y + F.h + tick + gap + fs * .5); });

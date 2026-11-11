@@ -489,6 +489,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 Uri u = Uri.parse(url);
                 if (!MapActivity.isGovmap(u)) return;
+                if (url.endsWith("#almassah-print")) { openMapActivity(url); return; }
                 if (external) { try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { } }
                 else openMapActivity(url);
             });
@@ -575,9 +576,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (MapActivity.printRequested && web != null) {
-            MapActivity.printRequested = false;
-            web.postDelayed(() -> web.evaluateJavascript("window.govPrint && govPrint()", null), 400);
+        if (MapActivity.printData != null && web != null) {
+            final String d = MapActivity.printData;
+            MapActivity.printData = null;
+            web.postDelayed(() -> web.evaluateJavascript("window.govPrintImg && govPrintImg(" + d + ")", null), 400);
         }
     }
 

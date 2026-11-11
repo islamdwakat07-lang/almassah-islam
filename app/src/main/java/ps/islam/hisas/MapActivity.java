@@ -35,8 +35,11 @@ import org.json.JSONObject;
 
 /** Shows GovMap inside the app, in its own WebView (no AndroidBridge exposed to the site). */
 public class MapActivity extends Activity {
-    /** set when the user taps «طباعة»: the GOV page then makes the PDF for the same point */
-    static boolean printRequested = false;
+    /** the GovMap picture taken for printing (JSON for the GOV page), handed over when this screen closes */
+    static String printData = null;
+    private boolean autoPrint = false, printing = false;
+    private Runnable printStep = null;        // runs when the map has loaded and stopped moving (print mode)
+    private TextView banner;
     private WebView web;
     private String startUrl;
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -68,7 +71,8 @@ public class MapActivity extends Activity {
                     mapL = (float) o.getDouble("l") * k; mapT = (float) o.getDouble("t") * k;
                     mapR = (float) o.getDouble("r") * k; mapB = (float) o.getDouble("b") * k;
                     // give GovMap time to draw its own marker and the layers, then find the marker and tap it
-                    ui.postDelayed(() -> tapCentre(s), 2500);
+                    if (printStep != null) { final Runnable r = printStep; ui.postDelayed(() -> waitThen(s, r, 0), 2000); }
+                    else ui.postDelayed(() -> tapCentre(s), 2500);
                     return;
                 }
             } catch (Exception ignored) { }
@@ -204,6 +208,173 @@ public class MapActivity extends Activity {
         }, 90);
     }
 
+
+    /* ================= طباعة صورة GovMap ================= */
+    /** hides GovMap's own buttons, search box, panels and popups over the map, so only the map is captured */
+    private static final String HIDE_JS = "(function(){try{window.__ph=[];var best=null,ba=0;"
+        + "var els=document.querySelectorAll('canvas,.esri-view-surface,.esri-view-root,.ol-viewport,.leaflet-container,#map,#mapDiv,.map');"
+        + "for(var i=0;i<els.length;i++){var r=els[i].getBoundingClientRect();var a=r.width*r.height;if(r.width>innerWidth*0.45&&r.height>innerHeight*0.35&&a>ba){ba=a;best=els[i];}}"
+        + "if(!best)return 0;var all=document.body.querySelectorAll('*');"
+        + "for(var j=0;j<all.length;j++){var e=all[j];if(e.contains(best)||best.contains(e)&&e.tagName==='CANVAS')continue;"
+        + "var t=e.tagName,hit=/^(BUTTON|INPUT|TEXTAREA|SELECT|A|LABEL|H1|H2|H3|P|SPAN|LI)$/.test(t)||e.getAttribute('role')==='button'||e.getAttribute('role')==='dialog';"
+        + "if(!hit){for(var k=0;k<e.childNodes.length;k++){var n=e.childNodes[k];if(n.nodeType===3&&n.textContent.trim()){hit=true;break;}}}"
+        + "if(!hit)continue;var r2=e.getBoundingClientRect();if(r2.width<1||r2.height<1)continue;"
+        + "var top=e;while(top.parentElement&&top.parentElement!==document.body&&!top.parentElement.contains(best))top=top.parentElement;"
+        + "if(top.contains(best)||top.__phd)continue;top.__phd=1;window.__ph.push([top,top.style.visibility]);top.style.visibility='hidden';}"
+        + "return window.__ph.length;}catch(e){return -1;}})()";
+    private static final String SHOW_JS = "(function(){try{(window.__ph||[]).forEach(function(p){p[0].style.visibility=p[1];p[0].__phd=0;});window.__ph=[];}catch(e){}})()";
+    private static final String IW_JS = "(function(){return innerWidth;})()";
+
+    private double pcx, pcy, pz, pD, pRes0, pk;
+    private Bitmap shotA;
+    private float markX = -1, markY = -1;
+
+    private static double scaleOf(double z) {   // GovMap zoom levels (1:… at 96 dpi)
+        double[] sc = {2000000, 1000000, 500000, 250000, 100000, 50000, 25000, 10000, 5000, 2500, 1250, 625, 312.5, 156.25};
+        int i = (int) Math.floor(z); if (i < 0) return sc[0]; if (i >= sc.length - 1) return sc[sc.length - 1];
+        double f = z - i; return sc[i] * Math.pow(sc[i + 1] / sc[i], f);
+    }
+    private String urlAt(double x, double y) {
+        Uri u = Uri.parse(startUrl); Uri.Builder b = u.buildUpon().clearQuery();
+        for (String n : u.getQueryParameterNames()) {
+            if (n.equals("c")) b.appendQueryParameter("c", String.format(java.util.Locale.US, "%.2f,%.2f", x, y));
+            else if (n.equals("z")) b.appendQueryParameter("z", String.format(java.util.Locale.US, pz == Math.rint(pz) ? "%.0f" : "%.2f", pz));
+            else b.appendQueryParameter(n, u.getQueryParameter(n));
+        }
+        return b.build().toString().replace("%2C", ",");
+    }
+    private void say(String t) { banner.setText(t); banner.setVisibility(t == null ? View.GONE : View.VISIBLE); }
+
+    private void startPrint() {
+        if (printing) return;
+        printing = true; if (cross != null) cross.setVisibility(View.GONE);
+        // the place and zoom now on screen (GovMap keeps them in its address), otherwise the coordinate it was opened on
+        double[] cz = cz(web.getUrl()); if (cz == null) cz = cz(startUrl);
+        if (cz == null) { printing = false; toastMsg("تعذّر معرفة موقع الخارطة"); return; }
+        pcx = cz[0]; pcy = cz[1]; pz = cz[2];
+        say("…جاري تجهيز صورة الطباعة (1 من 2)");
+        printLoad(urlAt(pcx, pcy), this::printShotA);
+    }
+    private static double[] cz(String url) {
+        try { Uri u = Uri.parse(url); String c = u.getQueryParameter("c"), z = u.getQueryParameter("z");
+            if (c == null || !c.contains(",")) return null; String[] p = c.split(",");
+            return new double[]{Double.parseDouble(p[0].trim()), Double.parseDouble(p[1].trim()), z == null ? 9 : Double.parseDouble(z)}; }
+        catch (Exception e) { return null; }
+    }
+    private void printLoad(String url, Runnable then) {
+        session++; locating = false; pinX = pinY = -1; mapR = mapL = 0;
+        printStep = then;
+        web.loadUrl(url);
+    }
+    /** waits until the picture has stopped changing, then runs r */
+    private void waitThen(final int s, final Runnable r, final int tries) {
+        if (s != session || web == null) return;
+        if (tries == 0) { lastFrame = null; stableCount = 0; }
+        int[] f = null; try { f = frame(); } catch (Throwable ignored) { }
+        if (f != null && lastFrame != null && f.length == lastFrame.length) {
+            long diff = 0; for (int i = 0; i < f.length; i++) { int a = f[i], b = lastFrame[i];
+                diff += Math.abs(((a >> 16) & 255) - ((b >> 16) & 255)) + Math.abs(((a >> 8) & 255) - ((b >> 8) & 255)) + Math.abs((a & 255) - (b & 255)); }
+            stableCount = diff / (double) f.length < 1.5 ? stableCount + 1 : 0;
+        }
+        lastFrame = f;
+        if (stableCount >= 3 || tries > 40) { printStep = null; r.run(); return; }
+        ui.postDelayed(() -> waitThen(s, r, tries + 1), 600);
+    }
+    private Bitmap grabMap() {
+        int L = Math.max(0, (int) mapL), T = Math.max(0, (int) mapT), R = Math.min(web.getWidth(), (int) mapR), B = Math.min(web.getHeight(), (int) mapB);
+        if (R - L < 50 || B - T < 50) { L = 0; T = 0; R = web.getWidth(); B = web.getHeight(); }
+        Bitmap bm = Bitmap.createBitmap(R - L, B - T, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm); c.translate(-L - web.getScrollX(), -T - web.getScrollY()); web.draw(c);
+        return bm;
+    }
+    /** hide GovMap's controls, take the picture, show them again */
+    private void hiddenShot(java.util.function.Consumer<Bitmap> got) {
+        web.evaluateJavascript(HIDE_JS, v -> ui.postDelayed(() -> {
+            Bitmap b = null; try { b = grabMap(); } catch (Throwable ignored) { }
+            web.evaluateJavascript(SHOW_JS, null);
+            got.accept(b);
+        }, 450));
+    }
+    private void printShotA() {
+        // where GovMap put its marker = the exact pixel of the centre coordinate
+        float[] mk = null; try { mk = findMarker(); } catch (Throwable ignored) { }
+        float ccx = (mapL + mapR) / 2f, ccy = (mapT + mapB) / 2f;
+        if (mk != null && Math.hypot(mk[0] - ccx, mk[1] - ccy) < dp(40)) { markX = mk[0] - mapL; markY = mk[1] - mapT; } else { markX = ccx - mapL; markY = ccy - mapT; }
+        web.evaluateJavascript(IW_JS, iw -> {
+            double cssW = 0; try { cssW = Double.parseDouble(iw); } catch (Exception ignored) { }
+            pk = cssW > 0 ? web.getWidth() / cssW : getResources().getDisplayMetrics().density;
+            pRes0 = scaleOf(pz) * 0.0254 / 96.0 / pk;          // metres per screen pixel, from GovMap's zoom level
+            hiddenShot(b -> {
+                if (b == null) { printFail("تعذّر أخذ صورة الخارطة"); return; }
+                shotA = b;
+                pD = Math.max(1, Math.round(b.getWidth() * pRes0 * 0.3));   // move east by about a third of the picture
+                say("…جاري معايرة مقياس الرسم (2 من 2)");
+                printLoad(urlAt(pcx + pD, pcy), this::printShotB);
+            });
+        });
+    }
+    private void printShotB() {
+        hiddenShot(b -> {
+            double res = pRes0; boolean cal = false;
+            if (b != null && shotA != null && b.getWidth() == shotA.getWidth() && b.getHeight() == shotA.getHeight()) {
+                double s = shift(shotA, b);
+                if (s > 0) { double r = pD / s; if (r > pRes0 * 0.3 && r < pRes0 * 3) { res = r; cal = true; } }
+            }
+            if (b != null) b.recycle();
+            finishPrint(res, cal);
+        });
+    }
+    /** how many pixels the picture moved to the left between a and b (moving the centre east) */
+    private static double shift(Bitmap a, Bitmap b) {
+        final int f = 4; int w = a.getWidth() / f, h = a.getHeight() / f;
+        float[] ga = gray(a, f, w, h), gb = gray(b, f, w, h);
+        int y0 = h / 5, y1 = h * 4 / 5, best = -1, bdy = 0; double bs = 1e18, second = 1e18;
+        for (int dy = -2; dy <= 2; dy++) for (int s = Math.max(3, w / 25); s < w * 0.8; s++) {
+            double sum = 0; int n = 0;
+            for (int y = y0; y < y1; y += 2) { int yb = y + dy; if (yb < 0 || yb >= h) continue;
+                for (int x = s; x < w; x += 2) { sum += Math.abs(ga[y * w + x] - gb[yb * w + x - s]); n++; } }
+            if (n < 200) continue; double m = sum / n;
+            if (m < bs) { if (best < 0 || Math.abs(s - best) > 3) second = bs; bs = m; best = s; bdy = dy; }
+            else if (Math.abs(s - best) > 3 && m < second) second = m;
+        }
+        if (best < 0 || bs > 0.7 * second) return -1;            // no clear match
+        // refine at full size around the coarse answer
+        int W = a.getWidth(), H = a.getHeight(); float[] fa = gray(a, 1, W, H), fb = gray(b, 1, W, H);
+        int fy = bdy * f; double[] sc = new double[2 * f + 3]; int c0 = best * f - f - 1;
+        for (int i = 0; i < sc.length; i++) { int s = c0 + i; double sum = 0; int n = 0;
+            for (int y = H / 5; y < H * 4 / 5; y += 3) { int yb = y + fy; if (yb < 0 || yb >= H) continue;
+                for (int x = Math.max(s, 0); x < W; x += 3) { if (x - s >= W) continue; sum += Math.abs(fa[y * W + x] - fb[yb * W + x - s]); n++; } }
+            sc[i] = n > 0 ? sum / n : 1e18; }
+        int bi = 1; for (int i = 1; i < sc.length - 1; i++) if (sc[i] < sc[bi]) bi = i;
+        double den = sc[bi - 1] - 2 * sc[bi] + sc[bi + 1], off = den > 1e-9 ? 0.5 * (sc[bi - 1] - sc[bi + 1]) / den : 0;
+        return c0 + bi + Math.max(-0.5, Math.min(0.5, off));
+    }
+    private static float[] gray(Bitmap bm, int f, int w, int h) {
+        Bitmap s = f == 1 ? bm : Bitmap.createScaledBitmap(bm, w, h, true);
+        int[] px = new int[w * h]; s.getPixels(px, 0, w, 0, 0, w, h); if (s != bm) s.recycle();
+        float[] g = new float[w * h]; for (int i = 0; i < px.length; i++) { int p = px[i]; g[i] = ((p >> 16) & 255) * .3f + ((p >> 8) & 255) * .59f + (p & 255) * .11f; }
+        return g;
+    }
+    private void finishPrint(double res, boolean cal) {
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            shotA.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            String b64 = android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP);
+            JSONObject o = new JSONObject();
+            o.put("img", "data:image/jpeg;base64," + b64); o.put("w", shotA.getWidth()); o.put("h", shotA.getHeight());
+            o.put("cx", pcx); o.put("cy", pcy); o.put("mx", markX); o.put("my", markY); o.put("res", res); o.put("cal", cal); o.put("z", pz);
+            printData = o.toString();
+            shotA.recycle(); shotA = null;
+            printing = false; say(null);
+            finish();
+        } catch (Throwable e) { printFail("تعذّر تجهيز الصورة"); }
+    }
+    private void printFail(String m) {
+        printing = false; printStep = null; say(null); toastMsg(m);
+        if (shotA != null) { shotA.recycle(); shotA = null; }
+        web.loadUrl(urlAt(pcx, pcy));
+    }
+
     private void toastMsg(String t) { android.widget.Toast.makeText(this, t, android.widget.Toast.LENGTH_LONG).show(); }
 
     private void loadPoint() {
@@ -323,6 +494,7 @@ public class MapActivity extends Activity {
         super.onCreate(savedInstanceState);
         startUrl = getIntent().getDataString();
         if (startUrl == null) { finish(); return; }
+        if (startUrl.endsWith("#almassah-print")) { autoPrint = true; startUrl = startUrl.substring(0, startUrl.length() - 15); }
 
         getWindow().setStatusBarColor(GREEN);
         String xy = null;
@@ -363,13 +535,23 @@ public class MapActivity extends Activity {
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         tools.addView(greenPill("ℹ معلومات", v -> { if (mapR > mapL) { pinX = cx(); pinY = cy(); if (cross.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); } }));
         tools.addView(greenPill("🎯 تمركز", v -> loadPoint()));
-        tools.addView(greenPill("🖨 طباعة", v -> { printRequested = true; finish(); }));
+        tools.addView(greenPill("🖨 طباعة", v -> startPrint()));
         tools.addView(greenPill("المتصفح", v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
         }));
         FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         tp.bottomMargin = dp(18);
         root.addView(tools, tp);
+        banner = new TextView(this);
+        banner.setTextColor(Color.parseColor("#fff6d6"));
+        banner.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        banner.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        banner.setGravity(Gravity.CENTER);
+        banner.setPadding(dp(16), dp(12), dp(16), dp(12));
+        GradientDrawable bb = new GradientDrawable(); bb.setColor(Color.parseColor("#e60c3b26")); bb.setCornerRadius(dp(16)); bb.setStroke(dp(2), GOLD);
+        banner.setBackground(bb); banner.setVisibility(View.GONE);
+        FrameLayout.LayoutParams bp = new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER);
+        root.addView(banner, bp);
         page.addView(root, new LinearLayout.LayoutParams(-1, 0, 1f));
         setContentView(page);
 
@@ -383,6 +565,7 @@ public class MapActivity extends Activity {
         s.setAllowFileAccess(false);
 
         web.setOnTouchListener((v, e) -> {
+            if (printing) return true;
             if (autoTapping || cross == null) return false;
             if (e.getActionMasked() == MotionEvent.ACTION_DOWN) { downX = e.getX(); downY = e.getY(); }
             else if (e.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) cross.setVisibility(View.GONE);
@@ -415,6 +598,7 @@ public class MapActivity extends Activity {
             }
         });
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
+        else if (autoPrint) ui.postDelayed(this::startPrint, 300);
         else loadPoint();
     }
 

@@ -289,8 +289,8 @@ async function exportPDF(opts) {
 function drawGrid(ctx, F, G, itm) {
   const { gx0, gx1, gy0, gy1, X, Y, gw } = G;
   const steps = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000], step = steps.reduce((a, b) => Math.abs(b - gw / 5) < Math.abs(a - gw / 5) ? b : a);
-  const to = (x, y) => itm ? proj4("EPSG:28191", "EPSG:2039", [x, y]) : [x, y];
-  const from = (x, y) => itm ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y];
+  const to = G.to || ((x, y) => itm ? proj4("EPSG:28191", "EPSG:2039", [x, y]) : [x, y]);
+  const from = G.from || ((x, y) => itm ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y]);
   const cross = (a, b, k) => { const out = [], N = 300; let pv = null, pp = null;
     for (let i = 0; i <= N; i++) { const t = i / N, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, v = to(x, y)[k];
       if (pv !== null) { const m0 = Math.floor(pv / step), m1 = Math.floor(v / step); if (m0 !== m1) { const val = Math.max(m0, m1) * step, f = (val - pv) / (v - pv); out.push({ x: pp[0] + (x - pp[0]) * f, y: pp[1] + (y - pp[1]) * f, val }); } }

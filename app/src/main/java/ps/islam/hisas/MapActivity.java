@@ -227,6 +227,8 @@ public class MapActivity extends Activity {
 
     private double pcx, pcy, pz, pD, pRes0, pk;
     private Bitmap shotA;
+    private float[] aCrop;
+    private String infoText = "";
     private float markX = -1, markY = -1;
 
     private static double scaleOf(double z) {   // GovMap zoom levels (1:… at 96 dpi)
@@ -269,44 +271,78 @@ public class MapActivity extends Activity {
     /** waits until the picture has stopped changing, then runs r */
     private void waitThen(final int s, final Runnable r, final int tries) {
         if (s != session || web == null) return;
-        if (tries == 0) { lastFrame = null; stableCount = 0; }
-        int[] f = null; try { f = frame(); } catch (Throwable ignored) { }
-        if (f != null && lastFrame != null && f.length == lastFrame.length) {
-            long diff = 0; for (int i = 0; i < f.length; i++) { int a = f[i], b = lastFrame[i];
-                diff += Math.abs(((a >> 16) & 255) - ((b >> 16) & 255)) + Math.abs(((a >> 8) & 255) - ((b >> 8) & 255)) + Math.abs((a & 255) - (b & 255)); }
-            stableCount = diff / (double) f.length < 1.5 ? stableCount + 1 : 0;
-        }
-        lastFrame = f;
-        if (stableCount >= 3 || tries > 40) { printStep = null; r.run(); return; }
-        ui.postDelayed(() -> waitThen(s, r, tries + 1), 600);
+        if (tries == 0) { lastFrame = null; stableCount = 0; cropL = mapL; cropT = mapT; cropR = mapR; cropB = mapB; }
+        screenCopy(mapRectInWindow(), 10, bm -> {
+            if (s != session) return;
+            int[] f = null;
+            if (bm != null) { f = new int[bm.getWidth() * bm.getHeight()]; bm.getPixels(f, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm.getHeight()); bm.recycle(); }
+            if (f != null && lastFrame != null && f.length == lastFrame.length) {
+                long diff = 0; for (int i = 0; i < f.length; i++) { int a = f[i], b = lastFrame[i];
+                    diff += Math.abs(((a >> 16) & 255) - ((b >> 16) & 255)) + Math.abs(((a >> 8) & 255) - ((b >> 8) & 255)) + Math.abs((a & 255) - (b & 255)); }
+                stableCount = diff / (double) f.length < 1.5 ? stableCount + 1 : 0;
+            }
+            lastFrame = f;
+            if ((stableCount >= 3 && tries >= 4) || tries > 40) { printStep = null; r.run(); return; }
+            ui.postDelayed(() -> waitThen(s, r, tries + 1), 600);
+        });
     }
-    private Bitmap grabMap() {
-        int L = Math.max(0, (int) mapL), T = Math.max(0, (int) mapT), R = Math.min(web.getWidth(), (int) mapR), B = Math.min(web.getHeight(), (int) mapB);
+    /** what is really on the screen inside the map rectangle (PixelCopy sees GPU-drawn map layers; web.draw does not) */
+    private android.graphics.Rect mapRectInWindow() {
+        int[] loc = new int[2]; web.getLocationInWindow(loc);
+        int L = Math.max(0, (int) cropL), T = Math.max(0, (int) cropT), R = Math.min(web.getWidth(), (int) cropR), B = Math.min(web.getHeight(), (int) cropB);
         if (R - L < 50 || B - T < 50) { L = 0; T = 0; R = web.getWidth(); B = web.getHeight(); }
-        Bitmap bm = Bitmap.createBitmap(R - L, B - T, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(bm); c.translate(-L - web.getScrollX(), -T - web.getScrollY()); web.draw(c);
-        return bm;
+        return new android.graphics.Rect(loc[0] + L, loc[1] + T, loc[0] + R, loc[1] + B);
     }
-    /** hide GovMap's controls, take the picture, show them again */
-    private void hiddenShot(java.util.function.Consumer<Bitmap> got) {
-        web.evaluateJavascript(HIDE_JS, v -> ui.postDelayed(() -> {
-            Bitmap b = null; try { b = grabMap(); } catch (Throwable ignored) { }
-            web.evaluateJavascript(SHOW_JS, null);
-            got.accept(b);
-        }, 450));
+    private void screenCopy(android.graphics.Rect r, int div, java.util.function.Consumer<Bitmap> got) {
+        try {
+            Bitmap bm = Bitmap.createBitmap(Math.max(1, r.width() / div), Math.max(1, r.height() / div), Bitmap.Config.ARGB_8888);
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                android.view.PixelCopy.request(getWindow(), r, bm, res -> got.accept(res == android.view.PixelCopy.SUCCESS ? bm : null), ui);
+            } else {
+                Canvas c = new Canvas(bm); c.scale(1f / div, 1f / div); int[] loc = new int[2]; web.getLocationInWindow(loc);
+                c.translate(-(r.left - loc[0]) - web.getScrollX(), -(r.top - loc[1]) - web.getScrollY()); web.draw(c); got.accept(bm);
+            }
+        } catch (Throwable e) { got.accept(null); }
+    }
+    private float cropL, cropT, cropR, cropB;
+    /** hide GovMap's controls, find the clear part of the map, take the picture, show them again */
+    private static final String CROP_JS = "(function(){try{var best=null,ba=0;"
+        + "var els=document.querySelectorAll('canvas,.esri-view-surface,.esri-view-root,.ol-viewport,.leaflet-container,#map,#mapDiv,.map');"
+        + "for(var i=0;i<els.length;i++){var r=els[i].getBoundingClientRect();var a=r.width*r.height;if(r.width>innerWidth*0.45&&r.height>innerHeight*0.35&&a>ba){ba=a;best=els[i];}}"
+        + "if(!best)return JSON.stringify({ok:0});var m=best.getBoundingClientRect(),t=Math.max(0,m.top),b=Math.min(innerHeight,m.bottom),l=Math.max(0,m.left),rr=Math.min(innerWidth,m.right),H=b-t;"
+        + "var all=document.body.querySelectorAll('*');for(var j=0;j<all.length;j++){var e=all[j];if(e.contains(best)||e.tagName==='CANVAS')continue;"
+        + "var cs=getComputedStyle(e);if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity===0)continue;"
+        + "var q=e.getBoundingClientRect();if(q.width<(rr-l)*0.5||q.height<4||q.height>H*0.3||q.bottom<=t||q.top>=b)continue;"
+        + "var txt=(e.innerText||'').trim();if(!txt&&!e.querySelector('button,input,svg'))continue;"
+        + "var c=(q.top+q.bottom)/2;if(c<t+H*0.35)t=Math.max(t,q.bottom);else if(c>b-H*0.35)b=Math.min(b,q.top);}"
+        + "return JSON.stringify({ok:1,l:l,t:t,r:rr,b:b,w:innerWidth});}catch(e){return JSON.stringify({ok:0});}})()";
+    private void hiddenShot(int div, java.util.function.Consumer<Bitmap> got) {
+        web.evaluateJavascript(HIDE_JS, v -> ui.postDelayed(() -> web.evaluateJavascript(CROP_JS, cj -> {
+            cropL = mapL; cropT = mapT; cropR = mapR; cropB = mapB;
+            try { String j = cj; if (j != null && j.startsWith("\"")) j = new JSONObject("{\"v\":" + j + "}").getString("v");
+                JSONObject o = new JSONObject(j);
+                if (o.optInt("ok") == 1) { float k = web.getWidth() / (float) o.getDouble("w");
+                    cropL = Math.max(mapL, (float) o.getDouble("l") * k); cropT = Math.max(mapT, (float) o.getDouble("t") * k);
+                    cropR = Math.min(mapR, (float) o.getDouble("r") * k); cropB = Math.min(mapB, (float) o.getDouble("b") * k); }
+            } catch (Exception ignored) { }
+            banner.setVisibility(View.INVISIBLE);
+            ui.postDelayed(() -> screenCopy(mapRectInWindow(), div, b -> {
+                banner.setVisibility(View.VISIBLE);
+                web.evaluateJavascript(SHOW_JS, null);
+                got.accept(b);
+            }), 120);
+        }), 450));
     }
     private void printShotA() {
         // where GovMap put its marker = the exact pixel of the centre coordinate
-        float[] mk = null; try { mk = findMarker(); } catch (Throwable ignored) { }
-        float ccx = (mapL + mapR) / 2f, ccy = (mapT + mapB) / 2f;
-        if (mk != null && Math.hypot(mk[0] - ccx, mk[1] - ccy) < dp(40)) { markX = mk[0] - mapL; markY = mk[1] - mapT; } else { markX = ccx - mapL; markY = ccy - mapT; }
+        final float ccx = (mapL + mapR) / 2f, ccy = (mapT + mapB) / 2f;   // GovMap centres the coordinate on the map surface
         web.evaluateJavascript(IW_JS, iw -> {
             double cssW = 0; try { cssW = Double.parseDouble(iw); } catch (Exception ignored) { }
             pk = cssW > 0 ? web.getWidth() / cssW : getResources().getDisplayMetrics().density;
             pRes0 = scaleOf(pz) * 0.0254 / 96.0 / pk;          // metres per screen pixel, from GovMap's zoom level
-            hiddenShot(b -> {
+            hiddenShot(1, b -> {
                 if (b == null) { printFail("تعذّر أخذ صورة الخارطة"); return; }
-                shotA = b;
+                shotA = b; markX = ccx - cropL; markY = ccy - cropT; aCrop = new float[]{cropL, cropT, cropR, cropB};
                 pD = Math.max(1, Math.round(b.getWidth() * pRes0 * 0.3));   // move east by about a third of the picture
                 say("…جاري معايرة مقياس الرسم (2 من 2)");
                 printLoad(urlAt(pcx + pD, pcy), this::printShotB);
@@ -314,14 +350,35 @@ public class MapActivity extends Activity {
         });
     }
     private void printShotB() {
-        hiddenShot(b -> {
-            double res = pRes0; boolean cal = false;
-            if (b != null && shotA != null && b.getWidth() == shotA.getWidth() && b.getHeight() == shotA.getHeight()) {
-                double s = shift(shotA, b);
-                if (s > 0) { double r = pD / s; if (r > pRes0 * 0.3 && r < pRes0 * 3) { res = r; cal = true; } }
-            }
-            if (b != null) b.recycle();
-            finishPrint(res, cal);
+        web.evaluateJavascript(HIDE_JS, v -> ui.postDelayed(() -> {
+            cropL = aCrop[0]; cropT = aCrop[1]; cropR = aCrop[2]; cropB = aCrop[3];      // same window as the first picture
+            banner.setVisibility(View.INVISIBLE);
+            ui.postDelayed(() -> screenCopy(mapRectInWindow(), 1, b -> {
+                banner.setVisibility(View.VISIBLE);
+                web.evaluateJavascript(SHOW_JS, null);
+                double res = pRes0; boolean cal = false;
+                if (b != null && shotA != null && b.getWidth() == shotA.getWidth() && b.getHeight() == shotA.getHeight()) {
+                    double sh = shift(shotA, b);
+                    if (sh > 0) { double r = pD / sh; if (r > pRes0 * 0.3 && r < pRes0 * 3) { res = r; cal = true; } }
+                }
+                if (b != null) b.recycle();
+                readInfo(res, cal);
+            }), 120);
+        }, 450));
+    }
+    /** taps the printed coordinate so GovMap opens its own information (גוש / חלקה …), and reads its text */
+    private static final String TEXT_JS = "(function(){try{return (document.body.innerText||'').slice(0,6000);}catch(e){return '';}})()";
+    private void readInfo(final double res, final boolean cal) {
+        say("…جاري قراءة معلومات GovMap");
+        float px = (mapL + mapR) / 2f - (float) (pD / res), py = (mapT + mapB) / 2f;
+        web.evaluateJavascript(TEXT_JS, before -> {
+            if (px > mapL + dp(10)) { pinX = px; pinY = py; tapPoint(); }
+            ui.postDelayed(() -> web.evaluateJavascript(TEXT_JS, after -> {
+                String t = ""; try { t = new JSONObject("{\"v\":" + after + "}").getString("v"); } catch (Exception ignored) { }
+                String t0 = ""; try { t0 = new JSONObject("{\"v\":" + before + "}").getString("v"); } catch (Exception ignored) { }
+                infoText = t.equals(t0) ? "" : t;
+                finishPrint(res, cal);
+            }), 3500);
         });
     }
     /** how many pixels the picture moved to the left between a and b (moving the centre east) */
@@ -362,7 +419,7 @@ public class MapActivity extends Activity {
             String b64 = android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP);
             JSONObject o = new JSONObject();
             o.put("img", "data:image/jpeg;base64," + b64); o.put("w", shotA.getWidth()); o.put("h", shotA.getHeight());
-            o.put("cx", pcx); o.put("cy", pcy); o.put("mx", markX); o.put("my", markY); o.put("res", res); o.put("cal", cal); o.put("z", pz);
+            o.put("cx", pcx); o.put("cy", pcy); o.put("mx", markX); o.put("my", markY); o.put("res", res); o.put("cal", cal); o.put("z", pz); o.put("info", infoText);
             printData = o.toString();
             shotA.recycle(); shotA = null;
             printing = false; say(null);
@@ -533,15 +590,20 @@ public class MapActivity extends Activity {
         LinearLayout tools = new LinearLayout(this);
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        tools.addView(greenPill("ℹ معلومات", v -> { if (mapR > mapL) { pinX = cx(); pinY = cy(); if (cross.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); } }));
-        tools.addView(greenPill("🎯 تمركز", v -> loadPoint()));
-        tools.addView(greenPill("🖨 طباعة", v -> startPrint()));
-        tools.addView(greenPill("المتصفح", v -> {
-            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { }
-        }));
-        FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        tp.bottomMargin = dp(18);
-        root.addView(tools, tp);
+        tools.setPadding(dp(6), dp(6), dp(6), dp(6));
+        tools.setBackgroundColor(Color.parseColor("#f8f2e2"));
+        View[] pills = {
+            greenPill("ℹ معلومات", v -> { if (printing) return; if (mapR > mapL) { pinX = cx(); pinY = cy(); if (cross.getVisibility() == View.VISIBLE) tapPoint(); else loadPoint(); } }),
+            greenPill("🎯 تمركز", v -> { if (!printing) loadPoint(); }),
+            greenPill("🖨 طباعة", v -> startPrint()),
+            greenPill("🌐 المتصفح", v -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web.getUrl() != null ? web.getUrl() : startUrl))); } catch (Exception ignored) { } })
+        };
+        for (View pv : pills) {
+            TextView tv = (TextView) pv; tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13); tv.setPadding(dp(6), dp(8), dp(6), dp(8)); tv.setGravity(Gravity.CENTER); tv.setSingleLine(true); tv.setElevation(dp(2));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f); lp.setMarginStart(dp(3)); lp.setMarginEnd(dp(3));
+            tools.addView(pv, lp);
+        }
+        page.addView(tools, new LinearLayout.LayoutParams(-1, -2));
         banner = new TextView(this);
         banner.setTextColor(Color.parseColor("#fff6d6"));
         banner.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
@@ -565,7 +627,7 @@ public class MapActivity extends Activity {
         s.setAllowFileAccess(false);
 
         web.setOnTouchListener((v, e) -> {
-            if (printing) return true;
+            if (printing && !autoTapping) return true;
             if (autoTapping || cross == null) return false;
             if (e.getActionMasked() == MotionEvent.ACTION_DOWN) { downX = e.getX(); downY = e.getY(); }
             else if (e.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) cross.setVisibility(View.GONE);

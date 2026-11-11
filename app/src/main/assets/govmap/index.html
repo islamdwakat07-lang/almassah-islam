@@ -108,7 +108,6 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
     <p class="note">اضغط على نقطة لإعادة عرضها. تُحفظ آخر 20 نقطة على هذا الجهاز.</p>
   </section>
 </main>
-<script src="../geotoken.js"></script>
 <script src="../geomolg/lib/proj4.js"></script>
 <script src="../jspdf.umd.min.js"></script>
 <script src="../geomolg/pdf.js"></script>
@@ -180,7 +179,6 @@ document.querySelectorAll('input[name=open]').forEach(r => r.addEventListener("c
 applySettings(); renderHist();
 
 /* ---------- طباعة مخطط الموقع (صورة جيومولج حول النقطة + إحداثيات على الإطار) ---------- */
-const GREST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
 proj4.defs("EPSG:28191", "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs");
 proj4.defs("EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs");
 function pMsg(t, k) { const m = $("#pMsg"); m.textContent = t || ""; m.className = "msg" + (t ? " on " + (k || "warn") : ""); }
@@ -190,12 +188,6 @@ function prApply() {
   $("#pT").value = o.title || ""; if (o.stamp === false) $("#pStamp").checked = false;
 }
 const withT = (pr, ms) => Promise.race([pr, new Promise(r => setTimeout(() => r(null), ms))]);
-async function gq(svc, layer, pt, fields, tk) {
-  try {
-    const u = GREST + svc + "/MapServer/" + layer + "/query?geometry=" + pt[0] + "," + pt[1] + "&geometryType=esriGeometryPoint&inSR=28191&spatialRel=esriSpatialRelIntersects&returnGeometry=false&outFields=" + fields + "&f=json" + (tk ? "&token=" + tk : "");
-    const j = await (await fetch(u)).json(); return (j.features || [])[0] ? j.features[0].attributes : null;
-  } catch (e) { return null; }
-}
 /* زر الصفحة: يفتح GovMap داخل التطبيق، وزر «🖨 طباعة» هناك يلتقط الصورة ويرجع هنا */
 $("#pGo").addEventListener("click", () => {
   readSettings(); const p = check(); if (!p) return; remember(p); prRead();
@@ -213,11 +205,12 @@ window.govPrintImg = async function (d) {
     const res = d.res, gx0 = d.cx - d.mx * res, gy1 = d.cy + d.my * res, gx1 = gx0 + d.w * res, gy0 = gy1 - d.h * res;
     // the GOV point (the one typed in) — may differ from the centre if the map was moved
     const P = st.hist && st.hist[0] ? { x: +st.hist[0].x, y: +st.hist[0].y } : { x: d.cx, y: d.cy };
-    const ctrPG = proj4("EPSG:2039", "EPSG:28191", [P.x, P.y]), ll = proj4("EPSG:2039", "WGS84", [P.x, P.y]);
-    const tk = (window.geoToken ? await withT(geoToken(), 12000) : "") || "";
-    const info = await withT(Promise.all([gq("Blocks_02", 0, ctrPG, "GOV_A,VILLAGE_A,BLOCK_NO,BLOCK_A,SUB_BLOCK_NO"), tk ? gq("Parcels_All_PLA", 0, ctrPG, "GOV_A,VILLAGE_A,BLOCK_NO,SUB_BLOCK_NO,Plot_NO,Shape_Area", tk) : null, gq("ABC_Areas_JurisdictionBorders_07", 0, ctrPG, "LandClassificationValue_Arabic")]), 15000);
-    const [blk, pla, abc] = info || [];
-
+    const ctrPG = proj4("EPSG:2039", "EPSG:28191", [P.x, P.y]);
+    const ll = proj4("EPSG:2039", "WGS84", [P.x, P.y]);
+    // information only from GovMap itself (the popup it opened for the point), if any
+    const T = String(d.info || ""), grab = re => { const m = T.match(re); return m ? m[1] : null; };
+    const gush = grab(/גוש[^\d\n]{0,12}(\d{2,6})/), helka = grab(/חלקה[^\d\n]{0,12}(\d{1,5})/), migrash = grab(/מגרש[^\d\n]{0,12}([\d\/א-ת\-]{1,10})/),
+      plan = grab(/תכנית[^\S\n]*(?:מס['׳]?|מספר)?[^\S\n]*[:\-]?[^\S\n]*([0-9א-תA-Za-z][0-9א-תA-Za-z\/\-\.]{1,25})/), area = grab(/שטח[^\d\n]{0,20}([\d,\.]+)/);
     const W = mm(210), H = mm(297), maxW = 174, maxH = 172;
     let fwmm = maxW, fhmm = maxW * d.h / d.w; if (fhmm > maxH) { fhmm = maxH; fwmm = maxH * d.w / d.h; }
     const fx = (210 - fwmm) / 2, fy = 40;
@@ -226,9 +219,7 @@ window.govPrintImg = async function (d) {
     const X = x => F.x + (x - gx0) / gw * F.w, Y = y => F.y + (gy1 - y) / gh * F.h;
 
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const ctx = cv.getContext("2d");
-    const vil = (pla && pla.VILLAGE_A) || (blk && blk.VILLAGE_A) || "", gov = (pla && pla.GOV_A) || (blk && blk.GOV_A) || "";
-    const bno = pla ? pla.BLOCK_NO : blk ? blk.BLOCK_NO : null, sb = +((pla && pla.SUB_BLOCK_NO) || (blk && blk.SUB_BLOCK_NO) || 0) || 0;
-    frameHeader(ctx, W, o.title || "مخطط موقع نقطة", "⁦ITM  X " + P.x + "   Y " + P.y + "⁩" + (vil ? "  ·  " + vil : "") + (gov && gov !== vil ? "  ·  " + gov : ""));
+    frameHeader(ctx, W, o.title || "مخطط موقع نقطة", "\u2066ITM  X " + P.x + "   Y " + P.y + "\u2069" + (gush ? "  ·  גוש " + gush + (helka ? " חלקה " + helka : "") : ""));
 
     ctx.save(); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.clip();
     ctx.fillStyle = "#e9e3cf"; ctx.fillRect(F.x, F.y, F.w, F.h); ctx.drawImage(im, F.x, F.y, F.w, F.h);
@@ -257,10 +248,8 @@ window.govPrintImg = async function (d) {
     txt(ctx, "مقياس الرسم 1:" + Sr.toLocaleString("en-US"), sx + Math.max(Lp, mm(34)) / 2, sy - mm(8), `700 ${mm(2.8)}px ${AF}`, GREEN, "center");
 
     const rows = [
-      ...(gov ? [["المحافظة", gov]] : []), ...(vil ? [["البلدة", vil]] : []),
-      ...(bno != null ? [["حوض التسوية", bno + (blk && blk.BLOCK_A && blk.BLOCK_A.trim() && blk.BLOCK_A.trim() !== String(bno) ? " – " + blk.BLOCK_A.trim() : "") + (sb ? "  ·  حي " + sb : "")]] : []),
-      ...(pla && pla.Plot_NO != null ? [["رقم القطعة", pla.Plot_NO + (pla.Shape_Area ? "   ·   مساحتها " + Math.round(pla.Shape_Area).toLocaleString("en-US") + " م²" : "")]] : []),
-      ...(abc && abc.LandClassificationValue_Arabic ? [["المنطقة", abc.LandClassificationValue_Arabic]] : []),
+      ...(gush ? [["الحوض (גוש)", gush]] : []), ...(helka ? [["القطعة (חלקה)", helka]] : []),
+      ...(migrash ? [["المجرش (מגרש)", migrash]] : []), ...(plan ? [["المخطط (תכנית)", plan]] : []), ...(area && (gush || helka) ? [["المساحة (שטח)", area + " م²"]] : []),
       ["النقطة – ITM", `X ${P.x.toFixed(2)}   Y ${P.y.toFixed(2)}`],
       ["النقطة – فلسطين", `X ${ctrPG[0].toFixed(2)}   Y ${ctrPG[1].toFixed(2)}`],
       ["خط العرض / الطول", `${ll[1].toFixed(6)}°N   ${ll[0].toFixed(6)}°E`],
@@ -286,7 +275,7 @@ window.govPrintImg = async function (d) {
 
     const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
     doc.addImage(cv.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297);
-    const name = (`مخطط موقع GovMap ${vil ? vil + " " : ""}X${Math.round(P.x)} Y${Math.round(P.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
+    const name = (`مخطط موقع GovMap ${gush ? "גוש " + gush + " " : ""}${helka ? "חלקה " + helka + " " : ""}X${Math.round(P.x)} Y${Math.round(P.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
     if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(name, doc.output("datauristring").split(",")[1], "application/pdf");
     else doc.save(name);
     window.__lastGovPdf = cv;

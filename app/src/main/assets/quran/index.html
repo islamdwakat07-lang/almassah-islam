@@ -48,24 +48,16 @@ main{max-width:640px;margin:0 auto;padding:12px 14px 60px}
 /* ---------- صفحة المصحف ---------- */
 #reader{position:fixed;inset:calc(58px + env(safe-area-inset-top,0px)) 0 0 0;display:flex;flex-direction:column;align-items:center;background:#efe5c8;z-index:10;touch-action:pan-y}
 .pgwrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0;padding:6px}
-.pg{position:relative;background:#fffdf3;border-radius:6px;display:flex;flex-direction:column;
-  box-shadow:0 0 0 1px #d9c48a,0 6px 18px -8px rgba(60,40,0,.45);padding:var(--pad)}
-.pg::before{content:"";position:absolute;inset:calc(var(--pad) * .45);border:1.5px solid #c9a24a;border-radius:4px;pointer-events:none;box-shadow:inset 0 0 0 3px #fffdf3,inset 0 0 0 4px #e3cf93}
-.ph{display:flex;justify-content:space-between;font:400 calc(var(--fs) * .62)/1 "Amiri Quran",serif;color:#7a5a12;padding:0 4px;height:calc(var(--rh) * .62);align-items:center}
-.lines{display:grid;grid-template-rows:repeat(15,var(--rh));flex:none}
-.row{display:flex;align-items:center;justify-content:space-between;font:400 var(--fs)/1 "Hafs",serif;color:#1d1a12;white-space:nowrap;direction:rtl}
-.row.c{justify-content:center;gap:calc(var(--fs) * .28)}
-.row.hd{justify-content:center}
-.sbox{width:100%;height:86%;display:flex;align-items:center;justify-content:center;font:400 calc(var(--fs) * .95)/1 "Amiri Quran",serif;color:#0c3b26;border-radius:4px;
-  background:linear-gradient(90deg,#e8d48f,#fbf3d4 18%,#fbf3d4 82%,#e8d48f);box-shadow:inset 0 0 0 1.5px #b8902e,inset 0 0 0 4px #fbf3d4,inset 0 0 0 5px #c9a24a}
-.row.bs{justify-content:center;font-size:calc(var(--fs) * 1.02)}
-.w{cursor:pointer;border-radius:3px}
-.mk{color:#8a6410}
-.w.sel{background:#d8ead6}
-.w.hl{background:#f6df8f}
-.pn{text-align:center;font:400 calc(var(--fs) * .7)/1 "Amiri Quran",serif;color:#7a5a12;height:calc(var(--rh) * .6);display:flex;align-items:center;justify-content:center}
-.pn span{border:1px solid #d9c48a;border-radius:999px;padding:2px 12px;background:#fff8df}
-.p12 .lines{align-content:center}
+.qbox{display:flex;justify-content:center;padding:4px 0}
+.qz quran-madina-html{--qmh-background:#fffdf3;--qmh-header:#0c3b26;background:transparent;border-radius:0}
+.qz quran-madina-html-header{display:none}
+.qhl{background:#f6df8f!important;border-radius:4px}
+quran-madina-html-aya-popup{direction:rtl}
+quran-madina-html-aya-popup button{font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif!important;padding:8px 12px!important;border-radius:999px!important;background:#f3dc93!important;color:#0c3b26!important;border:0!important;margin:3px!important}
+.ph{display:flex;justify-content:space-between;font:400 15px/1 "Amiri Quran",serif;color:#7a5a12;padding:6px 8px 2px}
+.pn{text-align:center;font:400 15px/1 "Amiri Quran",serif;color:#7a5a12;padding:10px 0 4px}
+.pn span{border:1px solid #d9c48a;border-radius:999px;padding:3px 14px;background:#fff8df}
+.pg{position:relative;background:#fffdf3;border-radius:6px;padding:10px 12px;box-shadow:0 0 0 1px #d9c48a,0 6px 18px -8px rgba(60,40,0,.45),inset 0 0 0 5px #fffdf3,inset 0 0 0 6.5px #c9a24a}
 .pbar{display:flex;gap:8px;align-items:center;width:100%;max-width:520px;padding:6px 10px calc(8px + env(safe-area-inset-bottom,0px))}
 .rb{border:1.5px solid var(--am-gold-500);border-radius:999px;background:#fffaf0;color:var(--am-green-800);font:700 14px "IBM Plex Sans Arabic";padding:8px 12px;cursor:pointer;white-space:nowrap}
 .rb:active{transform:scale(.96)}
@@ -110,10 +102,8 @@ main{max-width:640px;margin:0 auto;padding:12px 14px 60px}
     <button class="rb" id="nextP" type="button">التالية ‹</button>
   </div>
 </section>
-<div class="act hidden" id="act"><span class="lbl" id="actL"></span><button type="button" id="aBm">🔖 علامة</button><button type="button" id="aCp">نسخ</button><button type="button" id="aX">✕</button></div>
 <div class="toast" id="toast"></div>
 <script src="mushaf.js"></script>
-<script>document.fonts && document.fonts.load('20px "Hafs"', "ٱللَّهِ");</script>
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
@@ -204,49 +194,78 @@ $("#gpGo").addEventListener("click", () => goTyped($("#gp")));
 $("#gp").addEventListener("keydown", e => { if (e.key === "Enter") goTyped($("#gp")); });
 
 /* ---------- عرض الصفحة كما في المصحف المطبوع ---------- */
-let cur = 1, selG = -1, fontOK = false;
+let cur = 1;
+/* الصفحة بمكتبة quran-madina-html: أسطر مصحف المدينة ١٤٤١هـ، كل سطر مضبوط بعرض الصفحة بمدّ الحروف كما في المطبوع */
+let qmhP = null, qtag = null;
+function qmh() {
+  if (qmhP) return qmhP;
+  qmhP = new Promise(ok => {
+    const availW = Math.min(innerWidth - 40, 560);
+    const sc = document.createElement("script");
+    sc.src = "qmh/dist/quran-madina-html.min.js"; sc.setAttribute("data-cdn", "qmh/"); sc.setAttribute("data-layout", "1441H");
+    sc.setAttribute("data-font-size", String(Math.max(10, Math.min(40, Math.round(16 * availW / 262)))));
+    sc.onload = () => customElements.whenDefined("quran-madina-html").then(() => {
+      const C = customElements.get("quran-madina-html");
+      C.clearActions();
+      C.registerAction({ id: "bm", title: "🔖 علامة", order: 10, onSelect: a => addBm(a.sura, a.aya) });
+      C.registerAction({ id: "cp", title: "نسخ الآية", order: 20, onSelect: a => copyAya(a.sura, a.aya) });
+      ok();
+    });
+    document.head.appendChild(sc);
+  });
+  return qmhP;
+}
 function openPage(p, flashG) {
   cur = Math.max(1, Math.min(604, p));
-  $("#idx").classList.add("hidden"); $("#reader").classList.remove("hidden"); closeAct();
-  const P = PAGES[cur - 1], g0 = P.a, [s0] = sa(g0);
-  let g = g0, h = "";
-  P.r.forEach(r => {
-    if (r[0] === "h") h += `<div class="row hd"><div class="sbox">سورة ${esc(SUR[r[1] - 1][0])}</div></div>`;
-    else if (r[0] === "b") h += `<div class="row bs">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</div>`;
-    else h += '<div class="row ln">' + r[1].map(t => { const mk = t.charCodeAt(0) === 0x06DD, s = `<span class="w${mk ? " mk" : ""}" data-g="${g}">${esc(t)}</span>`; if (mk) g++; return s; }).join("") + "</div>";
-  });
+  $("#idx").classList.add("hidden"); $("#reader").classList.remove("hidden");
+  const g0 = PAGES[cur - 1].a, [s0] = sa(g0);
   const pg = $("#pg");
-  pg.className = "pg" + (cur <= 2 ? " p12" : "");
-  pg.innerHTML = `<div class="ph"><span>سورة ${esc(SUR[s0 - 1][0])}</span><span>الجزء ${JUZ_NAMES[juzOfA(g0) - 1]}</span></div><div class="lines">${h}</div><div class="pn"><span>${AD(cur)}</span></div>`;
+  if (!qtag) {
+    pg.innerHTML = '<div class="ph"><span id="phS"></span><span id="phJ"></span></div><div class="qbox"><div class="qz" id="qz"><quran-madina-html id="qt" actions="bm cp"></quran-madina-html></div></div><div class="pn"><span id="phN"></span></div>';
+    qtag = $("#qt");
+  }
+  $("#phS").textContent = "سورة " + SUR[s0 - 1][0]; $("#phJ").textContent = "الجزء " + JUZ_NAMES[juzOfA(g0) - 1]; $("#phN").textContent = AD(cur);
   $("#pnum").value = AD(cur); $("#prevP").disabled = cur === 1; $("#nextP").disabled = cur === 604;
   st.last = cur; save();
-  fit();
-  // the Mushaf font loads on first use: measure again once it is ready
-  if (document.fonts && !fontOK) document.fonts.load('20px "Hafs"', "ٱللَّهِ").then(() => { fontOK = true; fit(); }).catch(() => {});
-  if (flashG != null) document.querySelectorAll(`.w[data-g="${flashG}"]`).forEach(w => { w.classList.add("hl"); setTimeout(() => w.classList.remove("hl"), 2400); });
+  const want = cur;
+  qmh().then(() => {
+    qtag.setAttribute("page", String(want));
+    let n = 0; const wait = () => {   // انتظار انتهاء رسم الصفحة ثم ضبط الحجم
+      if (cur !== want) return;
+      if (qtag.querySelector(".quran-madina-html-part") || n++ > 60) { fit(); if (flashG != null) flash(flashG); }
+      else setTimeout(wait, 50);
+    };
+    setTimeout(wait, 30);
+  });
 }
-/* حجم الخط: أطول سطر في الصفحة يملأ عرضها، والأسطر القصيرة (آخر السورة) في الوسط */
+function flash(g) {
+  const [s, a] = sa(g), cls = "quran-madina-html-" + String(s).padStart(3, "0") + "-" + String(a).padStart(3, "0");
+  let els = qtag.getElementsByClassName(cls);
+  if (!els.length) els = qtag.getElementsByClassName("quran-madina-html-" + String(s).padStart(3, "0") + "-" + String(a + 1).padStart(3, "0"));
+  [...els].forEach(e => { e.classList.add("qhl"); setTimeout(() => e.classList.remove("qhl"), 2600); });
+}
+/* الصفحة تملأ الشاشة: تكبير أو تصغير الصفحة المرسومة كاملة */
 function fit() {
-  const pw = $("#pw"), pg = $("#pg"); if (!pw.clientWidth) return;
-  const availW = pw.clientWidth - 12, availH = pw.clientHeight - 12;
-  let W = Math.min(availW, availH * 0.7, 560), H = Math.min(availH, W / 0.55);
-  const pad = Math.round(W * 0.055), rh = (H - pad * 2) / (15 + 1.6);
-  pg.style.width = W + "px"; pg.style.setProperty("--pad", pad + "px"); pg.style.setProperty("--rh", rh + "px");
-  const inner = W - pad * 2 - 8, base = 20; pg.style.setProperty("--fs", base + "px");
-  const rows = [...pg.querySelectorAll(".row.ln")]; let maxW = 1;
-  const nat = rows.map(r => { let s = 0; for (const c of r.children) s += c.getBoundingClientRect().width; maxW = Math.max(maxW, s); return s; });
-  let fs = Math.min(base * inner * 0.97 / maxW, rh * 0.58);
-  pg.style.setProperty("--fs", fs + "px");
-  rows.forEach((r, i) => r.classList.toggle("c", cur <= 2 || nat[i] * fs / base < inner * 0.8));
+  const pw = $("#pw"), pg = $("#pg"), qz = $("#qz"); if (!pw.clientWidth || !qz) return;
+  qz.style.zoom = 1;
+  const w = qtag.offsetWidth, h = qtag.offsetHeight; if (!w || !h) return;
+  const padX = 24, extraH = 70;
+  const z = Math.min((pw.clientWidth - 12 - padX) / w, (pw.clientHeight - 12 - extraH) / h);
+  qz.style.zoom = z;
+  pg.style.width = (w * z + padX) + "px";
 }
 addEventListener("resize", () => { if (!$("#reader").classList.contains("hidden")) fit(); });
-document.fonts && document.fonts.ready.then(() => { if (!$("#reader").classList.contains("hidden")) fit(); });
+function addBm(s, a) { const g = SUR[s - 1][3] + a - 1; if (!st.bm.some(b => b.g === g)) { st.bm.unshift({ g }); st.bm = st.bm.slice(0, 60); save(); } toast("حُفظت العلامة"); }
+async function copyAya(s, a) {
+  const g = SUR[s - 1][3] + a - 1, t = uth()[g] + " ﴿سورة " + SUR[s - 1][0] + " " + AD(a) + "﴾";
+  try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else await navigator.clipboard.writeText(t); toast("نُسخت الآية"); } catch (e) { toast("تعذّر النسخ"); }
+}
 $("#prevP").addEventListener("click", () => cur > 1 && openPage(cur - 1));
 $("#nextP").addEventListener("click", () => cur < 604 && openPage(cur + 1));
 $("#pnum").addEventListener("keydown", e => { if (e.key === "Enter") { goTyped($("#pnum")); $("#pnum").blur(); } });
 $("#pnum").addEventListener("change", () => goTyped($("#pnum")));
 $("#toIdx").addEventListener("click", toIndex);
-function toIndex() { $("#reader").classList.add("hidden"); $("#idx").classList.remove("hidden"); closeAct(); renderList(); scrollTo(0, 0); }
+function toIndex() { $("#reader").classList.add("hidden"); $("#idx").classList.remove("hidden"); renderList(); scrollTo(0, 0); }
 // السحب: من اليسار لليمين = الصفحة التالية (كما يُقلب المصحف)، والعكس = السابقة
 let tx = 0, ty = 0, tt = 0;
 $("#pw").addEventListener("touchstart", e => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; tt = Date.now(); }, { passive: true });
@@ -255,22 +274,7 @@ $("#pw").addEventListener("touchend", e => {
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - tt < 800) { if (dx > 0 && cur < 604) openPage(cur + 1); else if (dx < 0 && cur > 1) openPage(cur - 1); }
 }, { passive: true });
 addEventListener("keydown", e => { if ($("#reader").classList.contains("hidden") || e.target.tagName === "INPUT") return; if (e.key === "ArrowLeft" && cur < 604) openPage(cur + 1); if (e.key === "ArrowRight" && cur > 1) openPage(cur - 1); });
-// الضغط على آية: علامة أو نسخ
-$("#pg").addEventListener("click", e => {
-  const w = e.target.closest(".w"); if (!w) return;
-  document.querySelectorAll(".w.sel").forEach(x => x.classList.remove("sel"));
-  selG = +w.dataset.g; document.querySelectorAll(`.w[data-g="${selG}"]`).forEach(x => x.classList.add("sel"));
-  const [s, a] = sa(selG); $("#actL").textContent = SUR[s - 1][0] + " " + AD(a); $("#act").classList.remove("hidden");
-});
-function closeAct() { $("#act").classList.add("hidden"); document.querySelectorAll(".w.sel").forEach(x => x.classList.remove("sel")); }
-$("#aX").addEventListener("click", closeAct);
-$("#aBm").addEventListener("click", () => { if (!st.bm.some(b => b.g === selG)) { st.bm.unshift({ g: selG }); st.bm = st.bm.slice(0, 60); save(); } toast("حُفظت العلامة"); closeAct(); });
-$("#aCp").addEventListener("click", async () => {
-  const [s, a] = sa(selG), t = uth()[selG] + " ﴿سورة " + SUR[s - 1][0] + " " + AD(a) + "﴾";
-  try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else await navigator.clipboard.writeText(t); toast("نُسخت الآية"); } catch (e) { toast("تعذّر النسخ"); }
-  closeAct();
-});
-window.__back = () => { if (!$("#act").classList.contains("hidden")) { closeAct(); return 1; } if (!$("#reader").classList.contains("hidden")) { toIndex(); return 1; } if ($("#q").value) { $("#q").value = ""; search(""); return 1; } return 0; };
+window.__back = () => { const pop = document.querySelector("quran-madina-html-aya-popup.quran-madina-html-open"); if (pop) { pop.classList.remove("quran-madina-html-open"); return 1; } if (!$("#reader").classList.contains("hidden")) { toIndex(); return 1; } if ($("#q").value) { $("#q").value = ""; search(""); return 1; } return 0; };
 renderList();
 </script>
 </body>

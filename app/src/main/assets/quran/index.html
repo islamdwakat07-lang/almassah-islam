@@ -113,6 +113,7 @@ main{max-width:640px;margin:0 auto;padding:12px 14px 60px}
 <div class="act hidden" id="act"><span class="lbl" id="actL"></span><button type="button" id="aBm">🔖 علامة</button><button type="button" id="aCp">نسخ</button><button type="button" id="aX">✕</button></div>
 <div class="toast" id="toast"></div>
 <script src="mushaf.js"></script>
+<script>document.fonts && document.fonts.load('20px "Hafs"', "ٱللَّهِ");</script>
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
@@ -203,7 +204,7 @@ $("#gpGo").addEventListener("click", () => goTyped($("#gp")));
 $("#gp").addEventListener("keydown", e => { if (e.key === "Enter") goTyped($("#gp")); });
 
 /* ---------- عرض الصفحة كما في المصحف المطبوع ---------- */
-let cur = 1, selG = -1;
+let cur = 1, selG = -1, fontOK = false;
 function openPage(p, flashG) {
   cur = Math.max(1, Math.min(604, p));
   $("#idx").classList.add("hidden"); $("#reader").classList.remove("hidden"); closeAct();
@@ -220,6 +221,8 @@ function openPage(p, flashG) {
   $("#pnum").value = AD(cur); $("#prevP").disabled = cur === 1; $("#nextP").disabled = cur === 604;
   st.last = cur; save();
   fit();
+  // the Mushaf font loads on first use: measure again once it is ready
+  if (document.fonts && !fontOK) document.fonts.load('20px "Hafs"', "ٱللَّهِ").then(() => { fontOK = true; fit(); }).catch(() => {});
   if (flashG != null) document.querySelectorAll(`.w[data-g="${flashG}"]`).forEach(w => { w.classList.add("hl"); setTimeout(() => w.classList.remove("hl"), 2400); });
 }
 /* حجم الخط: أطول سطر في الصفحة يملأ عرضها، والأسطر القصيرة (آخر السورة) في الوسط */
@@ -227,7 +230,7 @@ function fit() {
   const pw = $("#pw"), pg = $("#pg"); if (!pw.clientWidth) return;
   const availW = pw.clientWidth - 12, availH = pw.clientHeight - 12;
   let W = Math.min(availW, availH * 0.7, 560), H = Math.min(availH, W / 0.55);
-  const pad = Math.round(W * 0.055), rh = (H - pad * 2) / (15 + 1.25);
+  const pad = Math.round(W * 0.055), rh = (H - pad * 2) / (15 + 1.6);
   pg.style.width = W + "px"; pg.style.setProperty("--pad", pad + "px"); pg.style.setProperty("--rh", rh + "px");
   const inner = W - pad * 2 - 8, base = 20; pg.style.setProperty("--fs", base + "px");
   const rows = [...pg.querySelectorAll(".row.ln")]; let maxW = 1;

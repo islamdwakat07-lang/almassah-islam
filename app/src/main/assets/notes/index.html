@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="notes">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>دفتر الملاحظات</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;background:#f8f2e2;color:var(--am-ink)}
+main{max-width:640px;margin:0 auto;padding:12px 14px 110px}
+.hidden{display:none!important}
+button{font-family:inherit}
+input,select,textarea{font:500 16px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:10px 12px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;color:var(--am-ink);width:100%;min-width:0}
+textarea{resize:vertical;min-height:110px;line-height:1.8}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--am-gold-500);outline-offset:1px}
+input[dir=ltr]{text-align:left;font-family:"IBM Plex Mono","IBM Plex Sans Arabic",monospace}
+/* ---------- القائمة ---------- */
+.top{display:flex;gap:8px;margin:2px 0 10px}
+.top input{flex:1}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--am-line);background:#fffdf6;border-radius:999px;padding:6px 12px;font:700 13.5px "IBM Plex Sans Arabic";color:var(--am-green-800);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--am-btn);color:#fff;border-color:transparent}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:linear-gradient(160deg,#17613f,#0c3b26);color:#fff6d6;border-radius:16px;padding:10px 12px;box-shadow:0 0 0 1.5px var(--am-gold-400)}
+.stat b{display:block;font:700 22px/1.2 var(--am-title);color:#f3dc93}
+.stat small{font-size:12.5px;opacity:.9}
+.sec{font:700 15px var(--am-title);color:var(--am-green-800);margin:14px 4px 8px;display:flex;align-items:center;gap:8px}
+.sec::after{content:"";flex:1;height:1px;background:var(--am-line)}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{position:relative;display:block;width:100%;text-align:right;border:1px solid var(--am-line);border-radius:16px;background:#fffdf6;padding:12px 14px 10px 12px;cursor:pointer;color:inherit;
+  box-shadow:0 8px 18px -16px rgba(8,42,27,.6);overflow:hidden}
+.card::before{content:"";position:absolute;inset:0 0 0 auto;width:6px;background:var(--k)}
+.card:active{background:#f6efd9}
+.card .h{display:flex;align-items:center;gap:8px}
+.card .t{font:700 17px/1.4 "IBM Plex Sans Arabic";flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .m{font-size:13.5px;color:var(--am-muted);margin-top:2px}
+.card .ic{display:flex;gap:10px;font-size:12.5px;color:var(--am-muted);margin-top:4px;flex-wrap:wrap}
+.badge{flex:none;font:700 12px "IBM Plex Sans Arabic";padding:2px 9px;border-radius:999px}
+.st-new{background:#e7eef9;color:#1d4f9a}.st-work{background:#fbf0d2;color:#8a5a00}.st-done{background:#e3efe2;color:#1e6b4a}
+.empty{color:var(--am-muted);text-align:center;padding:30px 10px}
+.empty b{display:block;font:700 18px var(--am-title);color:var(--am-green-800);margin-bottom:6px}
+.fab{position:fixed;left:18px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;border:0;border-radius:999px;padding:14px 20px;font:700 17px "IBM Plex Sans Arabic";color:#fff;
+  background:var(--am-btn);box-shadow:0 0 0 2px var(--am-gold-400),0 12px 22px -10px rgba(8,42,27,.8);cursor:pointer}
+.tools{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.sm{border:1.5px solid var(--am-gold-500);border-radius:999px;padding:8px 14px;background:#fffaf0;color:var(--am-green-800);font:700 14px "IBM Plex Sans Arabic";cursor:pointer;white-space:nowrap}
+.sm:active{transform:scale(.97)}
+/* ---------- المحرر ---------- */
+.ed{display:flex;flex-direction:column;gap:12px}
+.box{background:#fffdf6;border:1.5px solid var(--am-line);border-radius:18px;padding:12px 14px;box-shadow:0 10px 22px -18px rgba(8,42,27,.5)}
+.box h3{margin:0 0 10px;font:700 16px var(--am-title);color:var(--am-green-800);display:flex;align-items:center;gap:8px}
+.box h3 .sp{flex:1}
+.ttl{font:700 20px "IBM Plex Sans Arabic"!important;border:0!important;background:transparent!important;padding:4px 2px!important;border-bottom:2px dashed var(--am-line)!important;border-radius:0!important}
+.kinds{display:flex;gap:6px;flex-wrap:wrap}
+.kind{border:1.5px solid var(--am-line);background:#fff;border-radius:12px;padding:6px 10px;font:700 13.5px "IBM Plex Sans Arabic";cursor:pointer;color:var(--am-ink)}
+.kind.on{border-color:var(--k);background:color-mix(in srgb,var(--k) 14%,#fff);box-shadow:inset 0 0 0 1px var(--k)}
+.seg{display:flex;border:1.5px solid var(--am-line);border-radius:999px;overflow:hidden}
+.seg button{flex:1;border:0;background:#fff;padding:8px 4px;font:700 14px "IBM Plex Sans Arabic";color:var(--am-green-800);cursor:pointer}
+.seg button.on{background:var(--am-btn);color:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:13.5px;color:var(--am-green-800)}
+.row{display:flex;gap:8px;align-items:center}
+.ibtn{flex:none;border:0;border-radius:12px;width:44px;height:44px;display:grid;place-items:center;background:#f3ead2;color:#0c3b26;font-size:19px;cursor:pointer;text-decoration:none}
+.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #eadfbf}
+.chk input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:#0f5a37}
+.chk input[type=text]{border:0;background:transparent;padding:4px}
+.chk.ok input[type=text]{text-decoration:line-through;color:var(--am-muted)}
+.x{flex:none;border:0;background:none;color:#a0522d;font-size:17px;cursor:pointer;padding:4px 6px}
+table.pts{width:100%;border-collapse:collapse;font-size:14px}
+table.pts th{font-weight:700;color:var(--am-green-800);font-size:12.5px;padding:4px;border-bottom:1.5px solid var(--am-line)}
+table.pts td{padding:3px 2px;border-bottom:1px dashed #eadfbf}
+table.pts input{padding:7px 6px;font-size:14px;border-radius:9px}
+table.pts td.n input{width:52px;text-align:center}
+.note-s{font-size:12.5px;color:var(--am-muted);margin:6px 2px 0}
+.pad{position:relative;border:1.5px solid var(--am-line);border-radius:14px;overflow:hidden;background:#fffef8;
+  background-image:linear-gradient(#e9e2cc 1px,transparent 1px),linear-gradient(90deg,#e9e2cc 1px,transparent 1px);background-size:20px 20px}
+.pad canvas{display:block;width:100%;height:300px;touch-action:none}
+.pens{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.pen{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--am-line);cursor:pointer}
+.pen.on{box-shadow:0 0 0 2.5px #0c3b26}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ph{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#eee}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph button{position:absolute;top:4px;left:4px;border:0;border-radius:50%;width:28px;height:28px;background:rgba(0,0,0,.55);color:#fff;cursor:pointer}
+.addph{aspect-ratio:1;border:2px dashed var(--am-line);border-radius:12px;display:grid;place-items:center;color:var(--am-green-800);font:700 13px "IBM Plex Sans Arabic";cursor:pointer;background:#fffdf6;text-align:center}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;justify-content:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(248,242,226,.97);border-top:1px solid var(--am-line)}
+.bar .sm{flex:1;max-width:160px}
+.bar .del{border-color:#d9a08a;color:#a0402d}
+.meta-l{font-size:12.5px;color:var(--am-muted);text-align:center}
+.viewer{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center}
+.viewer img{max-width:100%;max-height:100%}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 16px;border-radius:999px;font-size:14px;z-index:95;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-notes.png" alt=""><b>دفتر الملاحظات</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+
+<main id="listV">
+  <div class="top"><input id="q" type="search" placeholder="ابحث: اسم، بلدة، حوض، قطعة، هاتف…" autocomplete="off"></div>
+  <div class="stats" id="stats"></div>
+  <div class="chips" id="chips"></div>
+  <div id="cards"></div>
+  <div class="tools">
+    <button class="sm" type="button" id="exp">⬇ نسخة احتياطية</button>
+    <button class="sm" type="button" id="imp">⬆ استرجاع</button>
+    <input type="file" id="impF" accept=".json,application/json" hidden>
+  </div>
+  <button class="fab" type="button" id="new">＋ ملاحظة جديدة</button>
+</main>
+
+<main id="edV" class="hidden">
+  <div class="ed">
+    <div class="box">
+      <input class="ttl" id="eTitle" placeholder="عنوان الملاحظة (مثلاً: رفع قطعة أبو أحمد)">
+      <div class="kinds" id="eKinds" style="margin-top:10px"></div>
+      <div class="seg" id="eStatus" style="margin-top:10px">
+        <button type="button" data-s="new">🆕 جديدة</button><button type="button" data-s="work">⏳ قيد العمل</button><button type="button" data-s="done">✅ منجزة</button>
+      </div>
+      <div class="g2" style="margin-top:10px">
+        <label class="f">الموعد<input id="eDate" type="datetime-local"></label>
+        <label class="f">📌 تثبيت<select id="ePin"><option value="0">لا</option><option value="1">نعم – في الأعلى</option></select></label>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>👤 صاحب العمل</h3>
+      <div class="row"><input id="eName" placeholder="الاسم"></div>
+      <div class="row" style="margin-top:8px"><input id="ePhone" dir="ltr" inputmode="tel" placeholder="05XXXXXXXX"><a class="ibtn" id="eCall" title="اتصال">📞</a><a class="ibtn" id="eWa" title="واتساب">💬</a></div>
+    </div>
+
+    <div class="box">
+      <h3>🗺️ الموقع</h3>
+      <div class="g3">
+        <label class="f">البلدة<input id="eVil" placeholder="عصيرة الشمالية"></label>
+        <label class="f">الحوض<input id="eBlk" inputmode="numeric"></label>
+        <label class="f">القطعة<input id="ePlot" inputmode="numeric"></label>
+      </div>
+      <div class="g2" style="margin-top:8px">
+        <label class="f">المساحة (م²)<input id="eArea" inputmode="decimal" dir="ltr"></label>
+        <label class="f">ملاحظة الموقع<input id="eWhere" placeholder="قرب المدرسة…"></label>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>📍 نقاط وإحداثيات<span class="sp"></span><span class="seg" id="eSys" style="width:150px"><button type="button" data-y="itm">ITM</button><button type="button" data-y="pg">فلسطيني</button></span></h3>
+      <table class="pts"><thead><tr><th>رقم</th><th>X</th><th>Y</th><th>Z</th><th></th></tr></thead><tbody id="ePts"></tbody></table>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">
+        <button class="sm" type="button" id="addPt">＋ نقطة</button>
+        <button class="sm" type="button" id="gps">📡 موقعي الآن</button>
+        <button class="sm" type="button" id="openGov">🗺️ افتح أول نقطة في GOV</button>
+      </div>
+      <p class="note-s" id="gpsMsg">«موقعي الآن» من GPS الجوال للاستدلال على المكان فقط (دقة بضعة أمتار)، وليس بديلاً عن جهاز المساحة.</p>
+    </div>
+
+    <div class="box">
+      <h3>☑️ قائمة المهام<span class="sp"></span><button class="sm" type="button" id="tpl" style="padding:5px 10px;font-size:12.5px">قائمة جاهزة حسب النوع</button></h3>
+      <div id="eChk"></div>
+      <div class="row" style="margin-top:8px"><input id="chkNew" placeholder="أضف مهمة…"><button class="ibtn" type="button" id="chkAdd">＋</button></div>
+    </div>
+
+    <div class="box">
+      <h3>✍️ الملاحظات</h3>
+      <textarea id="eBody" placeholder="اكتب ما تريد: حدود، جيران، قياسات، ملاحظات البلدية…"></textarea>
+    </div>
+
+    <div class="box">
+      <h3>✏️ كروكي ميداني<span class="sp"></span><button class="sm" type="button" id="skUndo" style="padding:5px 10px">↶ تراجع</button><button class="sm" type="button" id="skClr" style="padding:5px 10px">مسح</button></h3>
+      <div class="pad"><canvas id="sk"></canvas></div>
+      <div class="pens" id="pens"></div>
+    </div>
+
+    <div class="box">
+      <h3>📷 صور الموقع</h3>
+      <div class="photos" id="ePh"></div>
+      <input type="file" id="phF" accept="image/*" multiple hidden>
+    </div>
+
+    <div class="box">
+      <h3>💰 الأتعاب</h3>
+      <div class="g3">
+        <label class="f">المتفق عليه<input id="eFee" inputmode="decimal" dir="ltr"></label>
+        <label class="f">المقبوض<input id="ePaid" inputmode="decimal" dir="ltr"></label>
+        <label class="f">الباقي<input id="eRest" readonly dir="ltr" style="background:#f6efd9"></label>
+      </div>
+    </div>
+    <p class="meta-l" id="eMeta"></p>
+  </div>
+  <div class="bar">
+    <button class="sm" type="button" id="back">‹ رجوع</button>
+    <button class="sm" type="button" id="share">↗ مشاركة</button>
+    <button class="sm del" type="button" id="del">🗑 حذف</button>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="../geomolg/lib/proj4.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const toast = t => { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1900); };
+const num = s => { const v = parseFloat(String(s || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.\-]/g, "")); return isFinite(v) ? v : null; };
+proj4.defs("PG", "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs");
+proj4.defs("ITM", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs");
+
+/* أنواع الأعمال، وقائمة مهام جاهزة لكل نوع */
+const KINDS = {
+  survey:  { n: "📏 رفع مساحي", c: "#0f6b45", tpl: ["فحص الجهاز على نقطة ثابتة", "رفع حدود القطعة", "رفع المباني والأسوار", "رفع الشوارع والمداخل", "صور للموقع", "تصدير النقاط ورسمها"] },
+  stake:   { n: "📍 توقيع", c: "#b4232c", tpl: ["تجهيز ملف نقاط التوقيع", "فحص على ثابت قبل البدء", "توقيع الزوايا", "تثبيت الأوتاد/الدهان", "قياس تحقق بين النقاط", "تسليم صاحب الأرض"] },
+  license: { n: "🧾 ترخيص", c: "#1d4f9a", tpl: ["صورة سند الملكية / إخراج القيد", "صورة الهوية", "رفع الموقع", "مخطط دليل ١:١٠٠٠٠", "مخطط دليل ١:٥٠٠٠٠", "الصورة الجوية", "جدول الإحداثيات", "الأختام والتواقيع"] },
+  ifraz:   { n: "📐 إفراز", c: "#7a3fa0", tpl: ["الكوشان والحصص", "رفع حدود القطعة", "تحديد الاقتطاع للشوارع", "اقتراح الإفراز", "موافقة الشركاء", "توقيع القطع الجديدة"] },
+  build:   { n: "🏗️ بناء وخنزيرة", c: "#c26a12", tpl: ["التحقق من الارتدادات", "منسوب الصفر (BM)", "توقيع المحاور", "الخنزيرة وفحص الأقطار", "تسليم المقاول"] },
+  visit:   { n: "👁️ كشف ومعاينة", c: "#0d7f8a", tpl: ["صور الموقع", "الحدود والجيران", "الطرق والمداخل", "ملاحظات البلدية/التنظيم"] },
+  general: { n: "📝 عام", c: "#6b6b5a", tpl: [] }
+};
+const STATUS = { new: "جديدة", work: "قيد العمل", done: "منجزة" };
+const PENS = ["#1d2a22", "#c0182a", "#1d4f9a", "#0f6b45", "#c26a12"];
+
+/* ---------- التخزين: IndexedDB (يتسع للصور والكروكي) ---------- */
+let dbp = null;
+const db = () => dbp || (dbp = new Promise((ok, no) => { const r = indexedDB.open("almassah-notes", 1); r.onupgradeneeded = () => r.result.createObjectStore("notes", { keyPath: "id" }); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }));
+const tx = (mode, fn) => db().then(d => new Promise((ok, no) => { const t = d.transaction("notes", mode), s = t.objectStore("notes"), r = fn(s); t.oncomplete = () => ok(r && r.result); t.onerror = () => no(t.error); }));
+const all = () => tx("readonly", s => s.getAll()).then(a => a || []);
+const put = n => tx("readwrite", s => s.put(n));
+const delN = id => tx("readwrite", s => s.delete(id));
+
+/* ---------- القائمة ---------- */
+let notes = [], filt = "all", cur = null;
+async function refresh() { notes = await all(); renderList(); }
+function noteText(n) { return [n.title, n.name, n.phone, n.vil, n.blk, n.plot, n.where, n.body, (n.items || []).map(i => i.t).join(" ")].join(" ").toLowerCase(); }
+function fmtDate(s) { if (!s) return ""; const d = new Date(s); if (isNaN(d)) return ""; return d.toLocaleDateString("ar-EG", { weekday: "short", day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }); }
+function card(n) {
+  const k = KINDS[n.kind] || KINDS.general, items = n.items || [], done = items.filter(i => i.ok).length;
+  const loc = [n.vil, n.blk && "حوض " + n.blk, n.plot && "قطعة " + n.plot].filter(Boolean).join(" · ");
+  const ic = [];
+  if (n.date) ic.push("🗓️ " + fmtDate(n.date));
+  if (items.length) ic.push("☑️ " + done + "/" + items.length);
+  if ((n.pts || []).length) ic.push("📍 " + n.pts.length);
+  if ((n.photos || []).length) ic.push("📷 " + n.photos.length);
+  if (n.sketch) ic.push("✏️ كروكي");
+  const rest = (num(n.fee) || 0) - (num(n.paid) || 0); if (num(n.fee) && rest > 0) ic.push("💰 باقي " + rest.toLocaleString("en-US"));
+  return `<button class="card" type="button" data-id="${n.id}" style="--k:${k.c}"><div class="h">${n.pin ? "📌" : ""}<span class="t">${esc(n.title || "بدون عنوان")}</span><span class="badge st-${n.status || "new"}">${STATUS[n.status || "new"]}</span></div>
+    <div class="m">${k.n}${n.name ? " · 👤 " + esc(n.name) : ""}${loc ? " · " + esc(loc) : ""}</div>${ic.length ? `<div class="ic">${ic.map(esc).join("<span>·</span>")}</div>` : ""}</button>`;
+}
+function renderList() {
+  const q = $("#q").value.trim().toLowerCase();
+  const now = Date.now(), soon = notes.filter(n => n.date && new Date(n.date).getTime() >= now - 3600e3 && n.status !== "done").sort((a, b) => new Date(a.date) - new Date(b.date));
+  const open = notes.filter(n => n.status !== "done").length, owed = notes.reduce((t, n) => t + Math.max(0, (num(n.fee) || 0) - (num(n.paid) || 0)), 0);
+  $("#stats").innerHTML = `<div class="stat"><b>${notes.length}</b><small>كل الملاحظات</small></div><div class="stat"><b>${open}</b><small>أعمال مفتوحة</small></div><div class="stat"><b>${owed.toLocaleString("en-US")}</b><small>أتعاب لم تُقبض</small></div>`;
+  const chips = [["all", "الكل"], ["open", "المفتوحة"], ["done", "المنجزة"], ...Object.entries(KINDS).map(([k, v]) => [k, v.n])];
+  $("#chips").innerHTML = chips.map(([k, t]) => `<button class="chip${filt === k ? " on" : ""}" type="button" data-f="${k}">${t}</button>`).join("");
+  let list = notes.filter(n => (filt === "all" || (filt === "open" && n.status !== "done") || (filt === "done" && n.status === "done") || n.kind === filt) && (!q || noteText(n).includes(q)));
+  list.sort((a, b) => (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || b.u - a.u);
+  let h = "";
+  if (!notes.length) h = '<div class="empty"><b>دفترك فارغ</b>سجّل هنا كل عمل ميداني: صاحب العمل، الموقع والحوض والقطعة، النقاط والإحداثيات، قائمة المهام، كروكي بإصبعك، صور الموقع، والأتعاب.<br>اضغط «＋ ملاحظة جديدة» للبدء.</div>';
+  else {
+    if (soon.length && filt === "all" && !q) h += '<div class="sec">🗓️ المواعيد القادمة</div><div class="cards">' + soon.slice(0, 5).map(card).join("") + "</div>";
+    h += `<div class="sec">${q ? "نتائج البحث" : "الملاحظات"} (${list.length})</div><div class="cards">` + (list.length ? list.map(card).join("") : '<p class="empty">لا شيء هنا.</p>') + "</div>";
+  }
+  $("#cards").innerHTML = h;
+}
+$("#q").addEventListener("input", renderList);
+$("#chips").addEventListener("click", e => { const c = e.target.closest("[data-f]"); if (c) { filt = c.dataset.f; renderList(); } });
+$("#cards").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) openNote(notes.find(n => n.id === c.dataset.id)); });
+$("#new").addEventListener("click", () => openNote({ id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now(), u: Date.now(), kind: "survey", status: "new", sys: "itm", items: [], pts: [], photos: [] }, true));
+
+/* ---------- المحرر ---------- */
+const F = { eTitle: "title", eDate: "date", eName: "name", ePhone: "phone", eVil: "vil", eBlk: "blk", ePlot: "plot", eArea: "area", eWhere: "where", eBody: "body", eFee: "fee", ePaid: "paid" };
+let saveT = 0, isNew = false;
+function openNote(n, fresh) {
+  cur = JSON.parse(JSON.stringify(n)); isNew = !!fresh;
+  $("#listV").classList.add("hidden"); $("#edV").classList.remove("hidden"); scrollTo(0, 0);
+  Object.entries(F).forEach(([id, k]) => $("#" + id).value = cur[k] || "");
+  $("#ePin").value = cur.pin ? "1" : "0";
+  renderKinds(); renderStatus(); renderSys(); renderPts(); renderChk(); renderPhotos(); renderContact(); calcRest(); loadSketch();
+  $("#eMeta").textContent = "أُنشئت " + new Date(cur.t).toLocaleString("ar-EG") + (cur.u !== cur.t ? " · آخر تعديل " + new Date(cur.u).toLocaleString("ar-EG") : "");
+  if (fresh) setTimeout(() => $("#eTitle").focus(), 200);
+}
+function touch() { clearTimeout(saveT); saveT = setTimeout(saveNow, 500); }
+async function saveNow() {
+  clearTimeout(saveT); if (!cur) return;
+  const empty = !cur.title && !cur.body && !cur.name && !(cur.pts || []).length && !(cur.photos || []).length && !cur.sketch && !(cur.items || []).length;
+  if (isNew && empty) return;
+  cur.u = Date.now(); isNew = false; await put(cur);
+}
+Object.entries(F).forEach(([id, k]) => $("#" + id).addEventListener("input", () => { cur[k] = $("#" + id).value; if (id === "ePhone") renderContact(); if (id === "eFee" || id === "ePaid") calcRest(); touch(); }));
+$("#ePin").addEventListener("change", () => { cur.pin = $("#ePin").value === "1"; touch(); });
+function renderKinds() { $("#eKinds").innerHTML = Object.entries(KINDS).map(([k, v]) => `<button class="kind${cur.kind === k ? " on" : ""}" type="button" data-k="${k}" style="--k:${v.c}">${v.n}</button>`).join(""); }
+$("#eKinds").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (!b) return; cur.kind = b.dataset.k; renderKinds(); if (!(cur.items || []).length) fillTpl(); touch(); });
+function renderStatus() { document.querySelectorAll("#eStatus button").forEach(b => b.classList.toggle("on", b.dataset.s === (cur.status || "new"))); }
+$("#eStatus").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (b) { cur.status = b.dataset.s; renderStatus(); touch(); } });
+function renderContact() {
+  const p = (cur.phone || "").replace(/[^\d+]/g, ""), intl = p.startsWith("0") ? "970" + p.slice(1) : p.replace(/^\+/, "");
+  $("#eCall").href = p ? "tel:" + p : "#"; $("#eWa").href = p ? "https://wa.me/" + intl : "#";
+  $("#eCall").style.opacity = $("#eWa").style.opacity = p ? 1 : .4;
+}
+function calcRest() { const r = (num(cur.fee) || 0) - (num(cur.paid) || 0); $("#eRest").value = num(cur.fee) != null ? r.toLocaleString("en-US") : ""; }
+/* النقاط */
+function renderSys() { document.querySelectorAll("#eSys button").forEach(b => b.classList.toggle("on", b.dataset.y === (cur.sys || "itm"))); }
+$("#eSys").addEventListener("click", e => {
+  const b = e.target.closest("[data-y]"); if (!b || b.dataset.y === cur.sys) return;
+  const from = cur.sys === "pg" ? "PG" : "ITM", to = b.dataset.y === "pg" ? "PG" : "ITM";
+  (cur.pts || []).forEach(p => { const x = num(p.x), y = num(p.y); if (x != null && y != null) { const r = proj4(from, to, [x, y]); p.x = r[0].toFixed(2); p.y = r[1].toFixed(2); } });
+  cur.sys = b.dataset.y; renderSys(); renderPts(); touch(); toast("حُوّلت الإحداثيات إلى " + (to === "PG" ? "النظام الفلسطيني" : "ITM"));
+});
+function renderPts() {
+  $("#ePts").innerHTML = (cur.pts || []).map((p, i) => `<tr><td class="n"><input value="${esc(p.n)}" data-i="${i}" data-k="n"></td><td><input dir="ltr" inputmode="decimal" value="${esc(p.x)}" data-i="${i}" data-k="x"></td><td><input dir="ltr" inputmode="decimal" value="${esc(p.y)}" data-i="${i}" data-k="y"></td><td><input dir="ltr" inputmode="decimal" value="${esc(p.z)}" data-i="${i}" data-k="z" style="width:64px"></td><td><button class="x" type="button" data-rm="${i}">✕</button></td></tr>`).join("") || '<tr><td colspan="5" class="note-s" style="text-align:center">لا توجد نقاط بعد</td></tr>';
+}
+$("#ePts").addEventListener("input", e => { const t = e.target; if (t.dataset.i == null) return; cur.pts[+t.dataset.i][t.dataset.k] = t.value; touch(); });
+$("#ePts").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b) { cur.pts.splice(+b.dataset.rm, 1); renderPts(); touch(); } });
+$("#addPt").addEventListener("click", () => { cur.pts = cur.pts || []; cur.pts.push({ n: String(cur.pts.length + 1), x: "", y: "", z: "" }); renderPts(); touch(); const ins = $("#ePts").querySelectorAll('input[data-k="x"]'); ins[ins.length - 1].focus(); });
+$("#gps").addEventListener("click", () => {
+  if (!navigator.geolocation) { toast("الموقع غير متاح"); return; }
+  $("#gpsMsg").textContent = "…جاري تحديد موقعك";
+  navigator.geolocation.getCurrentPosition(pos => {
+    const c = pos.coords, r = proj4("WGS84", cur.sys === "pg" ? "PG" : "ITM", [c.longitude, c.latitude]);
+    cur.pts = cur.pts || []; cur.pts.push({ n: "GPS" + (cur.pts.filter(p => /^GPS/.test(p.n)).length + 1), x: r[0].toFixed(2), y: r[1].toFixed(2), z: c.altitude != null ? c.altitude.toFixed(1) : "" });
+    renderPts(); touch();
+    $("#gpsMsg").textContent = "أُضيف موقعك بدقة تقريبية ±" + Math.round(c.accuracy) + " م (GPS الجوال، للاستدلال فقط).";
+  }, err => { $("#gpsMsg").textContent = "تعذّر تحديد الموقع: " + (err.code === 1 ? "اسمح للتطبيق باستخدام الموقع" : "حاول في مكان مكشوف"); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+});
+$("#openGov").addEventListener("click", () => {
+  const p = (cur.pts || []).find(p => num(p.x) != null && num(p.y) != null); if (!p) { toast("أدخل نقطة فيها X و Y"); return; }
+  let x = num(p.x), y = num(p.y); if (cur.sys === "pg") [x, y] = proj4("PG", "ITM", [x, y]);
+  const u = `https://www.govmap.gov.il/?c=${x.toFixed(2)},${y.toFixed(2)}&z=9&lay=189,188,181&b=1`;
+  if (window.AndroidBridge && AndroidBridge.openMap) AndroidBridge.openMap(u, false); else window.open(u, "_blank");
+});
+/* المهام */
+function fillTpl() { const t = (KINDS[cur.kind] || KINDS.general).tpl; const have = new Set((cur.items || []).map(i => i.t)); cur.items = (cur.items || []).concat(t.filter(x => !have.has(x)).map(x => ({ t: x, ok: false }))); renderChk(); }
+$("#tpl").addEventListener("click", () => { fillTpl(); touch(); });
+function renderChk() { $("#eChk").innerHTML = (cur.items || []).map((it, i) => `<div class="chk${it.ok ? " ok" : ""}"><input type="checkbox" data-c="${i}"${it.ok ? " checked" : ""}><input type="text" value="${esc(it.t)}" data-t="${i}"><button class="x" type="button" data-rx="${i}">✕</button></div>`).join(""); }
+$("#eChk").addEventListener("change", e => { const c = e.target.dataset.c; if (c != null) { cur.items[+c].ok = e.target.checked; renderChk(); touch(); } });
+$("#eChk").addEventListener("input", e => { const t = e.target.dataset.t; if (t != null) { cur.items[+t].t = e.target.value; touch(); } });
+$("#eChk").addEventListener("click", e => { const b = e.target.closest("[data-rx]"); if (b) { cur.items.splice(+b.dataset.rx, 1); renderChk(); touch(); } });
+function addChk() { const v = $("#chkNew").value.trim(); if (!v) return; cur.items = cur.items || []; cur.items.push({ t: v, ok: false }); $("#chkNew").value = ""; renderChk(); touch(); }
+$("#chkAdd").addEventListener("click", addChk);
+$("#chkNew").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addChk(); } });
+
+/* ---------- الكروكي: رسم بالإصبع ---------- */
+const cv = $("#sk"), cx = cv.getContext("2d"); let strokes = [], pen = PENS[0], drawing = null;
+$("#pens").innerHTML = PENS.map((c, i) => `<button class="pen${i ? "" : " on"}" type="button" data-pen="${c}" style="background:${c}"></button>`).join("") + '<span class="note-s" style="margin:0 6px">ارسم القطعة والحدود والجيران بإصبعك</span>';
+$("#pens").addEventListener("click", e => { const b = e.target.closest("[data-pen]"); if (!b) return; pen = b.dataset.pen; document.querySelectorAll(".pen").forEach(p => p.classList.toggle("on", p === b)); });
+function sizeCanvas() { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); redraw(); }
+function redraw() {
+  const d = devicePixelRatio || 1, W = cv.width, H = cv.height; cx.clearRect(0, 0, W, H);
+  if (cur && cur.sketchImg && !strokes.length) { const im = new Image(); im.onload = () => { cx.drawImage(im, 0, 0, W, H); }; im.src = cur.sketchImg; }
+  strokes.forEach(s => { cx.strokeStyle = s.c; cx.lineWidth = 3 * d; cx.lineCap = cx.lineJoin = "round"; cx.beginPath(); s.p.forEach((p, i) => cx[i ? "lineTo" : "moveTo"](p[0] * W, p[1] * H)); cx.stroke(); });
+}
+function loadSketch() { strokes = (cur.sketch && cur.sketch.strokes) ? JSON.parse(JSON.stringify(cur.sketch.strokes)) : []; requestAnimationFrame(sizeCanvas); }
+const pt = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); drawing = { c: pen, p: [pt(e)] }; strokes.push(drawing); });
+cv.addEventListener("pointermove", e => { if (!drawing) return; drawing.p.push(pt(e)); redraw(); });
+const endStroke = () => { if (!drawing) return; drawing.p = drawing.p.map(p => [Math.round(p[0] * 1000) / 1000, Math.round(p[1] * 1000) / 1000]); drawing = null; cur.sketch = strokes.length ? { strokes } : null; touch(); };
+cv.addEventListener("pointerup", endStroke); cv.addEventListener("pointercancel", endStroke);
+$("#skUndo").addEventListener("click", () => { strokes.pop(); cur.sketch = strokes.length ? { strokes } : null; redraw(); touch(); });
+$("#skClr").addEventListener("click", () => { if (!strokes.length || !confirmLite("مسح الكروكي؟")) return; strokes = []; cur.sketch = null; redraw(); touch(); });
+addEventListener("resize", () => { if (!$("#edV").classList.contains("hidden")) sizeCanvas(); });
+let lastAsk = 0; function confirmLite(msg) { if (Date.now() - lastAsk < 3000) { lastAsk = 0; return true; } lastAsk = Date.now(); toast(msg + " اضغط مرة ثانية للتأكيد"); return false; }
+
+/* ---------- الصور: تُصغَّر قبل الحفظ ---------- */
+function renderPhotos() { $("#ePh").innerHTML = (cur.photos || []).map((p, i) => `<div class="ph"><img src="${p}" data-v="${i}" alt=""><button type="button" data-rp="${i}">✕</button></div>`).join("") + '<button class="addph" type="button" id="addPh">📷<br>أضف صورة</button>'; }
+$("#ePh").addEventListener("click", e => {
+  if (e.target.closest("#addPh")) { $("#phF").click(); return; }
+  const r = e.target.closest("[data-rp]"); if (r) { if (!confirmLite("حذف الصورة؟")) return; cur.photos.splice(+r.dataset.rp, 1); renderPhotos(); touch(); return; }
+  const v = e.target.closest("[data-v]"); if (v) { const d = document.createElement("div"); d.className = "viewer"; d.innerHTML = `<img src="${cur.photos[+v.dataset.v]}" alt="">`; d.onclick = () => d.remove(); document.body.appendChild(d); }
+});
+$("#phF").addEventListener("change", async () => {
+  for (const f of $("#phF").files) {
+    try {
+      const url = URL.createObjectURL(f), im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+      const k = Math.min(1, 1400 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      cur.photos = cur.photos || []; cur.photos.push(c.toDataURL("image/jpeg", .82));
+    } catch (e) { toast("تعذّر فتح إحدى الصور"); }
+  }
+  $("#phF").value = ""; renderPhotos(); touch();
+});
+
+/* ---------- مشاركة، حذف، رجوع ---------- */
+function summary(n) {
+  const k = KINDS[n.kind] || KINDS.general, L = [];
+  L.push("📒 " + (n.title || "ملاحظة") + " — " + k.n + " (" + STATUS[n.status || "new"] + ")");
+  if (n.date) L.push("🗓️ الموعد: " + fmtDate(n.date));
+  if (n.name || n.phone) L.push("👤 " + [n.name, n.phone].filter(Boolean).join(" – "));
+  const loc = [n.vil, n.blk && "حوض " + n.blk, n.plot && "قطعة " + n.plot, n.area && "المساحة " + n.area + " م²"].filter(Boolean).join(" · "); if (loc) L.push("🗺️ " + loc);
+  if (n.where) L.push("📌 " + n.where);
+  const pts = (n.pts || []).filter(p => p.x || p.y); if (pts.length) { L.push("📍 النقاط (" + (n.sys === "pg" ? "فلسطيني" : "ITM") + "):"); pts.forEach(p => L.push("  " + p.n + ":  X " + p.x + "   Y " + p.y + (p.z ? "   Z " + p.z : ""))); }
+  if ((n.items || []).length) { L.push("☑️ المهام:"); n.items.forEach(i => L.push("  " + (i.ok ? "✅" : "⬜") + " " + i.t)); }
+  if (n.body) L.push("✍️ " + n.body);
+  return L.join("\n");
+}
+$("#share").addEventListener("click", async () => {
+  await saveNow(); const t = summary(cur);
+  try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else await navigator.clipboard.writeText(t); } catch (e) {}
+  location.href = "https://wa.me/?text=" + encodeURIComponent(t);
+  toast("نُسخ النص، ويُفتح واتساب للمشاركة");
+});
+$("#del").addEventListener("click", async () => { if (!confirmLite("حذف الملاحظة نهائياً؟")) return; await delN(cur.id); cur = null; backToList(); toast("حُذفت"); });
+async function backToList() { if (cur) await saveNow(); cur = null; $("#edV").classList.add("hidden"); $("#listV").classList.remove("hidden"); await refresh(); scrollTo(0, 0); }
+$("#back").addEventListener("click", backToList);
+window.__back = () => { const v = document.querySelector(".viewer"); if (v) { v.remove(); return 1; } if (!$("#edV").classList.contains("hidden")) { backToList(); return 1; } return 0; };
+addEventListener("pagehide", () => { if (cur) saveNow(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden && cur) saveNow(); });
+
+/* ---------- نسخة احتياطية ---------- */
+$("#exp").addEventListener("click", async () => {
+  const data = JSON.stringify({ app: "almassah-notes", v: 1, at: new Date().toISOString(), notes: await all() });
+  const name = "دفتر-الملاحظات-" + new Date().toISOString().slice(0, 10) + ".json";
+  if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, btoa(unescape(encodeURIComponent(data))), "application/json"); toast("حُفظت النسخة في التنزيلات"); }
+  else { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "application/json" })); a.download = name; a.click(); }
+});
+$("#imp").addEventListener("click", () => $("#impF").click());
+$("#impF").addEventListener("change", async () => {
+  const f = $("#impF").files[0]; if (!f) return;
+  try { const o = JSON.parse(await f.text()); if (!o || !Array.isArray(o.notes)) throw 0; let n = 0; for (const x of o.notes) { if (x && x.id) { const old = notes.find(y => y.id === x.id); if (!old || old.u < x.u) { await put(x); n++; } } } toast("استُرجعت " + n + " ملاحظة"); refresh(); }
+  catch (e) { toast("الملف ليس نسخة دفتر صالحة"); }
+  $("#impF").value = "";
+});
+refresh();
+</script>
+</body>
+</html>

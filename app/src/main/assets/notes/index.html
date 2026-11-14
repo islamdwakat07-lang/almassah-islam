@@ -9,87 +9,109 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;background:#f8f2e2;color:var(--am-ink)}
-main{max-width:600px;margin:0 auto;padding:12px 14px 120px}
+main{max-width:640px;margin:0 auto;padding:10px 12px 40px}
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 14px}
-.tab{border:0;border-radius:16px;padding:10px 4px;background:#fffdf6;box-shadow:inset 0 0 0 1.5px var(--am-line);color:var(--am-green-800);font:700 15px "IBM Plex Sans Arabic"}
-.tab b{display:block;font:700 24px/1.2 var(--am-title)}
-.tab.on{background:linear-gradient(160deg,#17613f,#0c3b26);color:#fff6d6;box-shadow:0 0 0 2px var(--am-gold-400)}
-.tab.on b{color:#f3dc93}
-.list{display:flex;flex-direction:column;gap:10px}
-.job{background:#fffdf6;border-radius:18px;padding:12px 14px;box-shadow:inset 0 0 0 1.5px var(--am-line),0 10px 20px -18px rgba(8,42,27,.6);border-right:7px solid var(--c)}
-.job .top{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
-.job .nm{font:700 19px/1.4 "IBM Plex Sans Arabic";flex:1}
-.job .wk{font-size:16px;color:#3a4a40;margin-top:2px}
-.job .dt{flex:none;font:700 13px "IBM Plex Sans Arabic";padding:3px 10px;border-radius:999px;background:#eef3ec;color:#1e6b4a;white-space:nowrap}
-.job .dt.late{background:#fbe3df;color:#a0302a}
-.job .dt.today{background:#fbf0d2;color:#8a5a00}
-.job .acts{display:flex;gap:8px;margin-top:10px;align-items:center}
-.go{flex:1;border:0;border-radius:14px;padding:12px;font:700 17px "IBM Plex Sans Arabic";color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400)}
-.go.done{background:linear-gradient(160deg,#2f8a4f,#1e6b4a)}
-.go.back{flex:none;background:#fffaf0;color:var(--am-green-800);box-shadow:inset 0 0 0 1.5px var(--am-gold-500);font-size:14px;padding:10px 14px}
-.ib{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:#f3ead2;font-size:21px;text-decoration:none;border:0}
-.empty{text-align:center;color:var(--am-muted);padding:34px 10px;font-size:16px}
-.empty b{display:block;font:700 19px var(--am-title);color:var(--am-green-800);margin-bottom:4px}
-.add{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:30;border:0;border-radius:999px;padding:15px 30px;font:700 19px "IBM Plex Sans Arabic";color:#fff;
-  background:var(--am-btn);box-shadow:0 0 0 2px var(--am-gold-400),0 14px 24px -10px rgba(8,42,27,.8);white-space:nowrap}
-/* نافذة الإدخال */
-.sheet{position:fixed;inset:0;z-index:50;background:rgba(10,30,20,.45);display:flex;align-items:flex-end;justify-content:center}
-.form{width:100%;max-width:600px;background:#fbf6e8;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.25);max-height:92vh;overflow:auto}
-.form h3{margin:0 0 12px;font:700 20px var(--am-title);color:var(--am-green-800);display:flex;align-items:center}
-.form h3 .x{margin-inline-start:auto;border:0;background:#f3ead2;border-radius:50%;width:36px;height:36px;font-size:16px;color:#8a3b12}
-.fl{display:block;font:700 15px "IBM Plex Sans Arabic";color:var(--am-green-800);margin:10px 2px 5px}
-.in{display:flex;gap:8px}
-.in input,.in textarea{flex:1;min-width:0;font:500 18px "IBM Plex Sans Arabic";padding:12px 14px;border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;color:var(--am-ink)}
-.in textarea{min-height:52px;resize:none;line-height:1.5}
-.in input:focus,.in textarea:focus{outline:2px solid var(--am-gold-500);outline-offset:1px}
-.mic{flex:none;width:54px;border:0;border-radius:14px;font-size:24px;color:#fff;background:linear-gradient(160deg,#c0392b,#8e1f16);box-shadow:0 6px 12px -6px rgba(140,30,20,.7)}
+.am-home{padding:4px 10px!important;font-size:12.5px!important;gap:4px!important}
+.am-home svg{width:14px!important;height:14px!important}
+/* تبويبان */
+.views{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.views button{border:0;border-radius:14px;padding:10px 4px;font:700 16px "IBM Plex Sans Arabic";background:#fffdf6;color:var(--am-green-800);box-shadow:inset 0 0 0 1.5px var(--am-line)}
+.views button.on{background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;box-shadow:0 0 0 2px var(--am-gold-400)}
+/* إضافة سريعة */
+.quick{background:#fffdf6;border-radius:16px;padding:8px;box-shadow:inset 0 0 0 1.5px var(--am-line);display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.qrow{display:flex;gap:6px}
+.qrow input{flex:1;min-width:0;font:500 16px "IBM Plex Sans Arabic";padding:9px 11px;border:1.5px solid var(--am-line);border-radius:12px;background:#fff}
+.qrow input:focus{outline:2px solid var(--am-gold-500)}
+.mic{flex:none;width:44px;border:0;border-radius:12px;font-size:19px;color:#fff;background:linear-gradient(160deg,#c0392b,#8e1f16)}
 .mic.on{animation:pulse 1s infinite}
-@keyframes pulse{50%{transform:scale(1.08)}}
+@keyframes pulse{50%{transform:scale(1.1)}}
+.plus{flex:none;border:0;border-radius:12px;padding:0 16px;font:700 16px "IBM Plex Sans Arabic";color:#fff;background:var(--am-btn)}
+.sub{display:flex;gap:6px;margin:6px 0}
+.sub button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:999px;padding:4px 12px;font:700 13.5px "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.sub button.on{background:var(--am-btn);color:#fff;border-color:transparent}
+.sub .sp{flex:1}
+/* أسطر العمل */
+.rows{background:#fffdf6;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--am-line);overflow:hidden}
+.r{display:flex;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #eadfbf;min-height:52px}
+.r:last-child{border-bottom:0}
+.r .ck{flex:none;width:32px;height:32px;border-radius:50%;border:2px solid #b9c4bb;background:#fff;font-size:16px;color:#fff;display:grid;place-items:center}
+.r.done .ck{background:#2f8a4f;border-color:#2f8a4f}
+.r .nm{flex:1.45;min-width:0;font:700 15.5px "IBM Plex Sans Arabic";white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r .wk{flex:1.05;min-width:0;font-size:14px;color:#4a5a50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r.done .nm,.r.done .wk{text-decoration:line-through;color:#9aa49c}
+.r .fee{flex:none;width:70px;font:700 14.5px "IBM Plex Sans Arabic";padding:6px;border:1.5px solid var(--am-line);border-radius:10px;background:#fff;text-align:center;direction:ltr}
+.r .ib{flex:none;width:36px;height:36px;border:0;border-radius:10px;background:#f3ead2;font-size:16px;display:grid;place-items:center}
+.r .day{display:block;font-size:11.5px;color:#8a5a00;font-weight:600}
+.r .day.late{color:#b4232c}
+.hrow{display:flex;gap:6px;padding:6px 8px;font:700 12.5px "IBM Plex Sans Arabic";color:var(--am-green-800);background:#f3ead2}
+.empty{text-align:center;color:var(--am-muted);padding:26px 10px}
+/* السجل المالي */
+.frow{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:4px;align-items:center;padding:10px 8px;border-bottom:1px solid #eadfbf;cursor:pointer}
+.frow:last-child{border-bottom:0}
+.frow:active{background:#f6efd9}
+.frow.h{background:#f3ead2;font:700 12.5px "IBM Plex Sans Arabic";color:var(--am-green-800);cursor:default;padding:7px 8px}
+.frow .n{font:700 15px "IBM Plex Sans Arabic";white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .v{font:700 14px "IBM Plex Sans Arabic";direction:ltr;text-align:center}
+.frow .red{color:#b4232c}.frow .grn{color:#1e6b4a}
+.frow.tot{background:#0c3b26;color:#f3dc93;cursor:default}
+.frow.tot .v{color:#f3dc93;font-size:12.5px}
+.repb{border:0;border-radius:12px;padding:6px 12px;font:700 13.5px "IBM Plex Sans Arabic";color:#0c3b26;background:linear-gradient(180deg,#f8e7a8,#e6c35f);box-shadow:0 0 0 1.5px #c99a2e}
+/* الصفحات الداخلية */
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(10,30,20,.45);display:flex;align-items:flex-end;justify-content:center}
+.form{width:100%;max-width:640px;background:#fbf6e8;border-radius:22px 22px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.25);max-height:94vh;overflow:auto}
+.form h3{margin:0 0 6px;font:700 19px var(--am-title);color:var(--am-green-800);display:flex;align-items:center;gap:8px}
+.form h3 .x{margin-inline-start:auto;border:0;background:#f3ead2;border-radius:50%;width:36px;height:36px;font-size:16px;color:#8a3b12;flex:none}
+.fl{display:block;font:700 14.5px "IBM Plex Sans Arabic";color:var(--am-green-800);margin:10px 2px 4px}
+.in{display:flex;gap:8px}
+.in input,.in textarea{flex:1;min-width:0;font:500 17px "IBM Plex Sans Arabic";padding:11px 13px;border:1.5px solid var(--am-line);border-radius:13px;background:#fffdf6;color:var(--am-ink)}
+.in textarea{min-height:90px;resize:vertical;line-height:1.7}
+.in input:focus,.in textarea:focus{outline:2px solid var(--am-gold-500);outline-offset:1px}
+.in .mic{width:52px;border-radius:13px;font-size:22px}
+.in .lnk{flex:none;width:48px;border-radius:13px;background:#f3ead2;display:grid;place-items:center;font-size:20px;text-decoration:none}
 .days{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
-.day{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:999px;padding:6px 14px;font:700 14px "IBM Plex Sans Arabic";color:var(--am-green-800)}
-.day.on{background:var(--am-btn);color:#fff;border-color:transparent}
-.save{width:100%;margin-top:16px;border:0;border-radius:16px;padding:14px;font:700 19px "IBM Plex Sans Arabic";color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400)}
-.del{width:100%;margin-top:8px;border:0;border-radius:14px;padding:10px;font:700 15px "IBM Plex Sans Arabic";color:#a0302a;background:transparent}
+.dayb{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:999px;padding:5px 13px;font:700 14px "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.dayb.on{background:var(--am-btn);color:#fff;border-color:transparent}
+.save{width:100%;margin-top:14px;border:0;border-radius:15px;padding:13px;font:700 18px "IBM Plex Sans Arabic";color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400)}
+.del{width:100%;margin-top:6px;border:0;border-radius:14px;padding:9px;font:700 14.5px "IBM Plex Sans Arabic";color:#a0302a;background:transparent}
+.cur{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cur button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:12px;padding:8px 4px;font:700 15px "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.cur button.on{background:var(--am-btn);color:#fff;border-color:transparent}
 .money{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
-.money div{background:#f6f1e0;border-radius:12px;padding:5px 8px;text-align:center;font-size:12.5px;color:var(--am-muted)}
-.money b{display:block;font:700 16px "IBM Plex Sans Arabic";color:var(--am-ink);direction:ltr}
+.money div{background:#f6f1e0;border-radius:12px;padding:5px 6px;text-align:center;font-size:12.5px;color:var(--am-muted)}
+.money b{display:block;font:700 15px "IBM Plex Sans Arabic";color:var(--am-ink);direction:ltr}
 .money .rest b{color:#a0302a}.money .ok b{color:#1e6b4a}
-.pay{flex:none;border:0;border-radius:14px;padding:0 12px;height:48px;background:#e3efe2;color:#1e6b4a;font:700 14px "IBM Plex Sans Arabic"}
-.report{border:0;border-radius:16px;width:100%;margin:0 0 12px;padding:12px;font:700 17px "IBM Plex Sans Arabic";color:#0c3b26;background:linear-gradient(180deg,#f8e7a8,#e6c35f);box-shadow:0 0 0 1.5px #c99a2e,0 8px 16px -10px rgba(120,80,0,.6)}
-.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 4px}
-.tot div{border-radius:14px;padding:8px 6px;text-align:center;font-size:12.5px;background:linear-gradient(160deg,#17613f,#0c3b26);color:#e7efe1}
-.tot b{display:block;font:700 19px var(--am-title);color:#f3dc93;direction:ltr}
-.rl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.restbox{margin-top:10px;border-radius:14px;padding:11px;text-align:center;font:700 18px "IBM Plex Sans Arabic";background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;box-shadow:0 0 0 1.5px var(--am-gold-400)}
+.restbox.paid{background:linear-gradient(160deg,#2f8a4f,#1e6b4a);color:#fff}
+.plist{font-size:14px}
+.plist div{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed #e3d8b6}
+.plist button{border:0;background:none;color:#a0302a;font-size:15px}
+.sep{border:0;border-top:1.5px dashed var(--am-line);margin:14px 0 2px}
+.secT{font:700 16px var(--am-title);color:#0d7f8a;margin:6px 2px 0}
+.pt{display:flex;gap:8px}
+.pt input{flex:1;min-width:0;font:500 17px "IBM Plex Sans Arabic";padding:10px 13px;border:1.5px solid var(--am-line);border-radius:13px;background:#fffdf6;text-align:left;direction:ltr}
+.pt .mic{width:50px;border-radius:13px;font-size:20px}
+.pt .ok{flex:none;width:50px;border:1.5px solid var(--am-line);border-radius:13px;background:#fffdf6;font-size:21px;color:#9aa49c}
+.pt .ok.on{background:#2f8a4f;border-color:#2f8a4f;color:#fff}
+.pname{font:500 15px "IBM Plex Sans Arabic";border:1.5px dashed var(--am-line);border-radius:12px;padding:6px 10px;background:#fffdf6;margin-bottom:5px;width:100%}
+.dist{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.dist div{background:#eef6f5;border-radius:12px;padding:6px;text-align:center;font-size:12.5px;color:#356a6e}
+.dist b{display:block;font:700 15px "IBM Plex Sans Arabic";color:#0b5f66;direction:ltr}
+.pdf{width:100%;margin-top:12px;border:2px solid #0d7f8a;border-radius:15px;padding:11px;font:700 17px "IBM Plex Sans Arabic";color:#0d7f8a;background:#fffdf6}
+/* الكشف اليومي */
+.tot3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 4px}
+.tot3 div{border-radius:14px;padding:8px 6px;text-align:center;font-size:12.5px;background:linear-gradient(160deg,#17613f,#0c3b26);color:#e7efe1}
+.tot3 b{display:block;font:700 17px var(--am-title);color:#f3dc93;direction:ltr}
+.rl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
 .rl th{font-size:12.5px;color:var(--am-green-800);text-align:right;padding:5px 4px;border-bottom:1.5px solid var(--am-line)}
-.rl td{padding:7px 4px;border-bottom:1px dashed #e3d8b6;vertical-align:top}
+.rl td{padding:6px 4px;border-bottom:1px dashed #e3d8b6;vertical-align:top}
 .rl td.n{direction:ltr;text-align:left;font-weight:700;white-space:nowrap}
 .rl small{color:var(--am-muted)}
 .dnav{display:flex;gap:6px;align-items:center}
 .dnav button{flex:none;border:0;border-radius:12px;width:44px;height:44px;background:#f3ead2;font-size:18px;color:#0c3b26}
 .dnav input{flex:1;font:600 16px "IBM Plex Sans Arabic";padding:10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;text-align:center}
-.h4{font:700 15px var(--am-title);color:var(--am-green-800);margin:14px 2px 2px}
-.plist{margin-top:6px;font-size:14px}
-.plist div{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed #e3d8b6}
-.plist button{border:0;background:none;color:#a0302a;font-size:15px}
-.cur{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
-.cur button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:12px;padding:9px 4px;font:700 15px "IBM Plex Sans Arabic";color:var(--am-green-800)}
-.cur button.on{background:var(--am-btn);color:#fff;border-color:transparent}
-.restbox{margin-top:12px;border-radius:14px;padding:12px;text-align:center;font:700 19px "IBM Plex Sans Arabic";background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;box-shadow:0 0 0 1.5px var(--am-gold-400)}
-.restbox.paid{background:linear-gradient(160deg,#2f8a4f,#1e6b4a);color:#fff}
-.sep{border:0;border-top:1.5px dashed var(--am-line);margin:16px 0 4px}
-.secT{font:700 17px var(--am-title);color:#0d7f8a;margin:6px 2px 0}
-.pt{display:flex;gap:8px}
-.pt input{flex:1;min-width:0;font:500 18px "IBM Plex Sans Arabic";padding:12px 14px;border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;text-align:left;direction:ltr}
-.pt .ok{flex:none;width:54px;border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;font-size:22px;color:#9aa49c}
-.pt .ok.on{background:#2f8a4f;border-color:#2f8a4f;color:#fff}
-.pname{font:500 15px "IBM Plex Sans Arabic";border:1.5px dashed var(--am-line);border-radius:12px;padding:6px 10px;background:#fffdf6;margin-bottom:5px;width:100%}
-.dist{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
-.dist div{background:#eef6f5;border-radius:12px;padding:6px;text-align:center;font-size:12.5px;color:#356a6e}
-.dist b{display:block;font:700 16px "IBM Plex Sans Arabic";color:#0b5f66;direction:ltr}
-.pdf{width:100%;margin-top:14px;border:2px solid #0d7f8a;border-radius:16px;padding:13px;font:700 18px "IBM Plex Sans Arabic";color:#0d7f8a;background:#fffdf6}
-.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.h4{font:700 15px var(--am-title);color:var(--am-green-800);margin:12px 2px 2px}
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 </style>
 </head>
@@ -97,58 +119,74 @@ button{font-family:inherit;cursor:pointer}
 <div class="am-bar"><span class="am-title"><img src="../img/t-notes.png" alt=""><b>دفتر الملاحظات</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
 <div class="am-spacer" aria-hidden="true"></div>
 <main>
-  <button class="report" type="button" id="rep">📊 الكشف اليومي للمبالغ</button>
-  <div class="tabs" id="tabs">
-    <button class="tab on" type="button" data-s="new"><b id="cNew">0</b>📅 القادم</button>
-    <button class="tab" type="button" data-s="work"><b id="cWork">0</b>⏳ قيد العمل</button>
-    <button class="tab" type="button" data-s="done"><b id="cDone">0</b>✅ منجز</button>
-  </div>
-  <div class="list" id="list"></div>
-</main>
-<button class="add" type="button" id="add">＋ عمل جديد</button>
+  <div class="views" id="views"><button type="button" data-v="work" class="on">📋 ترتيب العمل</button><button type="button" data-v="fin">💰 السجل المالي</button></div>
 
-<div class="sheet hidden" id="sheet">
+  <section id="vWork">
+    <div class="quick">
+      <div class="qrow"><input id="qName" placeholder="اسم صاحب العمل"><button class="mic" type="button" data-mic="qName">🎤</button></div>
+      <div class="qrow"><input id="qWork" placeholder="نوع العمل"><button class="mic" type="button" data-mic="qWork">🎤</button><button class="plus" type="button" id="qAdd">＋ أضف</button></div>
+    </div>
+    <div class="sub" id="wSub"><button type="button" data-w="cur" class="on">الأعمال الحالية</button><button type="button" data-w="arch">🗄 الأرشيف</button></div>
+    <div class="rows" id="wRows"></div>
+  </section>
+
+  <section id="vFin" class="hidden">
+    <div class="quick">
+      <div class="qrow"><input id="fqName" placeholder="الاسم"><button class="mic" type="button" data-mic="fqName">🎤</button></div>
+      <div class="qrow"><input id="fqFee" inputmode="decimal" dir="ltr" placeholder="المبلغ المطلوب" style="text-align:left"><button class="mic" type="button" data-mic="fqFee">🎤</button><button class="plus" type="button" id="fqAdd">＋ أضف</button></div>
+    </div>
+    <div class="sub"><span class="sp"></span><button class="repb" type="button" id="rep">📊 الكشف اليومي</button></div>
+    <div class="rows" id="fRows"></div>
+  </section>
+</main>
+
+<!-- صفحة ملاحظات صاحب العمل -->
+<div class="sheet hidden" id="noteSheet">
   <div class="form">
-    <h3 id="fT">عمل جديد<button class="x" type="button" id="fX">✕</button></h3>
-    <label class="fl" for="fName">👤 الاسم</label>
-    <div class="in"><input id="fName" placeholder="اكتب أو اضغط الميكروفون"><button class="mic" type="button" data-mic="fName">🎤</button></div>
-    <label class="fl" for="fWork">🛠️ طبيعة العمل</label>
-    <div class="in"><textarea id="fWork" rows="2" placeholder="مثلاً: رفع قطعة وترخيص"></textarea><button class="mic" type="button" data-mic="fWork">🎤</button></div>
-    <label class="fl" for="fPhone">📞 رقم الهاتف</label>
-    <div class="in"><input id="fPhone" inputmode="tel" dir="ltr" placeholder="05XXXXXXXX" style="text-align:left"><button class="mic" type="button" data-mic="fPhone">🎤</button></div>
-    <label class="fl">🗓️ الموعد</label>
-    <div class="days" id="days"><button class="day" type="button" data-d="0">اليوم</button><button class="day" type="button" data-d="1">غداً</button><button class="day" type="button" data-d="2">بعد غد</button><button class="day" type="button" data-d="">بدون موعد</button></div>
-    <div class="in"><input id="fDate" type="date"><input id="fTime" type="time" style="max-width:40%"></div>
-    <label class="fl" for="fFee">💰 المبلغ المطلوب كاملاً</label>
-    <div class="in"><input id="fFee" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left"><button class="mic" type="button" data-mic="fFee">🎤</button></div>
+    <h3><span id="nT">ملاحظات</span><button class="x" type="button" data-close="noteSheet">✕</button></h3>
+    <label class="fl">👤 الاسم</label>
+    <div class="in"><input id="nName"><button class="mic" type="button" data-mic="nName">🎤</button></div>
+    <label class="fl">🛠️ نوع العمل</label>
+    <div class="in"><input id="nWork"><button class="mic" type="button" data-mic="nWork">🎤</button></div>
+    <label class="fl">📞 رقم الهاتف</label>
+    <div class="in"><input id="nPhone" inputmode="tel" dir="ltr" style="text-align:left"><button class="mic" type="button" data-mic="nPhone">🎤</button><a class="lnk" id="nCall">📞</a><a class="lnk" id="nWa">💬</a></div>
+    <label class="fl">🗓️ اليوم</label>
+    <div class="days" id="nDays"><button class="dayb" type="button" data-d="0">اليوم</button><button class="dayb" type="button" data-d="1">غداً</button><button class="dayb" type="button" data-d="2">بعد غد</button><button class="dayb" type="button" data-d="">بدون</button></div>
+    <div class="in"><input id="nDate" type="date"><input id="nTime" type="time" style="max-width:40%"></div>
+    <label class="fl">📝 الملاحظات</label>
+    <div class="in"><textarea id="nNote" placeholder="اكتب أو اضغط الميكروفون"></textarea><button class="mic" type="button" data-mic="nNote">🎤</button></div>
+    <button class="save" type="button" id="nSave">حفظ</button>
+    <button class="del" type="button" id="nDel">🗑 حذف نهائي</button>
+  </div>
+</div>
+
+<!-- صفحة التفاصيل المالية -->
+<div class="sheet hidden" id="finSheet">
+  <div class="form">
+    <h3><span>💰 التفاصيل المالية</span><button class="x" type="button" data-close="finSheet">✕</button></h3>
+    <label class="fl">👤 الاسم</label>
+    <div class="in"><input id="mName"><button class="mic" type="button" data-mic="mName">🎤</button></div>
+    <label class="fl">💰 المبلغ المطلوب كاملاً</label>
+    <div class="in"><input id="mFee" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left"><button class="mic" type="button" data-mic="mFee">🎤</button></div>
     <label class="fl">العملة</label>
-    <div class="cur" id="fCur"><button type="button" data-c="ils">شيكل ₪</button><button type="button" data-c="jod">دينار د.أ</button><button type="button" data-c="usd">دولار $</button></div>
-    <label class="fl">💵 الدفعات الواصلة</label>
-    <div class="plist" id="fPays"></div>
-    <div class="in" style="margin-top:6px"><input id="fPay" inputmode="decimal" dir="ltr" placeholder="المبلغ المدفوع من الزبون" style="text-align:left"><button class="mic" type="button" data-mic="fPay">🎤</button><input id="fPayD" type="date" style="max-width:36%"></div>
-    <div class="money" id="fMoney"></div>
-    <div class="restbox" id="fRest"></div>
+    <div class="cur" id="mCur"><button type="button" data-c="ils">شيكل ₪</button><button type="button" data-c="jod">دينار د.أ</button><button type="button" data-c="usd">دولار $</button></div>
+    <label class="fl">💵 المبلغ الواصل (الدفعات)</label>
+    <div class="plist" id="mPays"></div>
+    <div class="in" style="margin-top:6px"><input id="mPay" inputmode="decimal" dir="ltr" placeholder="دفعة جديدة" style="text-align:left"><button class="mic" type="button" data-mic="mPay">🎤</button><input id="mPayD" type="date" style="max-width:36%"></div>
+    <div class="money" id="mMoney"></div>
+    <div class="restbox" id="mRest"></div>
     <hr class="sep">
     <div class="secT">توزيع المبلغ على الأطراف</div>
-    <div id="fParts"></div>
-    <div class="dist" id="fDist"></div>
-    <label class="fl" for="fNote">📝 ملاحظات</label>
-    <div class="in"><textarea id="fNote" rows="2"></textarea><button class="mic" type="button" data-mic="fNote">🎤</button></div>
-    <button class="pdf" type="button" id="fPdf">📤 مشاركة كملف PDF</button>
-    <button class="save" type="button" id="fSave">حفظ</button>
-    <button class="del hidden" type="button" id="fDel">🗑 حذف هذا العمل</button>
+    <div id="mParts"></div>
+    <div class="dist" id="mDist"></div>
+    <label class="fl">📝 ملاحظات</label>
+    <div class="in"><textarea id="mNote" style="min-height:60px"></textarea><button class="mic" type="button" data-mic="mNote">🎤</button></div>
+    <button class="pdf" type="button" id="mPdf">📤 مشاركة كملف PDF</button>
+    <button class="save" type="button" id="mSave">حفظ</button>
   </div>
 </div>
-<div class="sheet hidden" id="paySheet">
-  <div class="form">
-    <h3><span id="pT">استلام دفعة</span><button class="x" type="button" data-close="paySheet">✕</button></h3>
-    <div class="money" id="pMoney" style="margin-top:0"></div>
-    <label class="fl" for="pAmt">المبلغ الواصل الآن</label>
-    <div class="in"><input id="pAmt" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left;font-size:24px"><button class="mic" type="button" data-mic="pAmt">🎤</button></div>
-    <div class="days" id="pQuick" style="margin-top:8px"></div>
-    <button class="save" type="button" id="pSave">✓ تسجيل الدفعة</button>
-  </div>
-</div>
+
+<!-- الكشف اليومي -->
 <div class="sheet hidden" id="repSheet">
   <div class="form">
     <h3>📊 الكشف اليومي<button class="x" type="button" data-close="repSheet">✕</button></h3>
@@ -167,172 +205,195 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&am
 const toast = t => { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1800); };
 const KEY = "jobs-v1";
 let jobs = []; try { jobs = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) {}
+jobs.forEach(j => { if (j.done == null) j.done = j.s === "done"; });   // من النسخة السابقة
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(jobs)); } catch (e) {} };
-let tab = "new", edit = null;
 const pad = n => String(n).padStart(2, "0");
 const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-const NEXT = { new: ["▶ بدء العمل", "work"], work: ["✓ تم الإنجاز", "done"] };
-const COLOR = { new: "#1d4f9a", work: "#c58a12", done: "#2f8a4f" };
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
-function when(j) {
-  if (!j.date) return null;
-  const today = ymd(new Date()), tm = ymd(new Date(Date.now() + 864e5));
-  const t = j.time ? " " + new Date("2000-01-01T" + j.time).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : "";
-  if (j.date === today) return { t: "اليوم" + t, c: "today" };
-  if (j.date === tm) return { t: "غداً" + t, c: "" };
-  const d = new Date(j.date + "T00:00");
-  const s = d.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }) + t;
-  return { t: s, c: j.date < today && j.s !== "done" ? "late" : "" };
-}
-/* ---------- المبالغ: المطلوب، الدفعات الواصلة (لكل دفعة تاريخ)، المتبقي ---------- */
+/* ---------- المبالغ ---------- */
 const N = s => { const v = parseFloat(String(s == null ? "" : s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.]/g, "")); return isFinite(v) ? v : 0; };
 const M = v => (Math.round(v * 100) / 100).toLocaleString("en-US");
 const CUR = { ils: "₪", jod: "د.أ", usd: "$" }, sym = j => CUR[(j && j.cur) || "ils"];
 const MC = (v, j) => M(v) + " " + sym(j);
-const PARTS = [["surv", "مبلغ المساحين"], ["draw", "مبلغ الرسامين"], ["reg", "مبلغ إخراج القيد"], ["law", "مبلغ محامي التسليم"], ["oth", "مبلغ لطرف آخر (إن وجد)"]];
-const partsSum = (parts, onlyPaid) => PARTS.reduce((t, [k]) => t + (parts && parts[k] && (!onlyPaid || parts[k].ok) ? N(parts[k].a) : 0), 0);
-/* مجموع حسب العملة: «1,200 ₪ · 300 د.أ» */
-function sumCur(items) { const o = {}; items.forEach(([v, j]) => { const c = (j && j.cur) || "ils"; o[c] = (o[c] || 0) + v; }); const k = Object.keys(o).filter(c => o[c]); return k.length ? k.map(c => M(o[c]) + " " + CUR[c]).join(" · ") : "0"; }
+const PARTS = [["surv", "مبلغ المساحين"], ["draw", "مبلغ الرسامين"], ["law", "مبلغ المحامي"], ["reg", "مبلغ إخراج القيد"], ["oth", "مبلغ طرف آخر (إن وجد)"]];
 const fee = j => N(j.fee), paid = j => (j.pays || []).reduce((t, p) => t + N(p.a), 0), rest = j => fee(j) - paid(j);
-function moneyHtml(f, p, j) { const r = f - p, S = j === undefined ? "" : " " + sym(j); return `<div><b>${M(f)}${S}</b>المطلوب</div><div class="ok"><b>${M(p)}${S}</b>الواصل</div><div class="${r > 0 ? "rest" : "ok"}"><b>${M(r)}${S}</b>${r > 0 ? "المتبقي" : r < 0 ? "زيادة" : "مدفوع كاملاً"}</div>`; }
-function render() {
-  $("#cNew").textContent = jobs.filter(j => j.s === "new").length;
-  $("#cWork").textContent = jobs.filter(j => j.s === "work").length;
-  $("#cDone").textContent = jobs.filter(j => j.s === "done").length;
-  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.s === tab));
-  let list = jobs.filter(j => j.s === tab);
-  if (tab === "done") list.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-  else list.sort((a, b) => ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")));
-  if (!list.length) {
-    $("#list").innerHTML = `<div class="empty"><b>${tab === "new" ? "لا مواعيد قادمة" : tab === "work" ? "لا أعمال قيد التنفيذ" : "لا أعمال منجزة بعد"}</b>${tab === "new" ? "اضغط «＋ عمل جديد» وسجّل الاسم وطبيعة العمل بصوتك." : ""}</div>`;
-    return;
-  }
-  $("#list").innerHTML = list.map(j => {
-    const w = when(j), ph = (j.phone || "").replace(/[^\d+]/g, ""), wa = ph.startsWith("0") ? "970" + ph.slice(1) : ph.replace(/^\+/, "");
-    const late = w && w.c === "late" ? " · فات الموعد" : "";
-    return `<div class="job" style="--c:${COLOR[j.s]}">
-      <div class="top" data-edit="${j.id}"><div style="flex:1;min-width:0"><div class="nm">${esc(j.name || "بدون اسم")}</div>${j.work ? `<div class="wk">${esc(j.work)}</div>` : ""}</div>${w ? `<span class="dt ${w.c}">${esc(w.t + late)}</span>` : ""}</div>
-      ${fee(j) || paid(j) ? `<div class="money">${moneyHtml(fee(j), paid(j), j)}</div>` : ""}
-      <div class="acts">${NEXT[j.s] ? `<button class="go${j.s === "work" ? " done" : ""}" type="button" data-next="${j.id}">${NEXT[j.s][0]}</button>` : `<button class="go back" type="button" data-undo="${j.id}">↺ إرجاع لقيد العمل</button><span style="flex:1"></span>`}
-      ${fee(j) && rest(j) > 0 ? `<button class="pay" type="button" data-pay="${j.id}">💵 دفعة</button>` : ""}${ph ? `<a class="ib" href="tel:${ph}" title="اتصال">📞</a><a class="ib" href="https://wa.me/${wa}" title="واتساب">💬</a>` : ""}</div></div>`;
+const partsSum = (parts, onlyPaid) => PARTS.reduce((t, [k]) => t + (parts && parts[k] && (!onlyPaid || parts[k].ok) ? N(parts[k].a) : 0), 0);
+function sumCur(items) { const o = {}; items.forEach(([v, j]) => { const c = (j && j.cur) || "ils"; o[c] = (o[c] || 0) + v; }); const k = Object.keys(o).filter(c => o[c]); return k.length ? k.map(c => M(o[c]) + " " + CUR[c]).join(" · ") : "0"; }
+function moneyHtml(f, p, j) { const r = f - p, S = " " + sym(j); return `<div><b>${M(f)}${S}</b>المطلوب</div><div class="ok"><b>${M(p)}${S}</b>الواصل</div><div class="${r > 0 ? "rest" : "ok"}"><b>${M(Math.abs(r))}${S}</b>${r > 0 ? "المتبقي" : r < 0 ? "زيادة" : "مدفوع كاملاً"}</div>`; }
+function dayName(d) { if (!d) return ""; const t = ymd(new Date()), y = ymd(new Date(Date.now() - 864e5)), tm = ymd(new Date(Date.now() + 864e5)); if (d === t) return "اليوم"; if (d === y) return "أمس"; if (d === tm) return "غداً"; return new Date(d + "T00:00").toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }); }
+
+/* ---------- التبويب ---------- */
+let view = "work", wSub = "cur";
+$("#views").addEventListener("click", e => { const b = e.target.closest("[data-v]"); if (!b) return; view = b.dataset.v; document.querySelectorAll("#views button").forEach(x => x.classList.toggle("on", x === b)); $("#vWork").classList.toggle("hidden", view !== "work"); $("#vFin").classList.toggle("hidden", view !== "fin"); render(); });
+$("#wSub").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (!b) return; wSub = b.dataset.w; document.querySelectorAll("#wSub button").forEach(x => x.classList.toggle("on", x === b)); render(); });
+function render() { renderWork(); renderFin(); const n = jobs.filter(j => j.arch && !j.finOnly).length; $('#wSub [data-w="arch"]').textContent = "🗄 الأرشيف" + (n ? " (" + n + ")" : ""); }
+
+/* ---------- ترتيب العمل: كل عمل بسطر ---------- */
+function renderWork() {
+  const arch = wSub === "arch";
+  let list = jobs.filter(j => !j.finOnly && !!j.arch === arch);
+  list.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")) || a.t - b.t);
+  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : "لا أعمال بعد. اكتب الاسم ونوع العمل فوق (أو بصوتك) واضغط «أضف»."}</div>`; return; }
+  const today = ymd(new Date());
+  $("#wRows").innerHTML = `<div class="hrow"><span style="width:32px"></span><span style="flex:1.45">الاسم</span><span style="flex:1.05">نوع العمل</span><span style="width:70px;text-align:center">المطلوب</span><span style="width:78px"></span></div>` + list.map(j => {
+    const d = j.date ? `<span class="day${j.date < today && !j.done ? " late" : ""}">🗓️ ${esc(dayName(j.date))}${j.time ? " " + esc(j.time) : ""}</span>` : "";
+    return `<div class="r${j.done ? " done" : ""}" data-id="${j.id}">
+      <button class="ck" type="button" data-done title="${j.done ? "إلغاء الشطب" : "انتهى العمل"}">${j.done ? "✓" : ""}</button>
+      <span class="nm">${esc(j.name || "—")}${d}</span><span class="wk">${esc(j.work || "")}</span>
+      <input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="${sym(j)}" data-fee>
+      <button class="ib" type="button" data-note title="ملاحظات">📝</button>
+      <button class="ib" type="button" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩" : "🗄"}</button></div>`;
   }).join("");
 }
-$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (b) { tab = b.dataset.s; render(); } });
-$("#list").addEventListener("click", e => {
-  const n = e.target.closest("[data-next]");
-  if (n) { const j = jobs.find(x => x.id === n.dataset.next); const to = NEXT[j.s][1]; j.s = to; if (to === "done") j.doneAt = Date.now(); save(); render(); toast(to === "work" ? "⏳ نُقل إلى قيد العمل" : "✅ نُقل إلى المنجز"); return; }
-  const py = e.target.closest("[data-pay]"); if (py) { openPay(jobs.find(x => x.id === py.dataset.pay)); return; }
-  const u = e.target.closest("[data-undo]");
-  if (u) { const j = jobs.find(x => x.id === u.dataset.undo); j.s = "work"; save(); render(); toast("أُرجع إلى قيد العمل"); return; }
-  const ed = e.target.closest("[data-edit]"); if (ed) openForm(jobs.find(x => x.id === ed.dataset.edit));
+$("#qAdd").addEventListener("click", () => {
+  const name = $("#qName").value.trim(), work = $("#qWork").value.trim(); if (!name && !work) { toast("اكتب الاسم أو نوع العمل"); return; }
+  jobs.push({ id: newId(), t: Date.now(), name, work, done: false, cur: "ils" }); save();
+  $("#qName").value = ""; $("#qWork").value = ""; if (wSub !== "cur") $('#wSub [data-w="cur"]').click(); else render(); toast("أُضيف");
 });
+$("#wRows").addEventListener("click", e => {
+  const r = e.target.closest("[data-id]"); if (!r) return; const j = jobs.find(x => x.id === r.dataset.id);
+  if (e.target.closest("[data-done]")) { j.done = !j.done; j.doneAt = j.done ? Date.now() : null; save(); render(); toast(j.done ? "✓ انتهى العمل" : "أُعيد للأعمال"); }
+  else if (e.target.closest("[data-arch]")) { j.arch = !j.arch; save(); render(); toast(j.arch ? "🗄 نُقل إلى الأرشيف" : "↩ أُرجع من الأرشيف"); }
+  else if (e.target.closest("[data-note]")) openNote(j);
+});
+$("#wRows").addEventListener("change", e => { const f = e.target.closest("[data-fee]"); if (!f) return; const j = jobs.find(x => x.id === f.closest("[data-id]").dataset.id); j.fee = f.value.trim(); save(); renderFin(); });
 
-/* ---------- نافذة الإدخال ---------- */
-function setDay(d) { document.querySelectorAll(".day").forEach(b => b.classList.toggle("on", b.dataset.d === d)); }
-function openForm(j) {
-  edit = j || null;
-  $("#fT").firstChild.textContent = j ? "تعديل العمل" : "عمل جديد";
-  $("#fName").value = j ? j.name || "" : ""; $("#fWork").value = j ? j.work || "" : ""; $("#fPhone").value = j ? j.phone || "" : "";
-  $("#fDate").value = j ? j.date || "" : ""; $("#fTime").value = j ? j.time || "" : "";
-  setDay(""); $("#fDel").classList.toggle("hidden", !j);
-  fCur = (j && j.cur) || "ils"; fParts = j && j.parts ? JSON.parse(JSON.stringify(j.parts)) : {}; $("#fNote").value = j ? j.note || "" : ""; renderParts();
-  $("#fFee").value = j && j.fee ? j.fee : ""; fPays = j ? JSON.parse(JSON.stringify(j.pays || [])) : []; $("#fPay").value = ""; $("#fPayD").value = ymd(new Date()); renderFPays();
-  $("#sheet").classList.remove("hidden");
+/* ---------- صفحة الملاحظات ---------- */
+let nJob = null;
+function setDay(d) { document.querySelectorAll("#nDays .dayb").forEach(b => b.classList.toggle("on", b.dataset.d === d)); }
+function contact() { const p = $("#nPhone").value.replace(/[^\d+]/g, ""), w = p.startsWith("0") ? "970" + p.slice(1) : p.replace(/^\+/, ""); $("#nCall").href = p ? "tel:" + p : "#"; $("#nWa").href = p ? "https://wa.me/" + w : "#"; $("#nCall").style.opacity = $("#nWa").style.opacity = p ? 1 : .4; }
+function openNote(j) {
+  nJob = j; $("#nT").textContent = "📝 " + (j.name || "ملاحظات");
+  $("#nName").value = j.name || ""; $("#nWork").value = j.work || ""; $("#nPhone").value = j.phone || ""; $("#nDate").value = j.date || ""; $("#nTime").value = j.time || ""; $("#nNote").value = j.note || "";
+  setDay(null); contact(); $("#noteSheet").classList.remove("hidden");
 }
-const closeForm = () => { $("#sheet").classList.add("hidden"); edit = null; };
-$("#add").addEventListener("click", () => openForm(null));
-$("#fX").addEventListener("click", closeForm);
-$("#sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeForm(); });
-$("#days").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (!b) return; setDay(b.dataset.d); $("#fDate").value = b.dataset.d === "" ? "" : ymd(new Date(Date.now() + 864e5 * +b.dataset.d)); if (b.dataset.d === "") $("#fTime").value = ""; });
-$("#fDate").addEventListener("input", () => setDay(null));
-$("#fSave").addEventListener("click", () => {
-  const name = $("#fName").value.trim(), work = $("#fWork").value.trim();
-  if (!name && !work) { toast("اكتب الاسم أو طبيعة العمل"); return; }
-  addFormPay();
-  const d = { name, work, phone: $("#fPhone").value.trim(), date: $("#fDate").value, time: $("#fTime").value, fee: $("#fFee").value.trim(), pays: fPays, cur: fCur, parts: readParts(), note: $("#fNote").value.trim() };
-  if (edit) Object.assign(edit, d); else { jobs.push(Object.assign({ id: Date.now().toString(36), s: "new", t: Date.now() }, d)); tab = "new"; }
-  save(); closeForm(); render(); toast("حُفظ");
+$("#nPhone").addEventListener("input", contact);
+$("#nDays").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (!b) return; setDay(b.dataset.d); $("#nDate").value = b.dataset.d === "" ? "" : ymd(new Date(Date.now() + 864e5 * +b.dataset.d)); if (b.dataset.d === "") $("#nTime").value = ""; });
+$("#nSave").addEventListener("click", () => {
+  Object.assign(nJob, { name: $("#nName").value.trim(), work: $("#nWork").value.trim(), phone: $("#nPhone").value.trim(), date: $("#nDate").value, time: $("#nTime").value, note: $("#nNote").value.trim() });
+  save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُفظ");
 });
-let fPays = [];
-function renderFPays() {
-  $("#fPays").innerHTML = fPays.length ? fPays.map((p, i) => `<div><span>${esc(dayName(p.d))}</span><span><b dir="ltr">${M(N(p.a))}</b> <button type="button" data-rp="${i}">✕</button></span></div>`).join("") : '<div style="color:var(--am-muted)">لا دفعات بعد</div>';
-  const pend = N($("#fPay").value);
-  const F = N($("#fFee").value), P = fPays.reduce((t, p) => t + N(p.a), 0) + pend, R = F - P, J = { cur: fCur };
-  $("#fMoney").innerHTML = moneyHtml(F, P, J);
-  $("#fRest").textContent = R > 0 ? "المتبقي على الزبون: " + MC(R, J) : F ? "✓ الزبون دفع كامل المبلغ" + (R < 0 ? " (زيادة " + MC(-R, J) + ")" : "") : "المتبقي على الزبون: 0 " + sym(J);
-  $("#fRest").classList.toggle("paid", F > 0 && R <= 0);
+let delAsk = 0;
+$("#nDel").addEventListener("click", () => { if (Date.now() - delAsk > 3000) { delAsk = Date.now(); toast("اضغط مرة ثانية للحذف النهائي"); return; } jobs = jobs.filter(x => x !== nJob); save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُذف"); });
+
+/* ---------- السجل المالي: كل اسم بسطر ---------- */
+function renderFin() {
+  const list = jobs.filter(j => j.finOnly || fee(j) || paid(j) || partsSum(j.parts)).sort((a, b) => (rest(b) > 0) - (rest(a) > 0) || b.t - a.t);
+  if (!list.length) { $("#fRows").innerHTML = '<div class="empty">لا سجلات بعد. أضف اسماً ومبلغاً فوق، أو اكتب المبلغ في سطر العمل.</div>'; return; }
+  $("#fRows").innerHTML = '<div class="frow h"><span>الاسم</span><span class="v">المطلوب</span><span class="v">الواصل</span><span class="v">المتبقي</span></div>' +
+    list.map(j => { const r = rest(j); return `<div class="frow" data-fin="${j.id}"><span class="n">${esc(j.name || "—")}${j.arch ? " 🗄" : ""}</span><span class="v">${MC(fee(j), j)}</span><span class="v grn">${MC(paid(j), j)}</span><span class="v ${r > 0 ? "red" : "grn"}">${r > 0 ? MC(r, j) : "✓"}</span></div>`; }).join("") +
+    `<div class="frow tot"><span class="n">المجموع</span><span class="v">${sumCur(list.map(j => [fee(j), j]))}</span><span class="v">${sumCur(list.map(j => [paid(j), j]))}</span><span class="v">${sumCur(list.map(j => [Math.max(0, rest(j)), j]))}</span></div>`;
+}
+$("#fqAdd").addEventListener("click", () => {
+  const name = $("#fqName").value.trim(); if (!name) { toast("اكتب الاسم"); return; }
+  jobs.push({ id: newId(), t: Date.now(), name, fee: $("#fqFee").value.trim(), cur: "ils", finOnly: true, done: false }); save();
+  $("#fqName").value = ""; $("#fqFee").value = ""; render(); toast("أُضيف إلى السجل المالي");
+});
+$("#fRows").addEventListener("click", e => { const r = e.target.closest("[data-fin]"); if (r) openFin(jobs.find(x => x.id === r.dataset.fin)); });
+
+/* ---------- صفحة التفاصيل المالية ---------- */
+let mJob = null, mCur = "ils", mPays = [], mParts = {};
+function openFin(j) {
+  mJob = j; mCur = j.cur || "ils"; mPays = JSON.parse(JSON.stringify(j.pays || [])); mParts = JSON.parse(JSON.stringify(j.parts || {}));
+  $("#mName").value = j.name || ""; $("#mFee").value = j.fee || ""; $("#mNote").value = j.fin_note || ""; $("#mPay").value = ""; $("#mPayD").value = ymd(new Date());
+  renderParts(); renderPays(); $("#finSheet").classList.remove("hidden");
+}
+function renderCur() { document.querySelectorAll("#mCur button").forEach(b => b.classList.toggle("on", b.dataset.c === mCur)); }
+$("#mCur").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { mCur = b.dataset.c; renderParts(); renderPays(); } });
+function renderPays() {
+  const J = { cur: mCur };
+  $("#mPays").innerHTML = mPays.length ? mPays.map((p, i) => `<div><span>${esc(dayName(p.d))}</span><span><b dir="ltr">${MC(N(p.a), J)}</b> <button type="button" data-rp="${i}">✕</button></span></div>`).join("") : '<div style="color:var(--am-muted)">لا دفعات بعد</div>';
+  const F = N($("#mFee").value), P = mPays.reduce((t, p) => t + N(p.a), 0) + N($("#mPay").value), R = F - P;
+  $("#mMoney").innerHTML = moneyHtml(F, P, J);
+  $("#mRest").textContent = R > 0 ? "المتبقي على الزبون: " + MC(R, J) : F ? "✓ الزبون دفع كامل المبلغ" + (R < 0 ? " (زيادة " + MC(-R, J) + ")" : "") : "المتبقي على الزبون: 0 " + sym(J);
+  $("#mRest").classList.toggle("paid", F > 0 && R <= 0);
   renderDist();
 }
-let fCur = "ils", fParts = {};
-function renderCur() { document.querySelectorAll("#fCur button").forEach(b => b.classList.toggle("on", b.dataset.c === fCur)); }
-$("#fCur").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { fCur = b.dataset.c; renderCur(); renderFPays(); renderParts(); } });
+["#mFee", "#mPay"].forEach(s => $(s).addEventListener("input", renderPays));
+$("#mPays").addEventListener("click", e => { const b = e.target.closest("[data-rp]"); if (b) { mPays.splice(+b.dataset.rp, 1); renderPays(); } });
+function addPay() { const a = N($("#mPay").value); if (a > 0) { mPays.push({ a, d: $("#mPayD").value || ymd(new Date()), t: Date.now() }); $("#mPay").value = ""; } }
 function renderParts() {
-  renderCur();
-  $("#fParts").innerHTML = PARTS.map(([k, t]) => { const v = fParts[k] || {}; return `<label class="fl" for="pt_${k}">${t} <small style="color:var(--am-muted)">(${sym({ cur: fCur })})</small></label>${k === "oth" ? `<input class="pname" id="ptn_oth" placeholder="اسم الطرف" value="${esc(v.n || "")}">` : ""}<div class="pt"><input id="pt_${k}" inputmode="decimal" value="${esc(v.a || "")}" placeholder="0"><button class="mic" type="button" data-mic2="pt_${k}">🎤</button><button class="ok${v.ok ? " on" : ""}" type="button" data-ok="${k}" title="تم الدفع لهذا الطرف">✓</button></div>`; }).join("");
+  renderCur(); const S = sym({ cur: mCur });
+  $("#mParts").innerHTML = PARTS.map(([k, t]) => { const v = mParts[k] || {}; return `<label class="fl">${t} <small style="color:var(--am-muted)">(${S})</small></label>${k === "oth" ? `<input class="pname" id="ptn_oth" placeholder="اسم الطرف" value="${esc(v.n || "")}">` : ""}<div class="pt"><input id="pt_${k}" inputmode="decimal" value="${esc(v.a || "")}" placeholder="0"><button class="mic" type="button" data-mic2="pt_${k}">🎤</button><button class="ok${v.ok ? " on" : ""}" type="button" data-ok="${k}" title="تم الدفع لهذا الطرف">✓</button></div>`; }).join("");
   renderDist();
 }
-function readParts() { const o = {}; PARTS.forEach(([k]) => { const a = $("#pt_" + k).value.trim(), ok = (fParts[k] || {}).ok; if (a || ok) o[k] = { a, ok: !!ok }; }); const n = $("#ptn_oth") && $("#ptn_oth").value.trim(); if (n) (o.oth = o.oth || { a: "", ok: false }).n = n; return o; }
+function readParts() { const o = {}; PARTS.forEach(([k]) => { const el = $("#pt_" + k); const a = el ? el.value.trim() : "", ok = (mParts[k] || {}).ok; if (a || ok) o[k] = { a, ok: !!ok }; }); const n = $("#ptn_oth") && $("#ptn_oth").value.trim(); if (n) (o.oth = o.oth || { a: "", ok: false }).n = n; return o; }
 function renderDist() {
   if (!$("#pt_surv")) return;
-  const parts = readParts(), J = { cur: fCur }, tot = partsSum(parts), done = partsSum(parts, true), F = N($("#fFee").value);
-  $("#fDist").innerHTML = tot ? `<div><b>${MC(tot, J)}</b>للأطراف</div><div><b>${MC(done, J)}</b>دُفع لهم ✓</div><div><b>${MC(F - tot, J)}</b>صافي لك</div>` : "";
+  const parts = readParts(), J = { cur: mCur }, tot = partsSum(parts), done = partsSum(parts, true), F = N($("#mFee").value);
+  $("#mDist").innerHTML = tot ? `<div><b>${MC(tot, J)}</b>للأطراف</div><div><b>${MC(done, J)}</b>دُفع لهم ✓</div><div><b>${MC(F - tot, J)}</b>صافي لك</div>` : "";
 }
-$("#fParts").addEventListener("input", renderDist);
-$("#fParts").addEventListener("click", e => {
-  const ok = e.target.closest("[data-ok]"); if (ok) { const k = ok.dataset.ok; fParts = readParts(); fParts[k] = fParts[k] || { a: "", ok: false }; fParts[k].ok = !fParts[k].ok; ok.classList.toggle("on", fParts[k].ok); renderDist(); return; }
+$("#mParts").addEventListener("input", renderDist);
+$("#mParts").addEventListener("click", e => {
+  const ok = e.target.closest("[data-ok]"); if (ok) { const k = ok.dataset.ok; mParts = readParts(); mParts[k] = mParts[k] || { a: "", ok: false }; mParts[k].ok = !mParts[k].ok; ok.classList.toggle("on", mParts[k].ok); renderDist(); return; }
   const m = e.target.closest("[data-mic2]"); if (m) micTo(m, $("#" + m.dataset.mic2), true);
 });
-function addFormPay() { const a = N($("#fPay").value); if (a > 0) { fPays.push({ a, d: $("#fPayD").value || ymd(new Date()), t: Date.now() }); $("#fPay").value = ""; } }
-["#fFee", "#fPay"].forEach(s => $(s).addEventListener("input", renderFPays));
-$("#fPays").addEventListener("click", e => { const b = e.target.closest("[data-rp]"); if (b) { fPays.splice(+b.dataset.rp, 1); renderFPays(); } });
-function dayName(d) { if (!d) return ""; const t = ymd(new Date()), y = ymd(new Date(Date.now() - 864e5)); if (d === t) return "اليوم"; if (d === y) return "أمس"; return new Date(d + "T00:00").toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }); }
+function collectFin() { addPay(); Object.assign(mJob, { name: $("#mName").value.trim(), fee: $("#mFee").value.trim(), cur: mCur, pays: mPays, parts: readParts(), fin_note: $("#mNote").value.trim() }); }
+$("#mSave").addEventListener("click", () => { collectFin(); save(); $("#finSheet").classList.add("hidden"); render(); toast("حُفظ"); });
 
-/* ---------- استلام دفعة سريع من البطاقة ---------- */
-let payJob = null;
-function openPay(j) {
-  payJob = j; $("#pT").textContent = "استلام دفعة — " + (j.name || ""); $("#pAmt").value = "";
-  $("#pMoney").innerHTML = moneyHtml(fee(j), paid(j), j);
-  const r = rest(j); $("#pQuick").innerHTML = r > 0 ? `<button class="day" type="button" data-q="${r}">كامل الباقي ${MC(r, j)}</button>` + (r >= 100 ? `<button class="day" type="button" data-q="${Math.round(r / 2)}">النصف ${M(Math.round(r / 2))}</button>` : "") : "";
-  $("#paySheet").classList.remove("hidden"); setTimeout(() => $("#pAmt").focus(), 150);
-}
-$("#pQuick").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (b) $("#pAmt").value = b.dataset.q; });
-$("#pSave").addEventListener("click", () => {
-  const a = N($("#pAmt").value); if (!(a > 0)) { toast("اكتب المبلغ"); return; }
-  payJob.pays = payJob.pays || []; payJob.pays.push({ a, d: ymd(new Date()), t: Date.now() });
-  save(); $("#paySheet").classList.add("hidden"); render(); toast("✓ سُجّلت دفعة " + MC(a, payJob) + (rest(payJob) > 0 ? " — الباقي " + MC(rest(payJob), payJob) : " — مدفوع كاملاً"));
+/* ---------- PDF: كشف حساب ---------- */
+$("#mPdf").addEventListener("click", async () => {
+  collectFin(); save(); renderPays(); const j = mJob, J = { cur: j.cur }, F = fee(j), P = paid(j), R = F - P, parts = j.parts || {};
+  await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`].map(f => document.fonts.load(f).catch(() => 0)));
+  const W = mm(210), H = mm(297), cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d");
+  frameHeader(c, W, "كشف حساب معاملة", (j.name || "") + (j.work ? "  ·  " + j.work : ""), "كشف حساب");
+  let y = mm(40); const x1 = mm(196), x0 = mm(14), lh = mm(9);
+  const sec = t => { c.fillStyle = "#0c3b26"; rr(c, x0, y, x1 - x0, mm(8), mm(2)); c.fill(); txt(c, t, x1 - mm(4), y + mm(4.2), `700 ${mm(4)}px ${TF}`, "#f3dc93"); y += mm(11); };
+  const row = (k, v, color, bold) => { c.strokeStyle = "#eadfbf"; c.lineWidth = 2; c.beginPath(); c.moveTo(x0, y + lh); c.lineTo(x1, y + lh); c.stroke();
+    txt(c, k, x1 - mm(3), y + lh / 2, `600 ${mm(3.9)}px ${AF}`, "#5d6458"); txt(c, String(v), x1 - mm(66), y + lh / 2, `${bold ? 700 : 600} ${mm(4.3)}px ${AF}`, color || "#1d2a22"); y += lh; };
+  sec("بيانات المعاملة");
+  row("اسم الزبون", j.name || "—"); if (j.phone) row("رقم الهاتف", "⁦" + j.phone + "⁩"); if (j.work) row("نوع العمل", j.work);
+  if (j.date) row("التاريخ", j.date.split("-").reverse().join("/")); row("العملة", { ils: "شيكل ₪", jod: "دينار د.أ", usd: "دولار $" }[j.cur || "ils"]);
+  y += mm(4); sec("المبالغ");
+  row("المبلغ المطلوب كاملاً", MC(F, J), null, true);
+  (j.pays || []).forEach((p, i) => row("دفعة " + (i + 1) + " — " + (p.d || "").split("-").reverse().join("/"), MC(N(p.a), J), "#1e6b4a"));
+  row("مجموع الواصل", MC(P, J), "#1e6b4a", true);
+  row(R > 0 ? "المتبقي على الزبون" : "الحالة", R > 0 ? MC(R, J) : "مدفوع بالكامل", R > 0 ? "#b4232c" : "#1e6b4a", true);
+  const tot = partsSum(parts);
+  if (tot) {
+    y += mm(4); sec("توزيع المبلغ على الأطراف");
+    PARTS.forEach(([k, t]) => { const v = parts[k]; if (!v || !N(v.a)) return; row(t.replace("مبلغ ", "").replace(" (إن وجد)", "") + (k === "oth" && v.n ? " (" + v.n + ")" : ""), MC(N(v.a), J) + (v.ok ? "   ✓ دُفع" : "   ⏳ لم يُدفع"), v.ok ? "#1e6b4a" : "#8a5a00"); });
+    row("مجموع الأطراف", MC(tot, J), null, true); row("صافي لك", MC(F - tot, J), "#0c3b26", true);
+  }
+  if (j.fin_note) { y += mm(4); sec("ملاحظات"); c.font = `500 ${mm(3.9)}px ${AF}`; let line = "";
+    j.fin_note.split(/\s+/).forEach(w => { const t = line ? line + " " + w : w; if (c.measureText(t).width > x1 - x0 - mm(8)) { txt(c, line, x1 - mm(3), y + mm(3), `500 ${mm(3.9)}px ${AF}`, "#1d2a22"); y += mm(7); line = w; } else line = t; });
+    if (line) txt(c, line, x1 - mm(3), y + mm(3), `500 ${mm(3.9)}px ${AF}`, "#1d2a22"); }
+  const d = new Date(), ds = d.getFullYear() + "/" + pad(d.getMonth() + 1) + "/" + pad(d.getDate());
+  txt(c, "صادر من دفتر الملاحظات – تطبيق المهندس إسلام", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458");
+  txt(c, "تاريخ الإصدار " + ds, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  doc.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297);
+  const fn = ("كشف حساب " + (j.name || "معاملة") + ".pdf").replace(/[\\/:*?"<>|]/g, "-");
+  if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(fn, doc.output("datauristring").split(",")[1], "application/pdf"); else doc.save(fn);
+  window.__lastPdf = cv; render();
 });
-document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => $("#" + b.dataset.close).classList.add("hidden")));
-["paySheet", "repSheet"].forEach(id => $("#" + id).addEventListener("click", e => { if (e.target.id === id) e.target.classList.add("hidden"); }));
 
 /* ---------- الكشف اليومي ---------- */
 function report(day) {
   const rows = [];
   jobs.forEach(j => (j.pays || []).forEach(p => { if (p.d === day) rows.push({ j, a: N(p.a), t: p.t }); }));
   rows.sort((a, b) => (a.t || 0) - (b.t || 0));
-  const todayIn = sumCur(rows.map(r => [r.a, r.j]));
+  const fin = jobs.filter(j => j.finOnly || fee(j) || paid(j)), owing = fin.filter(j => rest(j) > 0).sort((a, b) => rest(b) - rest(a));
   const doneToday = jobs.filter(j => j.doneAt && ymd(new Date(j.doneAt)) === day);
-  const owing = jobs.filter(j => rest(j) > 0).sort((a, b) => rest(b) - rest(a));
-  const allRest = sumCur(owing.map(j => [rest(j), j])), allFee = sumCur(jobs.map(j => [fee(j), j])), allPaid = sumCur(jobs.map(j => [paid(j), j]));
-  const partsOwed = sumCur(jobs.map(j => [partsSum(j.parts) - partsSum(j.parts, true), j])), net = sumCur(jobs.map(j => [fee(j) - partsSum(j.parts), j]));
-  return { rows, todayIn, doneToday, owing, allRest, allFee, allPaid, partsOwed, net };
+  return { rows, todayIn: sumCur(rows.map(r => [r.a, r.j])), doneToday, owing, allRest: sumCur(owing.map(j => [rest(j), j])), allFee: sumCur(fin.map(j => [fee(j), j])), allPaid: sumCur(fin.map(j => [paid(j), j])),
+    partsOwed: sumCur(fin.map(j => [partsSum(j.parts) - partsSum(j.parts, true), j])), net: sumCur(fin.map(j => [fee(j) - partsSum(j.parts), j])) };
 }
 function renderReport() {
   const day = $("#rDay").value || ymd(new Date()), R = report(day);
-  let h = `<div class="tot"><div><b style="font-size:15px">${R.todayIn}</b>المقبوض ${esc(dayName(day))}</div><div><b>${R.rows.length}</b>عدد الدفعات</div><div><b>${R.doneToday.length}</b>أعمال أُنجزت</div></div>`;
+  let h = `<div class="tot3"><div><b style="font-size:14px">${R.todayIn}</b>المقبوض ${esc(dayName(day))}</div><div><b>${R.rows.length}</b>عدد الدفعات</div><div><b>${R.doneToday.length}</b>أعمال انتهت</div></div>`;
   h += '<div class="h4">💵 الدفعات الواصلة</div>';
-  h += R.rows.length ? `<table class="rl"><tr><th>الاسم والعمل</th><th>الواصل</th><th>الباقي الآن</th></tr>${R.rows.map(r => `<tr><td>${esc(r.j.name || "—")}<br><small>${esc(r.j.work || "")}${r.t ? " · " + new Date(r.t).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : ""}</small></td><td class="n">${MC(r.a, r.j)}</td><td class="n" style="color:${rest(r.j) > 0 ? "#a0302a" : "#1e6b4a"}">${rest(r.j) > 0 ? MC(rest(r.j), r.j) : "✓"}</td></tr>`).join("")}<tr><td><b>المجموع</b></td><td class="n">${R.todayIn}</td><td></td></tr></table>` : '<p style="color:var(--am-muted);margin:6px 2px">لا دفعات في هذا اليوم.</p>';
-  if (R.doneToday.length) h += '<div class="h4">✅ أعمال أُنجزت</div><table class="rl">' + R.doneToday.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${fee(j) ? MC(fee(j), j) : ""}</td></tr>`).join("") + "</table>";
-  h += `<div class="h4">📋 الحساب العام لكل الأعمال</div><div class="money" style="margin-top:4px"><div><b style="font-size:14px">${R.allFee}</b>المطلوب</div><div class="ok"><b style="font-size:14px">${R.allPaid}</b>الواصل</div><div class="rest"><b style="font-size:14px">${R.allRest}</b>المتبقي</div></div><div class="dist"><div style="grid-column:span 2"><b style="font-size:14px">${R.partsOwed}</b>لم يُدفع بعد للأطراف (مساحين، رسامين…)</div><div><b style="font-size:14px">${R.net}</b>صافي لك</div></div>`;
-  if (R.owing.length) h += '<div class="h4">⏳ المبالغ المتبقية على الزبائن</div><table class="rl"><tr><th>الاسم</th><th>المطلوب</th><th>الواصل</th><th>الباقي</th></tr>' + R.owing.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${MC(fee(j), j)}</td><td class="n">${MC(paid(j), j)}</td><td class="n" style="color:#a0302a">${MC(rest(j), j)}</td></tr>`).join("") + `<tr><td><b>المجموع</b></td><td></td><td></td><td class="n" style="color:#a0302a">${R.allRest}</td></tr></table>`;
+  h += R.rows.length ? `<table class="rl"><tr><th>الاسم</th><th>الواصل</th><th>الباقي الآن</th></tr>${R.rows.map(r => `<tr><td>${esc(r.j.name || "—")}<br><small>${esc(r.j.work || "")}</small></td><td class="n">${MC(r.a, r.j)}</td><td class="n" style="color:${rest(r.j) > 0 ? "#a0302a" : "#1e6b4a"}">${rest(r.j) > 0 ? MC(rest(r.j), r.j) : "✓"}</td></tr>`).join("")}<tr><td><b>المجموع</b></td><td class="n">${R.todayIn}</td><td></td></tr></table>` : '<p style="color:var(--am-muted);margin:6px 2px">لا دفعات في هذا اليوم.</p>';
+  if (R.doneToday.length) h += '<div class="h4">✅ أعمال انتهت</div><table class="rl">' + R.doneToday.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${fee(j) ? MC(fee(j), j) : ""}</td></tr>`).join("") + "</table>";
+  h += `<div class="h4">📋 الحساب العام</div><div class="money" style="margin-top:4px"><div><b style="font-size:13px">${R.allFee}</b>المطلوب</div><div class="ok"><b style="font-size:13px">${R.allPaid}</b>الواصل</div><div class="rest"><b style="font-size:13px">${R.allRest}</b>المتبقي</div></div><div class="dist"><div style="grid-column:span 2"><b style="font-size:13px">${R.partsOwed}</b>لم يُدفع بعد للأطراف</div><div><b style="font-size:13px">${R.net}</b>صافي لك</div></div>`;
+  if (R.owing.length) h += '<div class="h4">⏳ المتبقي على الزبائن</div><table class="rl">' + R.owing.map(j => `<tr><td>${esc(j.name || "—")}</td><td class="n" style="color:#a0302a">${MC(rest(j), j)}</td></tr>`).join("") + "</table>";
   $("#rBody").innerHTML = h;
 }
 function reportText(day) {
-  const R = report(day), L = ["📊 كشف " + dayName(day) + " (" + day + ")", ""];
-  L.push("💵 المقبوض: " + R.todayIn + " (" + R.rows.length + " دفعات)");
+  const R = report(day), L = ["📊 كشف " + dayName(day) + " (" + day + ")", "", "💵 المقبوض: " + R.todayIn + " (" + R.rows.length + " دفعات)"];
   R.rows.forEach(r => L.push("• " + (r.j.name || "—") + (r.j.work ? " – " + r.j.work : "") + ": " + MC(r.a, r.j) + (rest(r.j) > 0 ? " (الباقي عليه الآن " + MC(rest(r.j), r.j) + ")" : " (خالص)")));
-  if (R.doneToday.length) { L.push("", "✅ أعمال أُنجزت: " + R.doneToday.length); R.doneToday.forEach(j => L.push("• " + (j.name || "—") + (j.work ? " – " + j.work : ""))); }
-  L.push("", "📋 الحساب العام: المطلوب " + R.allFee + " · الواصل " + R.allPaid + " · المتبقي " + R.allRest);
-  L.push("🤝 لم يُدفع بعد للأطراف: " + R.partsOwed + " · صافي لك: " + R.net);
+  if (R.doneToday.length) { L.push("", "✅ أعمال انتهت: " + R.doneToday.length); R.doneToday.forEach(j => L.push("• " + (j.name || "—") + (j.work ? " – " + j.work : ""))); }
+  L.push("", "📋 الحساب العام: المطلوب " + R.allFee + " · الواصل " + R.allPaid + " · المتبقي " + R.allRest, "🤝 لم يُدفع للأطراف: " + R.partsOwed + " · صافي لك: " + R.net);
   if (R.owing.length) { L.push("", "⏳ المتبقي على الزبائن:"); R.owing.forEach(j => L.push("• " + (j.name || "—") + ": " + MC(rest(j), j))); }
   return L.join("\n");
 }
@@ -345,13 +406,14 @@ $("#rShare").addEventListener("click", async () => {
   try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else await navigator.clipboard.writeText(t); } catch (e) {}
   location.href = "https://wa.me/?text=" + encodeURIComponent(t);
 });
-let delAsk = 0;
-$("#fDel").addEventListener("click", () => {
-  if (Date.now() - delAsk > 3000) { delAsk = Date.now(); toast("اضغط مرة ثانية للحذف"); return; }
-  jobs = jobs.filter(x => x !== edit); save(); closeForm(); render(); toast("حُذف");
-});
 
-/* ---------- الإدخال الصوتي (من نظام الجوال، بالعربية) ---------- */
+/* ---------- إغلاق الصفحات الداخلية ---------- */
+const SHEETS = ["noteSheet", "finSheet", "repSheet"];
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => $("#" + b.dataset.close).classList.add("hidden")));
+SHEETS.forEach(id => $("#" + id).addEventListener("click", e => { if (e.target.id === id) e.target.classList.add("hidden"); }));
+window.__back = () => { for (const id of SHEETS) if (!$("#" + id).classList.contains("hidden")) { $("#" + id).classList.add("hidden"); return 1; } return 0; };
+
+/* ---------- الإدخال الصوتي ---------- */
 const voiceCb = {}; let vSeq = 0;
 window.onNativeVoice = (id, text) => { const cb = voiceCb[id]; delete voiceCb[id]; if (cb) cb(text); };
 window.onNativeVoiceError = (id, err) => { const cb = voiceCb[id]; delete voiceCb[id]; if (cb) cb(null, err); };
@@ -362,60 +424,20 @@ function listen(cb) {
   const r = new R(); r.lang = "ar-JO"; r.onresult = e => cb(e.results[0][0].transcript); r.onerror = () => cb(null, "error"); r.start();
 }
 const AR_NUM = { "صفر": "0", "واحد": "1", "اثنين": "2", "اثنان": "2", "ثلاثة": "3", "ثلاث": "3", "اربعة": "4", "أربعة": "4", "خمسة": "5", "خمس": "5", "ستة": "6", "ست": "6", "سبعة": "7", "سبع": "7", "ثمانية": "8", "ثمان": "8", "تسعة": "9", "تسع": "9" };
-const NUMF = new Set(["fPhone", "pAmt", "fFee", "fPay"]);
+const NUMF = new Set(["nPhone", "mFee", "mPay", "fqFee"]);
 function micTo(b, f, numeric) {
   b.classList.add("on");
   listen((text, err) => {
     b.classList.remove("on");
     if (text == null) { if (err === "unavailable") toast("الإدخال الصوتي غير متوفر على هذا الجوال"); return; }
     if (numeric) {
-      const digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join(f.id === "fPhone" ? "" : " ").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(f.id === "fPhone" ? /[^\d+]/g : /[^\d.]/g, "");
-      if (digits) { f.value = digits; f.dispatchEvent(new Event("input", { bubbles: true })); } else toast("لم أسمع أرقاماً، حاول مرة ثانية");
-    } else { f.value = (f.value ? f.value + " " : "") + text.trim(); f.dispatchEvent(new Event("input", { bubbles: true })); }
+      const ph = f.id === "nPhone", digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(ph ? /[^\d+]/g : /[^\d.]/g, "");
+      if (digits) f.value = digits; else toast("لم أسمع أرقاماً، حاول مرة ثانية");
+    } else f.value = (f.value && f.tagName === "TEXTAREA" ? f.value + " " : "") + text.trim();
+    f.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
 document.querySelectorAll("[data-mic]").forEach(b => b.addEventListener("click", () => micTo(b, $("#" + b.dataset.mic), NUMF.has(b.dataset.mic))));
-
-/* ---------- PDF: كشف حساب العمل ---------- */
-$("#fPdf").addEventListener("click", async () => {
-  const name = $("#fName").value.trim(), work = $("#fWork").value.trim(); if (!name && !work) { toast("اكتب الاسم أولاً"); return; }
-  addFormPay(); renderFPays();
-  const J = { cur: fCur }, F = N($("#fFee").value), P = fPays.reduce((t, p) => t + N(p.a), 0), R = F - P, parts = readParts();
-  await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0)));
-  const W = mm(210), H = mm(297), cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d");
-  frameHeader(c, W, "كشف حساب معاملة", (name || "") + (work ? "  ·  " + work : ""), "كشف حساب");
-  let y = mm(40); const x1 = mm(196), x0 = mm(14), lh = mm(9);
-  const sec = t => { c.fillStyle = "#0c3b26"; rr(c, x0, y, x1 - x0, mm(8), mm(2)); c.fill(); txt(c, t, x1 - mm(4), y + mm(4.2), `700 ${mm(4)}px ${TF}`, "#f3dc93"); y += mm(11); };
-  const row = (k, v, color, bold) => { c.strokeStyle = "#eadfbf"; c.lineWidth = 2; c.beginPath(); c.moveTo(x0, y + lh); c.lineTo(x1, y + lh); c.stroke();
-    txt(c, k, x1 - mm(3), y + lh / 2, `600 ${mm(3.8)}px ${AF}`, "#5d6458"); txt(c, String(v), x1 - mm(62), y + lh / 2, `${bold ? 700 : 600} ${mm(4.2)}px ${AF}`, color || "#1d2a22"); y += lh; };
-  sec("بيانات المعاملة");
-  row("اسم الزبون", name || "—"); if ($("#fPhone").value.trim()) row("رقم الهاتف", "⁦" + $("#fPhone").value.trim() + "⁩");
-  row("طبيعة العمل", work || "—"); if ($("#fDate").value) row("التاريخ", $("#fDate").value.split("-").reverse().join("/")); row("العملة", { ils: "شيكل ₪", jod: "دينار د.أ", usd: "دولار $" }[fCur]);
-  y += mm(4); sec("المبالغ");
-  row("المبلغ المطلوب كاملاً", MC(F, J), null, true);
-  fPays.forEach((p, i) => row("دفعة " + (i + 1) + " — " + (p.d || "").split("-").reverse().join("/"), MC(N(p.a), J), "#1e6b4a"));
-  row("مجموع المدفوع من الزبون", MC(P, J), "#1e6b4a", true);
-  row(R > 0 ? "المتبقي على الزبون" : "الحالة", R > 0 ? MC(R, J) : "مدفوع بالكامل", R > 0 ? "#b4232c" : "#1e6b4a", true);
-  const tot = partsSum(parts);
-  if (tot) {
-    y += mm(4); sec("توزيع المبلغ على الأطراف");
-    PARTS.forEach(([k, t]) => { const v = parts[k]; if (!v || !N(v.a)) return; row(t.replace("مبلغ ", "").replace(" (إن وجد)", "") + (k === "oth" && v.n ? " (" + v.n + ")" : ""), MC(N(v.a), J) + (v.ok ? "   ✓ دُفع" : "   ⏳ لم يُدفع"), v.ok ? "#1e6b4a" : "#8a5a00"); });
-    row("مجموع الأطراف", MC(tot, J), null, true); row("صافي لك", MC(F - tot, J), "#0c3b26", true);
-  }
-  const note = $("#fNote").value.trim();
-  if (note) { y += mm(4); sec("ملاحظات"); c.font = `500 ${mm(3.8)}px ${AF}`; const words = note.split(/\s+/); let line = "";
-    words.forEach(w => { const t = line ? line + " " + w : w; if (c.measureText(t).width > x1 - x0 - mm(8)) { txt(c, line, x1 - mm(3), y + mm(3), `500 ${mm(3.8)}px ${AF}`, "#1d2a22"); y += mm(7); line = w; } else line = t; });
-    if (line) { txt(c, line, x1 - mm(3), y + mm(3), `500 ${mm(3.8)}px ${AF}`, "#1d2a22"); y += mm(7); } }
-  const d = new Date(), ds = d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0");
-  txt(c, "صادر من دفتر الملاحظات – تطبيق المهندس إسلام", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458");
-  txt(c, "تاريخ الإصدار " + ds, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
-  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-  doc.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297);
-  const fn = ("كشف حساب " + (name || "معاملة") + ".pdf").replace(/[\\/:*?"<>|]/g, "-");
-  if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(fn, doc.output("datauristring").split(",")[1], "application/pdf"); else doc.save(fn);
-  window.__lastPdf = cv;
-});
-window.__back = () => { for (const id of ["paySheet", "repSheet"]) if (!$("#" + id).classList.contains("hidden")) { $("#" + id).classList.add("hidden"); return 1; } if (!$("#sheet").classList.contains("hidden")) { closeForm(); return 1; } return 0; };
 render();
 </script>
 </body>

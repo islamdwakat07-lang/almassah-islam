@@ -114,8 +114,9 @@ button{font-family:inherit;cursor:pointer}
 .fr{display:flex;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #eadfbf;min-height:56px}
 .fr:last-child{border-bottom:0}
 .fr .nmb{flex:1;min-width:0;text-align:right;border:0;background:none;padding:2px 0;color:inherit}
-.fr .nmb b{display:block;font:700 16px "IBM Plex Sans Arabic";white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fr .nmb small{display:block;font-size:12px;color:var(--am-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr .nmb b{display:block;font:700 17px/1.45 "IBM Plex Sans Arabic";white-space:normal;word-break:break-word}
+.fr .nmb small{display:block;font-size:13px;color:var(--am-muted);white-space:normal;line-height:1.6}
+.fr .nmb small .req{color:#1d4f9a;font-weight:700}
 .fr .nmb small .red{color:#b4232c;font-weight:700}.fr .nmb small .grn{color:#1e6b4a;font-weight:700}
 .fr .fee{flex:none;width:86px;font:700 15px "IBM Plex Sans Arabic";padding:7px 4px;border:1.5px solid var(--am-line);border-radius:10px;background:#fff;text-align:center;direction:ltr}
 .fr .ck{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid #b9c4bb;background:#fff;font-size:17px;color:#fff;display:grid;place-items:center}
@@ -260,11 +261,9 @@ function render() {
   const n = jobs.filter(j => j.arch).length; $('#wSub [data-w="arch"]').textContent = "🗄 الأرشيف" + (n ? " (" + n + ")" : "");
   if (!all.length) { $("#fRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : "لا سجلات بعد. اكتب الاسم (أو اضغط 🎤) والمبلغ المطلوب واضغط «أضف».<br>اضغط على الاسم لتفاصيل الدفعات وتوزيع المبلغ."}</div>`; return; }
   $("#fRows").innerHTML = all.map(j => { const r = rest(j), P = paid(j);
-    const sub = fee(j) || P ? `الواصل <span class="grn">${MC(P, j)}</span> · ${r > 0 ? `المتبقي <span class="red">${MC(r, j)}</span>` : '<span class="grn">مدفوع كاملاً ✓</span>'}` : "اضغط لإدخال التفاصيل";
+    const sub = fee(j) || P ? `المطلوب <span class="req">${MC(fee(j), j)}</span> · الواصل <span class="grn">${MC(P, j)}</span> · ${r > 0 ? `المتبقي <span class="red">${MC(r, j)}</span>` : '<span class="grn">مدفوع كاملاً ✓</span>'}` : "اضغط لإدخال التفاصيل";
     return `<div class="fr${j.done ? " done" : ""}" data-id="${j.id}">
       <button class="nmb" type="button" data-open><b>${esc(j.name || "—")}</b><small>${sub}</small></button>
-      ${telLinks(j.phone)}
-      <input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المطلوب ${sym(j)}" data-fee>
       <button class="ck" type="button" data-done title="${j.done ? "إلغاء الشطب" : "شطب – انتهى"}">${j.done ? "✓" : ""}</button>
       <button class="ib" type="button" data-arch title="${arch ? "إرجاع" : "أرشفة"}">${arch ? "↩" : "🗄"}</button></div>`; }).join("") +
     `<div class="ftot"><div><b>${sumCur(all.map(j => [fee(j), j]))}</b>المطلوب</div><div><b>${sumCur(all.map(j => [paid(j), j]))}</b>الواصل</div><div><b>${sumCur(all.map(j => [Math.max(0, rest(j)), j]))}</b>المتبقي</div></div>`;

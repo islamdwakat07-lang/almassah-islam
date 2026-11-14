@@ -124,6 +124,9 @@ button{font-family:inherit;cursor:pointer}
 .fr .ib{flex:none;width:38px;height:38px;border:0;border-radius:10px;background:#f3ead2;font-size:17px;display:grid;place-items:center}
 .ftot{display:flex;justify-content:space-around;gap:6px;padding:9px 8px;background:#0c3b26;color:#e7efe1;font-size:12.5px;text-align:center}
 .ftot b{display:block;font:700 14px "IBM Plex Sans Arabic";color:#f3dc93;direction:ltr}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.views button{border:0;border-radius:14px;padding:10px 4px;font:700 15px "IBM Plex Sans Arabic";background:#fffdf6;color:var(--am-green-800);box-shadow:inset 0 0 0 1.5px var(--am-line)}
+.views button.on{background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;box-shadow:0 0 0 2px var(--am-gold-400)}
 .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 </style>
@@ -132,6 +135,7 @@ button{font-family:inherit;cursor:pointer}
 <div class="am-bar"><span class="am-title"><img src="../img/t-fin.png" alt=""><b>السجل المالي</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
 <div class="am-spacer" aria-hidden="true"></div>
 <main>
+  <div class="views" id="ledg"><button type="button" data-l="main" class="on">💰 السجل المالي</button><button type="button" data-l="reg">📜 سجل إخراجات القيد</button></div>
   <div class="quick">
     <div class="qrow"><input id="fqName" placeholder="الاسم"><button class="mic" type="button" data-mic="fqName">🎤</button></div>
     <div class="qrow"><input id="fqFee" inputmode="decimal" dir="ltr" placeholder="المبلغ المطلوب" style="text-align:left"><button class="mic" type="button" data-mic="fqFee">🎤</button><button class="plus" type="button" id="fqAdd">＋ أضف</button></div>
@@ -190,7 +194,21 @@ if (!Array.isArray(jobs)) {   // أول فتح: نقل السجلات المال
   jobs = []; try { (JSON.parse(localStorage.getItem("jobs-v1") || "[]") || []).forEach(j => { if (j.finOnly || N(j.fee) || (j.pays || []).length || j.parts) jobs.push({ id: j.id, t: j.t, name: j.name, phone: j.phone, work: j.work, fee: j.fee, cur: j.cur || "ils", pays: j.pays || [], parts: j.parts || {}, fin_note: j.fin_note || "", done: false }); }); } catch (e) {}
   try { localStorage.setItem(KEY, JSON.stringify(jobs)); } catch (e) {}
 }
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(jobs)); } catch (e) {} };
+/* سجلّان منفصلان: السجل المالي، وسجل إخراجات القيد (لكل واحد تخزينه وأطرافه) */
+const LEDGERS = {
+  main: { key: KEY, title: "السجل المالي", parts: [["surv", "مبلغ المساحين"], ["draw", "مبلغ الرسامين"], ["law", "مبلغ المحامي"], ["reg", "مبلغ إخراج القيد"], ["oth", "مبلغ طرف آخر (إن وجد)"]] },
+  reg:  { key: "fin-reg-v1", title: "سجل إخراجات القيد", parts: [["surv", "مبلغ المساح"], ["dad", "مبلغ أبي"], ["oth", "مبلغ طرف آخر (إن وجد)"]] }
+};
+const DATA = { main: jobs, reg: (() => { try { const a = JSON.parse(localStorage.getItem("fin-reg-v1") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } })() };
+let ledger = "main", PARTS = LEDGERS.main.parts;
+const save = () => { try { localStorage.setItem(LEDGERS[ledger].key, JSON.stringify(jobs)); } catch (e) {} };
+function setLedger(l) {
+  DATA[ledger] = jobs; ledger = l; jobs = DATA[l]; PARTS = LEDGERS[l].parts;
+  document.querySelectorAll("#ledg button").forEach(b => b.classList.toggle("on", b.dataset.l === l));
+  document.querySelector(".am-title b").textContent = LEDGERS[l].title;
+  try { localStorage.setItem("fin-ledger", l); } catch (e) {}
+  render();
+}
 const pad = n => String(n).padStart(2, "0");
 const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -199,7 +217,6 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const M = v => (Math.round(v * 100) / 100).toLocaleString("en-US");
 const CUR = { ils: "₪", jod: "د.أ", usd: "$" }, sym = j => CUR[(j && j.cur) || "ils"];
 const MC = (v, j) => M(v) + " " + sym(j);
-const PARTS = [["surv", "مبلغ المساحين"], ["draw", "مبلغ الرسامين"], ["law", "مبلغ المحامي"], ["reg", "مبلغ إخراج القيد"], ["oth", "مبلغ طرف آخر (إن وجد)"]];
 const fee = j => N(j.fee), paid = j => (j.pays || []).reduce((t, p) => t + N(p.a), 0), rest = j => fee(j) - paid(j);
 const partsSum = (parts, onlyPaid) => PARTS.reduce((t, [k]) => t + (parts && parts[k] && (!onlyPaid || parts[k].ok) ? N(parts[k].a) : 0), 0);
 function sumCur(items) { const o = {}; items.forEach(([v, j]) => { const c = (j && j.cur) || "ils"; o[c] = (o[c] || 0) + v; }); const k = Object.keys(o).filter(c => o[c]); return k.length ? k.map(c => M(o[c]) + " " + CUR[c]).join(" · ") : "0"; }
@@ -281,7 +298,7 @@ $("#mPdf").addEventListener("click", async () => {
   collectFin(); save(); renderPays(); const j = mJob, J = { cur: j.cur }, F = fee(j), P = paid(j), R = F - P, parts = j.parts || {};
   await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`].map(f => document.fonts.load(f).catch(() => 0)));
   const W = mm(210), H = mm(297), cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d");
-  frameHeader(c, W, "كشف حساب معاملة", (j.name || "") + (j.work ? "  ·  " + j.work : ""), "كشف حساب");
+  frameHeader(c, W, ledger === "reg" ? "كشف حساب إخراج قيد" : "كشف حساب معاملة", (j.name || "") + (j.work ? "  ·  " + j.work : ""), "كشف حساب");
   let y = mm(40); const x1 = mm(196), x0 = mm(14), lh = mm(9);
   const sec = t => { c.fillStyle = "#0c3b26"; rr(c, x0, y, x1 - x0, mm(8), mm(2)); c.fill(); txt(c, t, x1 - mm(4), y + mm(4.2), `700 ${mm(4)}px ${TF}`, "#f3dc93"); y += mm(11); };
   const row = (k, v, color, bold) => { c.strokeStyle = "#eadfbf"; c.lineWidth = 2; c.beginPath(); c.moveTo(x0, y + lh); c.lineTo(x1, y + lh); c.stroke();
@@ -334,7 +351,7 @@ function renderReport() {
   $("#rBody").innerHTML = h;
 }
 function reportText(day) {
-  const R = report(day), L = ["📊 كشف " + dayName(day) + " (" + day + ")", "", "💵 المقبوض: " + R.todayIn + " (" + R.rows.length + " دفعات)"];
+  const R = report(day), L = ["📊 " + LEDGERS[ledger].title + " — كشف " + dayName(day) + " (" + day + ")", "", "💵 المقبوض: " + R.todayIn + " (" + R.rows.length + " دفعات)"];
   R.rows.forEach(r => L.push("• " + (r.j.name || "—") + (r.j.work ? " – " + r.j.work : "") + ": " + MC(r.a, r.j) + (rest(r.j) > 0 ? " (الباقي عليه الآن " + MC(rest(r.j), r.j) + ")" : " (خالص)")));
   if (R.doneToday.length) { L.push("", "✅ أعمال انتهت: " + R.doneToday.length); R.doneToday.forEach(j => L.push("• " + (j.name || "—") + (j.work ? " – " + j.work : ""))); }
   L.push("", "📋 الحساب العام: المطلوب " + R.allFee + " · الواصل " + R.allPaid + " · المتبقي " + R.allRest, "🤝 لم يُدفع للأطراف: " + R.partsOwed + " · صافي لك: " + R.net);
@@ -382,7 +399,9 @@ function micTo(b, f, numeric) {
   });
 }
 document.querySelectorAll("[data-mic]").forEach(b => b.addEventListener("click", () => micTo(b, $("#" + b.dataset.mic), NUMF.has(b.dataset.mic))));
-render();
+$("#ledg").addEventListener("click", e => { const b = e.target.closest("[data-l]"); if (b && b.dataset.l !== ledger) setLedger(b.dataset.l); });
+let lastL = "main"; try { lastL = localStorage.getItem("fin-ledger") || "main"; } catch (e) {}
+if (lastL === "reg") setLedger("reg"); else render();
 </script>
 </body>
 </html>

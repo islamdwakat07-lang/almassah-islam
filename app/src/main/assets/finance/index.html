@@ -127,6 +127,16 @@ button{font-family:inherit;cursor:pointer}
 .views{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .views button{border:0;border-radius:14px;padding:10px 4px;font:700 15px "IBM Plex Sans Arabic";background:#fffdf6;color:var(--am-green-800);box-shadow:inset 0 0 0 1.5px var(--am-line)}
 .views button.on{background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;box-shadow:0 0 0 2px var(--am-gold-400)}
+.fr .nma{flex:1;min-width:0}
+.fr .tel{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:15px;text-decoration:none;background:#e3efe2}
+.fr .tel.wa{background:#dcf5e3}
+.in .lnk{flex:none;width:48px;border-radius:13px;background:#f3ead2;display:grid;place-items:center;font-size:20px;text-decoration:none}
+.psum{display:grid;gap:8px;margin-bottom:10px}
+.pc{background:#fffdf6;border-radius:14px;box-shadow:inset 0 0 0 1.5px var(--am-line);padding:8px 8px;display:grid;grid-template-columns:.8fr 1fr 1fr 1fr;gap:6px;align-items:center;text-align:center}
+.pc .t{font:700 15px "IBM Plex Sans Arabic";color:var(--am-green-800);text-align:right}
+.pc div{font-size:11px;color:var(--am-muted);white-space:nowrap}
+.pc b{display:block;font:700 13.5px "IBM Plex Sans Arabic";color:var(--am-ink);direction:ltr;white-space:nowrap}
+.pc .g b{color:#1e6b4a}.pc .r b{color:#b4232c}
 .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 </style>
@@ -138,9 +148,11 @@ button{font-family:inherit;cursor:pointer}
   <div class="views" id="ledg"><button type="button" data-l="main" class="on">💰 السجل المالي</button><button type="button" data-l="reg">📜 سجل إخراجات القيد</button></div>
   <div class="quick">
     <div class="qrow"><input id="fqName" placeholder="الاسم"><button class="mic" type="button" data-mic="fqName">🎤</button></div>
+    <div class="qrow"><input id="fqPhone" inputmode="tel" dir="ltr" placeholder="رقم الهاتف" style="text-align:left"><button class="mic" type="button" data-mic="fqPhone">🎤</button></div>
     <div class="qrow"><input id="fqFee" inputmode="decimal" dir="ltr" placeholder="المبلغ المطلوب" style="text-align:left"><button class="mic" type="button" data-mic="fqFee">🎤</button><button class="plus" type="button" id="fqAdd">＋ أضف</button></div>
   </div>
   <div class="sub" id="wSub"><button type="button" data-w="cur" class="on">الحالية</button><button type="button" data-w="arch">🗄 الأرشيف</button><span class="sp"></span><button class="repb" type="button" id="rep">📊 الكشف اليومي</button></div>
+  <div id="pSum"></div>
   <div class="rows" id="fRows"></div>
 </main>
 
@@ -150,6 +162,8 @@ button{font-family:inherit;cursor:pointer}
     <h3><span>💰 التفاصيل المالية</span><button class="x" type="button" data-close="finSheet">✕</button></h3>
     <label class="fl">👤 الاسم</label>
     <div class="in"><input id="mName"><button class="mic" type="button" data-mic="mName">🎤</button></div>
+    <label class="fl">📞 رقم الهاتف</label>
+    <div class="in"><input id="mPhone" inputmode="tel" dir="ltr" style="text-align:left"><button class="mic" type="button" data-mic="mPhone">🎤</button><a class="lnk" id="mCall">📞</a><a class="lnk" id="mWa">💬</a></div>
     <label class="fl">💰 المبلغ المطلوب كاملاً</label>
     <div class="in"><input id="mFee" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left"><button class="mic" type="button" data-mic="mFee">🎤</button></div>
     <label class="fl">العملة</label>
@@ -226,7 +240,21 @@ function dayName(d) { if (!d) return ""; const t = ymd(new Date()), y = ymd(new 
 /* ---------- السجل المالي: كل اسم بسطر ---------- */
 let wSub = "cur";
 $("#wSub").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (!b) return; wSub = b.dataset.w; document.querySelectorAll("#wSub [data-w]").forEach(x => x.classList.toggle("on", x === b)); render(); });
+const waNum = p => { p = String(p || "").replace(/[^\d+]/g, ""); return p.startsWith("0") ? "970" + p.slice(1) : p.replace(/^\+/, ""); };
+function telLinks(ph) { const p = String(ph || "").replace(/[^\d+]/g, ""); return p ? `<a class="tel" href="tel:${p}" title="اتصال">📞</a><a class="tel wa" href="https://wa.me/${waNum(p)}" title="واتساب">💬</a>` : ""; }
+/* مجموع كل طرف في سجل إخراجات القيد: الواصل له (المعلَّم ✓) والمتبقي له */
+function renderPartySum() {
+  if (ledger !== "reg") { $("#pSum").innerHTML = ""; return; }
+  const rows = PARTS.map(([k, t]) => {
+    const got = [], due = [];
+    jobs.forEach(j => { const v = j.parts && j.parts[k]; if (!v || !N(v.a)) return; (v.ok ? got : due).push([N(v.a), j]); });
+    const name = t.replace("مبلغ ", "").replace(" (إن وجد)", "");
+    return `<div class="pc"><span class="t">${esc(name)}</span><div>المجموع<b>${sumCur(got.concat(due))}</b></div><div class="g">الواصل له<b>${sumCur(got)}</b></div><div class="r">المتبقي له<b>${sumCur(due)}</b></div></div>`;
+  });
+  $("#pSum").innerHTML = '<div class="psum">' + rows.join("") + "</div>";
+}
 function render() {
+  renderPartySum();
   const arch = wSub === "arch";
   const all = jobs.filter(j => !!j.arch === arch).sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || b.t - a.t);
   const n = jobs.filter(j => j.arch).length; $('#wSub [data-w="arch"]').textContent = "🗄 الأرشيف" + (n ? " (" + n + ")" : "");
@@ -235,6 +263,7 @@ function render() {
     const sub = fee(j) || P ? `الواصل <span class="grn">${MC(P, j)}</span> · ${r > 0 ? `المتبقي <span class="red">${MC(r, j)}</span>` : '<span class="grn">مدفوع كاملاً ✓</span>'}` : "اضغط لإدخال التفاصيل";
     return `<div class="fr${j.done ? " done" : ""}" data-id="${j.id}">
       <button class="nmb" type="button" data-open><b>${esc(j.name || "—")}</b><small>${sub}</small></button>
+      ${telLinks(j.phone)}
       <input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المطلوب ${sym(j)}" data-fee>
       <button class="ck" type="button" data-done title="${j.done ? "إلغاء الشطب" : "شطب – انتهى"}">${j.done ? "✓" : ""}</button>
       <button class="ib" type="button" data-arch title="${arch ? "إرجاع" : "أرشفة"}">${arch ? "↩" : "🗄"}</button></div>`; }).join("") +
@@ -242,8 +271,8 @@ function render() {
 }
 $("#fqAdd").addEventListener("click", () => {
   const name = $("#fqName").value.trim(); if (!name) { toast("اكتب الاسم أو اضغط 🎤"); return; }
-  jobs.push({ id: newId(), t: Date.now(), name, fee: $("#fqFee").value.trim(), cur: "ils", done: false }); save();
-  $("#fqName").value = ""; $("#fqFee").value = ""; if (wSub !== "cur") $('#wSub [data-w="cur"]').click(); else render(); toast("أُضيف");
+  jobs.push({ id: newId(), t: Date.now(), name, phone: $("#fqPhone").value.trim(), fee: $("#fqFee").value.trim(), cur: "ils", done: false }); save();
+  $("#fqName").value = ""; $("#fqFee").value = ""; $("#fqPhone").value = ""; if (wSub !== "cur") $('#wSub [data-w="cur"]').click(); else render(); toast("أُضيف");
 });
 $("#fRows").addEventListener("click", e => {
   const r = e.target.closest("[data-id]"); if (!r) return; const j = jobs.find(x => x.id === r.dataset.id);
@@ -254,10 +283,12 @@ $("#fRows").addEventListener("click", e => {
 $("#fRows").addEventListener("change", e => { const f = e.target.closest("[data-fee]"); if (!f) return; jobs.find(x => x.id === f.closest("[data-id]").dataset.id).fee = f.value.trim(); save(); render(); });
 
 /* ---------- صفحة التفاصيل المالية ---------- */
+function mContact() { const p = $("#mPhone").value.replace(/[^\d+]/g, ""); $("#mCall").href = p ? "tel:" + p : "#"; $("#mWa").href = p ? "https://wa.me/" + waNum(p) : "#"; $("#mCall").style.opacity = $("#mWa").style.opacity = p ? 1 : .4; }
+$("#mPhone").addEventListener("input", mContact);
 let mJob = null, mCur = "ils", mPays = [], mParts = {};
 function openFin(j) {
   mJob = j; mCur = j.cur || "ils"; mPays = JSON.parse(JSON.stringify(j.pays || [])); mParts = JSON.parse(JSON.stringify(j.parts || {}));
-  $("#mName").value = j.name || ""; $("#mFee").value = j.fee || ""; $("#mNote").value = j.fin_note || ""; $("#mPay").value = ""; $("#mPayD").value = ymd(new Date());
+  $("#mName").value = j.name || ""; $("#mPhone").value = j.phone || ""; mContact(); $("#mFee").value = j.fee || ""; $("#mNote").value = j.fin_note || ""; $("#mPay").value = ""; $("#mPayD").value = ymd(new Date());
   renderParts(); renderPays(); $("#finSheet").classList.remove("hidden");
 }
 function renderCur() { document.querySelectorAll("#mCur button").forEach(b => b.classList.toggle("on", b.dataset.c === mCur)); }
@@ -290,7 +321,7 @@ $("#mParts").addEventListener("click", e => {
   const ok = e.target.closest("[data-ok]"); if (ok) { const k = ok.dataset.ok; mParts = readParts(); mParts[k] = mParts[k] || { a: "", ok: false }; mParts[k].ok = !mParts[k].ok; ok.classList.toggle("on", mParts[k].ok); renderDist(); return; }
   const m = e.target.closest("[data-mic2]"); if (m) micTo(m, $("#" + m.dataset.mic2), true);
 });
-function collectFin() { addPay(); Object.assign(mJob, { name: $("#mName").value.trim(), fee: $("#mFee").value.trim(), cur: mCur, pays: mPays, parts: readParts(), fin_note: $("#mNote").value.trim() }); }
+function collectFin() { addPay(); Object.assign(mJob, { name: $("#mName").value.trim(), phone: $("#mPhone").value.trim(), fee: $("#mFee").value.trim(), cur: mCur, pays: mPays, parts: readParts(), fin_note: $("#mNote").value.trim() }); }
 $("#mSave").addEventListener("click", () => { collectFin(); save(); $("#finSheet").classList.add("hidden"); render(); toast("حُفظ"); });
 
 /* ---------- PDF: كشف حساب ---------- */
@@ -385,14 +416,14 @@ function listen(cb) {
   const r = new R(); r.lang = "ar-JO"; r.onresult = e => cb(e.results[0][0].transcript); r.onerror = () => cb(null, "error"); r.start();
 }
 const AR_NUM = { "صفر": "0", "واحد": "1", "اثنين": "2", "اثنان": "2", "ثلاثة": "3", "ثلاث": "3", "اربعة": "4", "أربعة": "4", "خمسة": "5", "خمس": "5", "ستة": "6", "ست": "6", "سبعة": "7", "سبع": "7", "ثمانية": "8", "ثمان": "8", "تسعة": "9", "تسع": "9" };
-const NUMF = new Set(["mFee", "mPay", "fqFee"]);
+const NUMF = new Set(["mFee", "mPay", "fqFee", "fqPhone", "mPhone"]);
 function micTo(b, f, numeric) {
   b.classList.add("on");
   listen((text, err) => {
     b.classList.remove("on");
     if (text == null) { if (err === "unavailable") toast("الإدخال الصوتي غير متوفر على هذا الجوال"); return; }
     if (numeric) {
-      const ph = f.id === "nPhone", digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(ph ? /[^\d+]/g : /[^\d.]/g, "");
+      const ph = /Phone$/.test(f.id), digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(ph ? /[^\d+]/g : /[^\d.]/g, "");
       if (digits) f.value = digits; else toast("لم أسمع أرقاماً، حاول مرة ثانية");
     } else f.value = (f.value && f.tagName === "TEXTAREA" ? f.value + " " : "") + text.trim();
     f.dispatchEvent(new Event("input", { bubbles: true }));

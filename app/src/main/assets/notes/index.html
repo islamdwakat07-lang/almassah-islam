@@ -52,6 +52,27 @@ button{font-family:inherit;cursor:pointer}
 .day.on{background:var(--am-btn);color:#fff;border-color:transparent}
 .save{width:100%;margin-top:16px;border:0;border-radius:16px;padding:14px;font:700 19px "IBM Plex Sans Arabic";color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400)}
 .del{width:100%;margin-top:8px;border:0;border-radius:14px;padding:10px;font:700 15px "IBM Plex Sans Arabic";color:#a0302a;background:transparent}
+.money{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.money div{background:#f6f1e0;border-radius:12px;padding:5px 8px;text-align:center;font-size:12.5px;color:var(--am-muted)}
+.money b{display:block;font:700 16px "IBM Plex Sans Arabic";color:var(--am-ink);direction:ltr}
+.money .rest b{color:#a0302a}.money .ok b{color:#1e6b4a}
+.pay{flex:none;border:0;border-radius:14px;padding:0 12px;height:48px;background:#e3efe2;color:#1e6b4a;font:700 14px "IBM Plex Sans Arabic"}
+.report{border:0;border-radius:16px;width:100%;margin:0 0 12px;padding:12px;font:700 17px "IBM Plex Sans Arabic";color:#0c3b26;background:linear-gradient(180deg,#f8e7a8,#e6c35f);box-shadow:0 0 0 1.5px #c99a2e,0 8px 16px -10px rgba(120,80,0,.6)}
+.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 4px}
+.tot div{border-radius:14px;padding:8px 6px;text-align:center;font-size:12.5px;background:linear-gradient(160deg,#17613f,#0c3b26);color:#e7efe1}
+.tot b{display:block;font:700 19px var(--am-title);color:#f3dc93;direction:ltr}
+.rl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px}
+.rl th{font-size:12.5px;color:var(--am-green-800);text-align:right;padding:5px 4px;border-bottom:1.5px solid var(--am-line)}
+.rl td{padding:7px 4px;border-bottom:1px dashed #e3d8b6;vertical-align:top}
+.rl td.n{direction:ltr;text-align:left;font-weight:700;white-space:nowrap}
+.rl small{color:var(--am-muted)}
+.dnav{display:flex;gap:6px;align-items:center}
+.dnav button{flex:none;border:0;border-radius:12px;width:44px;height:44px;background:#f3ead2;font-size:18px;color:#0c3b26}
+.dnav input{flex:1;font:600 16px "IBM Plex Sans Arabic";padding:10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;text-align:center}
+.h4{font:700 15px var(--am-title);color:var(--am-green-800);margin:14px 2px 2px}
+.plist{margin-top:6px;font-size:14px}
+.plist div{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed #e3d8b6}
+.plist button{border:0;background:none;color:#a0302a;font-size:15px}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 </style>
@@ -60,6 +81,7 @@ button{font-family:inherit;cursor:pointer}
 <div class="am-bar"><span class="am-title"><img src="../img/t-notes.png" alt=""><b>دفتر الملاحظات</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
 <div class="am-spacer" aria-hidden="true"></div>
 <main>
+  <button class="report" type="button" id="rep">📊 الكشف اليومي للمبالغ</button>
   <div class="tabs" id="tabs">
     <button class="tab on" type="button" data-s="new"><b id="cNew">0</b>📅 القادم</button>
     <button class="tab" type="button" data-s="work"><b id="cWork">0</b>⏳ قيد العمل</button>
@@ -81,8 +103,32 @@ button{font-family:inherit;cursor:pointer}
     <label class="fl">🗓️ الموعد</label>
     <div class="days" id="days"><button class="day" type="button" data-d="0">اليوم</button><button class="day" type="button" data-d="1">غداً</button><button class="day" type="button" data-d="2">بعد غد</button><button class="day" type="button" data-d="">بدون موعد</button></div>
     <div class="in"><input id="fDate" type="date"><input id="fTime" type="time" style="max-width:40%"></div>
+    <label class="fl" for="fFee">💰 المبلغ المطلوب (أتعاب العمل)</label>
+    <div class="in"><input id="fFee" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left"></div>
+    <label class="fl">💵 الدفعات الواصلة</label>
+    <div class="plist" id="fPays"></div>
+    <div class="in" style="margin-top:6px"><input id="fPay" inputmode="decimal" dir="ltr" placeholder="مبلغ دفعة جديدة" style="text-align:left"><input id="fPayD" type="date" style="max-width:44%"></div>
+    <div class="money" id="fMoney"></div>
     <button class="save" type="button" id="fSave">حفظ</button>
     <button class="del hidden" type="button" id="fDel">🗑 حذف هذا العمل</button>
+  </div>
+</div>
+<div class="sheet hidden" id="paySheet">
+  <div class="form">
+    <h3><span id="pT">استلام دفعة</span><button class="x" type="button" data-close="paySheet">✕</button></h3>
+    <div class="money" id="pMoney" style="margin-top:0"></div>
+    <label class="fl" for="pAmt">المبلغ الواصل الآن</label>
+    <div class="in"><input id="pAmt" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left;font-size:24px"><button class="mic" type="button" data-mic="pAmt">🎤</button></div>
+    <div class="days" id="pQuick" style="margin-top:8px"></div>
+    <button class="save" type="button" id="pSave">✓ تسجيل الدفعة</button>
+  </div>
+</div>
+<div class="sheet hidden" id="repSheet">
+  <div class="form">
+    <h3>📊 الكشف اليومي<button class="x" type="button" data-close="repSheet">✕</button></h3>
+    <div class="dnav"><button type="button" id="rPrev">›</button><input id="rDay" type="date"><button type="button" id="rNext">‹</button></div>
+    <div id="rBody"></div>
+    <button class="save" type="button" id="rShare">↗ مشاركة الكشف (واتساب)</button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -110,6 +156,11 @@ function when(j) {
   const s = d.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }) + t;
   return { t: s, c: j.date < today && j.s !== "done" ? "late" : "" };
 }
+/* ---------- المبالغ: المطلوب، الدفعات الواصلة (لكل دفعة تاريخ)، المتبقي ---------- */
+const N = s => { const v = parseFloat(String(s == null ? "" : s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.]/g, "")); return isFinite(v) ? v : 0; };
+const M = v => (Math.round(v * 100) / 100).toLocaleString("en-US");
+const fee = j => N(j.fee), paid = j => (j.pays || []).reduce((t, p) => t + N(p.a), 0), rest = j => fee(j) - paid(j);
+function moneyHtml(f, p) { const r = f - p; return `<div><b>${M(f)}</b>المطلوب</div><div class="ok"><b>${M(p)}</b>الواصل</div><div class="${r > 0 ? "rest" : "ok"}"><b>${M(r)}</b>${r > 0 ? "المتبقي" : r < 0 ? "زيادة" : "مدفوع كاملاً"}</div>`; }
 function render() {
   $("#cNew").textContent = jobs.filter(j => j.s === "new").length;
   $("#cWork").textContent = jobs.filter(j => j.s === "work").length;
@@ -127,14 +178,16 @@ function render() {
     const late = w && w.c === "late" ? " · فات الموعد" : "";
     return `<div class="job" style="--c:${COLOR[j.s]}">
       <div class="top" data-edit="${j.id}"><div style="flex:1;min-width:0"><div class="nm">${esc(j.name || "بدون اسم")}</div>${j.work ? `<div class="wk">${esc(j.work)}</div>` : ""}</div>${w ? `<span class="dt ${w.c}">${esc(w.t + late)}</span>` : ""}</div>
+      ${fee(j) || paid(j) ? `<div class="money">${moneyHtml(fee(j), paid(j))}</div>` : ""}
       <div class="acts">${NEXT[j.s] ? `<button class="go${j.s === "work" ? " done" : ""}" type="button" data-next="${j.id}">${NEXT[j.s][0]}</button>` : `<button class="go back" type="button" data-undo="${j.id}">↺ إرجاع لقيد العمل</button><span style="flex:1"></span>`}
-      ${ph ? `<a class="ib" href="tel:${ph}" title="اتصال">📞</a><a class="ib" href="https://wa.me/${wa}" title="واتساب">💬</a>` : ""}</div></div>`;
+      ${fee(j) && rest(j) > 0 ? `<button class="pay" type="button" data-pay="${j.id}">💵 دفعة</button>` : ""}${ph ? `<a class="ib" href="tel:${ph}" title="اتصال">📞</a><a class="ib" href="https://wa.me/${wa}" title="واتساب">💬</a>` : ""}</div></div>`;
   }).join("");
 }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (b) { tab = b.dataset.s; render(); } });
 $("#list").addEventListener("click", e => {
   const n = e.target.closest("[data-next]");
   if (n) { const j = jobs.find(x => x.id === n.dataset.next); const to = NEXT[j.s][1]; j.s = to; if (to === "done") j.doneAt = Date.now(); save(); render(); toast(to === "work" ? "⏳ نُقل إلى قيد العمل" : "✅ نُقل إلى المنجز"); return; }
+  const py = e.target.closest("[data-pay]"); if (py) { openPay(jobs.find(x => x.id === py.dataset.pay)); return; }
   const u = e.target.closest("[data-undo]");
   if (u) { const j = jobs.find(x => x.id === u.dataset.undo); j.s = "work"; save(); render(); toast("أُرجع إلى قيد العمل"); return; }
   const ed = e.target.closest("[data-edit]"); if (ed) openForm(jobs.find(x => x.id === ed.dataset.edit));
@@ -148,6 +201,7 @@ function openForm(j) {
   $("#fName").value = j ? j.name || "" : ""; $("#fWork").value = j ? j.work || "" : ""; $("#fPhone").value = j ? j.phone || "" : "";
   $("#fDate").value = j ? j.date || "" : ""; $("#fTime").value = j ? j.time || "" : "";
   setDay(""); $("#fDel").classList.toggle("hidden", !j);
+  $("#fFee").value = j && j.fee ? j.fee : ""; fPays = j ? JSON.parse(JSON.stringify(j.pays || [])) : []; $("#fPay").value = ""; $("#fPayD").value = ymd(new Date()); renderFPays();
   $("#sheet").classList.remove("hidden");
 }
 const closeForm = () => { $("#sheet").classList.add("hidden"); edit = null; };
@@ -159,9 +213,77 @@ $("#fDate").addEventListener("input", () => setDay(null));
 $("#fSave").addEventListener("click", () => {
   const name = $("#fName").value.trim(), work = $("#fWork").value.trim();
   if (!name && !work) { toast("اكتب الاسم أو طبيعة العمل"); return; }
-  const d = { name, work, phone: $("#fPhone").value.trim(), date: $("#fDate").value, time: $("#fTime").value };
+  addFormPay();
+  const d = { name, work, phone: $("#fPhone").value.trim(), date: $("#fDate").value, time: $("#fTime").value, fee: $("#fFee").value.trim(), pays: fPays };
   if (edit) Object.assign(edit, d); else { jobs.push(Object.assign({ id: Date.now().toString(36), s: "new", t: Date.now() }, d)); tab = "new"; }
   save(); closeForm(); render(); toast("حُفظ");
+});
+let fPays = [];
+function renderFPays() {
+  $("#fPays").innerHTML = fPays.length ? fPays.map((p, i) => `<div><span>${esc(dayName(p.d))}</span><span><b dir="ltr">${M(N(p.a))}</b> <button type="button" data-rp="${i}">✕</button></span></div>`).join("") : '<div style="color:var(--am-muted)">لا دفعات بعد</div>';
+  const pend = N($("#fPay").value);
+  $("#fMoney").innerHTML = moneyHtml(N($("#fFee").value), fPays.reduce((t, p) => t + N(p.a), 0) + pend);
+}
+function addFormPay() { const a = N($("#fPay").value); if (a > 0) { fPays.push({ a, d: $("#fPayD").value || ymd(new Date()), t: Date.now() }); $("#fPay").value = ""; } }
+["#fFee", "#fPay"].forEach(s => $(s).addEventListener("input", renderFPays));
+$("#fPays").addEventListener("click", e => { const b = e.target.closest("[data-rp]"); if (b) { fPays.splice(+b.dataset.rp, 1); renderFPays(); } });
+function dayName(d) { if (!d) return ""; const t = ymd(new Date()), y = ymd(new Date(Date.now() - 864e5)); if (d === t) return "اليوم"; if (d === y) return "أمس"; return new Date(d + "T00:00").toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }); }
+
+/* ---------- استلام دفعة سريع من البطاقة ---------- */
+let payJob = null;
+function openPay(j) {
+  payJob = j; $("#pT").textContent = "استلام دفعة — " + (j.name || ""); $("#pAmt").value = "";
+  $("#pMoney").innerHTML = moneyHtml(fee(j), paid(j));
+  const r = rest(j); $("#pQuick").innerHTML = r > 0 ? `<button class="day" type="button" data-q="${r}">كامل الباقي ${M(r)}</button>` + (r >= 100 ? `<button class="day" type="button" data-q="${Math.round(r / 2)}">النصف ${M(Math.round(r / 2))}</button>` : "") : "";
+  $("#paySheet").classList.remove("hidden"); setTimeout(() => $("#pAmt").focus(), 150);
+}
+$("#pQuick").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (b) $("#pAmt").value = b.dataset.q; });
+$("#pSave").addEventListener("click", () => {
+  const a = N($("#pAmt").value); if (!(a > 0)) { toast("اكتب المبلغ"); return; }
+  payJob.pays = payJob.pays || []; payJob.pays.push({ a, d: ymd(new Date()), t: Date.now() });
+  save(); $("#paySheet").classList.add("hidden"); render(); toast("✓ سُجّلت دفعة " + M(a) + (rest(payJob) > 0 ? " — الباقي " + M(rest(payJob)) : " — مدفوع كاملاً"));
+});
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => $("#" + b.dataset.close).classList.add("hidden")));
+["paySheet", "repSheet"].forEach(id => $("#" + id).addEventListener("click", e => { if (e.target.id === id) e.target.classList.add("hidden"); }));
+
+/* ---------- الكشف اليومي ---------- */
+function report(day) {
+  const rows = [];
+  jobs.forEach(j => (j.pays || []).forEach(p => { if (p.d === day) rows.push({ j, a: N(p.a), t: p.t }); }));
+  rows.sort((a, b) => (a.t || 0) - (b.t || 0));
+  const todayIn = rows.reduce((t, r) => t + r.a, 0);
+  const doneToday = jobs.filter(j => j.doneAt && ymd(new Date(j.doneAt)) === day);
+  const owing = jobs.filter(j => rest(j) > 0).sort((a, b) => rest(b) - rest(a));
+  const allRest = owing.reduce((t, j) => t + rest(j), 0), allFee = jobs.reduce((t, j) => t + fee(j), 0), allPaid = jobs.reduce((t, j) => t + paid(j), 0);
+  return { rows, todayIn, doneToday, owing, allRest, allFee, allPaid };
+}
+function renderReport() {
+  const day = $("#rDay").value || ymd(new Date()), R = report(day);
+  let h = `<div class="tot"><div><b>${M(R.todayIn)}</b>المقبوض ${esc(dayName(day))}</div><div><b>${R.rows.length}</b>عدد الدفعات</div><div><b>${R.doneToday.length}</b>أعمال أُنجزت</div></div>`;
+  h += '<div class="h4">💵 الدفعات الواصلة</div>';
+  h += R.rows.length ? `<table class="rl"><tr><th>الاسم والعمل</th><th>الواصل</th><th>الباقي الآن</th></tr>${R.rows.map(r => `<tr><td>${esc(r.j.name || "—")}<br><small>${esc(r.j.work || "")}${r.t ? " · " + new Date(r.t).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : ""}</small></td><td class="n">${M(r.a)}</td><td class="n" style="color:${rest(r.j) > 0 ? "#a0302a" : "#1e6b4a"}">${rest(r.j) > 0 ? M(rest(r.j)) : "✓"}</td></tr>`).join("")}<tr><td><b>المجموع</b></td><td class="n">${M(R.todayIn)}</td><td></td></tr></table>` : '<p style="color:var(--am-muted);margin:6px 2px">لا دفعات في هذا اليوم.</p>';
+  if (R.doneToday.length) h += '<div class="h4">✅ أعمال أُنجزت</div><table class="rl">' + R.doneToday.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${fee(j) ? M(fee(j)) : ""}</td></tr>`).join("") + "</table>";
+  h += `<div class="h4">📋 الحساب العام لكل الأعمال</div><div class="money" style="margin-top:4px">${moneyHtml(R.allFee, R.allPaid)}</div>`;
+  if (R.owing.length) h += '<div class="h4">⏳ المبالغ المتبقية على الزبائن</div><table class="rl"><tr><th>الاسم</th><th>المطلوب</th><th>الواصل</th><th>الباقي</th></tr>' + R.owing.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${M(fee(j))}</td><td class="n">${M(paid(j))}</td><td class="n" style="color:#a0302a">${M(rest(j))}</td></tr>`).join("") + `<tr><td><b>المجموع</b></td><td></td><td></td><td class="n" style="color:#a0302a">${M(R.allRest)}</td></tr></table>`;
+  $("#rBody").innerHTML = h;
+}
+function reportText(day) {
+  const R = report(day), L = ["📊 كشف " + dayName(day) + " (" + day + ")", ""];
+  L.push("💵 المقبوض: " + M(R.todayIn) + " (" + R.rows.length + " دفعات)");
+  R.rows.forEach(r => L.push("• " + (r.j.name || "—") + (r.j.work ? " – " + r.j.work : "") + ": " + M(r.a) + (rest(r.j) > 0 ? " (الباقي عليه الآن " + M(rest(r.j)) + ")" : " (خالص)")));
+  if (R.doneToday.length) { L.push("", "✅ أعمال أُنجزت: " + R.doneToday.length); R.doneToday.forEach(j => L.push("• " + (j.name || "—") + (j.work ? " – " + j.work : ""))); }
+  L.push("", "📋 الحساب العام: المطلوب " + M(R.allFee) + " · الواصل " + M(R.allPaid) + " · المتبقي " + M(R.allRest));
+  if (R.owing.length) { L.push("", "⏳ المتبقي على الزبائن:"); R.owing.forEach(j => L.push("• " + (j.name || "—") + ": " + M(rest(j)))); }
+  return L.join("\n");
+}
+$("#rep").addEventListener("click", () => { $("#rDay").value = ymd(new Date()); renderReport(); $("#repSheet").classList.remove("hidden"); });
+$("#rDay").addEventListener("input", renderReport);
+const shiftDay = k => { const d = new Date(($("#rDay").value || ymd(new Date())) + "T12:00"); d.setDate(d.getDate() + k); $("#rDay").value = ymd(d); renderReport(); };
+$("#rPrev").addEventListener("click", () => shiftDay(-1)); $("#rNext").addEventListener("click", () => shiftDay(1));
+$("#rShare").addEventListener("click", async () => {
+  const t = reportText($("#rDay").value || ymd(new Date()));
+  try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else await navigator.clipboard.writeText(t); } catch (e) {}
+  location.href = "https://wa.me/?text=" + encodeURIComponent(t);
 });
 let delAsk = 0;
 $("#fDel").addEventListener("click", () => {
@@ -185,13 +307,13 @@ document.querySelectorAll("[data-mic]").forEach(b => b.addEventListener("click",
   listen((text, err) => {
     b.classList.remove("on");
     if (text == null) { if (err === "unavailable") toast("الإدخال الصوتي غير متوفر على هذا الجوال"); return; }
-    if (f.id === "fPhone") {
+    if (f.id === "fPhone" || f.id === "pAmt") {
       const digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d+]/g, "");
       f.value = digits || f.value; if (!digits) toast("لم أسمع أرقاماً، حاول مرة ثانية");
     } else f.value = (f.value ? f.value + " " : "") + text.trim();
   });
 }));
-window.__back = () => { if (!$("#sheet").classList.contains("hidden")) { closeForm(); return 1; } return 0; };
+window.__back = () => { for (const id of ["paySheet", "repSheet"]) if (!$("#" + id).classList.contains("hidden")) { $("#" + id).classList.add("hidden"); return 1; } if (!$("#sheet").classList.contains("hidden")) { closeForm(); return 1; } return 0; };
 render();
 </script>
 </body>

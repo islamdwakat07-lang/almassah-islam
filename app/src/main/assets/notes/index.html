@@ -73,6 +73,22 @@ button{font-family:inherit;cursor:pointer}
 .plist{margin-top:6px;font-size:14px}
 .plist div{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed #e3d8b6}
 .plist button{border:0;background:none;color:#a0302a;font-size:15px}
+.cur{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+.cur button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:12px;padding:9px 4px;font:700 15px "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.cur button.on{background:var(--am-btn);color:#fff;border-color:transparent}
+.restbox{margin-top:12px;border-radius:14px;padding:12px;text-align:center;font:700 19px "IBM Plex Sans Arabic";background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;box-shadow:0 0 0 1.5px var(--am-gold-400)}
+.restbox.paid{background:linear-gradient(160deg,#2f8a4f,#1e6b4a);color:#fff}
+.sep{border:0;border-top:1.5px dashed var(--am-line);margin:16px 0 4px}
+.secT{font:700 17px var(--am-title);color:#0d7f8a;margin:6px 2px 0}
+.pt{display:flex;gap:8px}
+.pt input{flex:1;min-width:0;font:500 18px "IBM Plex Sans Arabic";padding:12px 14px;border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;text-align:left;direction:ltr}
+.pt .ok{flex:none;width:54px;border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;font-size:22px;color:#9aa49c}
+.pt .ok.on{background:#2f8a4f;border-color:#2f8a4f;color:#fff}
+.pname{font:500 15px "IBM Plex Sans Arabic";border:1.5px dashed var(--am-line);border-radius:12px;padding:6px 10px;background:#fffdf6;margin-bottom:5px;width:100%}
+.dist{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.dist div{background:#eef6f5;border-radius:12px;padding:6px;text-align:center;font-size:12.5px;color:#356a6e}
+.dist b{display:block;font:700 16px "IBM Plex Sans Arabic";color:#0b5f66;direction:ltr}
+.pdf{width:100%;margin-top:14px;border:2px solid #0d7f8a;border-radius:16px;padding:13px;font:700 18px "IBM Plex Sans Arabic";color:#0d7f8a;background:#fffdf6}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 </style>
@@ -103,12 +119,22 @@ button{font-family:inherit;cursor:pointer}
     <label class="fl">🗓️ الموعد</label>
     <div class="days" id="days"><button class="day" type="button" data-d="0">اليوم</button><button class="day" type="button" data-d="1">غداً</button><button class="day" type="button" data-d="2">بعد غد</button><button class="day" type="button" data-d="">بدون موعد</button></div>
     <div class="in"><input id="fDate" type="date"><input id="fTime" type="time" style="max-width:40%"></div>
-    <label class="fl" for="fFee">💰 المبلغ المطلوب (أتعاب العمل)</label>
-    <div class="in"><input id="fFee" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left"></div>
+    <label class="fl" for="fFee">💰 المبلغ المطلوب كاملاً</label>
+    <div class="in"><input id="fFee" inputmode="decimal" dir="ltr" placeholder="0" style="text-align:left"><button class="mic" type="button" data-mic="fFee">🎤</button></div>
+    <label class="fl">العملة</label>
+    <div class="cur" id="fCur"><button type="button" data-c="ils">شيكل ₪</button><button type="button" data-c="jod">دينار د.أ</button><button type="button" data-c="usd">دولار $</button></div>
     <label class="fl">💵 الدفعات الواصلة</label>
     <div class="plist" id="fPays"></div>
-    <div class="in" style="margin-top:6px"><input id="fPay" inputmode="decimal" dir="ltr" placeholder="مبلغ دفعة جديدة" style="text-align:left"><input id="fPayD" type="date" style="max-width:44%"></div>
+    <div class="in" style="margin-top:6px"><input id="fPay" inputmode="decimal" dir="ltr" placeholder="المبلغ المدفوع من الزبون" style="text-align:left"><button class="mic" type="button" data-mic="fPay">🎤</button><input id="fPayD" type="date" style="max-width:36%"></div>
     <div class="money" id="fMoney"></div>
+    <div class="restbox" id="fRest"></div>
+    <hr class="sep">
+    <div class="secT">توزيع المبلغ على الأطراف</div>
+    <div id="fParts"></div>
+    <div class="dist" id="fDist"></div>
+    <label class="fl" for="fNote">📝 ملاحظات</label>
+    <div class="in"><textarea id="fNote" rows="2"></textarea><button class="mic" type="button" data-mic="fNote">🎤</button></div>
+    <button class="pdf" type="button" id="fPdf">📤 مشاركة كملف PDF</button>
     <button class="save" type="button" id="fSave">حفظ</button>
     <button class="del hidden" type="button" id="fDel">🗑 حذف هذا العمل</button>
   </div>
@@ -132,6 +158,8 @@ button{font-family:inherit;cursor:pointer}
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<script src="../jspdf.umd.min.js"></script>
+<script src="../geomolg/pdf.js"></script>
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
@@ -159,8 +187,14 @@ function when(j) {
 /* ---------- المبالغ: المطلوب، الدفعات الواصلة (لكل دفعة تاريخ)، المتبقي ---------- */
 const N = s => { const v = parseFloat(String(s == null ? "" : s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.]/g, "")); return isFinite(v) ? v : 0; };
 const M = v => (Math.round(v * 100) / 100).toLocaleString("en-US");
+const CUR = { ils: "₪", jod: "د.أ", usd: "$" }, sym = j => CUR[(j && j.cur) || "ils"];
+const MC = (v, j) => M(v) + " " + sym(j);
+const PARTS = [["surv", "مبلغ المساحين"], ["draw", "مبلغ الرسامين"], ["reg", "مبلغ إخراج القيد"], ["law", "مبلغ محامي التسليم"], ["oth", "مبلغ لطرف آخر (إن وجد)"]];
+const partsSum = (parts, onlyPaid) => PARTS.reduce((t, [k]) => t + (parts && parts[k] && (!onlyPaid || parts[k].ok) ? N(parts[k].a) : 0), 0);
+/* مجموع حسب العملة: «1,200 ₪ · 300 د.أ» */
+function sumCur(items) { const o = {}; items.forEach(([v, j]) => { const c = (j && j.cur) || "ils"; o[c] = (o[c] || 0) + v; }); const k = Object.keys(o).filter(c => o[c]); return k.length ? k.map(c => M(o[c]) + " " + CUR[c]).join(" · ") : "0"; }
 const fee = j => N(j.fee), paid = j => (j.pays || []).reduce((t, p) => t + N(p.a), 0), rest = j => fee(j) - paid(j);
-function moneyHtml(f, p) { const r = f - p; return `<div><b>${M(f)}</b>المطلوب</div><div class="ok"><b>${M(p)}</b>الواصل</div><div class="${r > 0 ? "rest" : "ok"}"><b>${M(r)}</b>${r > 0 ? "المتبقي" : r < 0 ? "زيادة" : "مدفوع كاملاً"}</div>`; }
+function moneyHtml(f, p, j) { const r = f - p, S = j === undefined ? "" : " " + sym(j); return `<div><b>${M(f)}${S}</b>المطلوب</div><div class="ok"><b>${M(p)}${S}</b>الواصل</div><div class="${r > 0 ? "rest" : "ok"}"><b>${M(r)}${S}</b>${r > 0 ? "المتبقي" : r < 0 ? "زيادة" : "مدفوع كاملاً"}</div>`; }
 function render() {
   $("#cNew").textContent = jobs.filter(j => j.s === "new").length;
   $("#cWork").textContent = jobs.filter(j => j.s === "work").length;
@@ -178,7 +212,7 @@ function render() {
     const late = w && w.c === "late" ? " · فات الموعد" : "";
     return `<div class="job" style="--c:${COLOR[j.s]}">
       <div class="top" data-edit="${j.id}"><div style="flex:1;min-width:0"><div class="nm">${esc(j.name || "بدون اسم")}</div>${j.work ? `<div class="wk">${esc(j.work)}</div>` : ""}</div>${w ? `<span class="dt ${w.c}">${esc(w.t + late)}</span>` : ""}</div>
-      ${fee(j) || paid(j) ? `<div class="money">${moneyHtml(fee(j), paid(j))}</div>` : ""}
+      ${fee(j) || paid(j) ? `<div class="money">${moneyHtml(fee(j), paid(j), j)}</div>` : ""}
       <div class="acts">${NEXT[j.s] ? `<button class="go${j.s === "work" ? " done" : ""}" type="button" data-next="${j.id}">${NEXT[j.s][0]}</button>` : `<button class="go back" type="button" data-undo="${j.id}">↺ إرجاع لقيد العمل</button><span style="flex:1"></span>`}
       ${fee(j) && rest(j) > 0 ? `<button class="pay" type="button" data-pay="${j.id}">💵 دفعة</button>` : ""}${ph ? `<a class="ib" href="tel:${ph}" title="اتصال">📞</a><a class="ib" href="https://wa.me/${wa}" title="واتساب">💬</a>` : ""}</div></div>`;
   }).join("");
@@ -201,6 +235,7 @@ function openForm(j) {
   $("#fName").value = j ? j.name || "" : ""; $("#fWork").value = j ? j.work || "" : ""; $("#fPhone").value = j ? j.phone || "" : "";
   $("#fDate").value = j ? j.date || "" : ""; $("#fTime").value = j ? j.time || "" : "";
   setDay(""); $("#fDel").classList.toggle("hidden", !j);
+  fCur = (j && j.cur) || "ils"; fParts = j && j.parts ? JSON.parse(JSON.stringify(j.parts)) : {}; $("#fNote").value = j ? j.note || "" : ""; renderParts();
   $("#fFee").value = j && j.fee ? j.fee : ""; fPays = j ? JSON.parse(JSON.stringify(j.pays || [])) : []; $("#fPay").value = ""; $("#fPayD").value = ymd(new Date()); renderFPays();
   $("#sheet").classList.remove("hidden");
 }
@@ -214,7 +249,7 @@ $("#fSave").addEventListener("click", () => {
   const name = $("#fName").value.trim(), work = $("#fWork").value.trim();
   if (!name && !work) { toast("اكتب الاسم أو طبيعة العمل"); return; }
   addFormPay();
-  const d = { name, work, phone: $("#fPhone").value.trim(), date: $("#fDate").value, time: $("#fTime").value, fee: $("#fFee").value.trim(), pays: fPays };
+  const d = { name, work, phone: $("#fPhone").value.trim(), date: $("#fDate").value, time: $("#fTime").value, fee: $("#fFee").value.trim(), pays: fPays, cur: fCur, parts: readParts(), note: $("#fNote").value.trim() };
   if (edit) Object.assign(edit, d); else { jobs.push(Object.assign({ id: Date.now().toString(36), s: "new", t: Date.now() }, d)); tab = "new"; }
   save(); closeForm(); render(); toast("حُفظ");
 });
@@ -222,8 +257,31 @@ let fPays = [];
 function renderFPays() {
   $("#fPays").innerHTML = fPays.length ? fPays.map((p, i) => `<div><span>${esc(dayName(p.d))}</span><span><b dir="ltr">${M(N(p.a))}</b> <button type="button" data-rp="${i}">✕</button></span></div>`).join("") : '<div style="color:var(--am-muted)">لا دفعات بعد</div>';
   const pend = N($("#fPay").value);
-  $("#fMoney").innerHTML = moneyHtml(N($("#fFee").value), fPays.reduce((t, p) => t + N(p.a), 0) + pend);
+  const F = N($("#fFee").value), P = fPays.reduce((t, p) => t + N(p.a), 0) + pend, R = F - P, J = { cur: fCur };
+  $("#fMoney").innerHTML = moneyHtml(F, P, J);
+  $("#fRest").textContent = R > 0 ? "المتبقي على الزبون: " + MC(R, J) : F ? "✓ الزبون دفع كامل المبلغ" + (R < 0 ? " (زيادة " + MC(-R, J) + ")" : "") : "المتبقي على الزبون: 0 " + sym(J);
+  $("#fRest").classList.toggle("paid", F > 0 && R <= 0);
+  renderDist();
 }
+let fCur = "ils", fParts = {};
+function renderCur() { document.querySelectorAll("#fCur button").forEach(b => b.classList.toggle("on", b.dataset.c === fCur)); }
+$("#fCur").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { fCur = b.dataset.c; renderCur(); renderFPays(); renderParts(); } });
+function renderParts() {
+  renderCur();
+  $("#fParts").innerHTML = PARTS.map(([k, t]) => { const v = fParts[k] || {}; return `<label class="fl" for="pt_${k}">${t} <small style="color:var(--am-muted)">(${sym({ cur: fCur })})</small></label>${k === "oth" ? `<input class="pname" id="ptn_oth" placeholder="اسم الطرف" value="${esc(v.n || "")}">` : ""}<div class="pt"><input id="pt_${k}" inputmode="decimal" value="${esc(v.a || "")}" placeholder="0"><button class="mic" type="button" data-mic2="pt_${k}">🎤</button><button class="ok${v.ok ? " on" : ""}" type="button" data-ok="${k}" title="تم الدفع لهذا الطرف">✓</button></div>`; }).join("");
+  renderDist();
+}
+function readParts() { const o = {}; PARTS.forEach(([k]) => { const a = $("#pt_" + k).value.trim(), ok = (fParts[k] || {}).ok; if (a || ok) o[k] = { a, ok: !!ok }; }); const n = $("#ptn_oth") && $("#ptn_oth").value.trim(); if (n) (o.oth = o.oth || { a: "", ok: false }).n = n; return o; }
+function renderDist() {
+  if (!$("#pt_surv")) return;
+  const parts = readParts(), J = { cur: fCur }, tot = partsSum(parts), done = partsSum(parts, true), F = N($("#fFee").value);
+  $("#fDist").innerHTML = tot ? `<div><b>${MC(tot, J)}</b>للأطراف</div><div><b>${MC(done, J)}</b>دُفع لهم ✓</div><div><b>${MC(F - tot, J)}</b>صافي لك</div>` : "";
+}
+$("#fParts").addEventListener("input", renderDist);
+$("#fParts").addEventListener("click", e => {
+  const ok = e.target.closest("[data-ok]"); if (ok) { const k = ok.dataset.ok; fParts = readParts(); fParts[k] = fParts[k] || { a: "", ok: false }; fParts[k].ok = !fParts[k].ok; ok.classList.toggle("on", fParts[k].ok); renderDist(); return; }
+  const m = e.target.closest("[data-mic2]"); if (m) micTo(m, $("#" + m.dataset.mic2), true);
+});
 function addFormPay() { const a = N($("#fPay").value); if (a > 0) { fPays.push({ a, d: $("#fPayD").value || ymd(new Date()), t: Date.now() }); $("#fPay").value = ""; } }
 ["#fFee", "#fPay"].forEach(s => $(s).addEventListener("input", renderFPays));
 $("#fPays").addEventListener("click", e => { const b = e.target.closest("[data-rp]"); if (b) { fPays.splice(+b.dataset.rp, 1); renderFPays(); } });
@@ -233,15 +291,15 @@ function dayName(d) { if (!d) return ""; const t = ymd(new Date()), y = ymd(new 
 let payJob = null;
 function openPay(j) {
   payJob = j; $("#pT").textContent = "استلام دفعة — " + (j.name || ""); $("#pAmt").value = "";
-  $("#pMoney").innerHTML = moneyHtml(fee(j), paid(j));
-  const r = rest(j); $("#pQuick").innerHTML = r > 0 ? `<button class="day" type="button" data-q="${r}">كامل الباقي ${M(r)}</button>` + (r >= 100 ? `<button class="day" type="button" data-q="${Math.round(r / 2)}">النصف ${M(Math.round(r / 2))}</button>` : "") : "";
+  $("#pMoney").innerHTML = moneyHtml(fee(j), paid(j), j);
+  const r = rest(j); $("#pQuick").innerHTML = r > 0 ? `<button class="day" type="button" data-q="${r}">كامل الباقي ${MC(r, j)}</button>` + (r >= 100 ? `<button class="day" type="button" data-q="${Math.round(r / 2)}">النصف ${M(Math.round(r / 2))}</button>` : "") : "";
   $("#paySheet").classList.remove("hidden"); setTimeout(() => $("#pAmt").focus(), 150);
 }
 $("#pQuick").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (b) $("#pAmt").value = b.dataset.q; });
 $("#pSave").addEventListener("click", () => {
   const a = N($("#pAmt").value); if (!(a > 0)) { toast("اكتب المبلغ"); return; }
   payJob.pays = payJob.pays || []; payJob.pays.push({ a, d: ymd(new Date()), t: Date.now() });
-  save(); $("#paySheet").classList.add("hidden"); render(); toast("✓ سُجّلت دفعة " + M(a) + (rest(payJob) > 0 ? " — الباقي " + M(rest(payJob)) : " — مدفوع كاملاً"));
+  save(); $("#paySheet").classList.add("hidden"); render(); toast("✓ سُجّلت دفعة " + MC(a, payJob) + (rest(payJob) > 0 ? " — الباقي " + MC(rest(payJob), payJob) : " — مدفوع كاملاً"));
 });
 document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => $("#" + b.dataset.close).classList.add("hidden")));
 ["paySheet", "repSheet"].forEach(id => $("#" + id).addEventListener("click", e => { if (e.target.id === id) e.target.classList.add("hidden"); }));
@@ -251,29 +309,31 @@ function report(day) {
   const rows = [];
   jobs.forEach(j => (j.pays || []).forEach(p => { if (p.d === day) rows.push({ j, a: N(p.a), t: p.t }); }));
   rows.sort((a, b) => (a.t || 0) - (b.t || 0));
-  const todayIn = rows.reduce((t, r) => t + r.a, 0);
+  const todayIn = sumCur(rows.map(r => [r.a, r.j]));
   const doneToday = jobs.filter(j => j.doneAt && ymd(new Date(j.doneAt)) === day);
   const owing = jobs.filter(j => rest(j) > 0).sort((a, b) => rest(b) - rest(a));
-  const allRest = owing.reduce((t, j) => t + rest(j), 0), allFee = jobs.reduce((t, j) => t + fee(j), 0), allPaid = jobs.reduce((t, j) => t + paid(j), 0);
-  return { rows, todayIn, doneToday, owing, allRest, allFee, allPaid };
+  const allRest = sumCur(owing.map(j => [rest(j), j])), allFee = sumCur(jobs.map(j => [fee(j), j])), allPaid = sumCur(jobs.map(j => [paid(j), j]));
+  const partsOwed = sumCur(jobs.map(j => [partsSum(j.parts) - partsSum(j.parts, true), j])), net = sumCur(jobs.map(j => [fee(j) - partsSum(j.parts), j]));
+  return { rows, todayIn, doneToday, owing, allRest, allFee, allPaid, partsOwed, net };
 }
 function renderReport() {
   const day = $("#rDay").value || ymd(new Date()), R = report(day);
-  let h = `<div class="tot"><div><b>${M(R.todayIn)}</b>المقبوض ${esc(dayName(day))}</div><div><b>${R.rows.length}</b>عدد الدفعات</div><div><b>${R.doneToday.length}</b>أعمال أُنجزت</div></div>`;
+  let h = `<div class="tot"><div><b style="font-size:15px">${R.todayIn}</b>المقبوض ${esc(dayName(day))}</div><div><b>${R.rows.length}</b>عدد الدفعات</div><div><b>${R.doneToday.length}</b>أعمال أُنجزت</div></div>`;
   h += '<div class="h4">💵 الدفعات الواصلة</div>';
-  h += R.rows.length ? `<table class="rl"><tr><th>الاسم والعمل</th><th>الواصل</th><th>الباقي الآن</th></tr>${R.rows.map(r => `<tr><td>${esc(r.j.name || "—")}<br><small>${esc(r.j.work || "")}${r.t ? " · " + new Date(r.t).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : ""}</small></td><td class="n">${M(r.a)}</td><td class="n" style="color:${rest(r.j) > 0 ? "#a0302a" : "#1e6b4a"}">${rest(r.j) > 0 ? M(rest(r.j)) : "✓"}</td></tr>`).join("")}<tr><td><b>المجموع</b></td><td class="n">${M(R.todayIn)}</td><td></td></tr></table>` : '<p style="color:var(--am-muted);margin:6px 2px">لا دفعات في هذا اليوم.</p>';
-  if (R.doneToday.length) h += '<div class="h4">✅ أعمال أُنجزت</div><table class="rl">' + R.doneToday.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${fee(j) ? M(fee(j)) : ""}</td></tr>`).join("") + "</table>";
-  h += `<div class="h4">📋 الحساب العام لكل الأعمال</div><div class="money" style="margin-top:4px">${moneyHtml(R.allFee, R.allPaid)}</div>`;
-  if (R.owing.length) h += '<div class="h4">⏳ المبالغ المتبقية على الزبائن</div><table class="rl"><tr><th>الاسم</th><th>المطلوب</th><th>الواصل</th><th>الباقي</th></tr>' + R.owing.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${M(fee(j))}</td><td class="n">${M(paid(j))}</td><td class="n" style="color:#a0302a">${M(rest(j))}</td></tr>`).join("") + `<tr><td><b>المجموع</b></td><td></td><td></td><td class="n" style="color:#a0302a">${M(R.allRest)}</td></tr></table>`;
+  h += R.rows.length ? `<table class="rl"><tr><th>الاسم والعمل</th><th>الواصل</th><th>الباقي الآن</th></tr>${R.rows.map(r => `<tr><td>${esc(r.j.name || "—")}<br><small>${esc(r.j.work || "")}${r.t ? " · " + new Date(r.t).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : ""}</small></td><td class="n">${MC(r.a, r.j)}</td><td class="n" style="color:${rest(r.j) > 0 ? "#a0302a" : "#1e6b4a"}">${rest(r.j) > 0 ? MC(rest(r.j), r.j) : "✓"}</td></tr>`).join("")}<tr><td><b>المجموع</b></td><td class="n">${R.todayIn}</td><td></td></tr></table>` : '<p style="color:var(--am-muted);margin:6px 2px">لا دفعات في هذا اليوم.</p>';
+  if (R.doneToday.length) h += '<div class="h4">✅ أعمال أُنجزت</div><table class="rl">' + R.doneToday.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${fee(j) ? MC(fee(j), j) : ""}</td></tr>`).join("") + "</table>";
+  h += `<div class="h4">📋 الحساب العام لكل الأعمال</div><div class="money" style="margin-top:4px"><div><b style="font-size:14px">${R.allFee}</b>المطلوب</div><div class="ok"><b style="font-size:14px">${R.allPaid}</b>الواصل</div><div class="rest"><b style="font-size:14px">${R.allRest}</b>المتبقي</div></div><div class="dist"><div style="grid-column:span 2"><b style="font-size:14px">${R.partsOwed}</b>لم يُدفع بعد للأطراف (مساحين، رسامين…)</div><div><b style="font-size:14px">${R.net}</b>صافي لك</div></div>`;
+  if (R.owing.length) h += '<div class="h4">⏳ المبالغ المتبقية على الزبائن</div><table class="rl"><tr><th>الاسم</th><th>المطلوب</th><th>الواصل</th><th>الباقي</th></tr>' + R.owing.map(j => `<tr><td>${esc(j.name || "—")}<br><small>${esc(j.work || "")}</small></td><td class="n">${MC(fee(j), j)}</td><td class="n">${MC(paid(j), j)}</td><td class="n" style="color:#a0302a">${MC(rest(j), j)}</td></tr>`).join("") + `<tr><td><b>المجموع</b></td><td></td><td></td><td class="n" style="color:#a0302a">${R.allRest}</td></tr></table>`;
   $("#rBody").innerHTML = h;
 }
 function reportText(day) {
   const R = report(day), L = ["📊 كشف " + dayName(day) + " (" + day + ")", ""];
-  L.push("💵 المقبوض: " + M(R.todayIn) + " (" + R.rows.length + " دفعات)");
-  R.rows.forEach(r => L.push("• " + (r.j.name || "—") + (r.j.work ? " – " + r.j.work : "") + ": " + M(r.a) + (rest(r.j) > 0 ? " (الباقي عليه الآن " + M(rest(r.j)) + ")" : " (خالص)")));
+  L.push("💵 المقبوض: " + R.todayIn + " (" + R.rows.length + " دفعات)");
+  R.rows.forEach(r => L.push("• " + (r.j.name || "—") + (r.j.work ? " – " + r.j.work : "") + ": " + MC(r.a, r.j) + (rest(r.j) > 0 ? " (الباقي عليه الآن " + MC(rest(r.j), r.j) + ")" : " (خالص)")));
   if (R.doneToday.length) { L.push("", "✅ أعمال أُنجزت: " + R.doneToday.length); R.doneToday.forEach(j => L.push("• " + (j.name || "—") + (j.work ? " – " + j.work : ""))); }
-  L.push("", "📋 الحساب العام: المطلوب " + M(R.allFee) + " · الواصل " + M(R.allPaid) + " · المتبقي " + M(R.allRest));
-  if (R.owing.length) { L.push("", "⏳ المتبقي على الزبائن:"); R.owing.forEach(j => L.push("• " + (j.name || "—") + ": " + M(rest(j)))); }
+  L.push("", "📋 الحساب العام: المطلوب " + R.allFee + " · الواصل " + R.allPaid + " · المتبقي " + R.allRest);
+  L.push("🤝 لم يُدفع بعد للأطراف: " + R.partsOwed + " · صافي لك: " + R.net);
+  if (R.owing.length) { L.push("", "⏳ المتبقي على الزبائن:"); R.owing.forEach(j => L.push("• " + (j.name || "—") + ": " + MC(rest(j), j))); }
   return L.join("\n");
 }
 $("#rep").addEventListener("click", () => { $("#rDay").value = ymd(new Date()); renderReport(); $("#repSheet").classList.remove("hidden"); });
@@ -302,17 +362,59 @@ function listen(cb) {
   const r = new R(); r.lang = "ar-JO"; r.onresult = e => cb(e.results[0][0].transcript); r.onerror = () => cb(null, "error"); r.start();
 }
 const AR_NUM = { "صفر": "0", "واحد": "1", "اثنين": "2", "اثنان": "2", "ثلاثة": "3", "ثلاث": "3", "اربعة": "4", "أربعة": "4", "خمسة": "5", "خمس": "5", "ستة": "6", "ست": "6", "سبعة": "7", "سبع": "7", "ثمانية": "8", "ثمان": "8", "تسعة": "9", "تسع": "9" };
-document.querySelectorAll("[data-mic]").forEach(b => b.addEventListener("click", () => {
-  const f = $("#" + b.dataset.mic); b.classList.add("on");
+const NUMF = new Set(["fPhone", "pAmt", "fFee", "fPay"]);
+function micTo(b, f, numeric) {
+  b.classList.add("on");
   listen((text, err) => {
     b.classList.remove("on");
     if (text == null) { if (err === "unavailable") toast("الإدخال الصوتي غير متوفر على هذا الجوال"); return; }
-    if (f.id === "fPhone" || f.id === "pAmt") {
-      const digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d+]/g, "");
-      f.value = digits || f.value; if (!digits) toast("لم أسمع أرقاماً، حاول مرة ثانية");
-    } else f.value = (f.value ? f.value + " " : "") + text.trim();
+    if (numeric) {
+      const digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join(f.id === "fPhone" ? "" : " ").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(f.id === "fPhone" ? /[^\d+]/g : /[^\d.]/g, "");
+      if (digits) { f.value = digits; f.dispatchEvent(new Event("input", { bubbles: true })); } else toast("لم أسمع أرقاماً، حاول مرة ثانية");
+    } else { f.value = (f.value ? f.value + " " : "") + text.trim(); f.dispatchEvent(new Event("input", { bubbles: true })); }
   });
-}));
+}
+document.querySelectorAll("[data-mic]").forEach(b => b.addEventListener("click", () => micTo(b, $("#" + b.dataset.mic), NUMF.has(b.dataset.mic))));
+
+/* ---------- PDF: كشف حساب العمل ---------- */
+$("#fPdf").addEventListener("click", async () => {
+  const name = $("#fName").value.trim(), work = $("#fWork").value.trim(); if (!name && !work) { toast("اكتب الاسم أولاً"); return; }
+  addFormPay(); renderFPays();
+  const J = { cur: fCur }, F = N($("#fFee").value), P = fPays.reduce((t, p) => t + N(p.a), 0), R = F - P, parts = readParts();
+  await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0)));
+  const W = mm(210), H = mm(297), cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d");
+  frameHeader(c, W, "كشف حساب معاملة", (name || "") + (work ? "  ·  " + work : ""), "كشف حساب");
+  let y = mm(40); const x1 = mm(196), x0 = mm(14), lh = mm(9);
+  const sec = t => { c.fillStyle = "#0c3b26"; rr(c, x0, y, x1 - x0, mm(8), mm(2)); c.fill(); txt(c, t, x1 - mm(4), y + mm(4.2), `700 ${mm(4)}px ${TF}`, "#f3dc93"); y += mm(11); };
+  const row = (k, v, color, bold) => { c.strokeStyle = "#eadfbf"; c.lineWidth = 2; c.beginPath(); c.moveTo(x0, y + lh); c.lineTo(x1, y + lh); c.stroke();
+    txt(c, k, x1 - mm(3), y + lh / 2, `600 ${mm(3.8)}px ${AF}`, "#5d6458"); txt(c, String(v), x1 - mm(62), y + lh / 2, `${bold ? 700 : 600} ${mm(4.2)}px ${AF}`, color || "#1d2a22"); y += lh; };
+  sec("بيانات المعاملة");
+  row("اسم الزبون", name || "—"); if ($("#fPhone").value.trim()) row("رقم الهاتف", "⁦" + $("#fPhone").value.trim() + "⁩");
+  row("طبيعة العمل", work || "—"); if ($("#fDate").value) row("التاريخ", $("#fDate").value.split("-").reverse().join("/")); row("العملة", { ils: "شيكل ₪", jod: "دينار د.أ", usd: "دولار $" }[fCur]);
+  y += mm(4); sec("المبالغ");
+  row("المبلغ المطلوب كاملاً", MC(F, J), null, true);
+  fPays.forEach((p, i) => row("دفعة " + (i + 1) + " — " + (p.d || "").split("-").reverse().join("/"), MC(N(p.a), J), "#1e6b4a"));
+  row("مجموع المدفوع من الزبون", MC(P, J), "#1e6b4a", true);
+  row(R > 0 ? "المتبقي على الزبون" : "الحالة", R > 0 ? MC(R, J) : "مدفوع بالكامل", R > 0 ? "#b4232c" : "#1e6b4a", true);
+  const tot = partsSum(parts);
+  if (tot) {
+    y += mm(4); sec("توزيع المبلغ على الأطراف");
+    PARTS.forEach(([k, t]) => { const v = parts[k]; if (!v || !N(v.a)) return; row(t.replace("مبلغ ", "").replace(" (إن وجد)", "") + (k === "oth" && v.n ? " (" + v.n + ")" : ""), MC(N(v.a), J) + (v.ok ? "   ✓ دُفع" : "   ⏳ لم يُدفع"), v.ok ? "#1e6b4a" : "#8a5a00"); });
+    row("مجموع الأطراف", MC(tot, J), null, true); row("صافي لك", MC(F - tot, J), "#0c3b26", true);
+  }
+  const note = $("#fNote").value.trim();
+  if (note) { y += mm(4); sec("ملاحظات"); c.font = `500 ${mm(3.8)}px ${AF}`; const words = note.split(/\s+/); let line = "";
+    words.forEach(w => { const t = line ? line + " " + w : w; if (c.measureText(t).width > x1 - x0 - mm(8)) { txt(c, line, x1 - mm(3), y + mm(3), `500 ${mm(3.8)}px ${AF}`, "#1d2a22"); y += mm(7); line = w; } else line = t; });
+    if (line) { txt(c, line, x1 - mm(3), y + mm(3), `500 ${mm(3.8)}px ${AF}`, "#1d2a22"); y += mm(7); } }
+  const d = new Date(), ds = d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0");
+  txt(c, "صادر من دفتر الملاحظات – تطبيق المهندس إسلام", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458");
+  txt(c, "تاريخ الإصدار " + ds, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  doc.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297);
+  const fn = ("كشف حساب " + (name || "معاملة") + ".pdf").replace(/[\\/:*?"<>|]/g, "-");
+  if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(fn, doc.output("datauristring").split(",")[1], "application/pdf"); else doc.save(fn);
+  window.__lastPdf = cv;
+});
 window.__back = () => { for (const id of ["paySheet", "repSheet"]) if (!$("#" + id).classList.contains("hidden")) { $("#" + id).classList.add("hidden"); return 1; } if (!$("#sheet").classList.contains("hidden")) { closeForm(); return 1; } return 0; };
 render();
 </script>

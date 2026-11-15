@@ -174,24 +174,36 @@
     initPointer();
   }
   function setTool(t) {
-    tool = t; draft = []; mergeA = -1; if (t !== "grid" && t !== "pan") sel = -1;
+    tool = t; draft = []; mergeA = -1; rsel = -1; if (t !== "grid" && t !== "pan") sel = -1;
     document.querySelectorAll("#dzTools [data-t]").forEach(b => b.classList.toggle("on", b.dataset.t === t));
     panel(); draw();
   }
-  const HINT = { pan: "اضغط على أي قطعة لاختيارها وتغيير نوعها. اسحب لتحريك الصورة، وبإصبعين للتكبير.", road: "اضغط نقاط مسار الشارع على الصورة (يمكن أن يبدأ من خارج الأرض)، ثم «إنهاء الشارع».", grid: "اضغط على بلوك أو قطعة لتقسيمها شبكة.", split: "اضغط نقطتين لرسم خط يقسم القطعة التي يمر بها.", merge: "اضغط قطعتين متجاورتين لدمجهما.", more: "" };
+  const HINT = { pan: "اضغط على أي قطعة لاختيارها وتغيير نوعها. اسحب لتحريك الصورة، وبإصبعين للتكبير.", road: "", grid: "", split: "اضغط نقطتين لرسم خط يقسم القطعة التي يمر بها.", merge: "اضغط قطعتين متجاورتين لدمجهما.", more: "" };
 
   /* ---------- اللوحة السفلية حسب الأداة ---------- */
-  let gR = 1, gC = 4, gMode = "count", gW = 20, gDp = 30;
+  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1;
+  const aDef = () => { if (!aMin) aMin = +S.minParcel || 600; if (!aW) aW = +S.minWidth || 15; };
   function panel() {
     const p = $i("dzPanel"); let h = "";
-    if (tool === "road") h = `<div class="r"><span class="ttl">🛣️ شارع جديد</span><label>العرض (م)<input id="dzRW" type="number" min="2" step="0.5" value="${D.w || 8}"></label><span style="font-size:12.5px;color:#cfe0d4">${draft.length} نقاط</span></div>
-      <div class="r"><button class="pb go" type="button" id="dzRDone">✓ إنهاء الشارع</button><button class="pb" type="button" id="dzRBack">↶ نقطة</button><button class="pb" type="button" id="dzRCancel">إلغاء</button>${D.roads.length ? `<button class="pb" type="button" id="dzRDel">🗑 حذف آخر شارع</button>` : ""}</div>`;
+    if (tool === "road") {
+      const RM = [["free", "✍️ حر"], ["par", "∥ موازٍ لضلع"], ["perp", "⟂ عمودي على ضلع"], ["edit", "✋ تعديل شارع"]];
+      h = `<div class="r">${RM.map(([k, n]) => `<button class="pb ${rmode === k ? "go" : ""}" type="button" data-rm="${k}">${n}</button>`).join("")}</div>`;
+      if (rmode === "edit") {
+        const R = D.roads[rsel];
+        h += R ? `<div class="r"><span class="ttl">الشارع المختار</span><label>العرض (م)<input id="dzEW" type="number" min="2" step="0.5" value="${R.w}"></label><button class="pb" type="button" id="dzEDel">🗑 حذف هذا الشارع</button><button class="pb go" type="button" id="dzEOk">✓ تم</button></div><div class="r" style="font-size:12.5px;color:#cfe0d4">اسحب النقاط البيضاء لتغيير مسار الشارع.</div>`
+          : `<div class="r" style="font-size:12.5px;color:#cfe0d4">${D.roads.length ? "اضغط على الشارع الذي تريد تعديله." : "لا توجد شوارع مرسومة بعد."}</div>`;
+      } else {
+        h += `<div class="r"><label>العرض (م)<input id="dzRW" type="number" min="2" step="0.5" value="${D.w || 8}"></label>${rmode === "par" ? `<label>البعد عن الضلع (م)<input id="dzROff" type="number" min="0" step="0.5" value="${rOff}"></label>` : ""}${rmode === "free" ? `<span style="font-size:12.5px;color:#cfe0d4">${draft.length} نقاط</span>` : ""}</div>`;
+        h += rmode === "free" ? `<div class="r"><button class="pb go" type="button" id="dzRDone">✓ إنهاء الشارع</button><button class="pb" type="button" id="dzRBack">↶ نقطة</button><button class="pb" type="button" id="dzRCancel">إلغاء</button>${D.roads.length ? `<button class="pb" type="button" id="dzRDel">🗑 حذف آخر شارع</button>` : ""}</div>`
+          : `<div class="r" style="font-size:12.5px;color:#cfe0d4">${rmode === "par" ? "اضغط قرب ضلع الأرض: يُرسم شارع موازٍ له بالبعد المكتوب (0 = ملاصق للضلع من الداخل)." : "اضغط على ضلع الأرض في المكان الذي يبدأ منه الشارع: يُرسم عمودياً عليه ويقطع الأرض."}</div>`;
+      }
+    }
     else if (tool === "grid") {
-      if (sel < 0) h = `<div class="r"><span class="ttl">▦ اضغط على البلوك الذي تريد تقسيمه</span></div>`;
+      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button></div>`; }
       else h = `<div class="r"><span class="ttl">▦ تقسيم القطعة (${fmt(polyArea(parcelsL()[sel]))} م²)</span></div>
-        <div class="r"><button class="pb ${gMode === "count" ? "go" : ""}" type="button" data-gm="count">بالعدد</button><button class="pb ${gMode === "size" ? "go" : ""}" type="button" data-gm="size">بالأبعاد</button>
-        ${gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
-        <div class="r"><button class="pb" type="button" id="dzGDir">🔄 تدوير الاتجاه</button><button class="pb go" type="button" id="dzGGo">✓ قسّم</button></div>`;
+        <div class="r"><button class="pb ${gMode === "auto" ? "go" : ""}" type="button" data-gm="auto">⚡ تلقائي بالشروط</button><button class="pb ${gMode === "count" ? "go" : ""}" type="button" data-gm="count">بالعدد</button><button class="pb ${gMode === "size" ? "go" : ""}" type="button" data-gm="size">بالأبعاد</button></div><div class="r">
+        ${gMode === "auto" ? (aDef(), `<label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
+        <div class="r"><button class="pb" type="button" id="dzGDir">🔄 ${gMode === "auto" ? "تغيير الواجهة" : "تدوير الاتجاه"}</button><button class="pb go" type="button" id="dzGGo">✓ قسّم</button>${gMode === "auto" ? `<button class="pb" type="button" id="dzGAll">⚡ كل البلوكات غير المقسمة</button>` : ""}</div>`;
     } else if (tool === "pan" && sel >= 0) {
       const x = D.parcels[sel];
       h = `<div class="r"><span class="ttl">القطعة ${x.t === "res" ? "رقم " + numOf(sel) : ""} — ${fmt(polyArea(parcelsL()[sel]))} م²</span></div><div class="r">` +
@@ -209,15 +221,44 @@
     const rw = $i("dzRW"); if (rw) rw.oninput = () => { D.w = +rw.value || 8; draw(); };
     p.querySelectorAll("[data-gm]").forEach(b => b.onclick = () => { gMode = b.dataset.gm; panel(); draw(); });
     ["dzGR", "dzGC", "dzGW", "dzGD"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { gR = Math.max(1, +($i("dzGR") || {}).value || gR); gC = Math.max(1, +($i("dzGC") || {}).value || gC); gW = +($i("dzGW") || {}).value || gW; gDp = +($i("dzGD") || {}).value || gDp; draw(); }; });
-    on("dzGDir", () => { dirIdx++; draw(); }); on("dzGGo", doGrid);
+    on("dzGDir", () => { dirIdx++; draw(); panelInfo(); }); on("dzGGo", doGrid); on("dzGAll", doAutoAll);
+    ["dzAM", "dzAW"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { aMin = Math.max(20, +($i("dzAM") || {}).value || aMin); aW = Math.max(1, +($i("dzAW") || {}).value || aW); draw(); panelInfo(); }; });
+    p.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { rmode = b.dataset.rm; draft = []; rsel = -1; panel(); draw(); });
+    const ro = $i("dzROff"); if (ro) ro.oninput = () => { rOff = Math.max(0, +ro.value || 0); };
+    const ew = $i("dzEW"); if (ew) ew.onchange = () => { const v = +ew.value; if (!(v >= 1) || rsel < 0) return; snap(); D.roads[rsel].w = v; rebuild(false); saveD(); draw(); toast("تغيّر عرض الشارع وأُعيد حساب البلوكات"); };
+    on("dzEDel", () => { if (rsel < 0) return; snap(); D.roads.splice(rsel, 1); rsel = -1; rebuild(false); sel = -1; saveD(); panel(); draw(); toast("حُذف الشارع"); });
+    on("dzEOk", () => { rsel = -1; panel(); draw(); });
+    panelInfo();
     p.querySelectorAll("[data-ty]").forEach(b => b.onclick = () => { snap(); D.parcels[sel].t = b.dataset.ty; saveD(); panel(); draw(); });
     on("dzPdf", exportPDF); on("dzDxf", exportDXF);
     on("dzAllRes", () => { snap(); D.parcels.forEach(x => { if (x.t === "block") x.t = "res"; }); saveD(); panel(); draw(); });
     on("dzReset", () => { if (!confirmTwice()) return; snap(); D.roads = []; D.rp = []; rebuild(false); sel = -1; saveD(); panel(); draw(); });
   }
+  function panelInfo() {
+    const el = $i("dzAInfo"); if (!el || sel < 0) return;
+    const r = autoLots(parcelsL()[sel]);
+    el.textContent = r.lots.length ? `← ${r.lots.length} قسيمة` + (r.bad ? ` (${r.bad} لا تحقق الشروط)` : `، كل واحدة ≈ ${fmt(r.lots.reduce((t, l) => t + Math.abs(ringArea(l)), 0) / r.lots.length)} م²`) : "لا تتسع لقسيمة واحدة";
+    if (r.deep) el.textContent += ` — العمق ${fmt(r.deep, 0)} م كبير، ارسم شارعاً موازياً للواجهة لتصير صفين`;
+  }
   let askT = 0; const confirmTwice = () => { if (Date.now() - askT < 3000) { askT = 0; return true; } askT = Date.now(); toast("اضغط مرة ثانية للتأكيد"); return false; };
 
   /* ---------- العمليات ---------- */
+  /* شارع موازٍ لضلع أو عمودي عليه */
+  function edgeRoad(p) {
+    const Lr = land[0]; let bi = -1, bd = Infinity;
+    Lr.forEach((a, i) => { const d = distSeg(p, a, Lr[(i + 1) % Lr.length]); if (d < bd) { bd = d; bi = i; } });
+    if (bi < 0 || bd * V.k > 60) { toast("اضغط أقرب إلى ضلع الأرض"); return; }
+    const a = Lr[bi], b = Lr[(bi + 1) % Lr.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L;
+    let nx = -uy, ny = ux; const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; if (!inRing([m[0] + nx * 0.5, m[1] + ny * 0.5], Lr)) { nx = -nx; ny = -ny; }
+    const w = D.w || 8;
+    let pts;
+    // أطراف الشارع تمتد قليلاً خارج الأرض فقط، لتسهل سحبها
+    const du = Lr.map(v => (v[0] - a[0]) * ux + (v[1] - a[1]) * uy), dn = Lr.map(v => (v[0] - a[0]) * nx + (v[1] - a[1]) * ny);
+    if (rmode === "par") { const o = rOff + w / 2, t0 = Math.min(...du) - 3, t1 = Math.max(...du) + 3; pts = [[a[0] + ux * t0 + nx * o, a[1] + uy * t0 + ny * o], [a[0] + ux * t1 + nx * o, a[1] + uy * t1 + ny * o]]; }
+    else { const t = Math.max(w / 2, Math.min(L - w / 2, (p[0] - a[0]) * ux + (p[1] - a[1]) * uy)), q = [a[0] + ux * t, a[1] + uy * t], e = Math.max(...dn) + 3; pts = [[q[0] - nx * 2, q[1] - ny * 2], [q[0] + nx * e, q[1] + ny * e]]; }
+    snap(); D.roads.push({ pts: pts.map(toW), w }); rebuild(false); sel = -1; saveD(); panel(); draw();
+    toast((rmode === "par" ? "أُضيف شارع موازٍ للضلع " : "أُضيف شارع عمودي على الضلع ") + (bi + 1) + "، وصار عندك " + D.parcels.length + " بلوك");
+  }
   function finishRoad() {
     if (draft.length < 2) { toast("اضغط نقطتين على الأقل لمسار الشارع"); return; }
     snap(); D.roads.push({ pts: draft.map(toW), w: D.w || 8 }); draft = []; rebuild(false); sel = -1; saveD(); panel(); draw();
@@ -253,8 +294,78 @@
     for (let k = 1; k < n; k++) { let a = cuts[k - 1], b = hi; for (let it = 0; it < 50; it++) { const m = (a + b) / 2; if (left(m) < tot * k / n) a = m; else b = m; } cuts.push((a + b) / 2); }
     cuts.push(hi); return cuts;
   }
+  /* ---------- الإفراز التلقائي لجزء بشروط (أقل مساحة + أقل عرض) ----------
+     الواجهة = أطول ضلع للجزء على شارع (أو على الشارع الخارجي للأرض). القسائم متعامدة على الواجهة، بمساحات متساوية،
+     وعددها أكبر عدد ممكن بحيث لا تقل أي قسيمة عن المساحة والعرض المطلوبين. إن كان للجزء شارعان متقابلان وعمقه كبير يُقسم صفين. */
+  const distSeg = (m, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy; let t = l2 ? ((m[0] - a[0]) * dx + (m[1] - a[1]) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(m[0] - a[0] - t * dx, m[1] - a[1] - t * dy); };
+  function frontEdges(r) {
+    const RP = fromMP(roadsMP), ext = new Set([...(S.roadEdges || []), S.street || 0]), Lr = land[0], out = [];
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i], b = r[(i + 1) % r.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1) continue;
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], nx = -(b[1] - a[1]) / len, ny = (b[0] - a[0]) / len;
+      let po = [m[0] + nx * 0.6, m[1] + ny * 0.6]; if (inRing(po, r)) po = [m[0] - nx * 0.6, m[1] - ny * 0.6];
+      let on = RP.some(P => inPoly(po, P));
+      if (!on && !inRing(po, Lr)) for (const j of ext) { if (j < Lr.length && distSeg(m, Lr[j], Lr[(j + 1) % Lr.length]) < 0.05) { on = true; break; } }
+      if (on) out.push({ a, b, len, th: Math.atan2(b[1] - a[1], b[0] - a[0]) });
+    }
+    return out;
+  }
+  const sameTh = (x, y) => { const d = Math.abs((((x - y) % Math.PI) + Math.PI) % Math.PI); return d < 0.06 || Math.PI - d < 0.06; };
+  function chordU(R, v) { const xs = []; for (let i = 0; i < R.length; i++) { const a = R[i], b = R[(i + 1) % R.length]; if ((a[1] <= v && b[1] > v) || (b[1] <= v && a[1] > v)) xs.push(a[0] + (v - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); } return xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0; }
+  function minWU(R) { const bb = bboxOf(R); let m = Infinity; for (let t = 0.2; t < 0.81; t += 0.075) m = Math.min(m, chordU(R, bb[1] + (bb[3] - bb[1]) * t)); return isFinite(m) ? m : 0; }
+  let autoC = { k: "", r: null };
+  function autoLots(P) {
+    aDef();
+    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW;
+    if (autoC.k === key) return autoC.r;
+    const fe = frontEdges(r), dirs = [];
+    const addDir = (th, w, f) => { const e = dirs.find(d => sameTh(d.th, th)); if (e) { e.w += w; e.f = e.f || f; } else dirs.push({ th, w, f }); };
+    fe.forEach(e => addDir(e.th, e.len * 1000, true));
+    r.forEach((a, i) => { const b = r[(i + 1) % r.length]; addDir(Math.atan2(b[1] - a[1], b[0] - a[0]), Math.hypot(b[0] - a[0], b[1] - a[1]), false); });
+    dirs.sort((x, y) => y.w - x.w);
+    const D0 = dirs[dirIdx % dirs.length], th = D0.th, c = Math.cos(th), s = Math.sin(th);
+    const R = r.map(p => rot(p, c, s)), bb = bboxOf(R), H = bb[3] - bb[1];
+    const fv = fe.filter(e => sameTh(e.th, th)).map(e => (rot(e.a, c, s)[1] + rot(e.b, c, s)[1]) / 2);
+    const lowF = fv.some(v => v < bb[1] + H / 2), highF = fv.some(v => v >= bb[1] + H / 2);
+    const f = Math.max(aW, Math.sqrt(aMin * 1.05 / 1.25)), dT = aMin * 1.05 / f;
+    const bands = lowF && highF && H > 1.6 * dT ? [[bb[1] - 1, (bb[1] + bb[3]) / 2], [(bb[1] + bb[3]) / 2, bb[3] + 1]] : [[bb[1] - 1, bb[3] + 1]];
+    const lots = []; let bad = 0;
+    for (const [v0, v1] of bands) {
+      const row = clipHalf(clipHalf(R, 0, 1, -v0), 0, -1, v1); if (!row.length) continue;
+      const A = Math.abs(ringArea(row)), rb = bboxOf(row);
+      let n = Math.max(1, Math.min(Math.floor(A / aMin + 1e-9), Math.floor((rb[2] - rb[0]) / aW + 1e-9))), got = null;
+      for (; n >= 1 && !got; n--) {
+        const us = eqCuts(row, 0, n, rb), L = [];
+        for (let k = 0; k < n; k++) { const g = clipHalf(clipHalf(row, 1, 0, -(k ? us[k] : us[k] - 1)), -1, 0, k < n - 1 ? us[k + 1] : us[k + 1] + 1); if (g.length) L.push(g); }
+        if (L.every(g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01)) got = L;
+      }
+      if (!got) { got = [row]; bad++; }
+      got.forEach(g => lots.push(g.map(p => unrot(p, c, s))));
+    }
+    const res = { lots, bad, front: D0.f, deep: bands.length === 1 && H > 2.2 * dT ? H : 0 };
+    autoC = { k: key, r: res }; return res;
+  }
+  function doAutoAll() {
+    aDef(); const PL = parcelsL(); let n = 0, bad = 0; const next = [];
+    D.parcels.forEach((x, i) => {
+      if (x.t !== "block") { next.push(x); return; }
+      const keep = dirIdx; dirIdx = 0; const r = autoLots(PL[i]); dirIdx = keep;
+      if (!r.lots.length) { next.push(x); return; }
+      bad += r.bad; n += r.lots.length; r.lots.forEach(g => next.push({ P: [g.map(toW)], t: "res" }));
+    });
+    if (!n) { toast("لا توجد بلوكات غير مقسمة"); return; }
+    snap(); D.parcels = next; sel = -1; saveD(); panel(); draw();
+    toast(`أُفرزت البلوكات إلى ${n} قسيمة (أقل مساحة ${aMin} م²، أقل عرض ${aW} م)` + (bad ? ` — ${bad} جزء لم يتسع للشروط فبقي قطعة واحدة` : ""));
+  }
   function doGrid() {
     if (sel < 0) return;
+    if (gMode === "auto") {
+      const r = autoLots(parcelsL()[sel]); if (!r.lots.length) { toast("تعذّر الإفراز"); return; }
+      snap(); const t = D.parcels[sel].t === "block" ? "res" : D.parcels[sel].t;
+      D.parcels.splice(sel, 1, ...r.lots.map(g => ({ P: [g.map(toW)], t })));
+      sel = -1; saveD(); panel(); draw();
+      toast(r.bad ? "الجزء لا يتسع لقسيمة بهذه الشروط" : `أُفرز إلى ${r.lots.length} قسيمة متساوية` + (r.front ? "، واجهتها على الشارع" : "")); return;
+    }
     const P = parcelsL()[sel], out = [];
     gridCells(P).forEach(cell => { const r = clipConvex(P[0], cell); if (r.length && Math.abs(ringArea(r)) > 0.3) out.push([r]); });
     if (!out.length) { toast("تعذّر التقسيم"); return; }
@@ -329,7 +440,8 @@
     const PL = parcelsL(); NUM = numbering();
     fromMP(roadsMP).forEach(P => h += `<path d="${path(P)}" fill="rgba(70,70,70,.72)" stroke="#f5f5f5" stroke-width="1.2" stroke-dasharray="6 4" fill-rule="evenodd"/>`);
     PL.forEach((P, i) => { const ty = TYPES[D.parcels[i].t]; h += `<path d="${path(P)}" fill="${ty.f}" stroke="${i === sel || i === mergeA ? "#ff3b30" : ty.s}" stroke-width="${i === sel || i === mergeA ? 3.5 : 1.6}" fill-rule="evenodd"/>`; });
-    if (tool === "grid" && sel >= 0) gridCells(PL[sel]).forEach(c => { const r = clipConvex(PL[sel][0], c); if (r.length) h += `<path d="${path([r])}" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="5 3"/>`; });
+    if (tool === "grid" && sel >= 0 && gMode === "auto") { const ar = autoLots(PL[sel]); ar.lots.forEach(g => h += `<path d="${path([g])}" fill="none" stroke="${ar.bad ? "#ff6b5b" : "#fff"}" stroke-width="1.6" stroke-dasharray="5 3"/>`); }
+    else if (tool === "grid" && sel >= 0) gridCells(PL[sel]).forEach(c => { const r = clipConvex(PL[sel][0], c); if (r.length) h += `<path d="${path([r])}" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="5 3"/>`; });
     h += `<path d="${path(land)}" fill="none" stroke="#ffe066" stroke-width="3" stroke-linejoin="round"/>`;
     land[0].forEach(p => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="4" fill="#ffe066" stroke="#7a5a00"/>`);
     // labels
@@ -346,6 +458,12 @@
       h += `<polyline points="${draft.map(p => sx(p[0]) + "," + sy(p[1])).join(" ")}" fill="none" stroke="#ff3b30" stroke-width="2.5"/>`;
       draft.forEach(p => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5" fill="#ff3b30" stroke="#fff" stroke-width="2"/>`);
     }
+    if (tool === "road" && rmode === "edit" && D.roads[rsel]) {
+      const R = D.roads[rsel], pl = R.pts.map(toL);
+      fromMP(roadPoly(pl, R.w)).forEach(P => h += `<path d="${path(P)}" fill="rgba(255,59,48,.25)" stroke="#ff3b30" stroke-width="2"/>`);
+      h += `<polyline points="${pl.map(p => sx(p[0]) + "," + sy(p[1])).join(" ")}" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6 4"/>`;
+      pl.forEach(p => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="9" fill="#fff" stroke="#ff3b30" stroke-width="3"/>`);
+    }
     if (tool === "split" && draft.length === 1) h += `<circle cx="${sx(draft[0][0])}" cy="${sy(draft[0][1])}" r="6" fill="#ff3b30" stroke="#fff" stroke-width="2"/>`;
     svg.innerHTML = h;
     const s = stats(), res = s.by.res || { n: 0, a: 0 };
@@ -359,20 +477,29 @@
   }
   function tap(X, Y) {
     const p = [wx(X), wy(Y)], PL = parcelsL(), hit = PL.findIndex(P => inPoly(p, P));
-    if (tool === "road") { draft.push(snapPt(p)); panel(); draw(); return; }
+    if (tool === "road") {
+      if (rmode === "free") { draft.push(snapPt(p)); panel(); draw(); return; }
+      if (rmode === "edit") { rsel = D.roads.findIndex(R => fromMP(roadPoly(R.pts.map(toL), Math.max(R.w, 16 / V.k))).some(P => inPoly(p, P))); panel(); draw(); return; }
+      edgeRoad(p); return;
+    }
     if (tool === "split") { const q = snapPt(p); if (!draft.length) { draft = [q]; draw(); } else { const a = draft[0]; draft = []; doSplit(a, q); draw(); } return; }
     if (tool === "merge") { if (hit < 0) return; if (mergeA < 0 || mergeA === hit) { mergeA = hit; draw(); } else doMerge(mergeA, hit); return; }
     sel = hit; dirIdx = 0; panel(); draw();
   }
   function initPointer() {
     const el = $i("dzMap"), pts = new Map(); let start = null, moved = false, pinch = null;
-    el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.offsetX, e.offsetY]); if (pts.size === 1) { start = { x: e.offsetX, y: e.offsetY, cx: V.cx, cy: V.cy }; moved = false; } else if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), k: V.k, m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], w: [wx((a[0] + b[0]) / 2), wy((a[1] + b[1]) / 2)] }; moved = true; } });
+    let drag = null;
+    el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.offsetX, e.offsetY]);
+      if (pts.size === 1 && tool === "road" && rmode === "edit" && D.roads[rsel]) { const vi = D.roads[rsel].pts.findIndex(q => { const l = toL(q); return Math.hypot(sx(l[0]) - e.offsetX, sy(l[1]) - e.offsetY) < 24; }); if (vi >= 0) { snap(); drag = vi; start = null; moved = true; return; } }
+      if (pts.size === 1) { start = { x: e.offsetX, y: e.offsetY, cx: V.cx, cy: V.cy }; moved = false; } else if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), k: V.k, m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], w: [wx((a[0] + b[0]) / 2), wy((a[1] + b[1]) / 2)] }; moved = true; } });
     el.addEventListener("pointermove", e => {
       if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.offsetX, e.offsetY]);
+      if (drag != null && D.roads[rsel]) { D.roads[rsel].pts[drag] = toW([wx(e.offsetX), wy(e.offsetY)]); draw(); return; }
       if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); V.k = Math.max(0.05, Math.min(60, pinch.k * d / pinch.d)); const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; V.cx = pinch.w[0] - (m[0] - el.clientWidth / 2) / V.k; V.cy = pinch.w[1] + (m[1] - el.clientHeight / 2) / V.k; draw(); return; }
       if (start && pts.size === 1) { const dx = e.offsetX - start.x, dy = e.offsetY - start.y; if (Math.hypot(dx, dy) > 8) moved = true; if (moved) { V.cx = start.cx - dx / V.k; V.cy = start.cy + dy / V.k; draw(); } }
     });
-    const up = e => { if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { if (!moved && start) tap(e.offsetX, e.offsetY); start = null; } };
+    const up = e => { if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId);
+      if (drag != null) { drag = null; rebuild(false); sel = -1; saveD(); panel(); draw(); toast("تعدّل مسار الشارع وأُعيد حساب البلوكات"); start = null; return; } if (pts.size < 2) pinch = null; if (!pts.size) { if (!moved && start) tap(e.offsetX, e.offsetY); start = null; } };
     el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
     el.addEventListener("wheel", e => { e.preventDefault(); const w = [wx(e.offsetX), wy(e.offsetY)]; V.k = Math.max(0.05, Math.min(60, V.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); V.cx = w[0] - (e.offsetX - el.clientWidth / 2) / V.k; V.cy = w[1] + (e.offsetY - el.clientHeight / 2) / V.k; draw(); }, { passive: false });
     addEventListener("resize", () => { if (!$i("dz").hidden) draw(); });

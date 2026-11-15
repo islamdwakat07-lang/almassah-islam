@@ -114,6 +114,7 @@
     land = [S.boundary.map(toL)];
     const parts = D.roads.map(r => roadPoly(r.pts.map(toL), r.w)).filter(m => m.length);
     (S.approved || []).forEach(a => parts.push([[a.map(toL).concat([toL(a[0])])]]));
+    (D.rp || []).forEach(a => parts.push([[a.map(toL).concat([toL(a[0])])]]));   // طرق مقترح الإفراز الذكي
     const U = parts.length ? safePC("union", ...parts) : null;
     roadsMP = U ? (safePC("intersection", U, closeP(land)) || []) : [];
     if (!keepParcels || !D.parcels) {
@@ -212,7 +213,7 @@
     p.querySelectorAll("[data-ty]").forEach(b => b.onclick = () => { snap(); D.parcels[sel].t = b.dataset.ty; saveD(); panel(); draw(); });
     on("dzPdf", exportPDF); on("dzDxf", exportDXF);
     on("dzAllRes", () => { snap(); D.parcels.forEach(x => { if (x.t === "block") x.t = "res"; }); saveD(); panel(); draw(); });
-    on("dzReset", () => { if (!confirmTwice()) return; snap(); D.roads = []; rebuild(false); sel = -1; saveD(); panel(); draw(); });
+    on("dzReset", () => { if (!confirmTwice()) return; snap(); D.roads = []; D.rp = []; rebuild(false); sel = -1; saveD(); panel(); draw(); });
   }
   let askT = 0; const confirmTwice = () => { if (Date.now() - askT < 3000) { askT = 0; return true; } askT = Date.now(); toast("اضغط مرة ثانية للتأكيد"); return false; };
 
@@ -437,10 +438,15 @@
 
   /* ---------- فتح وإغلاق ---------- */
   let prevBack = null;
-  function open() {
+  function open(imp) {
     if (!S.boundary || S.boundary.length < 3) { toast("حمّل حدود الأرض أولاً (DXF أو إحداثيات)"); return; }
     if (!window.polygonClipping) { toast("…لحظة، جاري تحميل أدوات الهندسة"); return; }
-    build(); loadD(); rebuild(true); undo = []; sel = -1; draft = [];
+    build(); loadD();
+    if (imp && imp.parcels) {   // فتح مقترح من الإفراز الذكي للتعديل اليدوي
+      D = { b: bKey(), roads: [], rp: imp.roads || [], parcels: imp.parcels.map(x => ({ P: [x.ring], t: x.t })), w: D.w || 8 };
+      saveD(); setTimeout(() => toast("فُتح المقترح للتعديل: اختر قسيمة لتغيير نوعها، أو قسّم/ادمج، أو أضف شارعاً"), 400);
+    }
+    rebuild(true); undo = []; sel = -1; draft = [];
     $i("dz").hidden = false; document.body.style.overflow = "hidden"; $i("dzYear").value = aerYear;
     requestAnimationFrame(() => { fitView(); setTool("pan"); aerial(S.boundary, draw); });
     prevBack = window.__back; window.__back = () => { if (tool === "road" && draft.length) { draft = []; panel(); draw(); return 1; } if (sel >= 0) { sel = -1; panel(); draw(); return 1; } close(); return 1; };

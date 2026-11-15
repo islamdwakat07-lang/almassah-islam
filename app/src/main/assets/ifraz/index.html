@@ -91,6 +91,7 @@ textarea.rtl{direction:rtl;text-align:right;font-family:var(--f-body)}
 .chip.ok{color:var(--accent)} .chip.bad{color:var(--bad)} .chip.best{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
 table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+.cmp table{min-width:0;table-layout:fixed}.cmp th,.cmp td{padding:6px 3px;font-size:12px;white-space:normal}
 th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th{font-weight:500;color:var(--muted);font-size:12.5px;background:var(--paper)}
 td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums}
@@ -622,6 +623,280 @@ const G = (() => {
       const opts = (d.M > 1e-6 ? [[false, true], [true, true]] : []).concat([[false, false], [true, false]]);
       for (const [rv, wh] of opts) { const key = (wh ? 'mpW' : 'mpS') + (rv ? 'B' : 'A'); if (!cfg.only || cfg.only === key) props.push(mkProp(rv, wh)); }
     }
+    /* ================= الإفراز الذكي: شبكة طرق + صفوف قسائم بعمق مناسب + تقييم هندسي لكل قسيمة =================
+       سبب الشرائط في الطريقة القديمة: كل مالك يأخذ شريحة واحدة بكامل عمق الأرض (أو من الطريق حتى الحد)،
+       فعرضه = حصته ÷ العمق؛ كلما كبر العمق وصغرت الحصة صار شريطاً. هنا العمق يُحدَّد أولاً من القسيمة النموذجية،
+       وتُصمَّم الطرق بحيث يكون كل صف بهذا العمق، ثم تُقسم حصة المالك الكبيرة إلى عدة قسائم والصغيرة تُدمج مع جارتها. */
+    function smartPlan() {
+      if (vOn || !Rg.length) return [];
+      const wmin = Math.max(minWidth || 0, minFront || 0) || 8;
+      const base = minParcel > 0 ? minParcel : 500;
+      const Amin = minParcel > 0 ? minParcel : Math.max(150, base * 0.4);
+      const longest = (P, ax, val) => { let b = null; intervals(P, ax, val).forEach(x => { if (!b || x[1] - x[0] > b[1] - b[0]) b = x; }); return b; };
+      /* أجزاء الأرض: الجزء الرئيسي على الشارع + الأجزاء الكبيرة التي يفصلها طريق معتمد (لكل جزء إطار واجهته على طريق) */
+      const pieces = [{ P: Rg, from: q => q, v0: s, main: true }];
+      const accSegs = [...ringSegs(appr), ...segsL, [[-1e7, s], [1e7, s]]];
+      bigFrag.forEach(P => {
+        let best = null, bestAcc = null;
+        for (let i = 0; i < P.length; i++) {
+          const a = P[i], b = P[(i + 1) % P.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 0.5) continue;
+          if (!best || len > best.len) best = { a, b, len };
+          if (onLen([a, b], accSegs) > 0.01 && (!bestAcc || len > bestAcc.len)) bestAcc = { a, b, len };
+        }
+        const e = bestAcc || best, ux = (e.b[0] - e.a[0]) / e.len, uy = (e.b[1] - e.a[1]) / e.len;
+        let nx = -uy, ny = ux; const c = centroid(P);
+        if ((c[0] - e.a[0]) * nx + (c[1] - e.a[1]) * ny < 0) { nx = -nx; ny = -ny; }
+        const to = q => [(q[0] - e.a[0]) * ux + (q[1] - e.a[1]) * uy, (q[0] - e.a[0]) * nx + (q[1] - e.a[1]) * ny];
+        const from = q => [e.a[0] + q[0] * ux + q[1] * nx, e.a[1] + q[0] * uy + q[1] * ny];
+        const loc = clean(P.map(to)); if (loc.length) pieces.push({ P: loc, from, v0: bbox(loc)[1], main: false });
+      });
+      /* تخطيط جزء واحد: fam 0 = بلا طرق، A = طرق متعامدة على الشارع، B = طرق موازية للشارع + وصلة */
+      function lay(pc, fam, n, conn, dT) {
+        const P = pc.P, bb = bbox(P), v0 = Math.max(pc.v0, bb[1]);
+        const roads = [], rows = [];
+        if (fam === '0') { rows.push({ poly: P, ax: 0, rev: false }); return { roads, rows, d: bb[3] - v0, n: 0 }; }
+        if (fam === 'A') {
+          const iv = longest(P, 1, (v0 + bb[3]) / 2); if (!iv) return null;
+          const ul = iv[0], Wu = iv[1] - iv[0];
+          if (n == null) n = Math.max(1, Math.round(Wu / (2 * dT + w)));
+          const d = (Wu - n * w) / (2 * n); if (!(d >= wmin * 0.8)) return null;
+          const xs = []; for (let k = 0; k < n; k++) { const x1 = ul + d + k * (2 * d + w); xs.push([x1, x1 + w]); }
+          for (const [x1, x2] of xs) {
+            if (pc.main) { const rd = buildRoad(x1, x2); if (!rd.rings.length || !rd.connected) return null; roads.push(...rd.rings); }
+            else { const r = slab(P, 0, x1, x2); if (r.length) roads.push(r); }
+          }
+          const bnd = [[-BIG, xs[0][0]]];
+          for (let k = 0; k < n - 1; k++) { const m = (xs[k][1] + xs[k + 1][0]) / 2; bnd.push([xs[k][1], m], [m, xs[k + 1][0]]); }
+          bnd.push([xs[n - 1][1], BIG]);
+          bnd.forEach(([a, b], i) => { const r = slab(P, 0, a, b); if (r.length) rows.push({ poly: r, ax: 1, rev: i % 2 === 1 }); });
+          return { roads, rows, d, n };
+        }
+        const iv = longest(P, 0, (bb[0] + bb[2]) / 2); if (!iv) return null;
+        const Hv = iv[1] - v0;
+        if (n == null) n = Math.max(1, Math.round(Hv / (2 * dT + w)));
+        const d = (Hv - n * w) / (2 * n); if (!(d >= wmin * 0.8)) return null;
+        const ys = []; for (let k = 0; k < n; k++) { const y1 = v0 + d + k * (2 * d + w); ys.push([y1, y1 + w]); }
+        const vEnd = ys[n - 1][1], lefts = [], rights = [];
+        for (let t = 0; t <= 10; t++) { const iv2 = intervals(P, 1, v0 + 0.05 + (vEnd - v0 - 0.1) * t / 10); if (!iv2.length) return null; lefts.push(iv2[0][0]); rights.push(iv2[iv2.length - 1][1]); }
+        const uL = Math.max(...lefts), uR = Math.min(...rights);
+        if (uR - uL < (conn === 'LR' ? 2 : 1) * w + 2 * wmin) return null;
+        const cs = []; if (conn.includes('L')) cs.push([uL, uL + w]); if (conn.includes('R')) cs.push([uR - w, uR]);
+        cs.forEach(([x1, x2]) => { const r = clean(clipHalf(slab(P, 0, x1, x2), 1, vEnd, false)); if (r.length) roads.push(r); });
+        const gaps = []; let lo = -BIG; cs.forEach(([x1, x2]) => { gaps.push([lo, x1]); lo = x2; }); gaps.push([lo, BIG]);
+        ys.forEach(([y1, y2]) => { const band = slab(P, 1, y1, y2); gaps.forEach(([a, b]) => { const r = slab(band, 0, a, b); if (r.length) roads.push(r); }); });
+        const vb = [[-BIG, ys[0][0]]];
+        for (let k = 0; k < n - 1; k++) { const m = (ys[k][1] + ys[k + 1][0]) / 2; vb.push([ys[k][1], m], [m, ys[k + 1][0]]); }
+        vb.push([ys[n - 1][1], BIG]);
+        vb.forEach(([a, b], bi) => {
+          const band = slab(P, 1, a, b); if (!band.length) return;
+          let segs = a >= vEnd - 1e-9 ? [band] : gaps.map(([x1, x2]) => slab(band, 0, x1, x2)).filter(r => r.length);
+          const rev = bi % 2 === 1; if (rev) segs = segs.reverse();
+          segs.forEach(r => rows.push({ poly: r, ax: 0, rev }));
+        });
+        return { roads, rows, d, n };
+      }
+      const layCache = new Map();
+      function layout(sp, dT) {
+        const key = sp.fam + sp.n + (sp.conn || '') + (pieces.length > 1 ? '|' + dT.toFixed(1) : '');
+        if (layCache.has(key)) return layCache.get(key);
+        let roadsM = [], rows = [], waste = [], info = null, ok = true;
+        pieces.forEach(pc => {
+          if (!ok) return;
+          let L0 = lay(pc, sp.fam, pc.main ? sp.n : null, sp.conn || 'L', dT);
+          if (!L0 && !pc.main) L0 = lay(pc, '0');
+          if (!L0) { ok = false; return; }
+          if (pc.main) info = L0;
+          let rr = L0.rows;
+          if (pc.main && sp.fam === 'A' && PC && L0.roads.length) {   // قص المنحنيات والدوار من الصفوف
+            rr = [];
+            L0.rows.forEach(r => {
+              let rings; try { rings = mpRings(PC.difference([snap(r.poly)], ...L0.roads.map(x => [snap(x)]))); } catch (e) { rings = [r.poly]; }
+              rings.sort((p, q) => (bbox(p)[r.ax] - bbox(q)[r.ax]) * (r.rev ? -1 : 1));
+              rings.forEach(g => rr.push({ poly: g, ax: r.ax, rev: r.rev }));
+            });
+          }
+          rr.forEach(r => { if (area(r.poly) < Amin - 0.01) waste.push(r.poly.map(pc.from)); else rows.push({ ...r, pc }); });
+          L0.roads.forEach(g => roadsM.push(g.map(pc.from)));
+        });
+        const out = ok && info ? { roadsM, rows, waste, d: info.d, n: info.n } : null;
+        layCache.set(key, out); return out;
+      }
+      /* توزيع الحصص على الصفوف بالتسلسل (ذهاباً وإياباً)، ثم تقسيم حصة كل مالك في الصف إلى قسائم بعرض مناسب */
+      function build(Lay, ord, M, As) {
+        const rows = Lay.rows.map(r => ({ ...r, bb: bbox(r.poly) }));
+        const parcels = [];
+        let need = M;
+        for (let i = rows.length - 1; i >= 0 && need > 1e-6; i--) {   // قسيمة البلدية من آخر التسلسل (العمق)
+          const r = rows[i], A = area(r.poly), lo = r.bb[r.ax], hi = r.bb[r.ax + 2];
+          if (A <= need + 1e-6) { parcels.push({ kind: 'muni', poly: r.poly.map(r.pc.from) }); need -= A; r.poly = []; continue; }
+          let mp;
+          if (!r.rev) { const c = findRev(r.poly, r.ax, lo, hi, need, area); mp = slab(r.poly, r.ax, c, hi); r.poly = slab(r.poly, r.ax, lo, c); }
+          else { const c = findCut(r.poly, r.ax, lo, hi, need, area); mp = slab(r.poly, r.ax, lo, c); r.poly = slab(r.poly, r.ax, c, hi); }
+          parcels.push({ kind: 'muni', poly: mp.map(r.pc.from) }); need = 0; r.bb = bbox(r.poly);
+        }
+        const R2 = rows.filter(r => r.poly.length);
+        const V = R2.reduce((t, r) => t + area(r.poly), 0);
+        const startOf = r => (r.rev ? r.bb[r.ax + 2] : r.bb[r.ax]);
+        const segs = []; let ri = 0, pos = R2.length ? startOf(R2[0]) : 0;
+        ord.forEach((u, k) => {
+          let nd = k === ord.length - 1 ? Infinity : V * u.frac / tot;
+          while (nd > 1e-6 && ri < R2.length) {
+            const r = R2[ri], lo = r.bb[r.ax], hi = r.bb[r.ax + 2];
+            const rem = area(r.rev ? slab(r.poly, r.ax, lo, pos) : slab(r.poly, r.ax, pos, hi));
+            if (rem <= nd + 1e-6) { if (rem > 1e-6) segs.push({ ri, a: pos, b: r.rev ? lo : hi, u, amt: rem }); nd -= rem; ri++; if (ri < R2.length) pos = startOf(R2[ri]); }
+            else { const c = r.rev ? findRev(r.poly, r.ax, lo, pos, nd, area) : findCut(r.poly, r.ax, pos, hi, nd, area); segs.push({ ri, a: pos, b: c, u, amt: nd }); pos = c; nd = 0; }
+          }
+        });
+        const lotA = L => { const r = R2[L.ri]; return area(slab(r.poly, r.ax, Math.min(L.a, L.b), Math.max(L.a, L.b))); };
+        const lots = [];
+        segs.forEach(sg => {
+          const r = R2[sg.ri], len = Math.abs(sg.b - sg.a), Ap = lotA(sg);
+          let k = Math.max(1, Math.round(Ap / As));
+          while (k > 1 && (Ap / k < Amin || len / k < wmin)) k--;
+          let st = sg.a;
+          for (let j = 0; j < k; j++) {
+            const c = j === k - 1 ? sg.b : !r.rev ? findCut(r.poly, r.ax, st, sg.b, Ap / k, area) : findRev(r.poly, r.ax, sg.b, st, Ap / k, area);
+            lots.push({ ri: sg.ri, a: st, b: c, sh: [{ u: sg.u, amt: sg.amt / k }] }); st = c;
+          }
+        });
+        /* الجزء الصغير (أقل من الحد الأدنى للمساحة أو العرض) لا يصير قسيمة: يُضم لجاره في نفس الصف — لنفس المالك إن أمكن، وإلا قسيمة مشتركة */
+        const lotP = L => { const r = R2[L.ri]; return slab(r.poly, r.ax, Math.min(L.a, L.b), Math.max(L.a, L.b)); };
+        const small = L => { const g = lotP(L); return area(g) < Amin - 0.01 || Math.abs(L.b - L.a) < wmin - 1e-6 || minChord(g, 1 - R2[L.ri].ax) < wmin - 1e-6; };
+        let merged = 0;
+        for (let guard = 0; guard < 400; guard++) {
+          const i = lots.findIndex((L, j) => small(L) && ((j > 0 && lots[j - 1].ri === L.ri) || (j < lots.length - 1 && lots[j + 1].ri === L.ri)));
+          if (i < 0) break;
+          const L = lots[i], Pv = i > 0 && lots[i - 1].ri === L.ri ? lots[i - 1] : null, Nx = i < lots.length - 1 && lots[i + 1].ri === L.ri ? lots[i + 1] : null;
+          const same = X => X && X.sh.some(x => L.sh.some(y => y.u === x.u));
+          const T = same(Pv) ? Pv : same(Nx) ? Nx : (Pv && Nx) ? (lotA(Pv) <= lotA(Nx) ? Pv : Nx) : (Pv || Nx);
+          const f = Math.min(i, lots.indexOf(T)), A1 = lots[f], A2 = lots[f + 1];
+          const sh = A1.sh.map(x => ({ ...x }));
+          A2.sh.forEach(x => { const e = sh.find(y => y.u === x.u); if (e) e.amt += x.amt; else { sh.push({ ...x }); } });
+          if (sh.length > A1.sh.length || sh.length > A2.sh.length) merged++;
+          lots.splice(f, 2, { ri: A1.ri, a: A1.a, b: A2.b, sh });
+        }
+        const cnt = new Map(), seen = new Map();
+        lots.forEach(L => { if (L.sh.length === 1) cnt.set(L.sh[0].u, (cnt.get(L.sh[0].u) || 0) + 1); });
+        const Vo = V || 1;
+        lots.forEach(L => {
+          const r = R2[L.ri], lo = Math.min(L.a, L.b), hi = Math.max(L.a, L.b), lp = slab(r.poly, r.ax, lo, hi);
+          if (!lp.length) return;
+          const due = L.sh.reduce((t, x) => t + x.amt, 0);
+          const mem = [];
+          L.sh.forEach(x => x.u.members.forEach(m => { const a = x.amt * m.frac / x.u.frac, e = mem.find(y => y.idx === m.idx); if (e) e.frac += a / Vo; else mem.push({ ...m, f0: m.f0 != null ? m.f0 : m.frac, frac: a / Vo }); }));
+          let unit;
+          if (L.sh.length === 1) {
+            const u = L.sh[0].u, nn = cnt.get(u) || 1, j = (seen.get(u) || 0) + 1; seen.set(u, j);
+            unit = { ...u, frac: due / Vo, tag: nn > 1 ? u.tag + '/' + j : u.tag, members: mem, nLots: nn };
+          } else {
+            mem.sort((a, b) => a.idx - b.idx);
+            unit = { frac: due / Vo, idx: mem[0].idx, tag: L.sh.map(x => x.u.tag).join('+'), name: 'مشتركة: ' + mem.map(m => shortName(m.o.name)).join('، '), members: mem, pos: null, shared: true };
+          }
+          const shp = shapeOf(lp, r.ax, hi - lo);
+          parcels.push({ kind: 'owner', o: unit, poly: lp.map(r.pc.from), multiDue: due, widthPre: shp.wid, shape: shp });
+        });
+        return { parcels, merged, nLots: lots.length };
+      }
+      /* تقييم شكل القسيمة: نسبة العمق للعرض، الانتظام (قربها من المستطيل)، الزوايا الحادة، عدد الأضلاع */
+      function simp(poly) {
+        const p = poly.slice(); let ch = true;
+        while (ch && p.length > 3) {
+          ch = false;
+          for (let i = 0; i < p.length; i++) {
+            const a = p[(i + p.length - 1) % p.length], b = p[i], c = p[(i + 1) % p.length];
+            const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+            if (l1 < 0.05 || l2 < 0.05 || Math.abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) / (l1 * l2) < 0.05) { p.splice(i, 1); ch = true; break; }
+          }
+        }
+        return p;
+      }
+      function minAngle(p) {
+        const sg = Math.sign(sarea(p)) || 1; let m = 180;
+        for (let i = 0; i < p.length; i++) {
+          const a = p[(i + p.length - 1) % p.length], b = p[i], c = p[(i + 1) % p.length];
+          const v1 = [a[0] - b[0], a[1] - b[1]], v2 = [c[0] - b[0], c[1] - b[1]];
+          let ang = Math.acos(Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2) || 1)))) * 180 / Math.PI;
+          if (((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) * sg < 0) ang = 360 - ang;
+          m = Math.min(m, ang);
+        }
+        return m;
+      }
+      function shapeOf(poly, ax, len) {
+        const A = area(poly); if (A < 0.01) return { sc: 0, ratio: 99, wid: 0, dep: 0, rect: 0, ma: 0, nv: 0 };
+        const wid = minChord(poly, 1 - ax), fr = Math.max(len, 1e-6), dep = A / fr, ratio = Math.max(dep / fr, fr / dep);
+        const b = bbox(poly), rect = A / ((b[2] - b[0]) * (b[3] - b[1]) || 1), p = simp(poly), ma = minAngle(p), nv = p.length;
+        const sc = 100 - Math.min(45, Math.max(0, ratio - 1.5) * 22) - Math.min(35, (1 - rect) * 70) - (ma < 70 ? Math.min(25, (70 - ma) * 0.6) : 0) - Math.min(15, Math.max(0, nv - 5) * 4);
+        return { sc: Math.max(0, sc), ratio, wid, dep, rect, ma, nv };
+      }
+      /* تجربة كل البدائل وتقييمها */
+      const mbb = bbox(Rg), ivA = longest(Rg, 1, (s + mbb[3]) / 2), ivB = longest(Rg, 0, (mbb[0] + mbb[2]) / 2);
+      const AsList = [...new Set([base * 1.15, base * 1.6].map(x => Math.round(x)))];
+      const cands = [];
+      function evalC(sp, As, ord) {
+        const f = Math.max(wmin, Math.sqrt(As / 1.25)), dT = As / f;
+        const Lay = layout(sp, dT); if (!Lay) return null;
+        const Ra = [...Lay.roadsM, ...Lay.waste].reduce((t, g) => t + area(g), 0), d = ded(Ra);
+        const res = build(Lay, ord || owners, d.M, As);
+        const segs = [...ringSegs(Lay.roadsM), ...segsL];
+        let sA = 0, sW = 0, viol = 0, minW = Infinity, maxR = 0; const vt = { a: 0, w: 0, f: 0 };
+        res.parcels.forEach(pc => {
+          if (pc.kind !== 'owner') return;
+          const A = area(pc.poly), fr = Math.max(edgeOn(pc.poly, 1, s), onLen(pc.poly, segs));
+          sA += pc.shape.sc * A; sW += A; minW = Math.min(minW, pc.shape.wid); maxR = Math.max(maxR, pc.shape.ratio);
+          if (minParcel > 0 && A < minParcel - 0.01) { viol++; vt.a++; }
+          if (minWidth > 0 && pc.shape.wid < minWidth - 1e-6) { viol++; vt.w++; }
+          if (fr < Math.max(minFront || 0, 1) - 1e-6) { viol++; vt.f++; }
+        });
+        if (d.over) viol++;
+        return { sp, As, Lay, Ra, d, res, shape: sW ? sA / sW : 0, eff: 1 - (W + Ra) / T, viol, vt, minW, maxR, key: sp.fam + sp.n + (sp.conn || '') + '|' + As };
+      }
+      for (const As of AsList) {
+        const f = Math.max(wmin, Math.sqrt(As / 1.25)), dT = As / f, specs = [{ fam: '0', n: 0 }];
+        if (w > 0 && ivA) { const nA = Math.round((ivA[1] - ivA[0]) / (2 * dT + w)); for (const n of [nA - 1, nA, nA + 1]) if (n >= 1) specs.push({ fam: 'A', n }); }
+        if (w > 0 && ivB) { const nB = Math.round((ivB[1] - s) / (2 * dT + w)); for (const n of [nB - 1, nB, nB + 1]) if (n >= 1) for (const conn of ['L', 'R', 'LR']) specs.push({ fam: 'B', n, conn }); }
+        for (const sp of specs) { let c = null; try { c = evalC(sp, As); } catch (e) { c = null; } if (c && c.res.nLots) cands.push(c); }
+      }
+      if (typeof window !== 'undefined') window.__smc = cands.map(c => [c.key, Math.round(c.shape), c.viol, JSON.stringify(c.vt), +c.eff.toFixed(3), c.res.nLots]);
+      if (!cands.length) return [];
+      const eMin = Math.min(...cands.map(c => c.eff)), eMax = Math.max(...cands.map(c => c.eff));
+      cands.forEach(c => { c.effN = eMax - eMin > 1e-9 ? (c.eff - eMin) / (eMax - eMin) * 100 : 100; c.bal = 0.7 * c.shape + 0.3 * c.effN; });
+      const goodShape = cands.some(c => c.shape >= 65 && c.viol === 0);
+      const sorters = [
+        (a, b) => a.viol - b.viol || (goodShape ? (a.shape < 65) - (b.shape < 65) : 0) || b.eff - a.eff || b.shape - a.shape,
+        (a, b) => a.viol - b.viol || b.shape - a.shape || b.eff - a.eff,
+        (a, b) => a.viol - b.viol || (a.shape < 70) - (b.shape < 70) || b.bal - a.bal
+      ];
+      const used = new Set(), picks = [];
+      sorters.forEach(fn => { const l = cands.slice().sort(fn); const okc = x => x.viol <= l[0].viol && (x.shape >= 60 || l[0].shape < 60); const c = l.find(x => !used.has(x.key.split('|')[0]) && okc(x)) || l.find(x => !used.has(x.key) && okc(x)) || l[0]; used.add(c.key); used.add(c.key.split('|')[0]); picks.push(c); });
+      const titles = ['المقترح الأول: أفضل استغلال للمساحة', 'المقترح الثاني: أفضل انتظام للقسائم', 'المقترح الثالث: أفضل توازن'];
+      const f1 = x => (Math.round(x * 10) / 10).toString();
+      return picks.map((c0, i) => {
+        let c = c0;
+        if (hasPos && owners.length > 1) {   // مواقع مطلوبة لبعض الملاك: نجرب ترتيبات مختلفة
+          const r = optimize(ord => { const e = evalC(c0.sp, c0.As, ord); return e ? { parcels: e.res.parcels, e } : null; });
+          if (r && r.e) c = r.e;
+        }
+        const sp = c.sp, L0 = c.Lay;
+        const lay = sp.fam === '0' ? 'بدون طرق داخلية: صف قسائم واحد على الشارع بعمق ' + f1(L0.d) + ' م.'
+          : sp.fam === 'A' ? `${L0.n === 1 ? 'طريق داخلي' : L0.n + ' طرق داخلية'} بعرض ${w} م متعامدة على الشارع، والقسائم على جانبيها بعمق ${f1(L0.d)} م.`
+          : `${L0.n === 1 ? 'طريق داخلي موازٍ' : L0.n + ' طرق داخلية موازية'} للشارع بعرض ${w} م، تتصل بالشارع بوصلة ${sp.conn === 'LR' ? 'من الجانبين (بلا نهايات مغلقة)' : 'جانبية'}، والقسائم صفوف بعمق ${f1(L0.d)} م.`;
+        const parcels = c.res.parcels.slice();
+        L0.roadsM.forEach((g, j) => parcels.push({ kind: 'road', poly: g, nolabel: j > 0 }));
+        L0.waste.forEach(g => parcels.push({ kind: 'widen', sub: 'frag', poly: g }));
+        const pr = { key: 'q' + (i + 1), smart: true, title: titles[i], desc: lay + ` القسيمة النموذجية نحو ${c.As} م²، وعدد القسائم ${c.res.nLots}` + (c.res.merged ? `، ومنها ${c.res.merged} قسيمة مشتركة جُمعت فيها أجزاء صغيرة.` : '.'),
+          d: c.d, roadArea: c.Ra, parcels, roadSegs: ringSegs(L0.roadsM), widthAx: 1, score: c.shape, eff: c.eff, nLots: c.res.nLots, merged: c.res.merged, minW: c.minW, maxR: c.maxR, tried: cands.length };
+        if (c.viol) {
+          const why = [];
+          if (c.vt.a) why.push(`${c.vt.a} قسيمة أصغر من ${minParcel} م²`);
+          if (c.vt.w) why.push(`${c.vt.w} قسيمة عرضها أقل من ${minWidth} م`);
+          if (c.vt.f) why.push(`${c.vt.f} قسيمة بلا واجهة كافية على طريق`);
+          if (c.d.over) why.push('الطرق تتجاوز نسبة الاقتطاع');
+          pr.conflict = `جُرِّب ${cands.length} بديلاً لتخطيط الطرق والقسائم، وتعذّر تحقيق كل الشروط معاً في ${cands.every(x => x.viol) ? 'جميعها' : 'هذا المقترح'}: ${why.join('، ')}. ` + (c.vt.w || c.vt.a ? 'الأرض أو بعض الحصص لا تتسع لهذه الحدود مع عرض الطريق الحالي؛ خفّض أقل عرض/مساحة، أو غيّر عرض الطريق، أو فعّل الدمج.' : '');
+        }
+        return pr;
+      });
+    }
+    if (cfg.only === 'smart') smartPlan().forEach(p => props.push(p));
     for (const pr of props) {
       if (pr.multi) { pr.parcels.forEach(pc => { if (pc.kind === 'owner') pc.multiDue = pc.partDue; }); }
       if (!pr.multi && widen.length) pr.parcels.push({ kind: 'widen', poly: widen });
@@ -655,7 +930,7 @@ const G = (() => {
       pr.muniArea = pr.parcels.filter(x => x.kind === 'muni').reduce((a, x) => a + x.area, 0);
     }
     props.forEach(pr => { pr.splits = pr.parcels.filter(x => x.kind === 'owner' && x.part).length; });
-    props.sort((a, b) => a.issues - b.issues || a.splits - b.splits || b.rect - a.rect);
+    props.sort((a, b) => (a.smart && b.smart) ? a.key.localeCompare(b.key) : (a.issues - b.issues || a.splits - b.splits || b.rect - a.rect));
     return { T, W, widen, proposals: props, vOn, apprArea, fragArea, roadsOnly: !!cfg.roadsOnly };
   }
   // تقسيم يدوي: الضلع على محور u من 0 إلى len، والخطوط عمودية عليه
@@ -1175,6 +1450,8 @@ function compute() {
     out.sort((a, b) => a.issues - b.issues || a.merges - b.merges || b.rect - a.rect);
     R = meta; R.proposals = out;
   } else R = doPlan(owners);
+  /* الإفراز الذكي (3 مقترحات) يُعرض أولاً، والطرق القديمة تبقى بعده */
+  try { const sm = doPlan(owners, 'smart'); if (sm.proposals.length) R.proposals = [...sm.proposals, ...R.proposals]; } catch (e) { console.error(e); }
   R.pct = pct;
   R.proposals.forEach(pr => {
     let muniN = 0;
@@ -1255,12 +1532,31 @@ function renderProposals() {
     <button class="card" role="listitem" data-k="${p.key}" aria-pressed="${p.key === S.sel}">
       ${svgPlan(S.boundary, p.items, { small: true, street: S.street, ext: [...extSet()], hl: p.manual ? p.edge : null, aria: p.title })}
       <span class="t">${esc(p.title)}</span>
-      <span class="row" style="gap:4px">${p.manual ? '<span class="chip ok">يدوي</span>' : i === R.proposals.findIndex(q => !q.manual) ? '<span class="chip best">الأنسب</span>' : ''}${p.issues ? `<span class="chip bad">${p.issues} ملاحظة</span>` : '<span class="chip ok">يحقق الشروط</span>'}</span>
-    </button>`).join('') + `</div>`;
+      <span class="row" style="gap:4px">${p.manual ? '<span class="chip ok">يدوي</span>' : p.smart ? `<span class="chip best">جودة ${Math.round(p.score)}%</span>` : '<span class="chip">شرائح</span>'}${p.issues ? `<span class="chip bad">${p.issues} ملاحظة</span>` : '<span class="chip ok">يحقق الشروط</span>'}</span>
+    </button>`).join('') + `</div>` + cmpTable();
   box.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => { S.sel = c.dataset.k; save(); renderProposals(); }));
   renderResult();
 }
 
+/* مقارنة المقترحات الذكية جنباً إلى جنب */
+function cmpTable() {
+  const L = R.proposals.filter(p => p.smart); if (!L.length) return '';
+  const own = p => p.items.filter(x => x.kind === 'owner');
+  const row = (t, f) => `<tr><th>${t}</th>${L.map(p => `<td class="n">${f(p)}</td>`).join('')}</tr>`;
+  return `<div class="tablebox cmp" style="margin-top:10px"><table>
+    <thead><tr><th></th>${L.map((p, i) => `<th>${['١ استغلال', '٢ انتظام', '٣ توازن'][i] || p.title}</th>`).join('')}</tr></thead><tbody>
+    ${row('الجودة الهندسية', p => Math.round(p.score) + '%')}
+    ${row('عدد القسائم', p => own(p).length)}
+    ${row('أصغر مساحة م²', p => fmt(Math.min(...own(p).map(x => x.area)), 0))}
+    ${row('أصغر عرض م', p => fmt(Math.min(...own(p).map(x => x.width)), 1))}
+    ${row('أكبر نسبة عمق:عرض', p => fmt(p.maxR, 1) + ':1')}
+    ${row('قسائم مشتركة', p => own(p).filter(x => x.o.members.length > 1).length)}
+    ${row('مساحة الطرق م²', p => fmt(p.roadArea + R.W, 0))}
+    ${row('مجموع الاقتطاع م²', p => fmt(p.d.D, 0))}
+    ${row('قسيمة البلدية (المتبقي) م²', p => fmt(p.muniArea, 0))}
+    ${row('ملاحظات', p => p.issues ? `<span class="bad">${p.issues}</span>` : '✓')}
+    </tbody></table></div>`;
+}
 function renderResult() {
   const p = R.proposals.find(x => x.key === S.sel); if (!p) return;
   if (p.manual) return renderManual(p);
@@ -1270,7 +1566,7 @@ function renderResult() {
     <td></td><td class="hint">↳ ${esc(m.o.name)}</td>
     <td class="n">${fmt(m.frac * 100)}%</td><td class="n">${fmt(d.ownersTotal * m.frac)}</td>
     <td class="n">${fmt(it.area * m.frac / it.o.frac)}</td>${vOn ? '<td></td>' : ''}
-    <td colspan="3" class="hint">حصته في القسيمة المشتركة</td></tr>`).join('');
+    <td colspan="${p.smart ? 4 : 3}" class="hint">حصته في القسيمة المشتركة</td></tr>`).join('');
   const rows = owners.map(it => `<tr>
     <td class="n">${it.tag}</td>
     <td><span class="sw" style="background:${oColor(it.ci, .45)}"></span>${esc(it.o.members.length > 1 ? 'قسيمة مشتركة' : it.o.name)}</td>
@@ -1279,10 +1575,10 @@ function renderResult() {
     <td class="n">${fmt(it.area)}</td>
     ${vOn ? `<td class="n">${fmt(it.value, 0)}</td>` : ''}
     <td class="n">${fmt(it.front)}${it.fMain > 0.01 && it.fRoad > 0.01 ? ' <span class="hint">(شارعين)</span>' : it.fRoad > 0.01 && it.fMain < 0.01 ? ' <span class="hint">(طريق داخلي)</span>' : ''}</td>
-    <td class="n">${fmt(it.width)}</td>
+    <td class="n">${fmt(it.width)}</td>${p.smart ? `<td class="n">${it.shape ? Math.round(it.shape.sc) + '% · ' + fmt(it.shape.ratio, 1) + ':1' : ''}</td>` : ''}
     <td class="${it.issues.length ? 'bad' : ''}">${it.issues.join('، ') || ('✓' + (it.o.posText ? ' ' + it.o.posText : ''))}</td></tr>` + subRows(it)).join('');
   const muni = p.items.filter(x => x.kind === 'muni');
-  const muniRow = muni.length ? `<tr><td class="n">ب</td><td><span class="sw" style="background:color-mix(in srgb,var(--muni) 45%,transparent)"></span>قسيمة البلدية</td><td></td><td class="n">${fmt(d.M)}</td><td class="n">${fmt(p.muniArea)}</td>${vOn ? '<td></td>' : ''}<td></td><td></td><td></td></tr>` : '';
+  const muniRow = muni.length ? `<tr><td class="n">ب</td><td><span class="sw" style="background:color-mix(in srgb,var(--muni) 45%,transparent)"></span>قسيمة البلدية</td><td></td><td class="n">${fmt(d.M)}</td><td class="n">${fmt(p.muniArea)}</td>${vOn ? '<td></td>' : ''}<td></td><td></td>${p.smart ? '<td></td>' : ''}<td></td></tr>` : '';
   const notes = [];
   const grp = owners.filter(it => it.o.members.length > 1);
   const split = [...new Set(owners.filter(it => it.part).map(it => it.o.tag))];
@@ -1295,6 +1591,12 @@ function renderResult() {
   else if (p.roadArea > 0 || R.W > 0) notes.push(`الاقتطاع المسبق (الأحمر) والتوسعة والفضلات (${fmt(R.W)} م²) + الطريق الداخلي (${fmt(p.roadArea)} م²) + قسيمة البلدية (${fmt(p.muniArea)} م²) = ${fmt(d.D)} م²، أي ${fmt(d.D / R.T * 100, 1)}% من الأرض بالضبط.`);
   if (R.fragArea > R.T * 0.03) notes.push(`<span class="warn">الاقتطاع المسبق (الأحمر) فصل جزءاً من الأرض (${fmt(R.fragArea)} م²) واعتُبر فضلات طرق. إذا كان الجزء المفصول كبيراً ويجب إفرازه، أخبرني.</span>`);
   if (vOn) notes.push('القسمة هنا بالقيمة: من يأخذ قطعة في الخلف يأخذ مساحة أكبر تعويضاً. «المستحقة» هي المساحة لو كانت القسمة بالمساحة فقط.');
+  if (p.smart) {
+    const multi = [...new Set(owners.filter(it => it.o.nLots > 1).map(it => it.o.tag.split('/')[0]))];
+    notes.unshift('كل قسيمة مقيّمة هندسياً (الشكل %): قربها من المستطيل، ونسبة العمق إلى العرض (الأفضل 1:1 إلى 1.5:1)، والزوايا الحادة، وعدد الأضلاع.');
+    if (multi.length) notes.push(`حصص الملاك ${multi.join('، ')} كبيرة، فقُسمت كل حصة إلى عدة قسائم متجاورة منتظمة (مثل 3/1 و3/2) بدل شريحة واحدة طويلة.`);
+    if (p.conflict) notes.push(`<span class="bad">${esc(p.conflict)}</span>`);
+  }
   if (p.issues) notes.push(`<span class="bad">في هذا الاقتراح ${p.issues} ملاحظة. جرّب تغيير ترتيب الملاك، أو عرض الطريق، أو اقتراحاً آخر.</span>`);
   $('result').innerHTML = `
     <div class="panel" style="padding:0;border:0;background:none">
@@ -1311,19 +1613,35 @@ function renderResult() {
         <span><b>صافي للملاك</b><span class="num">${fmt(d.ownersTotal)}</span></span>
       </div>
       <div class="tablebox"><table>
-        <thead><tr><th>#</th><th>المالك</th><th>النسبة</th><th>المستحقة م²</th><th>الفعلية م²</th>${vOn ? '<th>القيمة (دينار)</th>' : ''}<th>الواجهة م</th><th>أقل عرض م</th><th>ملاحظات</th></tr></thead>
+        <thead><tr><th>#</th><th>المالك</th><th>النسبة</th><th>المستحقة م²</th><th>الفعلية م²</th>${vOn ? '<th>القيمة (دينار)</th>' : ''}<th>الواجهة م</th><th>أقل عرض م</th>${p.smart ? '<th>الشكل · النسبة</th>' : ''}<th>ملاحظات</th></tr></thead>
         <tbody>${rows}${muniRow}</tbody></table></div>
+      ${p.smart ? ownerSum(p) : ''}
       ${notes.length ? `<div class="notes">${notes.map(n => `<div>${n}</div>`).join('')}</div>` : ''}
       <div class="row">
         <button class="primary" id="exDXF">تنزيل DXF للأوتوكاد</button>
         <button class="primary" id="exPDF">تقرير PDF</button>
         <button id="exCSV">جدول CSV</button>
+        ${p.smart ? '<button id="exEdit">✏️ عدّل هذا المقترح يدوياً</button>' : ''}
       </div>
       <p class="hint" style="margin:0">ملف DXF بنفس إحداثيات رسمتك، فيفتح فوق الأرض مباشرة. الطبقات: IFRAZ_PARCELS، IFRAZ_ROAD، IFRAZ_MUNI، IFRAZ_TEXT.</p>
     </div>`;
   $('exDXF').addEventListener('click', () => exportDXF(p));
   $('exPDF').addEventListener('click', () => exportPDF(p));
   $('exCSV').addEventListener('click', () => exportCSV(p));
+  if ($('exEdit')) $('exEdit').addEventListener('click', () => window.ifzDesign && ifzDesign({
+    roads: p.items.filter(x => x.kind === 'road' || (x.kind === 'widen' && x.sub !== 'appr')).map(x => x.poly).filter(r => r.length > 2),
+    parcels: p.items.filter(x => (x.kind === 'owner' || x.kind === 'muni') && x.poly.length > 2).map(x => ({ ring: x.poly, t: x.kind === 'muni' ? 'pub' : 'res' }))
+  }));
+}
+/* مجموع ما أخذه كل مالك من كل قسائمه — للتأكد أن الحصص مطابقة */
+function ownerSum(p) {
+  const by = new Map();
+  p.items.filter(x => x.kind === 'owner').forEach(it => it.o.members.forEach(m => {
+    const e = by.get(m.idx) || { name: m.o.name, due: p.d.ownersTotal * (m.f0 != null ? m.f0 : m.frac), got: 0, tags: [] };
+    e.got += it.area * m.frac / it.o.frac; e.tags.push(it.tag); by.set(m.idx, e);
+  }));
+  const rows = [...by.entries()].sort((a, b) => a[0] - b[0]).map(([i, e]) => `<tr><td class="n">${i + 1}</td><td>${esc(e.name)}</td><td class="n">${fmt(e.due)}</td><td class="n">${fmt(e.got)}</td><td class="n ${Math.abs(e.got - e.due) > Math.max(0.1, e.due * 0.003) ? 'bad' : ''}">${fmt(e.got - e.due)}</td><td>${e.tags.join('، ')}</td></tr>`).join('');
+  return `<h3 style="font-size:16px;margin:12px 0 4px">مجموع كل مالك</h3><div class="tablebox"><table><thead><tr><th>#</th><th>المالك</th><th>المستحق م²</th><th>المخصص م²</th><th>الفرق</th><th>قسائمه</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderManual(p) {

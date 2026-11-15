@@ -151,6 +151,8 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
     <div class="row" id="extEdges"></div>
   </div>
   <div id="landView"></div>
+  <button class="primary" id="designBtn" type="button" style="width:100%;margin-top:10px;padding:13px;font-size:17px">✏️ صمّم الإفراز يدوياً على الصورة الجوية</button>
+  <p class="hint">ارسم الشوارع بإصبعك فوق الصورة الجوية، ثم قسّم كل بلوك إلى قسائم (بالعدد أو بالواجهة والعمق)، واقسم أو ادمج، واختر نوع كل قطعة (سكني، تجاري، خضراء، مرفق عام). يعطيك مساحة كل قسيمة ونسبة الشوارع، ويصدّر PDF و DXF.</p>
 </section>
 
 <section class="panel">
@@ -754,6 +756,8 @@ function svgPlan(B, items, opt = {}) {
   const pth = p => 'M' + p.map(q => v.x(q[0]).toFixed(1) + ',' + v.y(q[1]).toFixed(1)).join('L') + 'Z';
   const pid = 'h' + (patId++);
   let s = `<svg class="plan" viewBox="0 0 ${Wd} ${v.H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(opt.aria || 'مخطط الأرض')}">`;
+  const AE = window.ifzAerial ? ifzAerial(B, () => { renderLand(); try { if (R) renderProposals(); } catch (e) {} }) : null;
+  if (AE) { const x0 = v.x(AE.box[0]), y0 = v.y(AE.box[3]), x1 = v.x(AE.box[2]), y1 = v.y(AE.box[1]); s += `<clipPath id="c${pid}"><rect width="${Wd}" height="${v.H.toFixed(0)}"/></clipPath><image clip-path="url(#c${pid})" href="${AE.url}" x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${(x1 - x0).toFixed(1)}" height="${(y1 - y0).toFixed(1)}" preserveAspectRatio="none" opacity=".9"/>`; }
   s += `<defs><pattern id="${pid}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="14" fill="var(--paper)"/><line x1="0" y1="0" x2="0" y2="14" stroke="var(--road)" stroke-width="5"/></pattern></defs>`;
   for (const it of items) {
     if (!it.poly.length) continue;
@@ -1548,8 +1552,11 @@ function changed(full) {
 }
 fillSettings();
 changed(true);
+$('designBtn').addEventListener('click', () => window.ifzDesign && ifzDesign());
 loadScript('lib/polygon-clipping.umd.min.js').then(() => changed(false)).catch(() => changed(false));
 </script>
 
+<script src="../geotoken.js"></script>
+<script src="design.js"></script>
 </body>
 </html>

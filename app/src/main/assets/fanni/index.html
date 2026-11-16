@@ -48,7 +48,7 @@ table.t input{width:100%}
 </style>
 </head>
 <body>
-<header><h1>🎨 تصميم الإفراز الفني</h1><a href="../ifraz/index.html">↩ الإفراز</a></header>
+<header><h1>🎨 تصميم الإفراز الفني</h1><a href="../home.html">🏠 الرئيسية</a></header>
 <main>
   <section class="card" id="cFile"><h2><span class="n">1</span>ملف المخطط</h2>
     <div class="row">
@@ -839,7 +839,7 @@ $("eDxf").onclick = () => {
 /* ======================= البدء ======================= */
 bindSettings(); showLayers();
 if (/from=design/.test(location.search)) setTimeout(() => $("bFromDesign").click(), 50);
-window.__back = () => { location.href = "../ifraz/index.html"; return 1; };
+window.__back = () => { if (/ifraz\//.test(document.referrer)) location.href = "../ifraz/index.html"; else location.href = "../home.html"; return 1; };
 (() => { const t = localStorage.getItem("fanni-dxf"); if (t) { const nm = localStorage.getItem("fanni-dxf-name") || "آخر ملف"; const keep = JSON.stringify({ roles: ST.roles, owners: ST.owners, roadOf: ST.roadOf, colors: ST.colors, off: ST.off, geo: ST.geo });
   RAW = parseDXF(t); RAW.name = nm; Object.assign(ST, JSON.parse(keep)); showLayers(); $("fileInfo").hidden = false; $("fileInfo").textContent = "📄 " + nm + " (آخر ملف)"; build(); } })();
 </script>

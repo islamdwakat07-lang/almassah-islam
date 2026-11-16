@@ -428,8 +428,8 @@ const PAL = ["#5fbf2f", "#d9a21e", "#18a58a", "#9a4fd6", "#2f7fe0", "#e0632f", "
 const lotColor = l => ST.colors[l.no] || PAL[(l.no - 1) % PAL.length];
 function renderLotTable() {
   if (!M) { $("lotT").innerHTML = ""; return; }
-  $("lotT").innerHTML = `<tr><th>رقم</th><th>المساحة م²</th><th>مساحة الطرق م²</th><th>اسم المالك</th><th>اللون</th></tr>` +
-    M.lots.map(l => `<tr><td>${l.no}</td><td>${fmt(l.a)}</td><td><input data-r="${l.no}" type="number" step="0.01" value="${ST.roadOf[l.no] ?? ""}" placeholder="—" style="width:80px"></td><td><input data-o="${l.no}" value="${esc(ST.owners[l.no] || "")}" placeholder="فارغ للتعبئة اليدوية"></td><td><input type="color" data-c="${l.no}" value="${lotColor(l)}"></td></tr>`).join("");
+  $("lotT").innerHTML = `<tr><th>رقم</th><th>المساحة م²</th><th>اسم المالك</th><th>اللون</th></tr>` +
+    M.lots.map(l => `<tr><td>${l.no}</td><td>${fmt(l.a)}</td><td><input data-o="${l.no}" value="${esc(ST.owners[l.no] || "")}" placeholder="فارغ للتعبئة اليدوية"></td><td><input type="color" data-c="${l.no}" value="${lotColor(l)}"></td></tr>`).join("");
   $("lotT").querySelectorAll("[data-o]").forEach(i => i.oninput = () => { ST.owners[i.dataset.o] = i.value; save(); render(); });
   $("lotT").querySelectorAll("[data-r]").forEach(i => i.oninput = () => { ST.roadOf[i.dataset.r] = i.value === "" ? null : +i.value; save(); render(); });
   $("lotT").querySelectorAll("[data-c]").forEach(i => i.oninput = () => { ST.colors[i.dataset.c] = i.value; save(); render(); });
@@ -441,17 +441,20 @@ const SCALES = [100, 200, 250, 500, 750, 1000, 1250, 1500, 2000, 2500, 5000, 100
 function layout(pxW) {
   if (!M) return null;
   let [w, h] = PAPER[ST.paper] || PAPER.A3; if (ST.orient === "p") [w, h] = [h, w];
-  const k = pxW / w, panW = w * (+ST.panel || 29) / 100, m = h * 0.025;
-  const mapW = w - panW - 3 * m, mapH = h - 2 * m - h * 0.09;   // مساحة الرسم (يمين الهامش، وفوق مقياس الرسم)
+  const k = pxW / w, panW = w * (+ST.panel || 29) / 100, m = h * 0.025, band = h * 0.032;
+  // البرواز: منطقة الرسم يسار الهامش، وحوله شريط الإحداثيات
+  const F = [m + band, m + band, w - panW - 2 * m - band, h - m - band];
+  const mapW = F[2] - F[0], mapH = F[3] - F[1];
   const bb = bboxOf(M.boundary), ww = bb[2] - bb[0], wh = bb[3] - bb[1];
-  let sc = +ST.scale; const fitScale = Math.max(ww / mapW, wh / mapH) * 1000 * 1.06;
-  if (!sc) sc = SCALES.find(s => s >= fitScale) || Math.ceil(fitScale / 1000) * 1000;
+  // المقياس التلقائي: أكبر تكبير ممكن (القطعة تملأ البرواز مع هامش للعناصر)، مقرّب لقيمة مرتبة
+  let sc = +ST.scale; const fitScale = Math.max(ww / (mapW * 0.88), wh / (mapH * 0.77)) * 1000;
+  if (!sc) { const st = fitScale < 300 ? 10 : fitScale < 1000 ? 25 : fitScale < 3000 ? 50 : 100; sc = Math.ceil(fitScale / st) * st; }
   const mmPerM = 1000 / sc;
   const cx = (bb[0] + bb[2]) / 2 + (ST.off[0] || 0), cy = (bb[1] + bb[3]) / 2 + (ST.off[1] || 0);
-  const mapCx = m + mapW / 2, mapCy = m + mapH / 2;   // مركز منطقة الرسم على الورق (يسار)
+  const mapCx = (F[0] + F[2]) / 2, mapCy = (F[1] + F[3]) / 2 - mapH * 0.075;   // مركز البرواز (مع رفع بسيط فوق مقياس الرسم)
   const X = x => (mapCx + (x - cx) * mmPerM) * k, Y = y => (mapCy - (y - cy) * mmPerM) * k;
-  const worldBox = [cx - mapCx / mmPerM, cy - (h - mapCy) / mmPerM, cx + (w - mapCx) / mmPerM, cy + mapCy / mmPerM];
-  return { w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
+  const worldBox = [cx - (mapCx - F[0]) / mmPerM, cy - (F[3] - mapCy) / mmPerM, cx + (F[2] - mapCx) / mmPerM, cy + (mapCy - F[1]) / mmPerM];
+  return { w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, band, F, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
 }
 
 /* ======================= الرسم ======================= */
@@ -459,7 +462,10 @@ async function fontsReady() { try { await Promise.all(["700 20px Plex", "400 20p
 function drawSheet(cv, pxW, aer) {
   const L = layout(pxW); if (!L) return null;
   cv.width = L.W; cv.height = L.H; const g = cv.getContext("2d"), k = L.k, u = L.h / 100 * k;   // u = 1% من ارتفاع الورقة بالبكسل
-  g.fillStyle = "#2b3326"; g.fillRect(0, 0, L.W, L.H);
+  g.fillStyle = "#0e0e0f"; g.fillRect(0, 0, L.W, L.H);
+  const FX = L.F.map(v => v * k);
+  g.save(); g.beginPath(); g.rect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]); g.clip();
+  g.fillStyle = "#2b3326"; g.fillRect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]);
   if (aer && aer.img) { const b = aer.box; g.drawImage(aer.img, L.X(b[0]), L.Y(b[3]), L.X(b[2]) - L.X(b[0]), L.Y(b[1]) - L.Y(b[3])); }
   // تعتيم خفيف خارج الأرض ليبرز المخطط
   g.save(); g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.rect(0, 0, L.W, L.H); ring(g, L, M.boundary); g.fill("evenodd"); g.restore();
@@ -492,7 +498,9 @@ function drawSheet(cv, pxW, aer) {
   }
   M.lots.forEach(l => { g.beginPath(); ring(g, L, l.ring); g.lineJoin = "round"; g.lineWidth = 0.75 * u; g.strokeStyle = "rgba(255,255,255,.95)"; g.stroke(); g.lineWidth = 0.38 * u; g.strokeStyle = ST.border; g.stroke(); });
   // حدود الأرض الكلية
-  g.beginPath(); ring(g, L, M.boundary); g.lineWidth = 0.95 * u; g.strokeStyle = "#fff"; g.stroke(); g.lineWidth = 0.5 * u; g.strokeStyle = ST.border; g.setLineDash([2.2 * u, 0.6 * u]); g.stroke(); g.setLineDash([]);
+  g.save(); g.lineJoin = "round"; g.beginPath(); ring(g, L, M.boundary);
+  g.shadowColor = "rgba(0,0,0,.7)"; g.shadowBlur = 1.2 * u; g.lineWidth = 1.25 * u; g.strokeStyle = "#fff"; g.stroke(); g.shadowBlur = 0;
+  g.lineWidth = 0.72 * u; g.strokeStyle = ST.border; g.stroke(); g.lineWidth = 0.12 * u; g.strokeStyle = "rgba(255,255,255,.55)"; g.stroke(); g.restore();
   // أطوال الأضلاع
   if (ST.len) {
     const fs = 1.55 * u; g.font = `700 ${fs}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
@@ -529,8 +537,10 @@ function drawSheet(cv, pxW, aer) {
     const r = 0.95 * u; g.font = `700 ${1.05 * u}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
     M.V.forEach((p, i) => { const x = L.X(p[0]), y = L.Y(p[1]); sh(0.5, 0.05, 0.12); g.beginPath(); g.arc(x, y, r, 0, 7); g.fillStyle = "#fff"; g.fill(); nosh(); g.lineWidth = 0.22 * u; g.strokeStyle = ST.border; g.stroke(); g.fillStyle = "#1a1a1a"; g.fillText(String(i + 1), x, y + 0.05 * u); });
   }
-  if (ST.north) northArrow(g, L.m * k + 7 * u, L.m * k + 7.5 * u, 6 * u);
+  if (ST.north) northArrow(g, FX[2] - 7 * u, FX[3] - 7.5 * u, 4.2 * u);
   scaleBar(g, L, u);
+  g.restore();
+  frameCoords(g, L, u, FX);
   panel(g, L, u);
   return L;
 }
@@ -556,10 +566,40 @@ function northArrow(g, x, y, R) {
   [["N", 0, -R * 1.22], ["S", 0, R * 1.22], ["E", R * 1.22, 0], ["W", -R * 1.22, 0]].forEach(([t, a, b]) => { g.strokeText(t, a, b); g.fillStyle = "#fff"; g.fillText(t, a, b); });
   g.restore();
 }
+/* البرواز: خط ذهبي مزدوج، وعلى محيطه قيم الإحداثيات (X أعلى وأسفل، Y يمين ويسار)، وتقاطعات خفيفة داخل الرسم */
+function frameCoords(g, L, u, FX) {
+  const k = L.k, [x0, y0, x1, y1] = FX, wb = L.worldBox, b = L.band * k;
+  const stepM = niceStep((wb[2] - wb[0]) / 6);
+  g.save();
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 0.1 * u;
+  for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
+    const px = L.X(X), py = L.Y(Y), c = 0.9 * u; if (px < x0 + 2 * u || px > x1 - 2 * u || py < y0 + 2 * u || py > y1 - 2 * u) continue;
+    g.beginPath(); g.moveTo(px - c, py); g.lineTo(px + c, py); g.moveTo(px, py - c); g.lineTo(px, py + c); g.stroke();
+  }
+  g.fillStyle = "#0b0b0b"; g.beginPath(); g.rect(x0 - b, y0 - b, x1 - x0 + 2 * b, y1 - y0 + 2 * b); g.rect(x0, y0, x1 - x0, y1 - y0); g.fill("evenodd");
+  const gl = gold(g, x0 - b, y0 - b, x1 + b, y1 + b);
+  g.strokeStyle = gl; g.lineWidth = 0.45 * u; g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  g.lineWidth = 0.18 * u; g.strokeRect(x0 - b, y0 - b, x1 - x0 + 2 * b, y1 - y0 + 2 * b);
+  g.font = `700 ${1.2 * u}px Plex, sans-serif`; g.fillStyle = "#f3d27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.direction = "ltr";
+  const tk = 0.9 * u, lab = v => Math.round(v).toLocaleString("en-US");
+  for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) {
+    const px = L.X(X); if (px < x0 + 6 * u || px > x1 - 4 * u) continue;
+    g.fillRect(px - 0.08 * u, y0 - tk, 0.16 * u, tk); g.fillRect(px - 0.08 * u, y1, 0.16 * u, tk);
+    g.fillText(lab(X), px, y0 - b * 0.55); g.fillText(lab(X), px, y1 + b * 0.55);
+  }
+  for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
+    const py = L.Y(Y); if (py < y0 + 4 * u || py > y1 - 4 * u) continue;
+    g.fillRect(x0 - tk, py - 0.08 * u, tk, 0.16 * u); g.fillRect(x1, py - 0.08 * u, tk, 0.16 * u);
+    [[x0 - b * 0.55, -Math.PI / 2], [x1 + b * 0.55, Math.PI / 2]].forEach(([px, rt]) => { g.save(); g.translate(px, py); g.rotate(rt); g.fillText(lab(Y), 0, 0); g.restore(); });
+  }
+  g.font = `400 ${0.95 * u}px Plex, sans-serif`; g.fillStyle = "rgba(243,210,122,.8)"; g.textAlign = "left";
+  g.fillText(M.sr === 2039 ? "ITM" : M.sr === 28191 ? "Palestine 1923" : "Local", x0 - b + 0.6 * u, y1 + b * 0.55);
+  g.restore();
+}
 function niceStep(v) { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
 function scaleBar(g, L, u) {
-  const k = L.k, maxM = L.mapW * 0.42 / L.mmPerM, st = niceStep(maxM / 5), n = 5, segMm = st * L.mmPerM, totMm = segMm * n;
-  const bx = L.m * k, by = (L.h - L.m) * k - 7.6 * u, bw = totMm * k + 9 * u, bh = 7.6 * u;
+  const k = L.k, maxM = L.mapW * 0.36 / L.mmPerM, st = niceStep(maxM / 5), n = 5, segMm = st * L.mmPerM, totMm = segMm * n;
+  const bx = L.F[0] * k + 1.5 * u, by = L.F[3] * k - 9.1 * u, bw = totMm * k + 9 * u, bh = 7.6 * u;
   g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; rrect(g, bx, by, bw, bh, u); g.fillStyle = "rgba(10,10,10,.88)"; g.fill(); g.shadowBlur = 0; g.lineWidth = 0.3 * u; g.strokeStyle = gold(g, bx, by, bx + bw, by + bh); g.stroke();
   const x0 = bx + 4.5 * u, y0 = by + 3.6 * u, hh = 0.9 * u;
   for (let i = 0; i < n; i++) { g.fillStyle = i % 2 ? "#fff" : "#e2b54a"; g.fillRect(x0 + i * segMm * k, y0, segMm * k, hh); }
@@ -579,7 +619,7 @@ function panel(g, L, u) {
   };
   g.save(); g.direction = "rtl";
   // 1) معلومات الأرض
-  const many = M.lots.length > 14, rows = INFO.map(([kk, n]) => [n, infoVal(kk)]), rh = (many ? 2.35 : 2.85) * u, infoH = 7.5 * u + rows.length * rh + 1.2 * u;
+  const many = M.lots.length > 14, rows = INFO.map(([kk, n]) => [n, infoVal(kk)]), rh = (many ? 2.3 : 2.55) * u, infoH = 7.5 * u + rows.length * rh + 1.2 * u;
   card(top, infoH, "معلومات مخطط الإفراز");
   houseIcon(g, x0 + 4.5 * u, top + 3.4 * u, 2.6 * u);
   g.textBaseline = "middle";
@@ -592,7 +632,7 @@ function panel(g, L, u) {
   });
   // 3) مفتاح الخريطة (أسفل)
   const legItems = [["حدود القطعة الكلية", "bnd"], ["حدود القسائم", "lot"], ["الطرق المقترحة", "road"], ["المباني القائمة", "bld"], ["أشجار وزراعة", "tree"], ["ألوان القسائم", "cols"]];
-  const lc = many ? 2 : 1, lh = 3.0 * u, legH = 7.5 * u + Math.ceil(legItems.length / lc) * lh + 1 * u, legY = bottom - legH;
+  const lc = 2, lh = 2.9 * u, legH = 7.5 * u + Math.ceil(legItems.length / lc) * lh + 1 * u, legY = bottom - legH;
   card(legY, legH, "مفتاح الخريطة");
   legItems.forEach(([t, kind], i) => {
     const col = lc === 2 ? i % 2 : 0, row = lc === 2 ? Math.floor(i / 2) : i, cw2 = w / lc, cr = x1 - col * cw2;
@@ -603,37 +643,42 @@ function panel(g, L, u) {
   // 2) جدول القسائم (بين البطاقتين)
   const tY = top + infoH + 1.4 * u, tH = legY - 1.4 * u - tY;
   card(tY, tH, "جدول القسائم");
-  const lots = M.lots, n = lots.length, headH = 3.6 * u, sumH = 3.2 * u, avail = tH - 7.6 * u - headH - sumH - 1 * u;
+  const lots = M.lots, n = lots.length, headH = 3.6 * u, sumH = 3.2 * u, roadH = 3.0 * u, avail = tH - 7.6 * u - headH - sumH - roadH - 1.6 * u;
   let cols = 1, rowH = Math.min(3.0 * u, avail / Math.max(1, n));
   if (rowH < 2.0 * u) { cols = 2; rowH = Math.min(3.0 * u, avail / Math.ceil(n / 2)); }
   const fs = Math.max(0.8 * u, Math.min(1.4 * u, rowH * 0.6));
   const gw = (w - 3 * u - (cols - 1) * 1 * u) / cols;
   for (let cI = 0; cI < cols; cI++) {
     const gx1 = x1 - 1.5 * u - cI * (gw + 1 * u), gx0 = gx1 - gw, list = lots.slice(cI * Math.ceil(n / cols), (cI + 1) * Math.ceil(n / cols));
-    const cw = (cols > 1 ? [0.15, 0.3, 0.2, 0.35] : [0.17, 0.25, 0.22, 0.36]).map(f => f * gw); const cx = []; let xx = gx1; cw.forEach(c => { cx.push(xx - c / 2); xx -= c; });
+    const cw = (cols > 1 ? [0.18, 0.37, 0.45] : [0.18, 0.32, 0.5]).map(f => f * gw); const cx = []; let xx = gx1; cw.forEach(c => { cx.push(xx - c / 2); xx -= c; });
     const hy = tY + 7.6 * u; g.fillStyle = "rgba(226,181,74,.16)"; g.fillRect(gx0, hy, gw, headH);
     g.font = `700 ${Math.min(1.3 * u, fs * 1.05)}px Plex, sans-serif`; g.textAlign = "center"; g.fillStyle = "#f3d27a";
-    (cols > 1 ? ["رقم", "المساحة", "الطرق", "المالك"] : ["رقم", "المساحة m²", "الطرق m²", "اسم المالك"]).forEach((t, i) => g.fillText(fit(g, t, cw[i] - 0.6 * u), cx[i], hy + headH / 2));
+    (cols > 1 ? ["رقم", "المساحة m²", "المالك"] : ["رقم", "المساحة m²", "اسم المالك"]).forEach((t, i) => g.fillText(fit(g, t, cw[i] - 0.6 * u), cx[i], hy + headH / 2));
     list.forEach((l, i) => {
       const yy = hy + headH + i * rowH + rowH / 2;
       if (i % 2) { g.fillStyle = "rgba(255,255,255,.035)"; g.fillRect(gx0, yy - rowH / 2, gw, rowH); }
       const rr = Math.min(rowH * 0.42, 1.25 * u); g.beginPath(); g.arc(cx[0], yy, rr, 0, 7); g.fillStyle = gold(g, cx[0], yy - rr, cx[0], yy + rr); g.fill();
       g.fillStyle = "#111"; g.font = `700 ${fs}px Plex, sans-serif`; g.fillText(String(l.no), cx[0], yy + 0.05 * u);
-      g.fillStyle = "#fff"; g.font = `400 ${fs}px Plex, sans-serif`; g.direction = "ltr"; g.fillText(fmt(l.a), cx[1], yy); const rv = ST.roadOf[l.no]; g.fillText(rv != null && rv !== "" ? fmt(+rv) : "—", cx[2], yy); g.direction = "rtl";
-      g.fillText(fit(g, ST.owners[l.no] || "....................", cw[3] - 0.8 * u), cx[3], yy);
+      g.fillStyle = "#fff"; g.font = `400 ${fs}px Plex, sans-serif`; g.direction = "ltr"; g.fillText(fmt(l.a), cx[1], yy); g.direction = "rtl";
+      g.fillText(fit(g, ST.owners[l.no] || "....................", cw[2] - 0.8 * u), cx[2], yy);
       g.fillStyle = "rgba(226,181,74,.2)"; g.fillRect(gx0, yy + rowH / 2 - 0.04 * u, gw, 0.08 * u);
     });
     // خطوط الأعمدة
-    g.fillStyle = "rgba(226,181,74,.35)"; let lx = gx1; cw.slice(0, 3).forEach(c => { lx -= c; g.fillRect(lx, hy, 0.08 * u, headH + list.length * rowH); });
+    g.fillStyle = "rgba(226,181,74,.35)"; let lx = gx1; cw.slice(0, 2).forEach(c => { lx -= c; g.fillRect(lx, hy, 0.08 * u, headH + list.length * rowH); });
   }
-  // صف المجموع
-  const sy = tY + tH - sumH - 1.1 * u, perLot = lots.reduce((t, l) => t + (+ST.roadOf[l.no] || 0), 0), roadT = M.sumRoad + M.sumEx;
+  // صف الطرق (بلون مختلف) ثم صف المجموع
+  const roadT = M.sumRoad + M.sumEx, cwS = [0.18, 0.32, 0.5].map(f => f * (w - 3 * u)); const cxS = []; let xs = x1 - 1.5 * u; cwS.forEach(c => { cxS.push(xs - c / 2); xs -= c; });
+  const ry = tY + tH - sumH - roadH - 1.6 * u;
+  rrect(g, x0 + 1.5 * u, ry, w - 3 * u, roadH, 0.6 * u); g.fillStyle = "#2c3e50"; g.fill(); g.lineWidth = 0.15 * u; g.strokeStyle = "#7fb3e6"; g.stroke();
+  g.fillStyle = "#cfe6ff"; g.font = `700 ${1.3 * u}px Plex, sans-serif`; g.textAlign = "center";
+  g.fillText("الطرق", cxS[0], ry + roadH / 2); g.direction = "ltr"; g.fillText(fmt(roadT), cxS[1], ry + roadH / 2); g.direction = "rtl";
+  g.font = `400 ${1.15 * u}px Plex, sans-serif`; g.fillText(fit(g, M.sumEx > 0 && M.sumRoad > 0 ? "مقترحة " + fmt(M.sumRoad, 0) + " + قائمة " + fmt(M.sumEx, 0) : M.sumEx > 0 ? "طرق قائمة" : "طرق مقترحة", cwS[2] - u), cxS[2], ry + roadH / 2);
+  const sy = tY + tH - sumH - 1.1 * u;
   rrect(g, x0 + 1.5 * u, sy, w - 3 * u, sumH, 0.6 * u); g.fillStyle = gold(g, x0, sy, x0, sy + sumH); g.fill();
-  const cwS = [0.17, 0.25, 0.22, 0.36].map(f => f * (w - 3 * u)); const cxS = []; let xs = x1 - 1.5 * u; cwS.forEach(c => { cxS.push(xs - c / 2); xs -= c; });
   g.fillStyle = "#111"; g.font = `700 ${1.35 * u}px Plex, sans-serif`; g.textAlign = "center";
-  g.fillText("المجموع", cxS[0], sy + sumH / 2); g.direction = "ltr"; g.fillText(fmt(M.sumLots), cxS[1], sy + sumH / 2); g.fillText(fmt(perLot > 0 ? perLot : roadT), cxS[2], sy + sumH / 2); g.direction = "rtl";
+  g.fillText("المجموع", cxS[0], sy + sumH / 2); g.direction = "ltr"; g.fillText(fmt(M.sumLots + roadT), cxS[1], sy + sumH / 2); g.direction = "rtl";
   const ok = Math.abs(M.diff) <= (+ST.tol || 0.5); g.font = `700 ${1.15 * u}px Plex, sans-serif`;
-  g.fillText(fit(g, ok ? "✓ مطابق للمساحة الكلية" : "فرق " + fmt(M.diff) + " m²", cwS[3] - u), cxS[3], sy + sumH / 2);
+  g.fillText(fit(g, ok ? "✓ يطابق المساحة الكلية " + fmt(M.A) : "فرق " + fmt(M.diff) + " m² عن " + fmt(M.A), cwS[2] - u), cxS[2], sy + sumH / 2);
   g.restore();
 }
 function fit(g, s, w) { s = String(s); if (g.measureText(s).width <= w) return s; while (s.length > 1 && g.measureText(s + "…").width > w) s = s.slice(0, -1); return s + "…"; }

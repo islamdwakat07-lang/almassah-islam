@@ -108,7 +108,7 @@
     D = d;
   }
   const saveD = () => { try { localStorage.setItem(DKEY, JSON.stringify(D)); } catch (e) { toast("الذاكرة ممتلئة، لم يُحفظ التصميم"); } };
-  const snap = () => { undo.push(JSON.stringify({ roads: D.roads, parcels: D.parcels })); if (undo.length > 60) undo.shift(); };
+  const snap = () => { undo.push(JSON.stringify({ roads: D.roads, parcels: D.parcels, rp: D.rp || [] })); if (undo.length > 60) undo.shift(); };
   function rebuild(keepParcels) {   // الشوارع ← البلوكات
     O = bboxOf(S.boundary).slice(0, 2);
     land = [S.boundary.map(toL)];
@@ -168,7 +168,7 @@
     $i("dzTools").addEventListener("click", e => {
       const b = e.target.closest("button"); if (!b) return;
       if (b.dataset.t) { setTool(b.dataset.t); return; }
-      if (b.dataset.a === "undo") { const u = undo.pop(); if (!u) { toast("لا يوجد ما يُتراجع عنه"); return; } const o = JSON.parse(u); D.roads = o.roads; D.parcels = o.parcels; sel = -1; rebuild(true); saveD(); draw(); panel(); }
+      if (b.dataset.a === "undo") { const u = undo.pop(); if (!u) { toast("لا يوجد ما يُتراجع عنه"); return; } const o = JSON.parse(u); D.roads = o.roads; D.parcels = o.parcels; D.rp = o.rp || []; sel = -1; rebuild(true); saveD(); draw(); panel(); }
       if (b.dataset.a === "more") { tool = "more"; sel = -1; draft = []; panel(); draw(); }
     });
     initPointer();
@@ -181,7 +181,7 @@
   const HINT = { pan: "اضغط على أي قطعة لاختيارها وتغيير نوعها. اسحب لتحريك الصورة، وبإصبعين للتكبير.", road: "", grid: "", split: "اضغط نقطتين لرسم خط يقسم القطعة التي يمر بها.", merge: "اضغط قطعتين متجاورتين لدمجهما.", more: "" };
 
   /* ---------- اللوحة السفلية حسب الأداة ---------- */
-  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1;
+  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = false, aRW = 8;
   const aDef = () => { if (!aMin) aMin = +S.minParcel || 600; if (!aW) aW = +S.minWidth || 15; };
   function panel() {
     const p = $i("dzPanel"); let h = "";
@@ -199,10 +199,10 @@
       }
     }
     else if (tool === "grid") {
-      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button></div>`; }
+      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button></div>`; }
       else h = `<div class="r"><span class="ttl">▦ تقسيم القطعة (${fmt(polyArea(parcelsL()[sel]))} م²)</span></div>
         <div class="r"><button class="pb ${gMode === "auto" ? "go" : ""}" type="button" data-gm="auto">⚡ تلقائي بالشروط</button><button class="pb ${gMode === "count" ? "go" : ""}" type="button" data-gm="count">بالعدد</button><button class="pb ${gMode === "size" ? "go" : ""}" type="button" data-gm="size">بالأبعاد</button></div><div class="r">
-        ${gMode === "auto" ? (aDef(), `<label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
+        ${gMode === "auto" ? (aDef(), `<label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
         <div class="r"><button class="pb" type="button" id="dzGDir">🔄 ${gMode === "auto" ? "تغيير الواجهة" : "تدوير الاتجاه"}</button><button class="pb go" type="button" id="dzGGo">✓ قسّم</button>${gMode === "auto" ? `<button class="pb" type="button" id="dzGAll">⚡ كل البلوكات غير المقسمة</button>` : ""}</div>`;
     } else if (tool === "pan" && sel >= 0) {
       const x = D.parcels[sel];
@@ -223,6 +223,8 @@
     ["dzGR", "dzGC", "dzGW", "dzGD"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { gR = Math.max(1, +($i("dzGR") || {}).value || gR); gC = Math.max(1, +($i("dzGC") || {}).value || gC); gW = +($i("dzGW") || {}).value || gW; gDp = +($i("dzGD") || {}).value || gDp; draw(); }; });
     on("dzGDir", () => { dirIdx++; draw(); panelInfo(); }); on("dzGGo", doGrid); on("dzGAll", doAutoAll);
     ["dzAM", "dzAW"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { aMin = Math.max(20, +($i("dzAM") || {}).value || aMin); aW = Math.max(1, +($i("dzAW") || {}).value || aW); draw(); panelInfo(); }; });
+    const ar = $i("dzAR"); if (ar) ar.onchange = () => { aRoads = ar.checked; draw(); panelInfo(); };
+    const arw = $i("dzARW"); if (arw) arw.oninput = () => { aRW = Math.max(2, +arw.value || 8); draw(); panelInfo(); };
     p.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { rmode = b.dataset.rm; draft = []; rsel = -1; panel(); draw(); });
     const ro = $i("dzROff"); if (ro) ro.oninput = () => { rOff = Math.max(0, +ro.value || 0); };
     const ew = $i("dzEW"); if (ew) ew.onchange = () => { const v = +ew.value; if (!(v >= 1) || rsel < 0) return; snap(); D.roads[rsel].w = v; rebuild(false); saveD(); draw(); toast("تغيّر عرض الشارع وأُعيد حساب البلوكات"); };
@@ -238,7 +240,8 @@
     const el = $i("dzAInfo"); if (!el || sel < 0) return;
     const r = autoLots(parcelsL()[sel]);
     el.textContent = r.lots.length ? `← ${r.lots.length} قسيمة` + (r.bad ? ` (${r.bad} لا تحقق الشروط)` : `، كل واحدة ≈ ${fmt(r.lots.reduce((t, l) => t + Math.abs(ringArea(l)), 0) / r.lots.length)} م²`) : "لا تتسع لقسيمة واحدة";
-    if (r.deep) el.textContent += ` — العمق ${fmt(r.deep, 0)} م كبير، ارسم شارعاً موازياً للواجهة لتصير صفين`;
+    if (r.roads && r.roads.length) el.textContent += ` + ${r.how} (${fmt(r.ra, 0)} م² طرق)`;
+    if (r.deep) el.textContent += ` — العمق ${fmt(r.deep, 0)} م كبير، فعّل «اقترح طرقاً داخلية» أو ارسم شارعاً`;
   }
   let askT = 0; const confirmTwice = () => { if (Date.now() - askT < 3000) { askT = 0; return true; } askT = Date.now(); toast("اضغط مرة ثانية للتأكيد"); return false; };
 
@@ -316,7 +319,7 @@
   let autoC = { k: "", r: null };
   function autoLots(P) {
     aDef();
-    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW;
+    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW + "|" + aRoads + aRW;
     if (autoC.k === key) return autoC.r;
     const fe = frontEdges(r), dirs = [];
     const addDir = (th, w, f) => { const e = dirs.find(d => sameTh(d.th, th)); if (e) { e.w += w; e.f = e.f || f; } else dirs.push({ th, w, f }); };
@@ -332,29 +335,87 @@
     const lots = []; let bad = 0;
     for (const [v0, v1] of bands) {
       const row = clipHalf(clipHalf(R, 0, 1, -v0), 0, -1, v1); if (!row.length) continue;
-      const A = Math.abs(ringArea(row)), rb = bboxOf(row);
-      let n = Math.max(1, Math.min(Math.floor(A / aMin + 1e-9), Math.floor((rb[2] - rb[0]) / aW + 1e-9))), got = null;
-      for (; n >= 1 && !got; n--) {
-        const us = eqCuts(row, 0, n, rb), L = [];
-        for (let k = 0; k < n; k++) { const g = clipHalf(clipHalf(row, 1, 0, -(k ? us[k] : us[k] - 1)), -1, 0, k < n - 1 ? us[k + 1] : us[k + 1] + 1); if (g.length) L.push(g); }
-        if (L.every(g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01)) got = L;
-      }
-      if (!got) { got = [row]; bad++; }
-      got.forEach(g => lots.push(g.map(p => unrot(p, c, s))));
+      const k = cutRow(row, 0); if (!k.ok) bad++;
+      k.lots.forEach(g => lots.push(g.map(p => unrot(p, c, s))));
     }
-    const res = { lots, bad, front: D0.f, deep: bands.length === 1 && H > 2.2 * dT ? H : 0 };
+    let res = { lots, bad, rest: [], roads: [], ra: 0, front: D0.f, deep: bands.length === 1 && H > 2.2 * dT ? H : 0 };
+    if (aRoads) {   // اقتراح طرق داخلية: نجرب عدة تخطيطات ونختار الأكثر قسائم صالحة
+      const alt = withRoads(R, lowF, highF, dT);
+      const un = g => g.map(p => unrot(p, c, s));
+      if (alt && (alt.bad < res.bad || (alt.bad === res.bad && alt.lots.length > res.lots.length)))
+        res = { lots: alt.lots.map(un), bad: alt.bad, rest: alt.rest.map(un), roads: alt.roads.map(un), ra: alt.ra, front: true, deep: 0, how: alt.how };
+    }
     autoC = { k: key, r: res }; return res;
   }
+  /* تقسيم صف واحد: القسائم جنباً إلى جنب (ax=0: الخطوط عمودية على u، ax=1: على v)، أكبر عدد متساوٍ يحقق الشروط */
+  function cutRow(row, ax) {
+    const T = ax ? (p => [p[1], -p[0]]) : (p => p), Ti = ax ? (p => [-p[1], p[0]]) : (p => p);
+    const Rr = row.map(T), A = Math.abs(ringArea(Rr)), rb = bboxOf(Rr);
+    let n = Math.max(1, Math.min(Math.floor(A / aMin + 1e-9), Math.floor((rb[2] - rb[0]) / aW + 1e-9)));
+    for (; n >= 1; n--) {
+      const us = eqCuts(Rr, 0, n, rb), L = [];
+      for (let k = 0; k < n; k++) { const g = clipHalf(clipHalf(Rr, 1, 0, -(k ? us[k] : us[k] - 1)), -1, 0, k < n - 1 ? us[k + 1] : us[k + 1] + 1); if (g.length) L.push(g); }
+      if (L.every(g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01)) return { lots: L.map(g => g.map(Ti)), ok: true };
+    }
+    return { lots: [row], ok: false };
+  }
+  /* طرق مقترحة داخل الجزء بعرض aRW (بالإحداثيات المدوّرة: الواجهة أسفل). A = طرق متعامدة على الواجهة، B = طرق موازية + وصلة */
+  function withRoads(R0, lowF, highF, dT) {
+    let R = R0, flip = false;
+    if (!lowF && highF) { R = R0.map(p => [-p[0], -p[1]]); flip = true; [lowF, highF] = [true, false]; }
+    const bb = bboxOf(R), Wu = bb[2] - bb[0], H = bb[3] - bb[1], w = aRW, B = 1e6, cands = [];
+    const slabU = (g, a, b) => clipHalf(clipHalf(g, 1, 0, -a), -1, 0, b), slabV = (g, a, b) => clipHalf(clipHalf(g, 0, 1, -a), 0, -1, b);
+    const evalC = (roads, rows, how) => {
+      const lots = [], rest = []; let bad = 0;
+      rows.forEach(rw => { if (!rw.poly.length) return; if (Math.abs(ringArea(rw.poly)) < aMin - 0.01) { rest.push(rw.poly); return; } const k = cutRow(rw.poly, rw.ax); if (!k.ok) { rest.push(rw.poly); bad++; } else lots.push(...k.lots); });
+      cands.push({ lots, rest, roads: roads.filter(g => g.length), ra: roads.reduce((t, g) => t + (g.length ? Math.abs(ringArea(g)) : 0), 0), bad, how });
+    };
+    const nA = Math.max(1, Math.round(Wu / (2 * dT + w)));
+    for (const n of [nA - 1, nA, nA + 1]) {
+      if (n < 1) continue; const d = (Wu - n * w) / (2 * n); if (d < 0.6 * dT || d < aW * 0.6) continue;
+      const xs = []; for (let k = 0; k < n; k++) { const x1 = bb[0] + d + k * (2 * d + w); xs.push([x1, x1 + w]); }
+      const roads = xs.map(([a, b]) => slabU(R, a, b)), bnd = [[-B, xs[0][0]]];
+      for (let k = 0; k < n - 1; k++) { const m = (xs[k][1] + xs[k + 1][0]) / 2; bnd.push([xs[k][1], m], [m, xs[k + 1][0]]); }
+      bnd.push([xs[n - 1][1], B]);
+      evalC(roads, bnd.map(([a, b]) => ({ poly: slabU(R, a, b), ax: 1 })), n === 1 ? "طريق داخلي متعامد على الشارع" : n + " طرق متعامدة على الشارع");
+    }
+    const nB = Math.max(1, Math.round(H / (2 * dT + w)));
+    for (const m of [nB - 1, nB, nB + 1]) {
+      if (m < 1) continue; const d = (H - m * w) / (2 * m); if (d < 0.6 * dT || d < aW * 0.6) continue;
+      const ys = []; for (let k = 0; k < m; k++) { const y1 = bb[1] + d + k * (2 * d + w); ys.push([y1, y1 + w]); }
+      const vEnd = highF ? bb[3] + 1 : ys[m - 1][1], lefts = [], rights = [];
+      let okS = true;
+      for (let t = 0; t <= 10; t++) { const v = bb[1] + 0.05 + (Math.min(vEnd, bb[3]) - bb[1] - 0.1) * t / 10, xs = []; for (let i = 0; i < R.length; i++) { const a = R[i], b = R[(i + 1) % R.length]; if ((a[1] <= v && b[1] > v) || (b[1] <= v && a[1] > v)) xs.push(a[0] + (v - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); } if (xs.length < 2) { okS = false; break; } lefts.push(Math.min(...xs)); rights.push(Math.max(...xs)); }
+      if (!okS) continue;
+      const uL = Math.max(...lefts), uR = Math.min(...rights);
+      for (const side of ["L", "R", "LR"]) {
+        if (uR - uL < (side === "LR" ? 2 : 1) * w + 2 * aW) continue;
+        const cs = []; if (side.includes("L")) cs.push([uL, uL + w]); if (side.includes("R")) cs.push([uR - w, uR]);
+        const roads = cs.map(([a, b]) => slabV(slabU(R, a, b), -B, vEnd));
+        const gaps = []; let lo = -B; cs.forEach(([a, b]) => { gaps.push([lo, a]); lo = b; }); gaps.push([lo, B]);
+        ys.forEach(([a, b]) => gaps.forEach(([x1, x2]) => roads.push(slabU(slabV(R, a, b), x1, x2))));
+        const vb = [[-B, ys[0][0]]]; for (let k = 0; k < m - 1; k++) { const mm = (ys[k][1] + ys[k + 1][0]) / 2; vb.push([ys[k][1], mm], [mm, ys[k + 1][0]]); } vb.push([ys[m - 1][1], B]);
+        const rows = [];
+        vb.forEach(([a, b]) => { const band = slabV(R, a, b); if (!band.length) return; (a >= vEnd - 1e-9 ? [band] : gaps.map(([x1, x2]) => slabU(band, x1, x2))).forEach(g => rows.push({ poly: g, ax: 0 })); });
+        evalC(roads, rows, (m === 1 ? "طريق داخلي موازٍ للشارع" : m + " طرق موازية للشارع") + (side === "LR" ? " ووصلتان من الجانبين" : " ووصلة جانبية"));
+      }
+    }
+    if (!cands.length) return null;
+    cands.sort((a, b) => a.bad - b.bad || b.lots.length - a.lots.length || a.ra - b.ra);
+    const c = cands[0], F = g => flip ? g.map(p => [-p[0], -p[1]]) : g;
+    return { lots: c.lots.map(F), rest: c.rest.map(F), roads: c.roads.map(F), ra: c.ra, bad: c.bad, how: c.how };
+  }
   function doAutoAll() {
-    aDef(); const PL = parcelsL(); let n = 0, bad = 0; const next = [];
+    aDef(); const PL = parcelsL(); let n = 0, bad = 0; const next = [], newRoads = [];
     D.parcels.forEach((x, i) => {
       if (x.t !== "block") { next.push(x); return; }
       const keep = dirIdx; dirIdx = 0; const r = autoLots(PL[i]); dirIdx = keep;
       if (!r.lots.length) { next.push(x); return; }
       bad += r.bad; n += r.lots.length; r.lots.forEach(g => next.push({ P: [g.map(toW)], t: "res" }));
+      (r.rest || []).forEach(g => next.push({ P: [g.map(toW)], t: "block" })); (r.roads || []).forEach(g => newRoads.push(g.map(toW)));
     });
     if (!n) { toast("لا توجد بلوكات غير مقسمة"); return; }
-    snap(); D.parcels = next; sel = -1; saveD(); panel(); draw();
+    snap(); D.parcels = next; if (newRoads.length) { D.rp = (D.rp || []).concat(newRoads); rebuild(true); } sel = -1; saveD(); panel(); draw();
     toast(`أُفرزت البلوكات إلى ${n} قسيمة (أقل مساحة ${aMin} م²، أقل عرض ${aW} م)` + (bad ? ` — ${bad} جزء لم يتسع للشروط فبقي قطعة واحدة` : ""));
   }
   function doGrid() {
@@ -362,8 +423,10 @@
     if (gMode === "auto") {
       const r = autoLots(parcelsL()[sel]); if (!r.lots.length) { toast("تعذّر الإفراز"); return; }
       snap(); const t = D.parcels[sel].t === "block" ? "res" : D.parcels[sel].t;
-      D.parcels.splice(sel, 1, ...r.lots.map(g => ({ P: [g.map(toW)], t })));
+      D.parcels.splice(sel, 1, ...r.lots.map(g => ({ P: [g.map(toW)], t })), ...(r.rest || []).map(g => ({ P: [g.map(toW)], t: "block" })));
+      if (r.roads && r.roads.length) { D.rp = (D.rp || []).concat(r.roads.map(g => g.map(toW))); rebuild(true); }
       sel = -1; saveD(); panel(); draw();
+      if (r.roads && r.roads.length) { toast(`أُفرز إلى ${r.lots.length} قسيمة مع ${r.how} بعرض ${aRW} م (${fmt(r.ra)} م²)` + (r.rest.length ? `، وبقيت ${r.rest.length} قطعة صغيرة غير مقسمة` : "")); return; }
       toast(r.bad ? "الجزء لا يتسع لقسيمة بهذه الشروط" : `أُفرز إلى ${r.lots.length} قسيمة متساوية` + (r.front ? "، واجهتها على الشارع" : "")); return;
     }
     const P = parcelsL()[sel], out = [];
@@ -440,7 +503,7 @@
     const PL = parcelsL(); NUM = numbering();
     fromMP(roadsMP).forEach(P => h += `<path d="${path(P)}" fill="rgba(70,70,70,.72)" stroke="#f5f5f5" stroke-width="1.2" stroke-dasharray="6 4" fill-rule="evenodd"/>`);
     PL.forEach((P, i) => { const ty = TYPES[D.parcels[i].t]; h += `<path d="${path(P)}" fill="${ty.f}" stroke="${i === sel || i === mergeA ? "#ff3b30" : ty.s}" stroke-width="${i === sel || i === mergeA ? 3.5 : 1.6}" fill-rule="evenodd"/>`; });
-    if (tool === "grid" && sel >= 0 && gMode === "auto") { const ar = autoLots(PL[sel]); ar.lots.forEach(g => h += `<path d="${path([g])}" fill="none" stroke="${ar.bad ? "#ff6b5b" : "#fff"}" stroke-width="1.6" stroke-dasharray="5 3"/>`); }
+    if (tool === "grid" && sel >= 0 && gMode === "auto") { const ar = autoLots(PL[sel]); (ar.roads || []).forEach(g => h += `<path d="${path([g])}" fill="rgba(60,60,60,.7)" stroke="#fff" stroke-width="1.2" stroke-dasharray="6 4"/>`); (ar.rest || []).forEach(g => h += `<path d="${path([g])}" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1"/>`); ar.lots.forEach(g => h += `<path d="${path([g])}" fill="none" stroke="${ar.bad ? "#ff6b5b" : "#fff"}" stroke-width="1.6" stroke-dasharray="5 3"/>`); }
     else if (tool === "grid" && sel >= 0) gridCells(PL[sel]).forEach(c => { const r = clipConvex(PL[sel][0], c); if (r.length) h += `<path d="${path([r])}" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="5 3"/>`; });
     h += `<path d="${path(land)}" fill="none" stroke="#ffe066" stroke-width="3" stroke-linejoin="round"/>`;
     land[0].forEach(p => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="4" fill="#ffe066" stroke="#7a5a00"/>`);

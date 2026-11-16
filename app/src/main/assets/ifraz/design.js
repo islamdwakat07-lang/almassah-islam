@@ -326,7 +326,7 @@
   function chordU(R, v) { const xs = []; for (let i = 0; i < R.length; i++) { const a = R[i], b = R[(i + 1) % R.length]; if ((a[1] <= v && b[1] > v) || (b[1] <= v && a[1] > v)) xs.push(a[0] + (v - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); } return xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0; }
   function minWU(R) { const bb = bboxOf(R); let m = Infinity; for (let t = 0.2; t < 0.81; t += 0.075) m = Math.min(m, chordU(R, bb[1] + (bb[3] - bb[1]) * t)); return isFinite(m) ? m : 0; }
   /* ---------- الكنتور من جيومولج ونموذج الارتفاعات ---------- */
-  const SQLC = "https://sql.geomolg.ps/adaptor/rest/services/ContourLines_02/MapServer/";
+  const CSRV = ["https://orthophotos.geomolg.ps/adaptor/rest/services/ContourLines_02/MapServer/", "https://sql.geomolg.ps/adaptor/rest/services/ContourLines_02/MapServer/"];
   const nh = {}; let nhSeq = 0;
   function netGet(url) {
     if (window.AndroidBridge && AndroidBridge.httpGet) {
@@ -344,6 +344,8 @@
     const named = fs.find(f => /elev|contour|height|hgt|^z$|alt|منسوب|level|value/i.test(f.name + " " + (f.alias || "")));
     if (named) return named.name;
     const at = (j.features || []).map(f => f.attributes || {}), keys = at.length ? Object.keys(at[0]) : [];
+    const byName = keys.find(k => /elev|contour|height|hgt|^z$|alt|منسوب|level/i.test(k) && at.every(a => isFinite(parseFloat(a[k]))));
+    if (byName) return byName;
     let best = null, bn = 0;
     keys.filter(k => !skip.test(k)).forEach(k => { const v = at.map(a => +a[k]).filter(x => isFinite(x)); if (v.length < at.length * 0.9 || v.some(x => x < -450 || x > 1300)) return; const n = new Set(v).size; if (n > bn) { bn = n; best = k; } });
     return best;
@@ -353,18 +355,31 @@
     if (!sr) { CT = { key, st: "err", lines: [], msg: "إحداثيات الأرض ليست بنظام فلسطيني أو ITM" }; panelInfo(); return; }
     if (CT.key === key && (CT.st === "ok" || CT.st === "loading")) return;
     CT = { key, st: "loading", lines: [] }; panelInfo();
-    for (const lay of [0, 1]) {
-      try {
-        const q = new URLSearchParams({ geometry: [bb[0] - pad, bb[1] - pad, bb[2] + pad, bb[3] + pad].map(v => v.toFixed(1)).join(","), geometryType: "esriGeometryEnvelope", inSR: sr, outSR: sr, spatialRel: "esriSpatialRelIntersects", outFields: "*", returnGeometry: "true", maxAllowableOffset: "0.3", geometryPrecision: "2", f: "json" });
-        const r = await netGet(SQLC + lay + "/query?" + q); const j = JSON.parse(r.text);
-        if (j.error || !j.features || !j.features.length) throw 0;
-        const zf = pickZ(j); if (!zf) throw 0;
-        const lines = j.features.map((f, id) => ({ id, z: +f.attributes[zf], paths: ((f.geometry || {}).paths || []).map(pp => pp.map(q2 => toL(q2))) })).filter(l => isFinite(l.z) && l.paths.length);
-        if (lines.length < 2) throw 0;
-        CT = { key, st: "ok", lines, step: lay ? 5 : 1 }; buildDEM(); autoC.k = ""; draw(); panelInfo(); return;
-      } catch (e) {}
+    const box = [bb[0] - pad, bb[1] - pad, bb[2] + pad, bb[3] + pad].map(v => v.toFixed(1));
+    let tk = "", lastErr = "";
+    const tries = [];
+    for (const base of CSRV) for (const lay of [0, 1]) { tries.push([base, lay, "query"]); tries.push([base, lay, "identify"]); }
+    for (let pass = 0; pass < 2; pass++) {
+      if (pass === 1) { if (!window.geoToken) break; try { tk = await geoToken(); } catch (e) {} if (!tk) break; }
+      for (const [base, lay, how] of tries) {
+        try {
+          const prm = how === "query"
+            ? { geometry: box.join(","), geometryType: "esriGeometryEnvelope", inSR: sr, outSR: sr, spatialRel: "esriSpatialRelIntersects", outFields: "*", returnGeometry: "true", maxAllowableOffset: "0.3", geometryPrecision: "2", f: "json" }
+            : { geometry: JSON.stringify({ xmin: +box[0], ymin: +box[1], xmax: +box[2], ymax: +box[3] }), geometryType: "esriGeometryEnvelope", sr, layers: "all:" + lay, tolerance: "0", mapExtent: box.join(","), imageDisplay: "1200,1200,96", returnGeometry: "true", maxAllowableOffset: "0.3", f: "json" };
+          if (tk) prm.token = tk;
+          const r = await netGet(base + (how === "query" ? lay + "/query" : "identify") + "?" + new URLSearchParams(prm));
+          let j; try { j = JSON.parse(r.text); } catch (e) { throw new Error("HTTP " + r.status); }
+          if (j.error) throw new Error(j.error.message || ("code " + j.error.code));
+          if (how === "identify") j = { features: (j.results || []).map(x => ({ attributes: x.attributes, geometry: x.geometry })) };
+          if (!j.features || !j.features.length) throw new Error("لا توجد خطوط كنتور في هذه المنطقة");
+          const zf = pickZ(j); if (!zf) throw new Error("لم أجد خانة المنسوب: " + Object.keys(j.features[0].attributes || {}).join("، "));
+          const lines = j.features.map((f, id) => ({ id, z: parseFloat(f.attributes[zf]), paths: ((f.geometry || {}).paths || []).map(pp => pp.map(q2 => toL(q2))) })).filter(l => isFinite(l.z) && l.paths.length);
+          if (lines.length < 2) throw new Error("خطوط الكنتور غير كافية");
+          CT = { key, st: "ok", lines, step: lay ? 5 : 1 }; buildDEM(); autoC.k = ""; draw(); panelInfo(); return;
+        } catch (e) { if (!lastErr) lastErr = (e && e.message) || String(e); }
+      }
     }
-    CT = { key, st: "err", lines: [], msg: "تعذّر تحميل الكنتور من جيومولج (تأكد من الإنترنت)" }; autoC.k = ""; panelInfo();
+    CT = { key, st: "err", lines: [], msg: "تعذّر تحميل الكنتور من جيومولج (" + lastErr + ")" }; autoC.k = ""; panelInfo();
   }
   function buildDEM() {
     const H = new Map(); let zmin = Infinity, zmax = -Infinity;

@@ -82,7 +82,6 @@ table.t input{width:100%}
 
   <section class="card closed" id="cAer"><h2><span class="n">4</span>الصورة الجوية والمطابقة</h2>
     <div class="row"><label>المصدر<select id="aSrc"><option value="2025">جيومولج 2025</option><option value="2022">جيومولج 2022</option><option value="2019">جيومولج 2019</option><option value="none">بدون صورة</option><option value="custom">صورة أرفعها أنا</option></select></label><span id="aStat" class="pill"></span></div>
-    <div class="row" style="margin-top:6px"><button id="bEarth" style="width:100%">🌍 افتح مكان الأرض في Google Earth (للمطابقة صدّر ملف KML من «التصدير»)</button></div>
     <p class="hint" id="aSys"></p>
     <div id="custBox" hidden>
       <div class="row"><label class="btn">🖼 اختر الصورة<input type="file" id="fImg" accept="image/*" hidden></label></div>
@@ -109,11 +108,6 @@ table.t input{width:100%}
     <div class="grid2">
       <label>حجم الورق<select id="sPaper"><option>A3</option><option>A2</option><option>A1</option><option>A0</option></select></label>
       <label>الاتجاه<select id="sOrient"><option value="l">أفقي</option><option value="p">عمودي</option></select></label>
-      <label>نوع الإخراج<select id="sView"><option value="plan">مسقط بمقياس الرسم</option><option value="oblique">منظور مائل ثلاثي الأبعاد (مسطّح)</option><option value="terrain">مجسّم على التضاريس الحقيقية</option></select></label>
-      <label>اتجاه النظر للمجسّم (°)<input id="sHead" type="range" min="0" max="359" step="5"></label>
-      <label>ميل الكاميرا للمجسّم (°)<input id="sCam" type="range" min="20" max="75" step="1"></label>
-      <label>تضخيم الارتفاعات<input id="sExag" type="range" min="1" max="3" step="0.1"></label>
-      <label>ميل المنظور (للمنظور المائل)<input id="sTilt" type="range" min="0.4" max="0.85" step="0.05"></label>
       <label>مقياس رسم بتكتبه أنت 1:<input id="sScaleC" type="number" min="20" step="1" placeholder="فارغ = حسب القائمة"></label>
       <label>مقياس الرسم<select id="sScale"><option value="0">تلقائي</option><option>100</option><option>200</option><option>250</option><option>500</option><option>750</option><option>1000</option><option>1250</option><option>1500</option><option>2000</option><option>2500</option><option>5000</option></select></label>
       <label>عرض الهامش الأيمن %<input id="sPanel" type="range" min="22" max="40" step="1"></label>
@@ -124,7 +118,6 @@ table.t input{width:100%}
     <div class="row" style="margin-top:8px">
       <label><input type="checkbox" id="sVtx"> ترقيم الرؤوس</label>
       <label><input type="checkbox" id="sLen"> أطوال الأضلاع</label>
-      <label><input type="checkbox" id="s3d"> الظلال المجسمة</label>
       <label><input type="checkbox" id="sNorth"> سهم الشمال</label>
     </div>
   </section>
@@ -151,6 +144,7 @@ let ST = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") |
 const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, head: 0, cam: 42, exag: 1.3, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
 for (const k in DEF) if (ST[k] == null) ST[k] = JSON.parse(JSON.stringify(DEF[k]));
 ST.own = false;   // اسم المالك بالجدول فقط
+ST.view = "plan"; ST.d3 = false;   // مخطط مسطّح فقط
 if (ST.alphaV !== 2) { ST.alpha = 0.3; ST.roadA = 0.45; ST.alphaV = 2; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) { toast("الذاكرة ممتلئة، لم تُحفظ الإعدادات"); } };
 
@@ -527,9 +521,8 @@ function drawSheet(cv, pxW, aer) {
   // كل الطرق (القائمة والمقترحة، داخل الحدود وخارجها) بنفس الإسفلت وموصولة ببعض
   (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => {
     g.save(); sh(0.8 * ST.roadA, 0.15, 0.25); g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.fillStyle = `rgba(48,50,54,${ST.roadA})`; g.fill("evenodd"); nosh();
-    g.clip("evenodd"); const bb = bboxOf(openR(pg[0]));   // نسيج إسفلت خفيف
-    const grd = g.createLinearGradient(L.X(bb[0]), L.Y(bb[3]), L.X(bb[2]), L.Y(bb[1])); grd.addColorStop(0, "rgba(255,255,255,.07)"); grd.addColorStop(1, "rgba(0,0,0,.18)"); g.fillStyle = grd; g.fillRect(0, 0, L.W, L.H); g.restore();
-    g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.lineWidth = 0.35 * u; g.strokeStyle = "#cfcac0"; g.stroke(); g.lineWidth = 0.1 * u; g.strokeStyle = "#7d786e"; g.stroke();
+    g.restore();
+    g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.lineJoin = "round"; g.lineWidth = 0.55 * u; g.strokeStyle = "rgba(255,255,255,.9)"; g.stroke(); g.lineWidth = 0.28 * u; g.strokeStyle = "#8a8f96"; g.stroke();
   });
   // الخطوط الوسطية: محاور مرسومة في الملف، أو محور تقريبي للطرق المستطيلة
   g.save(); g.setLineDash([1.2 * u, 0.9 * u]); g.lineWidth = 0.18 * u; g.strokeStyle = "rgba(255,255,255,.85)";
@@ -538,20 +531,19 @@ function drawSheet(cv, pxW, aer) {
   if (!axes.length) axes = M.roadMP.map(pg => roadAxis(openR(pg[0]))).filter(Boolean);
   axes.forEach(a => { g.beginPath(); a.forEach((p, i) => g[i ? "lineTo" : "moveTo"](L.X(p[0]), L.Y(p[1]))); g.stroke(); });
   g.restore();
-  // القسائم: ظل مجسم + تعبئة شفافة متدرجة + حدود
+  // القسائم: تعبئة شفافة مسطّحة + حدود
   M.lots.forEach(l => {
     const col = lotColor(l), bb = bboxOf(l.ring);
     g.save(); sh(1.0, 0.25, 0.4, `rgba(0,0,0,${0.25 + ST.alpha * 0.4})`); g.beginPath(); ring(g, L, l.ring); g.fillStyle = hexA(col, ST.alpha); g.fill(); nosh();
-    const grd = g.createLinearGradient(L.X(bb[0]), L.Y(bb[3]), L.X(bb[2]), L.Y(bb[1])); grd.addColorStop(0, `rgba(255,255,255,${0.1 + ST.alpha * 0.2})`); grd.addColorStop(0.55, "rgba(255,255,255,0)"); grd.addColorStop(1, `rgba(0,0,0,${0.06 + ST.alpha * 0.25})`);
-    g.clip(); g.fillStyle = grd; g.fillRect(0, 0, L.W, L.H); g.restore();
+    g.restore();
     // ضبط الشفافية الفعلية: إعادة رسم الصورة تحت حسب الشفافية المختارة
   });
 
-  M.lots.forEach(l => { g.beginPath(); ring(g, L, l.ring); g.lineJoin = "round"; g.lineWidth = 0.75 * u; g.strokeStyle = "rgba(255,255,255,.95)"; g.stroke(); g.lineWidth = 0.38 * u; g.strokeStyle = ST.border; g.stroke(); });
+  M.lots.forEach(l => { g.beginPath(); ring(g, L, l.ring); g.lineJoin = "round"; g.lineWidth = 0.55 * u; g.strokeStyle = "rgba(255,255,255,.9)"; g.stroke(); g.lineWidth = 0.28 * u; g.strokeStyle = ST.border; g.stroke(); });
   // حدود الأرض الكلية
   g.save(); g.lineJoin = "round"; g.beginPath(); ring(g, L, M.boundary);
-  g.shadowColor = "rgba(0,0,0,.7)"; g.shadowBlur = 1.2 * u; g.lineWidth = 1.25 * u; g.strokeStyle = "#fff"; g.stroke(); g.shadowBlur = 0;
-  g.lineWidth = 0.72 * u; g.strokeStyle = ST.border; g.stroke(); g.lineWidth = 0.12 * u; g.strokeStyle = "rgba(255,255,255,.55)"; g.stroke(); g.restore();
+  g.lineWidth = 0.95 * u; g.strokeStyle = "#fff"; g.stroke();
+  g.lineWidth = 0.5 * u; g.strokeStyle = ST.border; g.stroke(); g.restore();
   // أطوال الأضلاع
   if (ST.len) {
     const fs = 1.3 * u; g.font = `700 ${fs}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
@@ -1048,9 +1040,9 @@ $("bCenter").onclick = () => center(true);
 /* ======================= الإعدادات ======================= */
 function bindSettings() {
   const b = (id, k, conv = v => v, ev = "change") => { const e = $(id); if (e.type === "checkbox") e.checked = !!ST[k]; else e.value = ST[k]; e.addEventListener(ev, () => { ST[k] = e.type === "checkbox" ? e.checked : conv(e.value); save(); if (["paper", "orient", "scale", "panel", "view", "tilt", "scaleC"].includes(k)) loadAerial(); render(); }); };
-  b("sView", "view"); b("sHead", "head", v => +v, "input"); b("sCam", "cam", v => +v, "input"); b("sExag", "exag", v => +v, "input"); b("sTilt", "tilt", v => +v, "input"); b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
+  b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
   b("sPaper", "paper"); b("sOrient", "orient"); b("sScale", "scale", v => +v); b("sPanel", "panel", v => +v, "input"); b("sAlpha", "alpha", v => +v, "input"); b("sRoadA", "roadA", v => +v, "input"); b("sBorder", "border", v => v, "input");
-  b("sVtx", "vtx"); b("sLen", "len"); b("s3d", "d3"); b("sNorth", "north");
+  b("sVtx", "vtx"); b("sLen", "len"); b("sNorth", "north");
   $("tol").value = ST.tol; $("tol").oninput = () => { ST.tol = +$("tol").value || 0; save(); };
   $("aSrc").value = ST.src; $("custBox").hidden = ST.src !== "custom";
   if (ST.custBox) ["ciX0", "ciY0", "ciX1", "ciY1"].forEach((id, i) => $(id).value = ST.custBox[i] || "");
@@ -1060,7 +1052,7 @@ document.querySelectorAll(".card>h2").forEach(h => h.onclick = () => h.parentEle
 /* ======================= الملفات ======================= */
 $("fDxf").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { localStorage.setItem("fanni-dxf", r.result.length < 4.5e6 ? r.result : ""); localStorage.setItem("fanni-dxf-name", f.name); } catch (er) {} loadDXFText(r.result, f.name); }; r.readAsText(f); };
 $("bBuild").onclick = () => build();
-$("bEarth").onclick = () => openEarth();
+
 /* مخطط جديد: يمسح الملف والمالكين والبيانات الخاصة بالقطعة، ويُبقي إعداداتك (الورق، الألوان، المساح…) */
 let newT = 0;
 $("bNew").onclick = () => {

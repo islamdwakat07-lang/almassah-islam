@@ -329,7 +329,12 @@ function build() {
   }
   const diff = A - (sumLots + sumRoad + sumEx);
   msgs.unshift(`مساحة الأرض <b>${fmt(A)}</b> م² · القسائم (${lots.length}) <b>${fmt(sumLots)}</b> · الطرق المقترحة <b>${fmt(sumRoad)}</b>${derived ? " (محسوبة من الفراغ بين القسائم)" : ""}${sumEx > 0 ? " · الطرق القائمة <b>" + fmt(sumEx) + "</b>" : ""} · الفرق <b class="${Math.abs(diff) <= tol ? "ok" : "bad"}">${fmt(diff)}</b> م² ${Math.abs(diff) <= tol ? "✓ ضمن السماحية" : "✗ أكبر من السماحية (" + tol + ")"}`);
-  M = { boundary, lots, roadMP, exMP, axes, A, sumLots, sumRoad, sumEx, diff, derived };
+  // للرسم: الطرق كاملة (داخل الحدود وخارجها) موحّدة، لتظهر الطرق الخارجية متصلة بالداخلية وبنفس اللون
+  let roadDraw = [];
+  if (P) { const parts = [...roads, ...roadsEx].map(cl); if (roadMP.length) parts.push(roadMP); if (parts.length) { try { roadDraw = P.union(...parts); } catch (e) { roadDraw = [...roadMP, ...exMP]; } } }
+  const outA = mpArea(roadDraw) - sumRoad - sumEx;
+  if (outA > 1) msgs.push(`طرق خارج حدود القطعة: <b>${fmt(outA)}</b> م² — تظهر على المخطط متصلة بالطرق الداخلية، ولا تدخل في الحساب.`);
+  M = { boundary, lots, roadMP, exMP, roadDraw, axes, A, sumLots, sumRoad, sumEx, diff, derived };
   numberVertices();
   $("checks").hidden = false; $("checks").innerHTML = msgs.map(m => `<div>${m}</div>`).join("");
   renderInfo(); renderLotTable(); detectSys(); loadAerial(); center(false); render();
@@ -471,10 +476,8 @@ function drawSheet(cv, pxW, aer) {
   g.save(); g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.rect(0, 0, L.W, L.H); ring(g, L, M.boundary); g.fill("evenodd"); g.restore();
   const sh = (b, ox, oy, c) => { if (!ST.d3) return; g.shadowColor = c || "rgba(0,0,0,.55)"; g.shadowBlur = b * u; g.shadowOffsetX = ox * u; g.shadowOffsetY = oy * u; };
   const nosh = () => { g.shadowColor = "transparent"; g.shadowBlur = 0; g.shadowOffsetX = 0; g.shadowOffsetY = 0; };
-  // الطرق القائمة
-  M.exMP.forEach(pg => { g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.fillStyle = "rgba(95,92,86,.78)"; g.fill("evenodd"); g.lineWidth = 0.12 * u; g.strokeStyle = "rgba(255,255,255,.55)"; g.stroke(); });
-  // الطرق المقترحة: إسفلت + أرصفة + خط وسطي
-  M.roadMP.forEach(pg => {
+  // كل الطرق (القائمة والمقترحة، داخل الحدود وخارجها) بنفس الإسفلت وموصولة ببعض
+  (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => {
     g.save(); sh(1.2, 0.25, 0.35); g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.fillStyle = "#3b3e42"; g.fill("evenodd"); nosh();
     g.clip("evenodd"); const bb = bboxOf(openR(pg[0]));   // نسيج إسفلت خفيف
     const grd = g.createLinearGradient(L.X(bb[0]), L.Y(bb[3]), L.X(bb[2]), L.Y(bb[1])); grd.addColorStop(0, "rgba(255,255,255,.07)"); grd.addColorStop(1, "rgba(0,0,0,.18)"); g.fillStyle = grd; g.fillRect(0, 0, L.W, L.H); g.restore();
@@ -784,7 +787,7 @@ $("ePdf").onclick = async () => {
 $("eDxf").onclick = () => {
   if (!M) { toast("ارفع ملف المخطط أولاً"); return; }
   const o = [], f = v => (+v).toFixed(4), P = (...a) => a.forEach(x => o.push(String(x)));
-  const LAY = [["BOUNDARY", 1], ["LOTS", 3], ["ROADS_PROPOSED", 8], ["ROADS_EXISTING", 9], ["ROAD_AXIS", 7], ["LOT_NO", 2], ["AREAS", 7], ["LENGTHS", 7], ["VERTEX_NO", 1], ["OWNERS", 6]];
+  const LAY = [["BOUNDARY", 1], ["LOTS", 3], ["ROADS_PROPOSED", 8], ["ROADS_EXISTING", 9], ["ROADS_OUTSIDE", 8], ["ROAD_AXIS", 7], ["LOT_NO", 2], ["AREAS", 7], ["LENGTHS", 7], ["VERTEX_NO", 1], ["OWNERS", 6]];
   P(0, "SECTION", 2, "TABLES", 0, "TABLE", 2, "LAYER", 70, LAY.length); LAY.forEach(([n, c]) => P(0, "LAYER", 2, n, 70, 0, 62, c, 6, "CONTINUOUS")); P(0, "ENDTAB", 0, "ENDSEC");
   P(0, "SECTION", 2, "ENTITIES");
   const pl = (r, ly, cl = true) => { P(0, "POLYLINE", 8, ly, 66, 1, 10, "0.0", 20, "0.0", 30, "0.0", 70, cl ? 1 : 0); r.forEach(p => P(0, "VERTEX", 8, ly, 10, f(p[0]), 20, f(p[1]), 30, "0.0")); P(0, "SEQEND", 8, ly); };
@@ -792,6 +795,7 @@ $("eDxf").onclick = () => {
   const sz = Math.sqrt(M.A) / 60;
   pl(M.boundary, "BOUNDARY");
   M.roadMP.forEach(pg => pg.forEach(r => pl(openR(r), "ROADS_PROPOSED"))); M.exMP.forEach(pg => pg.forEach(r => pl(openR(r), "ROADS_EXISTING")));
+  if (PC() && M.roadDraw.length) { try { (PC().difference(M.roadDraw, [closeR(M.boundary)]) || []).forEach(pg => pg.forEach(r => pl(openR(r), "ROADS_OUTSIDE"))); } catch (e) {} }
   M.axes.forEach(a => pl(a, "ROAD_AXIS", false));
   M.lots.forEach(l => { pl(l.ring, "LOTS"); const c = labelPt(l.ring); tx([c[0], c[1] + sz * 1.2], String(l.no), sz * 2, "LOT_NO"); tx([c[0], c[1] - sz * 0.6], fmt(l.a) + " m2", sz, "AREAS"); if (ST.owners[l.no]) tx([c[0], c[1] - sz * 2.2], ST.owners[l.no], sz, "OWNERS"); });
   M.E.forEach(e => { const len = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]); let an = Math.atan2(e.q[1] - e.p[1], e.q[0] - e.p[0]) * 180 / Math.PI; if (an > 90) an -= 180; if (an < -90) an += 180; tx([(e.p[0] + e.q[0]) / 2, (e.p[1] + e.q[1]) / 2], len.toFixed(2), sz * 0.8, "LENGTHS", an); });

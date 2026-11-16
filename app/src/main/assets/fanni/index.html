@@ -222,19 +222,19 @@ let M = null;     // المخطط المعتمد {boundary, lots:[{ring,no}], ro
 const ROLE = { boundary: "حدود الأرض", lots: "القسائم", road: "طرق مقترحة", roadEx: "طرق قائمة", axis: "محاور الطرق", ignore: "تجاهل" };
 function guessRole(name) {
   const n = name.toLowerCase();
-  if (/contour|كنتور|label|text|dim|grid|point|nokta|hatch|defpoints|frame|برواز|نص/.test(n)) return "ignore";
+  if (/contour|كنتور|label|text|txt|dim|dis|grid|point|nokta|hatch|defpoints|frame|cross|برواز|نص|wall|build|fence|fenc|tree|shajar|cover|circ|elect|pole|well|house|مبن|سور|جدار|شجر/.test(n)) return "ignore";
   if (/bound|حدود|outline|border|parcel_?main|^land/.test(n)) return "boundary";
   if (/axis|center|محور/.test(n)) return "axis";
   if (/exist|قائم|appr|معتمد|old/.test(n)) return "roadEx";
   if (/road|street|طريق|طرق|شارع|شوارع/.test(n)) return "road";
-  if (/lot|قسيم|قسائم|نمر|parcel|plot|green|خضراء|public/.test(n)) return "lots";
-  return "lots";
+  if (/lot|قسيم|قسائم|نمر|parcel|plot|green|خضراء|public|ifraz|afraz|افراز|إفراز/.test(n)) return "lots";
+  return "ignore";   // الطبقة المجهولة لا تُحسب إلا إذا اخترتها
 }
 function loadDXFText(txt, name) {
   let R; try { R = parseDXF(txt); } catch (e) { toast("تعذّرت قراءة الملف"); return; }
   if (!R.ents.length) { toast("الملف لا يحتوي عناصر (قد يكون DXF ثنائي أو DWG)"); return; }
   RAW = { ...R, name };
-  ST.roles = {}; R.layers.forEach(l => { ST.roles[l] = guessRole(l); });
+  ST.roles = {}; R.layers.forEach(l => { ST.roles[l] = guessRole(l); }); ST.rolesV = 2;
   // إذا لم توجد طبقة حدود: أكبر مضلع مغلق يصير حدوداً
   if (!Object.values(ST.roles).includes("boundary")) ST.boundaryAuto = true;
   ST.off = [0, 0]; ST.geo = null; ST.owners = {}; ST.roadOf = {}; ST.colors = {};
@@ -247,11 +247,27 @@ function loadDXFText(txt, name) {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 function showLayers() {
   if (!RAW) { $("layers").innerHTML = '<p class="hint">ارفع ملفاً أولاً.</p>'; return; }
-  $("layers").innerHTML = RAW.layers.map(l => {
-    const n = RAW.ents.filter(e => e.layer === l && e.type !== "TX").length;
-    return `<div class="lay"><span>${esc(l)} <span class="pill">(${n})</span></span><select data-l="${esc(l)}">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}"${ST.roles[l] === k ? " selected" : ""}>${v}</option>`).join("")}</select><span></span></div>`;
-  }).join("") + (ST.boundaryAuto ? '<p class="hint">لا توجد طبقة باسم الحدود: سيُعتبر أكبر مضلع مغلق حدودَ الأرض (غيّر وظيفة طبقة إن أردت).</p>' : "");
-  $("layers").querySelectorAll("select").forEach(s => s.onchange = () => { ST.roles[s.dataset.l] = s.value; ST.boundaryAuto = !Object.values(ST.roles).includes("boundary"); save(); });
+  const geo = RAW.ents.filter(e => e.type !== "TX"), all = bboxOf(geo.flatMap(e => e.pts));
+  const drawable = RAW.layers.filter(l => geo.some(e => e.layer === l));
+  const order = { boundary: 0, lots: 1, road: 2, roadEx: 3, axis: 4, ignore: 5 };
+  drawable.sort((a, b) => (order[ST.roles[a]] ?? 5) - (order[ST.roles[b]] ?? 5));
+  const textOnly = RAW.layers.filter(l => !drawable.includes(l));
+  $("layers").innerHTML = `<div class="msg" style="margin-bottom:8px;line-height:1.9">كل طبقة بملفك: اختر <b>شو فيها</b>. الرسمة الصغيرة جنب كل طبقة بتوريك محتواها (بالذهبي) على كامل الملف.<br>
+    • <b>حدود الأرض</b>: الطبقة اللي فيها حد القطعة الكلية.<br>• <b>القسائم</b>: الطبقة اللي فيها النمر المفرزة (بوليلاين مغلق لكل نمرة).<br>• <b>طرق مقترحة / قائمة</b>: إن وجدت.<br>• كل الباقي (جدران، مباني، سياج، نصوص، برواز…): <b>تجاهل</b>.</div>` +
+    drawable.map(l => {
+      const n = geo.filter(e => e.layer === l).length;
+      return `<div class="lay" style="grid-template-columns:auto 1fr auto"><canvas data-th="${esc(l)}" width="96" height="66" style="width:72px;height:50px;background:#0c0c0d;border:1px solid #3a372e;border-radius:6px"></canvas><span>${esc(l)} <span class="pill">(${n} عنصر)</span></span><select data-l="${esc(l)}">${Object.entries(ROLE).map(([k, v]) => `<option value="${k}"${ST.roles[l] === k ? " selected" : ""}>${v}</option>`).join("")}</select></div>`;
+    }).join("") +
+    (textOnly.length ? `<p class="hint">طبقات فيها نصوص فقط (تُتجاهل): ${textOnly.map(esc).join("، ")}</p>` : "") +
+    (ST.boundaryAuto ? '<p class="hint">ما في طبقة محددة كحدود: رح يعتبر أكبر مضلع مغلق هو حد الأرض.</p>' : "");
+  $("layers").querySelectorAll("canvas[data-th]").forEach(c => {   // رسمة مصغرة لمحتوى الطبقة
+    const g = c.getContext("2d"), W = c.width, H = c.height, sc = Math.min((W - 8) / ((all[2] - all[0]) || 1), (H - 8) / ((all[3] - all[1]) || 1));
+    const X = x => 4 + (x - all[0]) * sc, Y = y => H - 4 - (y - all[1]) * sc;
+    g.strokeStyle = "rgba(255,255,255,.13)"; g.lineWidth = 1; geo.forEach(e => { g.beginPath(); e.pts.forEach((p, i) => g[i ? "lineTo" : "moveTo"](X(p[0]), Y(p[1]))); if (e.closed) g.closePath(); g.stroke(); });
+    g.strokeStyle = "#f3c74a"; g.lineWidth = 1.6; geo.filter(e => e.layer === c.dataset.th).forEach(e => { g.beginPath(); e.pts.forEach((p, i) => g[i ? "lineTo" : "moveTo"](X(p[0]), Y(p[1]))); if (e.closed) g.closePath(); g.stroke(); });
+  });
+  let t = 0;
+  $("layers").querySelectorAll("select").forEach(s => s.onchange = () => { ST.roles[s.dataset.l] = s.value; ST.boundaryAuto = !Object.values(ST.roles).includes("boundary"); save(); clearTimeout(t); t = setTimeout(build, 300); });
 }
 
 /* ======================= بناء المخطط + الفحص ======================= */
@@ -284,6 +300,7 @@ function build() {
   if (Lr.openCount && Lr.leftover) msgs.push(`<span class="bad">في طبقة القسائم ${Lr.openCount} خط/بوليلاين غير مغلق لم يمكن وصله بحلقة.</span>`);
   // القسائم: نستبعد المضلعات التي تطابق الحدود نفسها
   let lots = Lr.rings.filter(r => Math.abs(area(r) - area(boundary)) > 0.01);
+  if (!lots.length) msgs.push('<span class="bad">ما لقيت قسائم: اختار من القائمة فوق الطبقة اللي فيها النمر المفرزة (بوليلاين مغلق لكل نمرة) وخليها «القسائم».</span>');
   // ترقيم القسائم: نص رقمي داخل القسيمة إن وجد
   const texts = RAW.ents.filter(e => e.type === "TX" && /^\d{1,4}$/.test(e.s));
   lots = lots.map(r => { const t = texts.find(x => inRing(x.p, r)); return { ring: r, txt: t ? +t.s : null }; });
@@ -841,7 +858,7 @@ bindSettings(); showLayers();
 if (/from=design/.test(location.search)) setTimeout(() => $("bFromDesign").click(), 50);
 window.__back = () => { if (/ifraz\//.test(document.referrer)) location.href = "../ifraz/index.html"; else location.href = "../home.html"; return 1; };
 (() => { const t = localStorage.getItem("fanni-dxf"); if (t) { const nm = localStorage.getItem("fanni-dxf-name") || "آخر ملف"; const keep = JSON.stringify({ roles: ST.roles, owners: ST.owners, roadOf: ST.roadOf, colors: ST.colors, off: ST.off, geo: ST.geo });
-  RAW = parseDXF(t); RAW.name = nm; Object.assign(ST, JSON.parse(keep)); showLayers(); $("fileInfo").hidden = false; $("fileInfo").textContent = "📄 " + nm + " (آخر ملف)"; build(); } })();
+  RAW = parseDXF(t); RAW.name = nm; Object.assign(ST, JSON.parse(keep)); if (ST.rolesV !== 2) { ST.roles = {}; RAW.layers.forEach(l => { ST.roles[l] = guessRole(l); }); ST.rolesV = 2; save(); } showLayers(); $("fileInfo").hidden = false; $("fileInfo").textContent = "📄 " + nm + " (آخر ملف)"; build(); } })();
 </script>
 </body>
 </html>

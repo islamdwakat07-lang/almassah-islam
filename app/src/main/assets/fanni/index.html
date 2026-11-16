@@ -334,7 +334,16 @@ function build() {
   if (P) { const parts = [...roads, ...roadsEx].map(cl); if (roadMP.length) parts.push(roadMP); if (parts.length) { try { roadDraw = P.union(...parts); } catch (e) { roadDraw = [...roadMP, ...exMP]; } } }
   const outA = mpArea(roadDraw) - sumRoad - sumEx;
   if (outA > 1) msgs.push(`طرق خارج حدود القطعة: <b>${fmt(outA)}</b> م² — تظهر على المخطط متصلة بالطرق الداخلية، ولا تدخل في الحساب.`);
-  M = { boundary, lots, roadMP, exMP, roadDraw, axes, A, sumLots, sumRoad, sumEx, diff, derived };
+  // محاور تقريبية للطرق: كل الطرق إن لم توجد طبقة محاور، وإلا الطرق الواقعة خارج القطعة فقط
+  const roadAxes = [];
+  [...roads, ...roadsEx].forEach(r => {
+    let outF = 1; if (P) { try { outF = 1 - mpArea(P.intersection(cl(r), Bmp)) / area(r); } catch (e) {} }
+    if (axes.length && outF < 0.5) return;
+    let a = centerLine(r);
+    if (a && axes.length && P) a = a.filter(q => !inRing(q, boundary));   // خارج القطعة فقط (المحور الداخلي مرسوم من الملف)
+    if (a && a.length > 1) roadAxes.push(a);
+  });
+  M = { boundary, lots, roadMP, exMP, roadDraw, axes, roadAxes, A, sumLots, sumRoad, sumEx, diff, derived };
   numberVertices();
   $("checks").hidden = false; $("checks").innerHTML = msgs.map(m => `<div>${m}</div>`).join("");
   renderInfo(); renderLotTable(); detectSys(); loadAerial(); center(false); render();
@@ -485,7 +494,9 @@ function drawSheet(cv, pxW, aer) {
   });
   // الخطوط الوسطية: محاور مرسومة في الملف، أو محور تقريبي للطرق المستطيلة
   g.save(); g.setLineDash([1.2 * u, 0.9 * u]); g.lineWidth = 0.18 * u; g.strokeStyle = "rgba(255,255,255,.85)";
-  const axes = M.axes.length ? M.axes : M.roadMP.map(pg => roadAxis(openR(pg[0]))).filter(Boolean);
+  if (M.roadDraw && M.roadDraw.length) { g.beginPath(); M.roadDraw.forEach(pg => pg.forEach(r => ring(g, L, openR(r)))); g.clip("evenodd"); }   // الخط داخل الإسفلت فقط
+  let axes = [...M.axes, ...(M.roadAxes || [])];
+  if (!axes.length) axes = M.roadMP.map(pg => roadAxis(openR(pg[0]))).filter(Boolean);
   axes.forEach(a => { g.beginPath(); a.forEach((p, i) => g[i ? "lineTo" : "moveTo"](L.X(p[0]), L.Y(p[1]))); g.stroke(); });
   g.restore();
   // القسائم: ظل مجسم + تعبئة شفافة متدرجة + حدود
@@ -559,6 +570,27 @@ function roadAxis(r) {   // محور تقريبي للطريق: أطول اتج�
   const { bb, c, s } = best, len = bb[2] - bb[0], wid = bb[3] - bb[1]; const L2 = len >= wid;
   const m = L2 ? [[bb[0], (bb[1] + bb[3]) / 2], [bb[2], (bb[1] + bb[3]) / 2]] : [[(bb[0] + bb[2]) / 2, bb[1]], [(bb[0] + bb[2]) / 2, bb[3]]];
   return m.map(p => [p[0] * c - p[1] * s, p[0] * s + p[1] * c]);
+}
+/* خط وسط تقريبي لطريق طولي (مستقيم أو منحنٍ قليلاً): مقاطع عرضية على طول اتجاهه، ونقطة المنتصف لكل مقطع */
+function centerLine(r) {
+  let best = null;
+  for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.5) continue; const th = Math.atan2(b[1] - a[1], b[0] - a[0]), c = Math.cos(th), s = Math.sin(th);
+    const pr = r.map(p => [p[0] * c + p[1] * s, -p[0] * s + p[1] * c]), bb = bboxOf(pr), ra = (bb[2] - bb[0]) * (bb[3] - bb[1]); if (!best || ra < best.ra) best = { ra, c, s, bb, pr }; }
+  if (!best) return null;
+  let { c, s, bb, pr } = best; let len = bb[2] - bb[0], wid = bb[3] - bb[1];
+  if (wid > len) { pr = pr.map(p => [p[1], -p[0]]); const t = c; c = -s; s = t; [len, wid] = [wid, len]; bb = bboxOf(pr); }   // نجعل الاتجاه الطولي على المحور الأول
+  const W = area(r) / len; if (len < 1.5 * W) return null;   // ليس طريقاً طولياً
+  const out = [], n = Math.max(2, Math.ceil(len / 2));
+  for (let k = 0; k <= n; k++) {
+    const x = bb[0] + 0.3 + (len - 0.6) * k / n, ys = [];
+    for (let i = 0; i < pr.length; i++) { const a = pr[i], b = pr[(i + 1) % pr.length]; if ((a[0] <= x && b[0] > x) || (b[0] <= x && a[0] > x)) ys.push(a[1] + (x - a[0]) * (b[1] - a[1]) / (b[0] - a[0])); }
+    if (ys.length < 2) continue; ys.sort((p, q) => p - q);
+    let lo = ys[0], hi = ys[1]; const prev = out.length ? out[out.length - 1][1] : null;
+    if (prev != null) for (let j = 0; j + 1 < ys.length; j += 2) if (ys[j] <= prev && prev <= ys[j + 1]) { lo = ys[j]; hi = ys[j + 1]; }
+    out.push([x, (lo + hi) / 2]);
+  }
+  // رجوع من الإحداثيات المدوّرة (الدوران العكسي: [u c - v s, u s + v c])
+  return out.length > 1 ? out.map(([u, v]) => [u * c - v * s, u * s + v * c]) : null;
 }
 function northArrow(g, x, y, R) {
   g.save(); g.translate(x, y);

@@ -109,7 +109,8 @@ table.t input{width:100%}
       <label>مقياس رسم بتكتبه أنت 1:<input id="sScaleC" type="number" min="20" step="1" placeholder="فارغ = حسب القائمة"></label>
       <label>مقياس الرسم<select id="sScale"><option value="0">تلقائي</option><option>100</option><option>200</option><option>250</option><option>500</option><option>750</option><option>1000</option><option>1250</option><option>1500</option><option>2000</option><option>2500</option><option>5000</option></select></label>
       <label>عرض الهامش الأيمن %<input id="sPanel" type="range" min="22" max="40" step="1"></label>
-      <label>شفافية ألوان القسائم<input id="sAlpha" type="range" min="0.15" max="0.9" step="0.05"></label>
+      <label>كثافة لون القسائم (الأقل = الأرض أوضح)<input id="sAlpha" type="range" min="0.08" max="0.85" step="0.02"></label>
+      <label>كثافة لون الطرق<input id="sRoadA" type="range" min="0.1" max="1" step="0.05"></label>
       <label>لون حدود القسائم<input id="sBorder" type="color"></label>
     </div>
     <div class="row" style="margin-top:8px">
@@ -138,8 +139,9 @@ const fmt = (n, d = 2) => (isFinite(n) ? n.toLocaleString("en-US", { minimumFrac
 function toast(m, ms = 3500) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms); }
 const KEY = "fanni-v1";
 let ST = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } })();
-const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.55, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
+const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
 for (const k in DEF) if (ST[k] == null) ST[k] = JSON.parse(JSON.stringify(DEF[k]));
+if (ST.alphaV !== 2) { ST.alpha = 0.3; ST.roadA = 0.45; ST.alphaV = 2; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) { toast("الذاكرة ممتلئة، لم تُحفظ الإعدادات"); } };
 
 /* ======================= DXF ======================= */
@@ -513,7 +515,7 @@ function drawSheet(cv, pxW, aer) {
   const nosh = () => { g.shadowColor = "transparent"; g.shadowBlur = 0; g.shadowOffsetX = 0; g.shadowOffsetY = 0; };
   // كل الطرق (القائمة والمقترحة، داخل الحدود وخارجها) بنفس الإسفلت وموصولة ببعض
   (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => {
-    g.save(); sh(1.2, 0.25, 0.35); g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.fillStyle = "#3b3e42"; g.fill("evenodd"); nosh();
+    g.save(); sh(0.8 * ST.roadA, 0.15, 0.25); g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.fillStyle = `rgba(48,50,54,${ST.roadA})`; g.fill("evenodd"); nosh();
     g.clip("evenodd"); const bb = bboxOf(openR(pg[0]));   // نسيج إسفلت خفيف
     const grd = g.createLinearGradient(L.X(bb[0]), L.Y(bb[3]), L.X(bb[2]), L.Y(bb[1])); grd.addColorStop(0, "rgba(255,255,255,.07)"); grd.addColorStop(1, "rgba(0,0,0,.18)"); g.fillStyle = grd; g.fillRect(0, 0, L.W, L.H); g.restore();
     g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.lineWidth = 0.35 * u; g.strokeStyle = "#cfcac0"; g.stroke(); g.lineWidth = 0.1 * u; g.strokeStyle = "#7d786e"; g.stroke();
@@ -528,14 +530,12 @@ function drawSheet(cv, pxW, aer) {
   // القسائم: ظل مجسم + تعبئة شفافة متدرجة + حدود
   M.lots.forEach(l => {
     const col = lotColor(l), bb = bboxOf(l.ring);
-    g.save(); sh(1.6, 0.35, 0.55); g.beginPath(); ring(g, L, l.ring); g.fillStyle = hexA(col, Math.min(0.95, ST.alpha + 0.12)); g.fill(); nosh();
-    const grd = g.createLinearGradient(L.X(bb[0]), L.Y(bb[3]), L.X(bb[2]), L.Y(bb[1])); grd.addColorStop(0, "rgba(255,255,255,.22)"); grd.addColorStop(0.55, "rgba(255,255,255,0)"); grd.addColorStop(1, "rgba(0,0,0,.25)");
+    g.save(); sh(1.0, 0.25, 0.4, `rgba(0,0,0,${0.25 + ST.alpha * 0.4})`); g.beginPath(); ring(g, L, l.ring); g.fillStyle = hexA(col, ST.alpha); g.fill(); nosh();
+    const grd = g.createLinearGradient(L.X(bb[0]), L.Y(bb[3]), L.X(bb[2]), L.Y(bb[1])); grd.addColorStop(0, `rgba(255,255,255,${0.1 + ST.alpha * 0.2})`); grd.addColorStop(0.55, "rgba(255,255,255,0)"); grd.addColorStop(1, `rgba(0,0,0,${0.06 + ST.alpha * 0.25})`);
     g.clip(); g.fillStyle = grd; g.fillRect(0, 0, L.W, L.H); g.restore();
     // ضبط الشفافية الفعلية: إعادة رسم الصورة تحت حسب الشفافية المختارة
   });
-  if (ST.alpha < 0.55 && aer && aer.img) {   // شفافية أعلى: نُظهر الصورة من خلال القسائم
-    g.save(); g.globalAlpha = (0.55 - ST.alpha) / 0.55 * 0.9; g.beginPath(); M.lots.forEach(l => ring(g, L, l.ring)); g.clip(); const b = aer.box; g.drawImage(aer.img, L.X(b[0]), L.Y(b[3]), L.X(b[2]) - L.X(b[0]), L.Y(b[1]) - L.Y(b[3])); g.restore();
-  }
+
   M.lots.forEach(l => { g.beginPath(); ring(g, L, l.ring); g.lineJoin = "round"; g.lineWidth = 0.75 * u; g.strokeStyle = "rgba(255,255,255,.95)"; g.stroke(); g.lineWidth = 0.38 * u; g.strokeStyle = ST.border; g.stroke(); });
   // حدود الأرض الكلية
   g.save(); g.lineJoin = "round"; g.beginPath(); ring(g, L, M.boundary);
@@ -793,7 +793,7 @@ function drawOblique(g, L, u, aer, FX) {
   const pathP = (rr, lift) => { rr.forEach((p, i) => { const q = P(p), h = lift ? lift * q[2] : 0; g[i ? "lineTo" : "moveTo"](q[0], q[1] - h); }); g.closePath(); };
   // الطرق (على الأرض)
   (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => {
-    g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = u; g.beginPath(); pg.forEach(r => pathP(openR(r))); g.fillStyle = "#3b3e42"; g.fill("evenodd"); g.restore();
+    g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = u; g.beginPath(); pg.forEach(r => pathP(openR(r))); g.fillStyle = `rgba(48,50,54,${ST.roadA})`; g.fill("evenodd"); g.restore();
     g.beginPath(); pg.forEach(r => pathP(openR(r))); g.lineWidth = 0.3 * u; g.strokeStyle = "#cfcac0"; g.stroke();
   });
   g.save(); if (M.roadDraw && M.roadDraw.length) { g.beginPath(); M.roadDraw.forEach(pg => pg.forEach(r => pathP(openR(r)))); g.clip("evenodd"); }
@@ -816,7 +816,7 @@ function drawOblique(g, L, u, aer, FX) {
     }
     // الوجه العلوي
     g.save(); g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 1.2 * u; g.shadowOffsetY = 0.4 * u;
-    g.beginPath(); pathP(r, lift); g.fillStyle = hexA(col, Math.min(0.92, ST.alpha + 0.25)); g.fill(); g.restore();
+    g.beginPath(); pathP(r, lift); g.fillStyle = hexA(col, Math.min(0.9, ST.alpha + 0.08)); g.fill(); g.restore();
     g.save(); g.beginPath(); pathP(r, lift); g.clip(); const c0 = P(l.c);
     const grd = g.createLinearGradient(c0[0] - 20 * u, c0[1] - 20 * u, c0[0] + 20 * u, c0[1] + 10 * u); grd.addColorStop(0, "rgba(255,255,255,.28)"); grd.addColorStop(1, "rgba(0,0,0,.2)"); g.fillStyle = grd; g.fillRect(FX[0], FX[1], O.W, O.H); g.restore();
     g.beginPath(); pathP(r, lift); g.lineJoin = "round"; g.lineWidth = 0.6 * u; g.strokeStyle = "#fff"; g.stroke(); g.lineWidth = 0.3 * u; g.strokeStyle = ST.border; g.stroke();
@@ -895,7 +895,7 @@ $("bCenter").onclick = () => center(true);
 function bindSettings() {
   const b = (id, k, conv = v => v, ev = "change") => { const e = $(id); if (e.type === "checkbox") e.checked = !!ST[k]; else e.value = ST[k]; e.addEventListener(ev, () => { ST[k] = e.type === "checkbox" ? e.checked : conv(e.value); save(); if (["paper", "orient", "scale", "panel", "view", "tilt", "scaleC"].includes(k)) loadAerial(); render(); }); };
   b("sView", "view"); b("sTilt", "tilt", v => +v, "input"); b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
-  b("sPaper", "paper"); b("sOrient", "orient"); b("sScale", "scale", v => +v); b("sPanel", "panel", v => +v, "input"); b("sAlpha", "alpha", v => +v, "input"); b("sBorder", "border", v => v, "input");
+  b("sPaper", "paper"); b("sOrient", "orient"); b("sScale", "scale", v => +v); b("sPanel", "panel", v => +v, "input"); b("sAlpha", "alpha", v => +v, "input"); b("sRoadA", "roadA", v => +v, "input"); b("sBorder", "border", v => v, "input");
   b("sVtx", "vtx"); b("sLen", "len"); b("sOwn", "own"); b("s3d", "d3"); b("sNorth", "north");
   $("tol").value = ST.tol; $("tol").oninput = () => { ST.tol = +$("tol").value || 0; save(); };
   $("aSrc").value = ST.src; $("custBox").hidden = ST.src !== "custom";

@@ -181,7 +181,8 @@
   const HINT = { pan: "اضغط على أي قطعة لاختيارها وتغيير نوعها. اسحب لتحريك الصورة، وبإصبعين للتكبير.", road: "", grid: "", split: "اضغط نقطتين لرسم خط يقسم القطعة التي يمر بها.", merge: "اضغط قطعتين متجاورتين لدمجهما.", more: "" };
 
   /* ---------- اللوحة السفلية حسب الأداة ---------- */
-  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = false, aRW = 8;
+  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = false, aRW = 8, aEx = 0;
+  const tgtA = () => aEx > 0 ? aEx : aMin;
   const aDef = () => { if (!aMin) aMin = +S.minParcel || 600; if (!aW) aW = +S.minWidth || 15; };
   function panel() {
     const p = $i("dzPanel"); let h = "";
@@ -199,10 +200,10 @@
       }
     }
     else if (tool === "grid") {
-      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button></div>`; }
+      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>مساحة النمرة (م²)<input id="dzAE" type="number" min="0" step="10" value="${aEx || ""}" placeholder="—"></label><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button></div>`; }
       else h = `<div class="r"><span class="ttl">▦ تقسيم القطعة (${fmt(polyArea(parcelsL()[sel]))} م²)</span></div>
         <div class="r"><button class="pb ${gMode === "auto" ? "go" : ""}" type="button" data-gm="auto">⚡ تلقائي بالشروط</button><button class="pb ${gMode === "count" ? "go" : ""}" type="button" data-gm="count">بالعدد</button><button class="pb ${gMode === "size" ? "go" : ""}" type="button" data-gm="size">بالأبعاد</button></div><div class="r">
-        ${gMode === "auto" ? (aDef(), `<label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
+        ${gMode === "auto" ? (aDef(), `<label>مساحة النمرة (م²)<input id="dzAE" type="number" min="0" step="10" value="${aEx || ""}" placeholder="—"></label><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
         <div class="r"><button class="pb" type="button" id="dzGDir">🔄 ${gMode === "auto" ? "تغيير الواجهة" : "تدوير الاتجاه"}</button><button class="pb go" type="button" id="dzGGo">✓ قسّم</button>${gMode === "auto" ? `<button class="pb" type="button" id="dzGAll">⚡ كل البلوكات غير المقسمة</button>` : ""}</div>`;
     } else if (tool === "pan" && sel >= 0) {
       const x = D.parcels[sel];
@@ -223,6 +224,7 @@
     ["dzGR", "dzGC", "dzGW", "dzGD"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { gR = Math.max(1, +($i("dzGR") || {}).value || gR); gC = Math.max(1, +($i("dzGC") || {}).value || gC); gW = +($i("dzGW") || {}).value || gW; gDp = +($i("dzGD") || {}).value || gDp; draw(); }; });
     on("dzGDir", () => { dirIdx++; draw(); panelInfo(); }); on("dzGGo", doGrid); on("dzGAll", doAutoAll);
     ["dzAM", "dzAW"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { aMin = Math.max(20, +($i("dzAM") || {}).value || aMin); aW = Math.max(1, +($i("dzAW") || {}).value || aW); draw(); panelInfo(); }; });
+    const ae = $i("dzAE"); if (ae) ae.oninput = () => { aEx = Math.max(0, +ae.value || 0); draw(); panelInfo(); };
     const ar = $i("dzAR"); if (ar) ar.onchange = () => { aRoads = ar.checked; draw(); panelInfo(); };
     const arw = $i("dzARW"); if (arw) arw.oninput = () => { aRW = Math.max(2, +arw.value || 8); draw(); panelInfo(); };
     p.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { rmode = b.dataset.rm; draft = []; rsel = -1; panel(); draw(); });
@@ -239,7 +241,8 @@
   function panelInfo() {
     const el = $i("dzAInfo"); if (!el || sel < 0) return;
     const r = autoLots(parcelsL()[sel]);
-    el.textContent = r.lots.length ? `← ${r.lots.length} قسيمة` + (r.bad ? ` (${r.bad} لا تحقق الشروط)` : `، كل واحدة ≈ ${fmt(r.lots.reduce((t, l) => t + Math.abs(ringArea(l)), 0) / r.lots.length)} م²`) : "لا تتسع لقسيمة واحدة";
+    el.textContent = r.lots.length ? `← ${r.lots.length} قسيمة` + (r.bad ? ` (${r.bad} لا تحقق الشروط)` : (aEx > 0 ? ` بمساحة ${fmt(aEx, 0)} م²` : `، كل واحدة ≈ ${fmt(r.lots.reduce((t, l) => t + Math.abs(ringArea(l)), 0) / r.lots.length)} م²`)) : "لا تتسع لقسيمة واحدة";
+    if (r.rest && r.rest.length) el.textContent += ` + باقي ${fmt(r.rest.reduce((t, g) => t + Math.abs(ringArea(g)), 0), 0)} م² غير مقسّم`;
     if (r.roads && r.roads.length) el.textContent += ` + ${r.how} (${fmt(r.ra, 0)} م² طرق)`;
     if (r.deep) el.textContent += ` — العمق ${fmt(r.deep, 0)} م كبير، فعّل «اقترح طرقاً داخلية» أو ارسم شارعاً`;
   }
@@ -319,7 +322,7 @@
   let autoC = { k: "", r: null };
   function autoLots(P) {
     aDef();
-    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW + "|" + aRoads + aRW;
+    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW + "|" + aRoads + aRW + "|" + aEx;
     if (autoC.k === key) return autoC.r;
     const fe = frontEdges(r), dirs = [];
     const addDir = (th, w, f) => { const e = dirs.find(d => sameTh(d.th, th)); if (e) { e.w += w; e.f = e.f || f; } else dirs.push({ th, w, f }); };
@@ -330,15 +333,15 @@
     const R = r.map(p => rot(p, c, s)), bb = bboxOf(R), H = bb[3] - bb[1];
     const fv = fe.filter(e => sameTh(e.th, th)).map(e => (rot(e.a, c, s)[1] + rot(e.b, c, s)[1]) / 2);
     const lowF = fv.some(v => v < bb[1] + H / 2), highF = fv.some(v => v >= bb[1] + H / 2);
-    const f = Math.max(aW, Math.sqrt(aMin * 1.05 / 1.25)), dT = aMin * 1.05 / f;
+    const f = Math.max(aW, Math.sqrt(tgtA() * 1.05 / 1.25)), dT = tgtA() * 1.05 / f;
     const bands = lowF && highF && H > 1.6 * dT ? [[bb[1] - 1, (bb[1] + bb[3]) / 2], [(bb[1] + bb[3]) / 2, bb[3] + 1]] : [[bb[1] - 1, bb[3] + 1]];
-    const lots = []; let bad = 0;
+    const lots = [], rest0 = []; let bad = 0;
     for (const [v0, v1] of bands) {
       const row = clipHalf(clipHalf(R, 0, 1, -v0), 0, -1, v1); if (!row.length) continue;
       const k = cutRow(row, 0); if (!k.ok) bad++;
-      k.lots.forEach(g => lots.push(g.map(p => unrot(p, c, s))));
+      k.lots.forEach(g => lots.push(g.map(p => unrot(p, c, s)))); (k.rest || []).forEach(g => rest0.push(g.map(p => unrot(p, c, s))));
     }
-    let res = { lots, bad, rest: [], roads: [], ra: 0, front: D0.f, deep: bands.length === 1 && H > 2.2 * dT ? H : 0 };
+    let res = { lots, bad, rest: rest0, roads: [], ra: 0, front: D0.f, deep: bands.length === 1 && H > 2.2 * dT ? H : 0 };
     if (aRoads) {   // اقتراح طرق داخلية: نجرب عدة تخطيطات ونختار الأكثر قسائم صالحة
       const alt = withRoads(R, lowF, highF, dT);
       const un = g => g.map(p => unrot(p, c, s));
@@ -351,6 +354,16 @@
   function cutRow(row, ax) {
     const T = ax ? (p => [p[1], -p[0]]) : (p => p), Ti = ax ? (p => [-p[1], p[0]]) : (p => p);
     const Rr = row.map(T), A = Math.abs(ringArea(Rr)), rb = bboxOf(Rr);
+    if (aEx > 0) {   // مساحة محددة لكل نمرة: نمر بالمساحة بالضبط من بداية الصف، والباقي في آخره
+      const n = Math.floor(A / aEx + 1e-6); if (n < 1) return { lots: [row], ok: false };
+      const left = t => { const g = clipHalf(Rr, -1, 0, t); return g.length ? Math.abs(ringArea(g)) : 0; };
+      const cuts = [rb[0] - 1];
+      for (let k = 1; k <= n; k++) { if (k === n && A - n * aEx < 0.05) { cuts.push(rb[2] + 1); break; } let a = cuts[k - 1], b = rb[2] + 1; for (let it = 0; it < 55; it++) { const m = (a + b) / 2; if (left(m) < aEx * k) a = m; else b = m; } cuts.push((a + b) / 2); }
+      const L = []; for (let k = 0; k < n; k++) { const g = clipHalf(clipHalf(Rr, 1, 0, -cuts[k]), -1, 0, cuts[k + 1]); if (g.length) L.push(g); }
+      const tail = cuts[n] < rb[2] ? clipHalf(Rr, 1, 0, -cuts[n]) : [], rest = [];
+      if (tail.length && Math.abs(ringArea(tail)) > 0.5) { if (Math.abs(ringArea(tail)) >= aMin - 0.01 && minWU(tail) >= aW - 0.01) L.push(tail); else rest.push(tail); }
+      return { lots: L.map(g => g.map(Ti)), rest: rest.map(g => g.map(Ti)), ok: L.every(g => minWU(g) >= aW - 0.01) };
+    }
     let n = Math.max(1, Math.min(Math.floor(A / aMin + 1e-9), Math.floor((rb[2] - rb[0]) / aW + 1e-9)));
     for (; n >= 1; n--) {
       const us = eqCuts(Rr, 0, n, rb), L = [];
@@ -367,7 +380,7 @@
     const slabU = (g, a, b) => clipHalf(clipHalf(g, 1, 0, -a), -1, 0, b), slabV = (g, a, b) => clipHalf(clipHalf(g, 0, 1, -a), 0, -1, b);
     const evalC = (roads, rows, how) => {
       const lots = [], rest = []; let bad = 0;
-      rows.forEach(rw => { if (!rw.poly.length) return; if (Math.abs(ringArea(rw.poly)) < aMin - 0.01) { rest.push(rw.poly); return; } const k = cutRow(rw.poly, rw.ax); if (!k.ok) { rest.push(rw.poly); bad++; } else lots.push(...k.lots); });
+      rows.forEach(rw => { if (!rw.poly.length) return; if (Math.abs(ringArea(rw.poly)) < tgtA() - 0.01) { rest.push(rw.poly); return; } const k = cutRow(rw.poly, rw.ax); if (!k.ok) { rest.push(rw.poly); bad++; } else { lots.push(...k.lots); rest.push(...(k.rest || [])); } });
       cands.push({ lots, rest, roads: roads.filter(g => g.length), ra: roads.reduce((t, g) => t + (g.length ? Math.abs(ringArea(g)) : 0), 0), bad, how });
     };
     const nA = Math.max(1, Math.round(Wu / (2 * dT + w)));
@@ -416,7 +429,7 @@
     });
     if (!n) { toast("لا توجد بلوكات غير مقسمة"); return; }
     snap(); D.parcels = next; if (newRoads.length) { D.rp = (D.rp || []).concat(newRoads); rebuild(true); } sel = -1; saveD(); panel(); draw();
-    toast(`أُفرزت البلوكات إلى ${n} قسيمة (أقل مساحة ${aMin} م²، أقل عرض ${aW} م)` + (bad ? ` — ${bad} جزء لم يتسع للشروط فبقي قطعة واحدة` : ""));
+    toast(`أُفرزت البلوكات إلى ${n} قسيمة (${aEx > 0 ? "مساحة النمرة " + aEx : "أقل مساحة " + aMin} م²، أقل عرض ${aW} م)` + (bad ? ` — ${bad} جزء لم يتسع للشروط فبقي قطعة واحدة` : ""));
   }
   function doGrid() {
     if (sel < 0) return;

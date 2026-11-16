@@ -76,7 +76,7 @@ table.t input{width:100%}
 
   <section class="card" id="cPrev"><h2><span class="n">3</span>المعاينة</h2>
     <div class="pvbar">
-      <button id="zIn">＋</button><button id="zOut">－</button><button id="zFit">ملء</button><button id="bFull">⛶ صفحة كاملة</button>
+      <button id="zIn">＋</button><button id="zOut">－</button><button id="zFit">ملء</button><button id="bFull">⛶ صفحة كاملة</button><button id="bInfo">✏️ معلومات الهامش</button>
       <button id="bPan">✋ تحريك المخطط</button><button id="bCenter">⌖ توسيط</button>
       <span class="pill" id="pvInfo"></span>
     </div>
@@ -102,7 +102,8 @@ table.t input{width:100%}
     <div class="row" style="margin-top:6px"><button id="bGeo">تطبيق المطابقة</button><button id="bGeoClr">إلغاء المطابقة</button><span id="geoInfo" class="pill"></span></div>
   </section>
 
-  <section class="card closed" id="cInfo"><h2><span class="n">5</span>بيانات الأرض والمالكين</h2>
+  <section class="card closed" id="cInfo"><h2><span class="n">5</span>معلومات الهامش والمالكين</h2>
+    <p class="hint">اللي بتكتبه هون بيظهر مباشرة في بطاقة «معلومات مخطط الإفراز» بالهامش، وأسماء المالكين في جدول القسائم. الخانة الفاضية بتاخذ القيمة الرمادية التلقائية.</p>
     <div class="grid2" id="infoF"></div>
     <h3 style="font-size:14px;color:var(--gold2);margin:12px 0 4px">القسائم</h3>
     <div style="overflow:auto"><table class="t" id="lotT"></table></div>
@@ -120,7 +121,6 @@ table.t input{width:100%}
       <label>لون حدود القسائم<input id="sBorder" type="color"></label>
     </div>
     <div class="row" style="margin-top:8px">
-      <label><input type="checkbox" id="sVtx"> ترقيم الرؤوس</label>
       <label><input type="checkbox" id="sLen"> أطوال الأضلاع</label>
       <label><input type="checkbox" id="sNorth"> سهم الشمال</label>
     </div>
@@ -129,6 +129,7 @@ table.t input{width:100%}
   <section class="card" id="cExp"><h2><span class="n">7</span>التصدير</h2>
     <div class="row"><label>الدقة<select id="eDpi"><option value="150">150 نقطة/إنش</option><option value="200" selected>200 نقطة/إنش</option><option value="300">300 نقطة/إنش</option></select></label>
       <button class="go" id="ePdf">📄 PDF</button><button class="go" id="ePng">🖼 PNG</button><button class="go" id="eDxf">📐 DXF</button><button class="go" id="eKml">🌍 KML لـ Google Earth</button></div>
+    <div class="row" style="margin-top:8px"><label style="flex:1">اسم الملف (لـ Google Earth وكل ملفات التصدير)<input id="eName" placeholder="مثال: إفراز قطعة 25 حوض 7 عصيرة"></label></div>
     <p class="hint">ملف KML: افتحه بتطبيق Google Earth (من نافذة المشاركة أو من الملفات)، فتنفرش القسائم والطرق والحدود على الأرض الثلاثية الأبعاد بمكانها الحقيقي، وتقدر تلف حواليها.</p>
     <p class="hint">PDF وPNG بحجم الورق الحقيقي وبمقياس الرسم المختار (مقياس الطباعة صحيح عند الطباعة بحجم 100%). الرسم داخل PDF صورة عالية الدقة، والهندسة الدقيقة القابلة للتكبير بلا حدود موجودة في ملف DXF.</p>
     <div id="eStat" class="msg" hidden></div>
@@ -148,7 +149,7 @@ let ST = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") |
 const DEF = { paper: "A3", orient: "a", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, head: 0, cam: 42, exag: 1.3, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
 for (const k in DEF) if (ST[k] == null) ST[k] = JSON.parse(JSON.stringify(DEF[k]));
 ST.own = false;   // اسم المالك بالجدول فقط
-ST.view = "plan"; ST.d3 = false;
+ST.view = "plan"; ST.d3 = false; ST.vtx = false;   // بدون دوائر ترقيم الرؤوس
 if (ST.orientV !== 2) { ST.orient = "a"; ST.orientV = 2; }
 if (ST.alphaV !== 2) { ST.alpha = 0.3; ST.roadA = 0.45; ST.alphaV = 2; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) { toast("الذاكرة ممتلئة، لم تُحفظ الإعدادات"); } };
@@ -564,12 +565,17 @@ function drawSheet(cv, pxW, aer) {
     const fs = 1.3 * u; g.font = `700 ${fs}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
     M.E.forEach(e => {
       const len = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]), x1 = L.X(e.p[0]), y1 = L.Y(e.p[1]), x2 = L.X(e.q[0]), y2 = L.Y(e.q[1]), pl = Math.hypot(x2 - x1, y2 - y1);
-      const t = len.toFixed(2); if (pl < g.measureText(t).width * 1.25 + 2.6 * u) return;
+      const t = len.toFixed(2); if (pl < 0.5) return;
+      // كل الأضلاع تُكتب: الخط يصغر ليناسب الضلع، والضلع القصير جداً يُكتب طوله خارجه بجانبه
+      g.font = `700 ${fs}px Plex, sans-serif`; const tw = g.measureText(t).width; let f = Math.min(fs, fs * (pl - 0.6 * u) / (tw * 1.08)), out = false;
+      if (f < 0.8 * u) { f = 0.8 * u; out = true; }
+      g.font = `700 ${f}px Plex, sans-serif`;
       let an = Math.atan2(y2 - y1, x2 - x1); if (an > Math.PI / 2) an -= Math.PI; if (an < -Math.PI / 2) an += Math.PI;
-      // إزاحة النص نحو داخل القسيمة (للضلع غير المشترك)
       let mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-      if (e.n === 1) { const c = labelPt(e.lot.ring), cx = L.X(c[0]), cy = L.Y(c[1]), nx = -(y2 - y1) / pl, ny = (x2 - x1) / pl, sgn = ((cx - mx) * nx + (cy - my) * ny) > 0 ? 1 : -1; mx += nx * sgn * fs * 1.05; my += ny * sgn * fs * 1.05; }
-      g.save(); g.translate(mx, my); g.rotate(an); g.lineWidth = fs * 0.28; g.strokeStyle = "rgba(0,0,0,.85)"; g.lineJoin = "round"; sh(0.4, 0.05, 0.1, "rgba(0,0,0,.8)"); g.strokeText(t, 0, 0); nosh(); g.fillStyle = "#fff"; g.fillText(t, 0, 0); g.restore();
+      const c = labelPt(e.lot.ring), cx = L.X(c[0]), cy = L.Y(c[1]), nx = -(y2 - y1) / pl, ny = (x2 - x1) / pl, sgn = ((cx - mx) * nx + (cy - my) * ny) > 0 ? 1 : -1;
+      if (out) { mx -= nx * sgn * f * 1.15; my -= ny * sgn * f * 1.15; }   // خارج الضلع القصير
+      else if (e.n === 1) { mx += nx * sgn * f * 1.05; my += ny * sgn * f * 1.05; }   // داخل القسيمة للضلع غير المشترك
+      g.save(); g.translate(mx, my); g.rotate(an); g.lineWidth = f * 0.28; g.strokeStyle = "rgba(0,0,0,.85)"; g.lineJoin = "round"; sh(0.4, 0.05, 0.1, "rgba(0,0,0,.8)"); g.strokeText(t, 0, 0); nosh(); g.fillStyle = "#fff"; g.fillText(t, 0, 0); g.restore();
     });
   }
   // رقم القسيمة + المساحة + خانة المالك
@@ -776,7 +782,7 @@ function houseIcon(g, x, y, s) {
 }
 function legendIcon(g, kind, x, y, w, u) {
   g.save();
-  if (kind === "bnd") { g.lineWidth = 0.45 * u; g.strokeStyle = "#fff"; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.stroke(); g.lineWidth = 0.25 * u; g.strokeStyle = ST.border; g.stroke(); [x, x + w].forEach(px => { g.beginPath(); g.arc(px, y, 0.6 * u, 0, 7); g.fillStyle = "#fff"; g.fill(); g.lineWidth = 0.18 * u; g.strokeStyle = ST.border; g.stroke(); }); }
+  if (kind === "bnd") { g.lineWidth = 0.45 * u; g.strokeStyle = "#fff"; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.stroke(); g.lineWidth = 0.25 * u; g.strokeStyle = ST.border; g.stroke(); }
   else if (kind === "lot") { rrect(g, x, y - 1.1 * u, w, 2.2 * u, 0.3 * u); g.fillStyle = hexA(PAL[0], .55); g.fill(); g.lineWidth = 0.25 * u; g.strokeStyle = ST.border; g.stroke(); }
   else if (kind === "road") { g.fillStyle = "#3b3e42"; g.fillRect(x, y - 1.1 * u, w, 2.2 * u); g.strokeStyle = "#cfcac0"; g.lineWidth = 0.15 * u; g.strokeRect(x, y - 1.1 * u, w, 2.2 * u); g.setLineDash([0.7 * u, 0.5 * u]); g.strokeStyle = "#fff"; g.beginPath(); g.moveTo(x + 0.4 * u, y); g.lineTo(x + w - 0.4 * u, y); g.stroke(); }
   else if (kind === "bld") { const s = 1.2 * u; g.fillStyle = "#e9dcc6"; g.fillRect(x + w / 2 - s, y - s * 0.6, s * 2, s * 1.4); g.fillStyle = "#c9b48f"; g.beginPath(); g.moveTo(x + w / 2 - s * 1.2, y - s * 0.6); g.lineTo(x + w / 2, y - s * 1.3); g.lineTo(x + w / 2 + s * 1.2, y - s * 0.6); g.fill(); g.fillStyle = "#6b5a3e"; g.fillRect(x + w / 2 - s * 0.6, y - s * 0.1, s * 0.4, s * 0.4); g.fillRect(x + w / 2 + s * 0.2, y - s * 0.1, s * 0.4, s * 0.4); }
@@ -1027,12 +1033,14 @@ async function exportKML() {
   const kc = (hex, a) => { const n = parseInt(hex.slice(1), 16); const h2 = v => v.toString(16).padStart(2, "0"); return h2(Math.round(a * 255)) + h2(n & 255) + h2((n >> 8) & 255) + h2(n >> 16); };
   const x = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   const poly = (name, r, style, desc) => `<Placemark><name>${x(name)}</name>${desc ? `<description>${x(desc)}</description>` : ""}<styleUrl>#${style}</styleUrl><Polygon><tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode><outerBoundaryIs><LinearRing><coordinates>${ringK(r)}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`;
-  let st = `<Style id="bnd"><LineStyle><color>ff2b26e8</color><width>4</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style><Style id="road"><LineStyle><color>ffc0cacf</color><width>1.5</width></LineStyle><PolyStyle><color>${kc("#303236", 0.55)}</color></PolyStyle></Style><Style id="lbl"><IconStyle><scale>0</scale></IconStyle><LabelStyle><scale>0.62</scale></LabelStyle></Style>`;
+  let st = `<Style id="bnd"><LineStyle><color>ff2b26e8</color><width>4</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style><Style id="road"><LineStyle><color>ffc0cacf</color><width>1.5</width></LineStyle><PolyStyle><color>${kc("#303236", 0.55)}</color></PolyStyle></Style><Style id="lbl"><IconStyle><scale>0</scale></IconStyle><LabelStyle><scale>0.62</scale></LabelStyle></Style><Style id="len"><IconStyle><scale>0</scale></IconStyle><LabelStyle><color>ff9ce6ff</color><scale>0.5</scale></LabelStyle></Style>`;
   M.lots.forEach(l => { st += `<Style id="l${l.no}"><LineStyle><color>ff2b26e8</color><width>2.5</width></LineStyle><PolyStyle><color>${kc(lotColor(l), 0.45)}</color></PolyStyle></Style>`; });
   let pm = poly("حدود الأرض", M.boundary, "bnd", "المساحة " + fa(M.A) + " م²");
   (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => { pm += poly("طريق", openR(pg[0]), "road"); });
-  M.lots.forEach(l => { pm += poly("قسيمة " + l.no, l.ring, "l" + l.no, "المساحة " + fa(l.a) + " م²" + (ST.owners[l.no] ? " — " + ST.owners[l.no] : "")); const c = labelPt(l.ring); pm += `<Placemark><name>${l.no} • ${Math.round(l.a)}</name><styleUrl>#lbl</styleUrl><Point><coordinates>${T(c)}</coordinates></Point></Placemark>`; });
-  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${x("مخطط إفراز " + (ST.info.parcel ? "قطعة " + ST.info.parcel : ""))}</name>${st}${pm}</Document></kml>`;
+  M.lots.forEach(l => { pm += poly("قسيمة " + l.no, l.ring, "l" + l.no, "المساحة " + fa(l.a) + " م²" + (ST.owners[l.no] ? " — " + ST.owners[l.no] : "")); const c = labelPt(l.ring); pm += `<Placemark><name>${fa(l.a)} م²</name><styleUrl>#lbl</styleUrl><Point><coordinates>${T(c)}</coordinates></Point></Placemark>`; });
+  // أطوال كل الأضلاع على منتصف كل ضلع
+  M.E.forEach(e => { const len = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]); if (len < 0.05) return; pm += `<Placemark><name>${len.toFixed(2)}</name><styleUrl>#len</styleUrl><Point><coordinates>${T([(e.p[0] + e.q[0]) / 2, (e.p[1] + e.q[1]) / 2])}</coordinates></Point></Placemark>`; });
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${x(outName())}</name>${st}${pm}</Document></kml>`;
   saveFile(baseName() + ".kml", new Blob([kml], { type: "application/vnd.google-earth.kml+xml" }));
   toast("افتح الملف بتطبيق Google Earth: المخطط بينفرش على الأرض الثلاثية الأبعاد بمكانه");
 }
@@ -1044,7 +1052,7 @@ async function render() {
   await fontsReady();
   const L = drawSheet($("pv"), 1700, AER); if (!L) return;
   $("pv").style.width = (zoom * 100) + "%";
-  $("pvInfo").textContent = `${ST.paper} ${L.port ? "عمودي" : "أفقي"}${ST.orient === "a" ? " (تلقائي)" : ""} · مقياس 1:${L.sc}${L.forced ? ` (1:${L.want} لا يتّسع على هذه الورقة)` : ""} · ${M.lots.length} قسيمة · ${M.V.length} رأس`;
+  $("pvInfo").textContent = `${ST.paper} ${L.port ? "عمودي" : "أفقي"}${ST.orient === "a" ? " (تلقائي)" : ""} · مقياس 1:${L.sc}${L.forced ? ` (1:${L.want} لا يتّسع على هذه الورقة)` : ""} · ${M.lots.length} قسيمة`;
 }
 $("zIn").onclick = () => { zoom = Math.min(5, zoom * 1.4); render(); };
 $("zOut").onclick = () => { zoom = Math.max(1, zoom / 1.4); render(); };
@@ -1056,6 +1064,11 @@ function fullFit() {
   im.style.width = s * ar + "px"; im.style.height = s + "px"; im.style.transform = `translate(-50%,-50%) rotate(${rot ? 90 : 0}deg)`;
 }
 $("bFull").onclick = () => { if (!M) return toast("ارفع ملف المخطط أولاً"); $("fImg").src = $("pv").toDataURL("image/jpeg", 0.92); fullFit(); $("full").classList.add("on"); };
+function openInfo() { const c = $("cInfo"); c.classList.remove("closed"); c.scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => { const i = c.querySelector("input"); if (i) i.focus({ preventScroll: true }); }, 500); }
+$("bInfo").onclick = openInfo;
+$("eName").value = ST.fname || ""; $("eName").addEventListener("input", () => { ST.fname = $("eName").value; save(); });
+// لمس الهامش في المعاينة يفتح خانات المعلومات
+$("pv").addEventListener("click", e => { if (panMode || !M) return; const L = layout(1700), r = $("pv").getBoundingClientRect(), x = (e.clientX - r.left) / r.width * L.w, y = (e.clientY - r.top) / r.height * L.h; if (L.port ? y > L.h - L.m - L.panH : x > L.w - L.m - L.panW) openInfo(); });
 $("fClose").onclick = () => $("full").classList.remove("on");
 addEventListener("resize", () => { if ($("full").classList.contains("on")) fullFit(); });
 $("bPan").onclick = () => { panMode = !panMode; $("pvWrap").classList.toggle("pan", panMode); $("bPan").classList.toggle("go", panMode); toast(panMode ? "اسحب على المعاينة لتحريك المخطط داخل الورقة" : "انتهى التحريك"); };
@@ -1073,7 +1086,7 @@ function bindSettings() {
   const b = (id, k, conv = v => v, ev = "change") => { const e = $(id); if (e.type === "checkbox") e.checked = !!ST[k]; else e.value = ST[k]; e.addEventListener(ev, () => { ST[k] = e.type === "checkbox" ? e.checked : conv(e.value); save(); if (["paper", "orient", "scale", "panel", "view", "tilt", "scaleC"].includes(k)) loadAerial(); render(); }); };
   b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
   b("sPaper", "paper"); b("sOrient", "orient"); b("sScale", "scale", v => +v); b("sPanel", "panel", v => +v, "input"); b("sAlpha", "alpha", v => +v, "input"); b("sRoadA", "roadA", v => +v, "input"); b("sBorder", "border", v => v, "input");
-  b("sVtx", "vtx"); b("sLen", "len"); b("sNorth", "north");
+  b("sLen", "len"); b("sNorth", "north");
   $("tol").value = ST.tol; $("tol").oninput = () => { ST.tol = +$("tol").value || 0; save(); };
   $("aSrc").value = ST.src; $("custBox").hidden = ST.src !== "custom";
   if (ST.custBox) ["ciX0", "ciY0", "ciX1", "ciY1"].forEach((id, i) => $(id).value = ST.custBox[i] || "");
@@ -1114,12 +1127,15 @@ $("bFromDesign").onclick = () => {
 async function saveFile(name, blob) {
   if (window.AndroidBridge && AndroidBridge.saveFile) {
     const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
-    const mime = /\.pdf$/i.test(name) ? "application/pdf" : /\.png$/i.test(name) ? "image/png" : "application/dxf";
+    const mime = /\.pdf$/i.test(name) ? "application/pdf" : /\.png$/i.test(name) ? "image/png" : /\.kml$/i.test(name) ? "application/vnd.google-earth.kml+xml" : "application/dxf";
     AndroidBridge.saveFile(name, b64, mime); return;
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
-const baseName = () => "ifraz-fanni-" + (ST.info.parcel ? "q" + ST.info.parcel + "-" : "") + new Date().toISOString().slice(0, 10);
+const baseName = () => (ST.fname || "").trim() ? outName() : defName();
+/* اسم الملف: يكتبه المستخدم من التطبيق، وإلا اسم تلقائي */
+const outName = () => ((ST.fname || "").trim() || defName()).replace(/[\\/:*?"<>|\n\r\t]+/g, "-").replace(/\.(kml|pdf|png|dxf)$/i, "");
+const defName = () => "ifraz-fanni-" + (ST.info.parcel ? "q" + ST.info.parcel + "-" : "") + new Date().toISOString().slice(0, 10);
 async function exportCanvas() {
   if (!M) { toast("ارفع ملف المخطط أولاً"); return null; }
   const [w, h] = paperWH();

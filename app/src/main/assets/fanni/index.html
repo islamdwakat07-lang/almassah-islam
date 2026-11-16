@@ -143,6 +143,7 @@ table.t input{width:100%}
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
+const fa = n => fmt(Math.round(n), 0);   // المساحات: أقرب عدد صحيح
 const fmt = (n, d = 2) => (isFinite(n) ? n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—");
 function toast(m, ms = 3500) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms); }
 const KEY = "fanni-v1";
@@ -349,11 +350,11 @@ function build() {
     let ov = [];
     for (let i = 0; i < lots.length; i++) for (let j = i + 1; j < lots.length; j++) {
       const bi = bboxOf(lots[i].ring), bj = bboxOf(lots[j].ring); if (bi[0] > bj[2] || bj[0] > bi[2] || bi[1] > bj[3] || bj[1] > bi[3]) continue;
-      const x = mpArea(P.intersection(cl(lots[i].ring), cl(lots[j].ring))); if (x > 0.01) ov.push(`${lots[i].no}↔${lots[j].no} (${fmt(x)} م²)`);
+      const x = mpArea(P.intersection(cl(lots[i].ring), cl(lots[j].ring))); if (x > 0.01) ov.push(`${lots[i].no}↔${lots[j].no} (${fa(x)} م²)`);
     }
     msgs.push(ov.length ? `<span class="bad">تداخل بين القسائم: ${ov.join("، ")}</span>` : '<span class="ok">✓ لا تداخل بين القسائم.</span>');
     const out = lots.map(l => [l.no, mpArea(P.difference(cl(l.ring), Bmp))]).filter(x => x[1] > 0.01);
-    if (out.length) msgs.push(`<span class="bad">قسائم تخرج عن حدود الأرض: ${out.map(x => x[0] + " (" + fmt(x[1]) + " م²)").join("، ")}</span>`);
+    if (out.length) msgs.push(`<span class="bad">قسائم تخرج عن حدود الأرض: ${out.map(x => x[0] + " (" + fa(x[1]) + " م²)").join("، ")}</span>`);
     if (roads.length) { const rl = mpArea(P.intersection(lotsU, roadMP)); if (rl > 0.01) msgs.push(`<span class="bad">الطرق تتداخل مع القسائم بمساحة ${fmt(rl)} م².</span>`); }
     const all = P.union(lotsU, ...(roadMP.length ? [roadMP] : []), ...(exMP.length ? [exMP] : []));
     const gap = (P.difference(Bmp, all) || []).filter(pg => mpArea([pg]) > tol);
@@ -361,12 +362,12 @@ function build() {
     msgs.push(gap.length ? `<span class="warn">فجوات غير مفسرة داخل الحدود: ${gap.length} (${fmt(gA)} م²).</span>` : '<span class="ok">✓ لا فجوات غير مفسرة.</span>');
   }
   const diff = A - (sumLots + sumRoad + sumEx);
-  msgs.unshift(`مساحة الأرض <b>${fmt(A)}</b> م² · القسائم (${lots.length}) <b>${fmt(sumLots)}</b> · الطرق المقترحة <b>${fmt(sumRoad)}</b>${derived ? " (محسوبة من الفراغ بين القسائم)" : ""}${sumEx > 0 ? " · الطرق القائمة <b>" + fmt(sumEx) + "</b>" : ""} · الفرق <b class="${Math.abs(diff) <= tol ? "ok" : "bad"}">${fmt(diff)}</b> م² ${Math.abs(diff) <= tol ? "✓ ضمن السماحية" : "✗ أكبر من السماحية (" + tol + ")"}`);
+  msgs.unshift(`مساحة الأرض <b>${fa(A)}</b> م² · القسائم (${lots.length}) <b>${fa(sumLots)}</b> · الطرق المقترحة <b>${fa(sumRoad)}</b>${derived ? " (محسوبة من الفراغ بين القسائم)" : ""}${sumEx > 0 ? " · الطرق القائمة <b>" + fa(sumEx) + "</b>" : ""} · الفرق <b class="${Math.abs(diff) <= tol ? "ok" : "bad"}">${fmt(diff)}</b> م² ${Math.abs(diff) <= tol ? "✓ ضمن السماحية" : "✗ أكبر من السماحية (" + tol + ")"}`);
   // للرسم: الطرق كاملة (داخل الحدود وخارجها) موحّدة، لتظهر الطرق الخارجية متصلة بالداخلية وبنفس اللون
   let roadDraw = [];
   if (P) { const parts = [...roads, ...roadsEx].map(cl); if (roadMP.length) parts.push(roadMP); if (parts.length) { try { roadDraw = P.union(...parts); } catch (e) { roadDraw = [...roadMP, ...exMP]; } } }
   const outA = mpArea(roadDraw) - sumRoad - sumEx;
-  if (outA > 1) msgs.push(`طرق خارج حدود القطعة: <b>${fmt(outA)}</b> م² — تظهر على المخطط متصلة بالطرق الداخلية، ولا تدخل في الحساب.`);
+  if (outA > 1) msgs.push(`طرق خارج حدود القطعة: <b>${fa(outA)}</b> م² — تظهر على المخطط متصلة بالطرق الداخلية، ولا تدخل في الحساب.`);
   // محاور تقريبية للطرق: كل الطرق إن لم توجد طبقة محاور، وإلا الطرق الواقعة خارج القطعة فقط
   const roadAxes = [];
   [...roads, ...roadsEx].forEach(r => {
@@ -462,9 +463,9 @@ $("bGeoClr").onclick = () => { ST.geo = null; save(); build(); $("geoInfo").text
 const INFO = [["gov", "المحافظة"], ["town", "البلدة"], ["site", "الموقع / الحي"], ["hawd", "رقم الحوض"], ["parcel", "رقم القطعة"], ["area", "المساحة الكلية"], ["roads", "مساحة الطرق المقتطعة"], ["net", "المساحة الصافية"], ["app", "مقدم الطلب"], ["surv", "المساح / معد المخطط"], ["date", "تاريخ إعداد المخطط"]];
 function autoInfo(k) {
   if (!M) return "";
-  if (k === "area") return fmt(M.A) + " m²";
-  if (k === "roads") return fmt(M.sumRoad + M.sumEx) + " m²";
-  if (k === "net") return fmt(M.sumLots) + " m²";
+  if (k === "area") return fa(M.A) + " m²";
+  if (k === "roads") return fa(M.sumRoad + M.sumEx) + " m²";
+  if (k === "net") return fa(M.sumLots) + " m²";
   if (k === "date") return new Date().toISOString().slice(0, 10);
   return "";
 }
@@ -478,7 +479,7 @@ const lotColor = l => ST.colors[l.no] || PAL[(l.no - 1) % PAL.length];
 function renderLotTable() {
   if (!M) { $("lotT").innerHTML = ""; return; }
   $("lotT").innerHTML = `<tr><th>رقم</th><th>المساحة م²</th><th>اسم المالك</th><th>اللون</th></tr>` +
-    M.lots.map(l => `<tr><td>${l.no}</td><td>${fmt(l.a)}</td><td><input data-o="${l.no}" value="${esc(ST.owners[l.no] || "")}" placeholder="فارغ للتعبئة اليدوية"></td><td><input type="color" data-c="${l.no}" value="${lotColor(l)}"></td></tr>`).join("");
+    M.lots.map(l => `<tr><td>${l.no}</td><td>${fa(l.a)}</td><td><input data-o="${l.no}" value="${esc(ST.owners[l.no] || "")}" placeholder="فارغ للتعبئة اليدوية"></td><td><input type="color" data-c="${l.no}" value="${lotColor(l)}"></td></tr>`).join("");
   $("lotT").querySelectorAll("[data-o]").forEach(i => i.oninput = () => { ST.owners[i.dataset.o] = i.value; save(); render(); });
   $("lotT").querySelectorAll("[data-r]").forEach(i => i.oninput = () => { ST.roadOf[i.dataset.r] = i.value === "" ? null : +i.value; save(); render(); });
   $("lotT").querySelectorAll("[data-c]").forEach(i => i.oninput = () => { ST.colors[i.dataset.c] = i.value; save(); render(); });
@@ -553,7 +554,7 @@ function drawSheet(cv, pxW, aer) {
   g.lineWidth = 0.72 * u; g.strokeStyle = ST.border; g.stroke(); g.lineWidth = 0.12 * u; g.strokeStyle = "rgba(255,255,255,.55)"; g.stroke(); g.restore();
   // أطوال الأضلاع
   if (ST.len) {
-    const fs = 1.55 * u; g.font = `700 ${fs}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+    const fs = 1.3 * u; g.font = `700 ${fs}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
     M.E.forEach(e => {
       const len = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]), x1 = L.X(e.p[0]), y1 = L.Y(e.p[1]), x2 = L.X(e.q[0]), y2 = L.Y(e.q[1]), pl = Math.hypot(x2 - x1, y2 - y1);
       const t = len.toFixed(2); if (pl < g.measureText(t).width * 1.25 + 2.6 * u) return;
@@ -572,7 +573,7 @@ function drawSheet(cv, pxW, aer) {
     g.lineWidth = 0.32 * u * s; g.strokeStyle = gold(g, x, yy - R * 1.3, x, yy + R); g.stroke();
     g.font = `700 ${2.5 * u * s}px Plex, sans-serif`; g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(l.no), x, yy - R * 0.45);
     // شريط المساحة
-    const at = fmt(l.a, l.a % 1 ? 2 : 0) + " m²"; g.font = `700 ${1.45 * u * s}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.6 * u * s, th = 2.0 * u * s, ty = yy + R * 0.75;
+    const at = fa(l.a) + " m²"; g.font = `700 ${1.45 * u * s}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.6 * u * s, th = 2.0 * u * s, ty = yy + R * 0.75;
     rrect(g, x - tw / 2, ty - th / 2, tw, th, th / 2); g.fillStyle = "#111"; g.fill(); g.lineWidth = 0.22 * u * s; g.strokeStyle = gold(g, x, ty - th, x, ty + th); g.stroke();
     g.fillStyle = "#fff"; g.direction = "ltr"; g.fillText(at, x, ty + 0.05 * u); g.direction = "rtl";
     if (ST.own) {   // خانة اسم المالك
@@ -731,7 +732,7 @@ function panel(g, L, u) {
       if (i % 2) { g.fillStyle = "rgba(255,255,255,.035)"; g.fillRect(gx0, yy - rowH / 2, gw, rowH); }
       const rr = Math.min(rowH * 0.42, 1.25 * u); g.beginPath(); g.arc(cx[0], yy, rr, 0, 7); g.fillStyle = gold(g, cx[0], yy - rr, cx[0], yy + rr); g.fill();
       g.fillStyle = "#111"; g.font = `700 ${fs}px Plex, sans-serif`; g.fillText(String(l.no), cx[0], yy + 0.05 * u);
-      g.fillStyle = "#fff"; g.font = `400 ${fs}px Plex, sans-serif`; g.direction = "ltr"; g.fillText(fmt(l.a), cx[1], yy); g.direction = "rtl";
+      g.fillStyle = "#fff"; g.font = `400 ${fs}px Plex, sans-serif`; g.direction = "ltr"; g.fillText(fa(l.a), cx[1], yy); g.direction = "rtl";
       g.fillText(fit(g, ST.owners[l.no] || "....................", cw[2] - 0.8 * u), cx[2], yy);
       g.fillStyle = "rgba(226,181,74,.2)"; g.fillRect(gx0, yy + rowH / 2 - 0.04 * u, gw, 0.08 * u);
     });
@@ -743,14 +744,14 @@ function panel(g, L, u) {
   const ry = tY + tH - sumH - roadH - 1.6 * u;
   rrect(g, x0 + 1.5 * u, ry, w - 3 * u, roadH, 0.6 * u); g.fillStyle = "#2c3e50"; g.fill(); g.lineWidth = 0.15 * u; g.strokeStyle = "#7fb3e6"; g.stroke();
   g.fillStyle = "#cfe6ff"; g.font = `700 ${1.3 * u}px Plex, sans-serif`; g.textAlign = "center";
-  g.fillText("الطرق", cxS[0], ry + roadH / 2); g.direction = "ltr"; g.fillText(fmt(roadT), cxS[1], ry + roadH / 2); g.direction = "rtl";
-  g.font = `400 ${1.15 * u}px Plex, sans-serif`; g.fillText(fit(g, M.sumEx > 0 && M.sumRoad > 0 ? "مقترحة " + fmt(M.sumRoad, 0) + " + قائمة " + fmt(M.sumEx, 0) : M.sumEx > 0 ? "طرق قائمة" : "طرق مقترحة", cwS[2] - u), cxS[2], ry + roadH / 2);
+  g.fillText("الطرق", cxS[0], ry + roadH / 2); g.direction = "ltr"; g.fillText(fa(roadT), cxS[1], ry + roadH / 2); g.direction = "rtl";
+  g.font = `400 ${1.15 * u}px Plex, sans-serif`; g.fillText(fit(g, M.sumEx > 0 && M.sumRoad > 0 ? "مقترحة " + fa(M.sumRoad) + " + قائمة " + fa(M.sumEx) : M.sumEx > 0 ? "طرق قائمة" : "طرق مقترحة", cwS[2] - u), cxS[2], ry + roadH / 2);
   const sy = tY + tH - sumH - 1.1 * u;
   rrect(g, x0 + 1.5 * u, sy, w - 3 * u, sumH, 0.6 * u); g.fillStyle = gold(g, x0, sy, x0, sy + sumH); g.fill();
   g.fillStyle = "#111"; g.font = `700 ${1.35 * u}px Plex, sans-serif`; g.textAlign = "center";
-  g.fillText("المجموع", cxS[0], sy + sumH / 2); g.direction = "ltr"; g.fillText(fmt(M.sumLots + roadT), cxS[1], sy + sumH / 2); g.direction = "rtl";
+  g.fillText("المجموع", cxS[0], sy + sumH / 2); g.direction = "ltr"; g.fillText(fa(M.sumLots + roadT), cxS[1], sy + sumH / 2); g.direction = "rtl";
   const ok = Math.abs(M.diff) <= (+ST.tol || 0.5); g.font = `700 ${1.15 * u}px Plex, sans-serif`;
-  g.fillText(fit(g, ok ? "✓ يطابق المساحة الكلية " + fmt(M.A) : "فرق " + fmt(M.diff) + " m² عن " + fmt(M.A), cwS[2] - u), cxS[2], sy + sumH / 2);
+  g.fillText(fit(g, ok ? "✓ يطابق المساحة الكلية " + fa(M.A) : "فرق " + fmt(M.diff) + " m² عن " + fa(M.A), cwS[2] - u), cxS[2], sy + sumH / 2);
   g.restore();
 }
 function fit(g, s, w) { s = String(s); if (g.measureText(s).width <= w) return s; while (s.length > 1 && g.measureText(s + "…").width > w) s = s.slice(0, -1); return s + "…"; }
@@ -846,7 +847,7 @@ function drawOblique(g, L, u, aer, FX) {
     g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; g.beginPath(); g.arc(x, yy - R * 0.35, R, 0, 7); g.fillStyle = "#111"; g.fill(); g.restore();
     g.beginPath(); g.arc(x, yy - R * 0.35, R, 0, 7); g.lineWidth = 0.3 * u * k2; g.strokeStyle = gold(g, x, yy - R * 1.3, x, yy + R); g.stroke();
     g.font = `700 ${2.4 * u * k2}px Plex, sans-serif`; g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(l.no), x, yy - R * 0.45);
-    const at = fmt(l.a, l.a % 1 ? 2 : 0) + " m²"; g.font = `700 ${1.4 * u * k2}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.6 * u * k2, th = 2.0 * u * k2, ty = yy + R * 0.75;
+    const at = fa(l.a) + " m²"; g.font = `700 ${1.4 * u * k2}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.6 * u * k2, th = 2.0 * u * k2, ty = yy + R * 0.75;
     rrect(g, x - tw / 2, ty - th / 2, tw, th, th / 2); g.fillStyle = "#111"; g.fill(); g.lineWidth = 0.2 * u * k2; g.strokeStyle = gold(g, x, ty - th, x, ty + th); g.stroke();
     g.fillStyle = "#fff"; g.direction = "ltr"; g.fillText(at, x, ty); g.direction = "rtl";
     if (ST.own) { const ow = ST.owners[l.no] || "", bw = 10.5 * u * k2, bh = 2.3 * u * k2, by2 = ty + th / 2 + 0.8 * u * k2;
@@ -992,7 +993,7 @@ function drawTerrain(g, L, u, aer, FX) {
     g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; g.beginPath(); g.arc(x, y - Rb * 0.35, Rb, 0, 7); g.fillStyle = "#111"; g.fill(); g.restore();
     g.beginPath(); g.arc(x, y - Rb * 0.35, Rb, 0, 7); g.lineWidth = 0.3 * u * k2; g.strokeStyle = gold(g, x, y - Rb * 1.3, x, y + Rb); g.stroke();
     g.font = `700 ${2.3 * u * k2}px Plex, sans-serif`; g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(l.no), x, y - Rb * 0.45);
-    const at = fmt(l.a, l.a % 1 ? 2 : 0) + " m²"; g.font = `700 ${1.35 * u * k2}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.5 * u * k2, th = 1.9 * u * k2, ty = y + Rb * 0.75;
+    const at = fa(l.a) + " m²"; g.font = `700 ${1.35 * u * k2}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.5 * u * k2, th = 1.9 * u * k2, ty = y + Rb * 0.75;
     rrect(g, x - tw / 2, ty - th / 2, tw, th, th / 2); g.fillStyle = "#111"; g.fill(); g.lineWidth = 0.2 * u * k2; g.strokeStyle = gold(g, x, ty - th, x, ty + th); g.stroke();
     g.fillStyle = "#fff"; g.direction = "ltr"; g.fillText(at, x, ty); g.direction = "rtl";
   });
@@ -1012,11 +1013,11 @@ async function exportKML() {
   const kc = (hex, a) => { const n = parseInt(hex.slice(1), 16); const h2 = v => v.toString(16).padStart(2, "0"); return h2(Math.round(a * 255)) + h2(n & 255) + h2((n >> 8) & 255) + h2(n >> 16); };
   const x = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   const poly = (name, r, style, desc) => `<Placemark><name>${x(name)}</name>${desc ? `<description>${x(desc)}</description>` : ""}<styleUrl>#${style}</styleUrl><Polygon><tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode><outerBoundaryIs><LinearRing><coordinates>${ringK(r)}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`;
-  let st = `<Style id="bnd"><LineStyle><color>ff2b26e8</color><width>4</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style><Style id="road"><LineStyle><color>ffc0cacf</color><width>1.5</width></LineStyle><PolyStyle><color>${kc("#303236", 0.55)}</color></PolyStyle></Style><Style id="lbl"><IconStyle><scale>0</scale></IconStyle><LabelStyle><scale>1.1</scale></LabelStyle></Style>`;
+  let st = `<Style id="bnd"><LineStyle><color>ff2b26e8</color><width>4</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style><Style id="road"><LineStyle><color>ffc0cacf</color><width>1.5</width></LineStyle><PolyStyle><color>${kc("#303236", 0.55)}</color></PolyStyle></Style><Style id="lbl"><IconStyle><scale>0</scale></IconStyle><LabelStyle><scale>0.62</scale></LabelStyle></Style>`;
   M.lots.forEach(l => { st += `<Style id="l${l.no}"><LineStyle><color>ff2b26e8</color><width>2.5</width></LineStyle><PolyStyle><color>${kc(lotColor(l), 0.45)}</color></PolyStyle></Style>`; });
-  let pm = poly("حدود الأرض", M.boundary, "bnd", "المساحة " + fmt(M.A) + " م²");
+  let pm = poly("حدود الأرض", M.boundary, "bnd", "المساحة " + fa(M.A) + " م²");
   (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => { pm += poly("طريق", openR(pg[0]), "road"); });
-  M.lots.forEach(l => { pm += poly("قسيمة " + l.no, l.ring, "l" + l.no, "المساحة " + fmt(l.a) + " م²" + (ST.owners[l.no] ? " — " + ST.owners[l.no] : "")); const c = labelPt(l.ring); pm += `<Placemark><name>${l.no} — ${fmt(l.a, l.a % 1 ? 2 : 0)} م²</name><styleUrl>#lbl</styleUrl><Point><coordinates>${T(c)}</coordinates></Point></Placemark>`; });
+  M.lots.forEach(l => { pm += poly("قسيمة " + l.no, l.ring, "l" + l.no, "المساحة " + fa(l.a) + " م²" + (ST.owners[l.no] ? " — " + ST.owners[l.no] : "")); const c = labelPt(l.ring); pm += `<Placemark><name>${l.no} • ${Math.round(l.a)}</name><styleUrl>#lbl</styleUrl><Point><coordinates>${T(c)}</coordinates></Point></Placemark>`; });
   const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${x("مخطط إفراز " + (ST.info.parcel ? "قطعة " + ST.info.parcel : ""))}</name>${st}${pm}</Document></kml>`;
   saveFile(baseName() + ".kml", new Blob([kml], { type: "application/vnd.google-earth.kml+xml" }));
   toast("افتح الملف بتطبيق Google Earth: المخطط بينفرش على الأرض الثلاثية الأبعاد بمكانه");
@@ -1133,7 +1134,7 @@ $("eDxf").onclick = () => {
   M.roadMP.forEach(pg => pg.forEach(r => pl(openR(r), "ROADS_PROPOSED"))); M.exMP.forEach(pg => pg.forEach(r => pl(openR(r), "ROADS_EXISTING")));
   if (PC() && M.roadDraw.length) { try { (PC().difference(M.roadDraw, [closeR(M.boundary)]) || []).forEach(pg => pg.forEach(r => pl(openR(r), "ROADS_OUTSIDE"))); } catch (e) {} }
   M.axes.forEach(a => pl(a, "ROAD_AXIS", false));
-  M.lots.forEach(l => { pl(l.ring, "LOTS"); const c = labelPt(l.ring); tx([c[0], c[1] + sz * 1.2], String(l.no), sz * 2, "LOT_NO"); tx([c[0], c[1] - sz * 0.6], fmt(l.a) + " m2", sz, "AREAS"); if (ST.owners[l.no]) tx([c[0], c[1] - sz * 2.2], ST.owners[l.no], sz, "OWNERS"); });
+  M.lots.forEach(l => { pl(l.ring, "LOTS"); const c = labelPt(l.ring); tx([c[0], c[1] + sz * 1.2], String(l.no), sz * 2, "LOT_NO"); tx([c[0], c[1] - sz * 0.6], Math.round(l.a) + " m2", sz, "AREAS"); if (ST.owners[l.no]) tx([c[0], c[1] - sz * 2.2], ST.owners[l.no], sz, "OWNERS"); });
   M.E.forEach(e => { const len = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]); let an = Math.atan2(e.q[1] - e.p[1], e.q[0] - e.p[0]) * 180 / Math.PI; if (an > 90) an -= 180; if (an < -90) an += 180; tx([(e.p[0] + e.q[0]) / 2, (e.p[1] + e.q[1]) / 2], len.toFixed(2), sz * 0.8, "LENGTHS", an); });
   M.V.forEach((p, i) => { P(0, "CIRCLE", 8, "VERTEX_NO", 10, f(p[0]), 20, f(p[1]), 30, "0.0", 40, f(sz * 0.7)); tx(p, String(i + 1), sz * 0.7, "VERTEX_NO"); });
   P(0, "ENDSEC", 0, "EOF");

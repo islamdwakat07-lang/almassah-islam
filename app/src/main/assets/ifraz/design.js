@@ -3,6 +3,7 @@
 (function () {
   "use strict";
   const $i = id => document.getElementById(id);
+  const fmt = n => (isFinite(n) ? Math.round(n).toLocaleString("en-US") : "—");   // مساحات التصميم: أقرب عدد صحيح
   const DKEY = "ifraz-design-v1";
   const TYPES = {
     res:   { n: "سكني",      f: "rgba(240,140,30,.55)",  s: "#ffd27a" },

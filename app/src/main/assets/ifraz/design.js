@@ -181,7 +181,7 @@
   const HINT = { pan: "اضغط على أي قطعة لاختيارها وتغيير نوعها. اسحب لتحريك الصورة، وبإصبعين للتكبير.", road: "", grid: "", split: "اضغط نقطتين لرسم خط يقسم القطعة التي يمر بها.", merge: "اضغط قطعتين متجاورتين لدمجهما.", more: "" };
 
   /* ---------- اللوحة السفلية حسب الأداة ---------- */
-  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = false, aRW = 8, aEx = 0, aSlopeOn = false, aSlope = 20;
+  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = true, aRW = 8, aEx = 0, aSlopeOn = false, aSlope = 20;
   const tgtA = () => aEx > 0 ? aEx : aMin;
   const aDef = () => { if (!aMin) aMin = +S.minParcel || 600; if (!aW) aW = +S.minWidth || 15; };
   function panel() {
@@ -434,6 +434,8 @@
     }
     autoC = { k: key, r: res }; return res;
   }
+  /* القسيمة الشريطية مرفوضة: العمق أكثر من 3 أضعاف الواجهة */
+  const notStrip = g => { const b = bboxOf(g), fw = b[2] - b[0]; return fw > 0 && Math.abs(ringArea(g)) / fw <= 3 * fw + 0.01; };
   /* تقسيم صف واحد: القسائم جنباً إلى جنب (ax=0: الخطوط عمودية على u، ax=1: على v)، أكبر عدد متساوٍ يحقق الشروط */
   function cutRow(row, ax) {
     const T = ax ? (p => [p[1], -p[0]]) : (p => p), Ti = ax ? (p => [-p[1], p[0]]) : (p => p);
@@ -446,10 +448,11 @@
       const L = []; for (let k = 0; k < n; k++) { const g = clipHalf(clipHalf(Rr, 1, 0, -cuts[k]), -1, 0, cuts[k + 1]); if (g.length) L.push(g); }
       const tail = cuts[n] < rb[2] ? clipHalf(Rr, 1, 0, -cuts[n]) : [], rest = [];
       if (tail.length && Math.abs(ringArea(tail)) > 0.5) { if (Math.abs(ringArea(tail)) >= aMin - 0.01 && minWU(tail) >= aW - 0.01) L.push(tail); else rest.push(tail); }
-      return { lots: L.map(g => g.map(Ti)), rest: rest.map(g => g.map(Ti)), ok: L.every(g => minWU(g) >= aW - 0.01) };
+      if (!L.every(g => minWU(g) >= aW - 0.01 && notStrip(g))) return { lots: [row], ok: false };   // شرائط: لا نقبلها، فيُقترح طريق داخلي
+      return { lots: L.map(g => g.map(Ti)), rest: rest.map(g => g.map(Ti)), ok: true };
     }
     let n = Math.max(1, Math.min(Math.floor(A / aMin + 1e-9), Math.floor((rb[2] - rb[0]) / aW + 1e-9)));
-    const okG = g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01;
+    const okG = g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01 && notStrip(g);
     const cell = (bs, k) => clipHalf(clipHalf(Rr, 1, 0, -(k ? bs[k] : bs[k] - 1)), -1, 0, k < bs.length - 2 ? bs[k + 1] : bs[k + 1] + 1);
     let eq = null;
     for (let m = n; m >= 1 && !eq; m--) { const us = eqCuts(Rr, 0, m, rb), L = []; for (let k = 0; k < m; k++) { const g = cell(us, k); if (g.length) L.push(g); } if (L.every(okG)) eq = L; }

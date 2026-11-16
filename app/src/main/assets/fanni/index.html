@@ -54,6 +54,7 @@ table.t input{width:100%}
     <div class="row">
       <label class="btn go" style="color:#111">📂 رفع ملف DXF<input type="file" id="fDxf" accept=".dxf,.DXF" hidden></label>
       <button id="bFromDesign">✏️ من التصميم على الصورة الجوية</button>
+      <button id="bNew">🆕 مخطط جديد</button>
     </div>
     <p class="hint">ملف DXF من أوتوكاد (ASCII). يقرأ: البوليلاين المغلقة وغير المغلقة، والخطوط المتصلة، والنصوص الرقمية داخل القسائم (تُعتمد أرقاماً للقسائم).</p>
     <div id="fileInfo" class="msg" hidden></div>
@@ -76,6 +77,7 @@ table.t input{width:100%}
 
   <section class="card closed" id="cAer"><h2><span class="n">4</span>الصورة الجوية والمطابقة</h2>
     <div class="row"><label>المصدر<select id="aSrc"><option value="2025">جيومولج 2025</option><option value="2022">جيومولج 2022</option><option value="2019">جيومولج 2019</option><option value="none">بدون صورة</option><option value="custom">صورة أرفعها أنا</option></select></label><span id="aStat" class="pill"></span></div>
+    <div class="row" style="margin-top:6px"><button id="bEarth">🌍 افتح موقع الأرض ثلاثي الأبعاد (Google Earth)</button></div>
     <p class="hint" id="aSys"></p>
     <div id="custBox" hidden>
       <div class="row"><label class="btn">🖼 اختر الصورة<input type="file" id="fImg" accept="image/*" hidden></label></div>
@@ -102,6 +104,9 @@ table.t input{width:100%}
     <div class="grid2">
       <label>حجم الورق<select id="sPaper"><option>A3</option><option>A2</option><option>A1</option><option>A0</option></select></label>
       <label>الاتجاه<select id="sOrient"><option value="l">أفقي</option><option value="p">عمودي</option></select></label>
+      <label>نوع الإخراج<select id="sView"><option value="plan">مسقط بمقياس الرسم</option><option value="oblique">منظور مائل ثلاثي الأبعاد</option></select></label>
+      <label>ميل المنظور (للمنظور المائل)<input id="sTilt" type="range" min="0.4" max="0.85" step="0.05"></label>
+      <label>مقياس رسم بتكتبه أنت 1:<input id="sScaleC" type="number" min="20" step="1" placeholder="فارغ = حسب القائمة"></label>
       <label>مقياس الرسم<select id="sScale"><option value="0">تلقائي</option><option>100</option><option>200</option><option>250</option><option>500</option><option>750</option><option>1000</option><option>1250</option><option>1500</option><option>2000</option><option>2500</option><option>5000</option></select></label>
       <label>عرض الهامش الأيمن %<input id="sPanel" type="range" min="22" max="40" step="1"></label>
       <label>شفافية ألوان القسائم<input id="sAlpha" type="range" min="0.15" max="0.9" step="0.05"></label>
@@ -133,7 +138,7 @@ const fmt = (n, d = 2) => (isFinite(n) ? n.toLocaleString("en-US", { minimumFrac
 function toast(m, ms = 3500) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms); }
 const KEY = "fanni-v1";
 let ST = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } })();
-const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.55, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
+const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.55, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
 for (const k in DEF) if (ST[k] == null) ST[k] = JSON.parse(JSON.stringify(DEF[k]));
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) { toast("الذاكرة ممتلئة، لم تُحفظ الإعدادات"); } };
 
@@ -402,7 +407,8 @@ async function fetchAerial(box, wpx, hpx) {
   if (src === "none" || !M || !M.sr) return null;
   const s = SVC[src] || SVC["2022"]; let tk = "";
   if (s[1] && window.geoToken) { try { tk = await geoToken(); } catch (e) {} }
-  const k = Math.min(1, 4000 / Math.max(wpx, hpx)), W = Math.round(wpx * k), H = Math.round(hpx * k);
+  // أبعاد الصورة بنفس نسبة المستطيل المطلوب، وإلا يغيّر الخادم الحدود فتنزاح الصورة
+  const bw = box[2] - box[0], bh = box[3] - box[1], big = Math.min(4000, Math.max(wpx, hpx)), W = Math.round(bw >= bh ? big : big * bw / bh), H = Math.round(bw >= bh ? big * bh / bw : big);
   const u = "https://orthophotos.geomolg.ps/adaptor/rest/services/" + s[0] + "/MapServer/export?bbox=" + box.map(v => v.toFixed(2)).join(",") + "&bboxSR=" + M.sr + "&imageSR=" + M.sr + "&size=" + W + "," + H + "&f=image&format=jpg" + (tk ? "&token=" + tk : "");
   const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status);
   const bl = await r.blob(); if (!/^image\//.test(bl.type) || bl.size < 2000) throw new Error("لم تصل صورة");
@@ -414,7 +420,7 @@ function loadAerial() {
   clearTimeout(aerTimer);
   aerTimer = setTimeout(async () => {
     if (!M) return; const L = layout(1600); if (!L) return;
-    const box = L.worldBox; $("aStat").textContent = "…جاري تحميل الصورة";
+    const box = L.aerBox; $("aStat").textContent = "…جاري تحميل الصورة";
     try { AER = await fetchAerial(box, L.W, L.H); $("aStat").textContent = AER ? "✓ الصورة محمّلة" : (ST.src === "none" ? "بدون صورة" : "لا صورة"); }
     catch (e) { AER = null; $("aStat").textContent = "⚠️ تعذّر تحميل الصورة (" + e.message + ")"; }
     render();
@@ -478,14 +484,16 @@ function layout(pxW) {
   const mapW = F[2] - F[0], mapH = F[3] - F[1];
   const bb = bboxOf(M.boundary), ww = bb[2] - bb[0], wh = bb[3] - bb[1];
   // المقياس التلقائي: أكبر تكبير ممكن (القطعة تملأ البرواز مع هامش للعناصر)، مقرّب لقيمة مرتبة
-  let sc = +ST.scale; const fitScale = Math.max(ww / (mapW * 0.88), wh / (mapH * 0.77)) * 1000;
+  let sc = +ST.scaleC > 0 ? +ST.scaleC : +ST.scale; const fitScale = Math.max(ww / (mapW * 0.88), wh / (mapH * 0.77)) * 1000;
   if (!sc) { const st = fitScale < 300 ? 10 : fitScale < 1000 ? 25 : fitScale < 3000 ? 50 : 100; sc = Math.ceil(fitScale / st) * st; }
   const mmPerM = 1000 / sc;
   const cx = (bb[0] + bb[2]) / 2 + (ST.off[0] || 0), cy = (bb[1] + bb[3]) / 2 + (ST.off[1] || 0);
   const mapCx = (F[0] + F[2]) / 2, mapCy = (F[1] + F[3]) / 2 - mapH * 0.075;   // مركز البرواز (مع رفع بسيط فوق مقياس الرسم)
   const X = x => (mapCx + (x - cx) * mmPerM) * k, Y = y => (mapCy - (y - cy) * mmPerM) * k;
   const worldBox = [cx - (mapCx - F[0]) / mmPerM, cy - (F[3] - mapCy) / mmPerM, cx + (F[2] - mapCx) / mmPerM, cy + (mapCy - F[1]) / mmPerM];
-  return { w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, band, F, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
+  const rr = Math.max(0.35, Math.min(0.9, +ST.tilt || 0.6)), wcx = (worldBox[0] + worldBox[2]) / 2, wwh = (worldBox[2] - worldBox[0]) / 2;
+  const wvh = worldBox[3] - worldBox[1], aerBox = ST.view === "oblique" ? [wcx - wwh / rr, worldBox[1] - wvh * 0.02, wcx + wwh / rr, worldBox[3] + wvh * 0.08] : worldBox;
+  return { aerBox, w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, band, F, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
 }
 
 /* ======================= الرسم ======================= */
@@ -497,6 +505,7 @@ function drawSheet(cv, pxW, aer) {
   const FX = L.F.map(v => v * k);
   g.save(); g.beginPath(); g.rect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]); g.clip();
   g.fillStyle = "#2b3326"; g.fillRect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]);
+  if (ST.view === "oblique") drawOblique(g, L, u, aer, FX); else {
   if (aer && aer.img) { const b = aer.box; g.drawImage(aer.img, L.X(b[0]), L.Y(b[3]), L.X(b[2]) - L.X(b[0]), L.Y(b[1]) - L.Y(b[3])); }
   // تعتيم خفيف خارج الأرض ليبرز المخطط
   g.save(); g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.rect(0, 0, L.W, L.H); ring(g, L, M.boundary); g.fill("evenodd"); g.restore();
@@ -568,8 +577,9 @@ function drawSheet(cv, pxW, aer) {
     const r = 0.95 * u; g.font = `700 ${1.05 * u}px Plex, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
     M.V.forEach((p, i) => { const x = L.X(p[0]), y = L.Y(p[1]); sh(0.5, 0.05, 0.12); g.beginPath(); g.arc(x, y, r, 0, 7); g.fillStyle = "#fff"; g.fill(); nosh(); g.lineWidth = 0.22 * u; g.strokeStyle = ST.border; g.stroke(); g.fillStyle = "#1a1a1a"; g.fillText(String(i + 1), x, y + 0.05 * u); });
   }
+  }
   if (ST.north) northArrow(g, FX[2] - 7 * u, FX[3] - 7.5 * u, 4.2 * u);
-  scaleBar(g, L, u);
+  if (ST.view === "oblique") obliqueCaption(g, L, u); else scaleBar(g, L, u);
   g.restore();
   frameCoords(g, L, u, FX);
   panel(g, L, u);
@@ -621,10 +631,10 @@ function northArrow(g, x, y, R) {
 /* البرواز: خط ذهبي مزدوج، وعلى محيطه قيم الإحداثيات (X أعلى وأسفل، Y يمين ويسار)، وتقاطعات خفيفة داخل الرسم */
 function frameCoords(g, L, u, FX) {
   const k = L.k, [x0, y0, x1, y1] = FX, wb = L.worldBox, b = L.band * k;
-  const stepM = niceStep((wb[2] - wb[0]) / 6);
+  const stepM = niceStep((wb[2] - wb[0]) / 6), obl = ST.view === "oblique";
   g.save();
   g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 0.1 * u;
-  for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
+  if (!obl) for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
     const px = L.X(X), py = L.Y(Y), c = 0.9 * u; if (px < x0 + 2 * u || px > x1 - 2 * u || py < y0 + 2 * u || py > y1 - 2 * u) continue;
     g.beginPath(); g.moveTo(px - c, py); g.lineTo(px + c, py); g.moveTo(px, py - c); g.lineTo(px, py + c); g.stroke();
   }
@@ -634,12 +644,12 @@ function frameCoords(g, L, u, FX) {
   g.lineWidth = 0.18 * u; g.strokeRect(x0 - b, y0 - b, x1 - x0 + 2 * b, y1 - y0 + 2 * b);
   g.font = `700 ${1.2 * u}px Plex, sans-serif`; g.fillStyle = "#f3d27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.direction = "ltr";
   const tk = 0.9 * u, lab = v => Math.round(v).toLocaleString("en-US");
-  for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) {
+  if (!obl) for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) {
     const px = L.X(X); if (px < x0 + 6 * u || px > x1 - 4 * u) continue;
     g.fillRect(px - 0.08 * u, y0 - tk, 0.16 * u, tk); g.fillRect(px - 0.08 * u, y1, 0.16 * u, tk);
     g.fillText(lab(X), px, y0 - b * 0.55); g.fillText(lab(X), px, y1 + b * 0.55);
   }
-  for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
+  if (!obl) for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
     const py = L.Y(Y); if (py < y0 + 4 * u || py > y1 - 4 * u) continue;
     g.fillRect(x0 - tk, py - 0.08 * u, tk, 0.16 * u); g.fillRect(x1, py - 0.08 * u, tk, 0.16 * u);
     [[x0 - b * 0.55, -Math.PI / 2], [x1 + b * 0.55, Math.PI / 2]].forEach(([px, rt]) => { g.save(); g.translate(px, py); g.rotate(rt); g.fillText(lab(Y), 0, 0); g.restore(); });
@@ -750,6 +760,115 @@ function legendIcon(g, kind, x, y, w, u) {
   g.restore();
 }
 
+/* ======================= المنظور المائل ثلاثي الأبعاد =======================
+   إسقاط منظوري حقيقي لمستوى الأرض: البعيد (الشمال) يصغر ويرتفع، والقريب يكبر. الصورة الجوية تُشوّه سطراً سطراً،
+   والقسائم والطرق والنصوص تُرسم متجهياً بعد الإسقاط، والقسائم ترتفع كألواح بسماكة خفيفة. للعرض فقط وليس بمقياس رسم. */
+function obliqueProj(L, FX) {
+  const wb0 = L.worldBox, sY = (wb0[3] - wb0[1]) * 0.08, wb = [wb0[0], wb0[1] + sY, wb0[2], wb0[3] + sY], ww = wb[2] - wb[0], wh = wb[3] - wb[1], r = Math.max(0.35, Math.min(0.9, +ST.tilt || 0.6));   // النافذة تُزاح شمالاً لتنزل القطعة لوسط المنظور
+  const W = FX[2] - FX[0], H = FX[3] - FX[1], cx = (FX[0] + FX[2]) / 2, yt = FX[1] + H * 0.07, yb = FX[3] + H * 0.04;
+  const zf = 1 / r, B = (yb - yt) / (1 - r), A = yb - B;
+  const P = p => { const sx = (p[0] - wb[0]) / ww, t = (wb[3] - p[1]) / wh, z = 1 + (zf - 1) * (1 - t); return [cx + (sx - 0.5) * W / z, A + B / z, 1 / z]; };
+  return { P, r, zf, A, B, yt, yb, W, H, cx, wb, ww, wh };
+}
+function shade(hex, f) { const n = parseInt(hex.slice(1), 16); const c = v => Math.max(0, Math.min(255, Math.round(v * f))); return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`; }
+function drawOblique(g, L, u, aer, FX) {
+  const O = obliqueProj(L, FX), P = O.P;
+  // السماء/الأفق فوق الأرض البعيدة
+  const sky = g.createLinearGradient(0, FX[1], 0, O.yt + u * 4); sky.addColorStop(0, "#9fc3dc"); sky.addColorStop(1, "#e8e2cf");
+  g.fillStyle = sky; g.fillRect(FX[0], FX[1], O.W, O.yt - FX[1] + 2);
+  // الصورة الجوية: سطر سطر
+  if (aer && aer.img) {
+    const b = aer.box, iw = aer.img.naturalWidth || aer.img.width, ih = aer.img.naturalHeight || aer.img.height, step = Math.max(1, Math.round(u * 0.12));
+    for (let py = Math.floor(O.yt); py < FX[3]; py += step) {
+      const z = O.B / (py + step / 2 - O.A), t = 1 - (z - 1) / (O.zf - 1); if (t < 0 || t > 1.2) continue;
+      const wy = O.wb[3] - t * O.wh, half = 0.5 * z, x0 = O.wb[0] + (0.5 - half) * O.ww, x1 = O.wb[0] + (0.5 + half) * O.ww;
+      const ix0 = (x0 - b[0]) / (b[2] - b[0]) * iw, ix1 = (x1 - b[0]) / (b[2] - b[0]) * iw, iy = (b[3] - wy) / (b[3] - b[1]) * ih;
+      if (iy < 0 || iy >= ih) continue;
+      g.drawImage(aer.img, ix0, iy, ix1 - ix0, Math.max(1, ih / O.H * step * z * 0.9), FX[0], py, O.W, step + 0.6);
+    }
+    // ضباب خفيف للبعيد
+    const fog = g.createLinearGradient(0, O.yt, 0, O.yt + O.H * 0.35); fog.addColorStop(0, "rgba(232,226,207,.55)"); fog.addColorStop(1, "rgba(232,226,207,0)");
+    g.fillStyle = fog; g.fillRect(FX[0], O.yt, O.W, O.H * 0.35);
+  } else { g.fillStyle = "#3a4632"; g.fillRect(FX[0], O.yt, O.W, FX[3] - O.yt); }
+  const pathP = (rr, lift) => { rr.forEach((p, i) => { const q = P(p), h = lift ? lift * q[2] : 0; g[i ? "lineTo" : "moveTo"](q[0], q[1] - h); }); g.closePath(); };
+  // الطرق (على الأرض)
+  (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => {
+    g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = u; g.beginPath(); pg.forEach(r => pathP(openR(r))); g.fillStyle = "#3b3e42"; g.fill("evenodd"); g.restore();
+    g.beginPath(); pg.forEach(r => pathP(openR(r))); g.lineWidth = 0.3 * u; g.strokeStyle = "#cfcac0"; g.stroke();
+  });
+  g.save(); if (M.roadDraw && M.roadDraw.length) { g.beginPath(); M.roadDraw.forEach(pg => pg.forEach(r => pathP(openR(r)))); g.clip("evenodd"); }
+  g.setLineDash([1.1 * u, 0.8 * u]); g.lineWidth = 0.16 * u; g.strokeStyle = "rgba(255,255,255,.85)";
+  let axes = [...M.axes, ...(M.roadAxes || [])]; if (!axes.length) axes = M.roadMP.map(pg => roadAxis(openR(pg[0]))).filter(Boolean);
+  axes.forEach(a => { g.beginPath(); a.forEach((p, i) => { const q = P(p); g[i ? "lineTo" : "moveTo"](q[0], q[1]); }); g.stroke(); });
+  g.restore();
+  // حد الأرض على الأرض
+  g.save(); g.lineJoin = "round"; g.beginPath(); pathP(M.boundary); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; g.lineWidth = 1.0 * u; g.strokeStyle = "#fff"; g.stroke(); g.shadowBlur = 0; g.lineWidth = 0.55 * u; g.strokeStyle = ST.border; g.stroke(); g.restore();
+  // القسائم كألواح مرتفعة: من البعيد للقريب
+  const lift = (ST.d3 ? 2.6 : 0.6) * u;
+  const order = M.lots.slice().sort((a, b) => b.c[1] - a.c[1]);
+  order.forEach(l => {
+    const col = lotColor(l), r = l.ring;
+    // الجدران
+    for (let i = 0; i < r.length; i++) {
+      const a = P(r[i]), b = P(r[(i + 1) % r.length]);
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(b[0], b[1] - lift * b[2]); g.lineTo(a[0], a[1] - lift * a[2]); g.closePath();
+      const dx = b[0] - a[0]; g.fillStyle = shade(col, dx > 0 ? 0.55 : 0.75); g.fill(); g.lineWidth = 0.08 * u; g.strokeStyle = "rgba(0,0,0,.35)"; g.stroke();
+    }
+    // الوجه العلوي
+    g.save(); g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 1.2 * u; g.shadowOffsetY = 0.4 * u;
+    g.beginPath(); pathP(r, lift); g.fillStyle = hexA(col, Math.min(0.92, ST.alpha + 0.25)); g.fill(); g.restore();
+    g.save(); g.beginPath(); pathP(r, lift); g.clip(); const c0 = P(l.c);
+    const grd = g.createLinearGradient(c0[0] - 20 * u, c0[1] - 20 * u, c0[0] + 20 * u, c0[1] + 10 * u); grd.addColorStop(0, "rgba(255,255,255,.28)"); grd.addColorStop(1, "rgba(0,0,0,.2)"); g.fillStyle = grd; g.fillRect(FX[0], FX[1], O.W, O.H); g.restore();
+    g.beginPath(); pathP(r, lift); g.lineJoin = "round"; g.lineWidth = 0.6 * u; g.strokeStyle = "#fff"; g.stroke(); g.lineWidth = 0.3 * u; g.strokeStyle = ST.border; g.stroke();
+  });
+  // أطوال الأضلاع على الوجوه العلوية
+  if (ST.len) M.E.forEach(e => {
+    const a = P(e.p), b = P(e.q), s = (a[2] + b[2]) / 2, ax = a[0], ay = a[1] - lift * a[2], bx = b[0], by = b[1] - lift * b[2];
+    const fs = 1.45 * u * (0.55 + 0.45 * s / 1), t = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]).toFixed(2), pl = Math.hypot(bx - ax, by - ay);
+    g.font = `700 ${fs}px Plex, sans-serif`; if (pl < g.measureText(t).width * 1.2 + 2 * u) return;
+    let an = Math.atan2(by - ay, bx - ax); if (an > Math.PI / 2) an -= Math.PI; if (an < -Math.PI / 2) an += Math.PI;
+    let mx = (ax + bx) / 2, my = (ay + by) / 2;
+    if (e.n === 1) { const c = P(labelPt(e.lot.ring)), cx = c[0], cy = c[1] - lift * c[2], nx = -(by - ay) / pl, ny = (bx - ax) / pl, sg = ((cx - mx) * nx + (cy - my) * ny) > 0 ? 1 : -1; mx += nx * sg * fs; my += ny * sg * fs; }
+    g.save(); g.translate(mx, my); g.rotate(an); g.textAlign = "center"; g.textBaseline = "middle"; g.lineWidth = fs * 0.28; g.strokeStyle = "rgba(0,0,0,.85)"; g.lineJoin = "round"; g.strokeText(t, 0, 0); g.fillStyle = "#fff"; g.fillText(t, 0, 0); g.restore();
+  });
+  // أرقام القسائم والمساحات وخانة المالك (حجمها حسب البعد)
+  order.forEach(l => {
+    const c = P(labelPt(l.ring)), s = c[2], x = c[0], y = c[1] - lift * s, k2 = Math.max(0.5, Math.min(1.2, s * Math.sqrt(l.a) * L.mmPerM * L.k / (18 * u)));
+    const R = 2.5 * u * k2, yy = y - (ST.own ? 1.6 * u * k2 : 0);
+    g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; g.beginPath(); g.arc(x, yy - R * 0.35, R, 0, 7); g.fillStyle = "#111"; g.fill(); g.restore();
+    g.beginPath(); g.arc(x, yy - R * 0.35, R, 0, 7); g.lineWidth = 0.3 * u * k2; g.strokeStyle = gold(g, x, yy - R * 1.3, x, yy + R); g.stroke();
+    g.font = `700 ${2.4 * u * k2}px Plex, sans-serif`; g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(l.no), x, yy - R * 0.45);
+    const at = fmt(l.a, l.a % 1 ? 2 : 0) + " m²"; g.font = `700 ${1.4 * u * k2}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.6 * u * k2, th = 2.0 * u * k2, ty = yy + R * 0.75;
+    rrect(g, x - tw / 2, ty - th / 2, tw, th, th / 2); g.fillStyle = "#111"; g.fill(); g.lineWidth = 0.2 * u * k2; g.strokeStyle = gold(g, x, ty - th, x, ty + th); g.stroke();
+    g.fillStyle = "#fff"; g.direction = "ltr"; g.fillText(at, x, ty); g.direction = "rtl";
+    if (ST.own) { const ow = ST.owners[l.no] || "", bw = 10.5 * u * k2, bh = 2.3 * u * k2, by2 = ty + th / 2 + 0.8 * u * k2;
+      rrect(g, x - bw / 2, by2, bw, bh, 0.5 * u * k2); g.fillStyle = "rgba(250,240,214,.95)"; g.fill(); g.fillStyle = "#3a3222"; g.font = `${ow ? 700 : 400} ${1.3 * u * k2}px Plex, sans-serif`; g.fillText(ow || "....................", x, by2 + bh / 2); }
+  });
+  // الرؤوس
+  if (ST.vtx) M.V.forEach((p, i) => { const q = P(p), s = q[2], x = q[0], y = q[1] - lift * s, r = 0.9 * u * (0.6 + 0.4 * s); g.beginPath(); g.arc(x, y, r, 0, 7); g.fillStyle = "#fff"; g.fill(); g.lineWidth = 0.2 * u; g.strokeStyle = ST.border; g.stroke(); g.font = `700 ${r * 1.1}px Plex, sans-serif`; g.fillStyle = "#1a1a1a"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(i + 1), x, y + 0.04 * u); });
+}
+/* بديل مقياس الرسم في المنظور: المنظور غير مقياسي */
+function obliqueCaption(g, L, u) {
+  const k = L.k, bx = L.F[0] * k + 1.5 * u, by = L.F[3] * k - 7.1 * u, bw = 44 * u, bh = 5.6 * u;
+  g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; rrect(g, bx, by, bw, bh, u); g.fillStyle = "rgba(10,10,10,.88)"; g.fill(); g.shadowBlur = 0; g.lineWidth = 0.3 * u; g.strokeStyle = gold(g, bx, by, bx + bw, by + bh); g.stroke();
+  g.font = `700 ${1.45 * u}px Plex, sans-serif`; g.fillStyle = "#f3d27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("منظور ثلاثي الأبعاد للعرض — بدون مقياس رسم", bx + bw / 2, by + bh * 0.36);
+  g.font = `400 ${1.15 * u}px Plex, sans-serif`; g.fillStyle = "#fff"; g.fillText("الأطوال والمساحات المكتوبة هي القيم الحقيقية", bx + bw / 2, by + bh * 0.72);
+  g.restore();
+}
+/* رابط الموقع ثلاثي الأبعاد في Google Earth */
+function openEarth() {
+  if (!M || !M.sr) { toast("الإحداثيات ليست فلسطيني أو ITM — لا يمكن تحديد الموقع"); return; }
+  const go = () => {
+    proj4.defs("EPSG:28191", "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs");
+    proj4.defs("EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs");
+    const c = centroid(M.boundary), [lon, lat] = proj4("EPSG:" + M.sr, "EPSG:4326", c), d = Math.max(250, Math.sqrt(M.A) * 6);
+    const url = `https://earth.google.com/web/@${lat.toFixed(6)},${lon.toFixed(6)},600a,${Math.round(d)}d,35y,0h,60t,0r`;
+    if (window.AndroidBridge) location.href = url; else window.open(url, "_blank");   // داخل التطبيق: الرابط الخارجي يفتح في المتصفح أو تطبيق Google Earth
+  };
+  if (window.proj4) return go();
+  const s = document.createElement("script"); s.src = "../geomolg/lib/proj4.js"; s.onload = go; s.onerror = () => toast("تعذّر تحميل أداة تحويل الإحداثيات"); document.head.appendChild(s);
+}
+
 /* ======================= المعاينة ======================= */
 let zoom = 1, panMode = false;
 async function render() {
@@ -774,7 +893,8 @@ $("bCenter").onclick = () => center(true);
 
 /* ======================= الإعدادات ======================= */
 function bindSettings() {
-  const b = (id, k, conv = v => v, ev = "change") => { const e = $(id); if (e.type === "checkbox") e.checked = !!ST[k]; else e.value = ST[k]; e.addEventListener(ev, () => { ST[k] = e.type === "checkbox" ? e.checked : conv(e.value); save(); if (["paper", "orient", "scale", "panel"].includes(k)) loadAerial(); render(); }); };
+  const b = (id, k, conv = v => v, ev = "change") => { const e = $(id); if (e.type === "checkbox") e.checked = !!ST[k]; else e.value = ST[k]; e.addEventListener(ev, () => { ST[k] = e.type === "checkbox" ? e.checked : conv(e.value); save(); if (["paper", "orient", "scale", "panel", "view", "tilt", "scaleC"].includes(k)) loadAerial(); render(); }); };
+  b("sView", "view"); b("sTilt", "tilt", v => +v, "input"); b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
   b("sPaper", "paper"); b("sOrient", "orient"); b("sScale", "scale", v => +v); b("sPanel", "panel", v => +v, "input"); b("sAlpha", "alpha", v => +v, "input"); b("sBorder", "border", v => v, "input");
   b("sVtx", "vtx"); b("sLen", "len"); b("sOwn", "own"); b("s3d", "d3"); b("sNorth", "north");
   $("tol").value = ST.tol; $("tol").oninput = () => { ST.tol = +$("tol").value || 0; save(); };
@@ -786,6 +906,18 @@ document.querySelectorAll(".card>h2").forEach(h => h.onclick = () => h.parentEle
 /* ======================= الملفات ======================= */
 $("fDxf").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { localStorage.setItem("fanni-dxf", r.result.length < 4.5e6 ? r.result : ""); localStorage.setItem("fanni-dxf-name", f.name); } catch (er) {} loadDXFText(r.result, f.name); }; r.readAsText(f); };
 $("bBuild").onclick = () => build();
+$("bEarth").onclick = () => openEarth();
+/* مخطط جديد: يمسح الملف والمالكين والبيانات الخاصة بالقطعة، ويُبقي إعداداتك (الورق، الألوان، المساح…) */
+let newT = 0;
+$("bNew").onclick = () => {
+  if (Date.now() - newT > 3000) { newT = Date.now(); toast("اضغط «مخطط جديد» مرة ثانية للتأكيد — سيُمسح المخطط الحالي"); return; }
+  newT = 0; const surv = ST.info.surv;
+  RAW = null; M = null; AER = null; CUST = null;
+  Object.assign(ST, { roles: {}, owners: {}, roadOf: {}, colors: {}, off: [0, 0], geo: null, scaleC: 0, custImg: false, info: surv ? { surv } : {} });
+  save(); try { localStorage.removeItem("fanni-dxf"); localStorage.removeItem("fanni-dxf-name"); } catch (e) {}
+  $("fDxf").value = ""; $("fileInfo").hidden = true; $("checks").hidden = true; $("sScaleC").value = "";
+  showLayers(); renderInfo(); renderLotTable(); render(); toast("بدأت مخططاً جديداً: ارفع ملف DXF"); window.scrollTo(0, 0);
+};
 /* من وضع التصميم على الصورة الجوية في أداة الإفراز */
 $("bFromDesign").onclick = () => {
   let D = null, S = null; try { D = JSON.parse(localStorage.getItem("ifraz-design-v1") || "null"); S = JSON.parse(localStorage.getItem("ifraz-v1") || "null"); } catch (e) {}
@@ -819,7 +951,7 @@ async function exportCanvas() {
   const st = $("eStat"); st.hidden = false; st.textContent = `…جاري التجهيز (${ST.paper}، ${dpi} نقطة/إنش)`;
   await fontsReady();
   const L0 = layout(pxW); let aer = AER;
-  try { const a2 = await fetchAerial(L0.worldBox, L0.W, L0.H); if (a2) aer = a2; } catch (e) {}
+  try { const a2 = await fetchAerial(L0.aerBox, L0.W, L0.H); if (a2) aer = a2; } catch (e) {}
   const cv = document.createElement("canvas"); const L = drawSheet(cv, pxW, aer);
   st.textContent = `✓ ${ST.paper} بمقياس 1:${L.sc}، ${L.W}×${L.H} بكسل (${dpi} نقطة/إنش)` + (dpi < +$("eDpi").value ? " — خُفّضت الدقة لحدود ذاكرة الجهاز" : "");
   return { cv, L, w, h };

@@ -211,7 +211,7 @@
         Object.entries(TYPES).filter(([k]) => k !== "block").map(([k, v]) => `<button class="pb t${x.t === k ? " on" : ""}" type="button" data-ty="${k}" style="--c:${v.s}">${v.n}</button>`).join("") + `</div>`;
     } else if (tool === "more") {
       const rows = tableRows();
-      h = `<div class="r"><button class="pb go" type="button" id="dzPdf">📄 تصدير PDF</button><button class="pb go" type="button" id="dzDxf">📐 تصدير DXF</button><button class="pb" type="button" id="dzAllRes">كل غير المقسّم ← سكني</button><button class="pb" type="button" id="dzReset">🗑 البدء من جديد</button></div>
+      h = `<div class="r"><button class="pb go" type="button" id="dzPdf">📄 تصدير PDF</button><button class="pb go" type="button" id="dzDxf">📐 تصدير DXF</button><button class="pb" type="button" id="dzAllRes">كل غير المقسّم ← سكني</button><button class="pb" type="button" id="dzReset">🗑 البدء من جديد</button><button class="pb go" type="button" id="dzFanni">🎨 إخراج فني للطباعة</button></div>
         <div class="dz-tbl"><table><tr><th style="width:22%">رقم</th><th style="width:40%">النوع</th><th>المساحة م²</th></tr>${rows.map(r => `<tr><td>${r.no}</td><td>${r.type}</td><td class="n" style="color:#f3dc93;font-weight:700">${fmt(r.a)}</td></tr>`).join("")}</table></div>`;
     }
     p.innerHTML = h; p.hidden = !h;
@@ -236,7 +236,7 @@
     on("dzEOk", () => { rsel = -1; panel(); draw(); });
     panelInfo();
     p.querySelectorAll("[data-ty]").forEach(b => b.onclick = () => { snap(); D.parcels[sel].t = b.dataset.ty; saveD(); panel(); draw(); });
-    on("dzPdf", exportPDF); on("dzDxf", exportDXF);
+    on("dzPdf", exportPDF); on("dzDxf", exportDXF); on("dzFanni", () => { saveD(); location.href = "../fanni/index.html?from=design"; });
     on("dzAllRes", () => { snap(); D.parcels.forEach(x => { if (x.t === "block") x.t = "res"; }); saveD(); panel(); draw(); });
     on("dzReset", () => { if (!confirmTwice()) return; snap(); D.roads = []; D.rp = []; rebuild(false); sel = -1; saveD(); panel(); draw(); });
   }

@@ -181,7 +181,7 @@
   const HINT = { pan: "اضغط على أي قطعة لاختيارها وتغيير نوعها. اسحب لتحريك الصورة، وبإصبعين للتكبير.", road: "", grid: "", split: "اضغط نقطتين لرسم خط يقسم القطعة التي يمر بها.", merge: "اضغط قطعتين متجاورتين لدمجهما.", more: "" };
 
   /* ---------- اللوحة السفلية حسب الأداة ---------- */
-  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = false, aRW = 8, aEx = 0;
+  let gR = 1, gC = 4, gMode = "auto", gW = 20, gDp = 30, aMin = 0, aW = 0, rmode = "free", rOff = 0, rsel = -1, aRoads = false, aRW = 8, aEx = 0, aSlopeOn = false, aSlope = 20;
   const tgtA = () => aEx > 0 ? aEx : aMin;
   const aDef = () => { if (!aMin) aMin = +S.minParcel || 600; if (!aW) aW = +S.minWidth || 15; };
   function panel() {
@@ -200,10 +200,10 @@
       }
     }
     else if (tool === "grid") {
-      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>مساحة النمرة (م²)<input id="dzAE" type="number" min="0" step="10" value="${aEx || ""}" placeholder="—"></label><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button></div>`; }
+      if (sel < 0) { aDef(); h = `<div class="r"><span class="ttl">▦ اضغط على البلوك أو الجزء الذي تريد إفرازه</span></div><div class="r"><label>مساحة النمرة (م²)<input id="dzAE" type="number" min="0" step="10" value="${aEx || ""}" placeholder="—"></label><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label>${aRoads ? `<label style="flex-basis:100%"><input id="dzAS" type="checkbox" style="width:auto!important;min-width:0!important" ${aSlopeOn ? "checked" : ""}> ⛰️ راعِ الميل من كنتور جيومولج: أقصى ميل للطريق <input id="dzASV" type="number" min="3" max="40" step="1" value="${aSlope}"> %</label>` : ""}<button class="pb" type="button" id="dzGAll">⚡ إفراز كل البلوكات تلقائياً</button><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span></div>`; }
       else h = `<div class="r"><span class="ttl">▦ تقسيم القطعة (${fmt(polyArea(parcelsL()[sel]))} م²)</span></div>
         <div class="r"><button class="pb ${gMode === "auto" ? "go" : ""}" type="button" data-gm="auto">⚡ تلقائي بالشروط</button><button class="pb ${gMode === "count" ? "go" : ""}" type="button" data-gm="count">بالعدد</button><button class="pb ${gMode === "size" ? "go" : ""}" type="button" data-gm="size">بالأبعاد</button></div><div class="r">
-        ${gMode === "auto" ? (aDef(), `<label>مساحة النمرة (م²)<input id="dzAE" type="number" min="0" step="10" value="${aEx || ""}" placeholder="—"></label><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label><span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
+        ${gMode === "auto" ? (aDef(), `<label>مساحة النمرة (م²)<input id="dzAE" type="number" min="0" step="10" value="${aEx || ""}" placeholder="—"></label><label>أقل مساحة (م²)<input id="dzAM" type="number" min="50" step="10" value="${aMin}"></label><label>أقل عرض (م)<input id="dzAW" type="number" min="3" step="0.5" value="${aW}"></label><label style="flex-basis:100%"><input id="dzAR" type="checkbox" style="width:auto!important;min-width:0!important" ${aRoads ? "checked" : ""}> 🛣️ اقترح طرقاً داخلية تصل للقسائم، عرضها <input id="dzARW" type="number" min="3" step="0.5" value="${aRW}"> م</label>${aRoads ? `<label style="flex-basis:100%"><input id="dzAS" type="checkbox" style="width:auto!important;min-width:0!important" ${aSlopeOn ? "checked" : ""}> ⛰️ راعِ الميل من كنتور جيومولج: أقصى ميل للطريق <input id="dzASV" type="number" min="3" max="40" step="1" value="${aSlope}"> %</label>` : ""}<span id="dzAInfo" style="font-size:12.5px;color:#f3dc93"></span>`) : gMode === "count" ? `<label>صفوف<input id="dzGR" type="number" min="1" value="${gR}"></label><label>أعمدة<input id="dzGC" type="number" min="1" value="${gC}"></label>` : `<label>الواجهة (م)<input id="dzGW" type="number" min="3" step="0.5" value="${gW}"></label><label>العمق (م)<input id="dzGD" type="number" min="3" step="0.5" value="${gDp}"></label>`}</div>
         <div class="r"><button class="pb" type="button" id="dzGDir">🔄 ${gMode === "auto" ? "تغيير الواجهة" : "تدوير الاتجاه"}</button><button class="pb go" type="button" id="dzGGo">✓ قسّم</button>${gMode === "auto" ? `<button class="pb" type="button" id="dzGAll">⚡ كل البلوكات غير المقسمة</button>` : ""}</div>`;
     } else if (tool === "pan" && sel >= 0) {
       const x = D.parcels[sel];
@@ -225,7 +225,9 @@
     on("dzGDir", () => { dirIdx++; draw(); panelInfo(); }); on("dzGGo", doGrid); on("dzGAll", doAutoAll);
     ["dzAM", "dzAW"].forEach(id => { const e = $i(id); if (e) e.oninput = () => { aMin = Math.max(20, +($i("dzAM") || {}).value || aMin); aW = Math.max(1, +($i("dzAW") || {}).value || aW); draw(); panelInfo(); }; });
     const ae = $i("dzAE"); if (ae) ae.oninput = () => { aEx = Math.max(0, +ae.value || 0); draw(); panelInfo(); };
-    const ar = $i("dzAR"); if (ar) ar.onchange = () => { aRoads = ar.checked; draw(); panelInfo(); };
+    const ar = $i("dzAR"); if (ar) ar.onchange = () => { aRoads = ar.checked; panel(); draw(); };
+    const as = $i("dzAS"); if (as) as.onchange = () => { aSlopeOn = as.checked; autoC.k = ""; if (aSlopeOn) loadContours(); draw(); panelInfo(); };
+    const asv = $i("dzASV"); if (asv) asv.oninput = () => { aSlope = Math.max(1, +asv.value || 20); autoC.k = ""; draw(); panelInfo(); };
     const arw = $i("dzARW"); if (arw) arw.oninput = () => { aRW = Math.max(2, +arw.value || 8); draw(); panelInfo(); };
     p.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { rmode = b.dataset.rm; draft = []; rsel = -1; panel(); draw(); });
     const ro = $i("dzROff"); if (ro) ro.oninput = () => { rOff = Math.max(0, +ro.value || 0); };
@@ -239,11 +241,15 @@
     on("dzReset", () => { if (!confirmTwice()) return; snap(); D.roads = []; D.rp = []; rebuild(false); sel = -1; saveD(); panel(); draw(); });
   }
   function panelInfo() {
-    const el = $i("dzAInfo"); if (!el || sel < 0) return;
+    const el = $i("dzAInfo"); if (!el) return;
+    const cst = aSlopeOn ? (CT.st === "loading" ? " ⏳ جاري تحميل الكنتور…" : CT.st === "err" ? " ⚠️ " + CT.msg : CT.st === "ok" ? ` ⛰️ الكنتور محمّل (كل ${CT.step} م، منسوب ${fmt(CT.zmin, 0)}–${fmt(CT.zmax, 0)})` : "") : "";
+    if (sel < 0) { el.textContent = cst; return; }
     const r = autoLots(parcelsL()[sel]);
     el.textContent = r.lots.length ? `← ${r.lots.length} قسيمة` + (r.bad ? ` (${r.bad} لا تحقق الشروط)` : (aEx > 0 ? ` بمساحة ${fmt(aEx, 0)} م²` : `، كل واحدة ≈ ${fmt(r.lots.reduce((t, l) => t + Math.abs(ringArea(l)), 0) / r.lots.length)} م²`)) : "لا تتسع لقسيمة واحدة";
     if (r.rest && r.rest.length) el.textContent += ` + باقي ${fmt(r.rest.reduce((t, g) => t + Math.abs(ringArea(g)), 0), 0)} م² غير مقسّم`;
     if (r.roads && r.roads.length) el.textContent += ` + ${r.how} (${fmt(r.ra, 0)} م² طرق)`;
+    if (r.g != null) el.textContent += ` · أقصى ميل للطرق ${(r.g * 100).toFixed(1)}% ` + (r.g > aSlope / 100 + 1e-9 ? `⚠️ أعلى من ${aSlope}% (جُرّب ${r.tried} تخطيطاً ولم يتحقق الحد؛ غيّر الواجهة أو ارسم الطريق يدوياً)` : "✓");
+    el.textContent += cst;
     if (r.deep) el.textContent += ` — العمق ${fmt(r.deep, 0)} م كبير، فعّل «اقترح طرقاً داخلية» أو ارسم شارعاً`;
   }
   let askT = 0; const confirmTwice = () => { if (Date.now() - askT < 3000) { askT = 0; return true; } askT = Date.now(); toast("اضغط مرة ثانية للتأكيد"); return false; };
@@ -319,10 +325,85 @@
   const sameTh = (x, y) => { const d = Math.abs((((x - y) % Math.PI) + Math.PI) % Math.PI); return d < 0.06 || Math.PI - d < 0.06; };
   function chordU(R, v) { const xs = []; for (let i = 0; i < R.length; i++) { const a = R[i], b = R[(i + 1) % R.length]; if ((a[1] <= v && b[1] > v) || (b[1] <= v && a[1] > v)) xs.push(a[0] + (v - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); } return xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0; }
   function minWU(R) { const bb = bboxOf(R); let m = Infinity; for (let t = 0.2; t < 0.81; t += 0.075) m = Math.min(m, chordU(R, bb[1] + (bb[3] - bb[1]) * t)); return isFinite(m) ? m : 0; }
+  /* ---------- الكنتور من جيومولج ونموذج الارتفاعات ---------- */
+  const SQLC = "https://sql.geomolg.ps/adaptor/rest/services/ContourLines_02/MapServer/";
+  const nh = {}; let nhSeq = 0;
+  function netGet(url) {
+    if (window.AndroidBridge && AndroidBridge.httpGet) {
+      const prev = window.onNativeHttp;
+      if (!(prev && prev.__dz)) { const f = (id, st, tx) => { if (nh[id]) { const cb = nh[id]; delete nh[id]; cb({ status: st, text: String(tx || "") }); } else if (prev) prev(id, st, tx); }; f.__dz = 1; window.onNativeHttp = f; }
+      return new Promise((ok, no) => { const id = "dz" + (++nhSeq); nh[id] = r => r.status === -1 ? no(new Error(r.text)) : ok(r); try { AndroidBridge.httpGet(id, url, false); } catch (e) { delete nh[id]; no(e); } });
+    }
+    return fetch(url).then(async r => ({ status: r.status, text: await r.text() }));
+  }
+  let CT = { key: "", st: "", lines: [] };
+  const slopeReady = () => aSlopeOn && CT.st === "ok";
+  function pickZ(j) {
+    const num = /Double|Integer|Single|SmallInteger/i, skip = /objectid|^fid|shape|length|area|^id$|_id$/i;
+    const fs = (j.fields || []).filter(f => num.test(f.type) && !skip.test(f.name));
+    const named = fs.find(f => /elev|contour|height|hgt|^z$|alt|منسوب|level|value/i.test(f.name + " " + (f.alias || "")));
+    if (named) return named.name;
+    const at = (j.features || []).map(f => f.attributes || {}), keys = at.length ? Object.keys(at[0]) : [];
+    let best = null, bn = 0;
+    keys.filter(k => !skip.test(k)).forEach(k => { const v = at.map(a => +a[k]).filter(x => isFinite(x)); if (v.length < at.length * 0.9 || v.some(x => x < -450 || x > 1300)) return; const n = new Set(v).size; if (n > bn) { bn = n; best = k; } });
+    return best;
+  }
+  async function loadContours() {
+    const sr = sysOf(S.boundary), bb = bboxOf(S.boundary), pad = 40, key = bb.map(v => v.toFixed(0)).join(",");
+    if (!sr) { CT = { key, st: "err", lines: [], msg: "إحداثيات الأرض ليست بنظام فلسطيني أو ITM" }; panelInfo(); return; }
+    if (CT.key === key && (CT.st === "ok" || CT.st === "loading")) return;
+    CT = { key, st: "loading", lines: [] }; panelInfo();
+    for (const lay of [0, 1]) {
+      try {
+        const q = new URLSearchParams({ geometry: [bb[0] - pad, bb[1] - pad, bb[2] + pad, bb[3] + pad].map(v => v.toFixed(1)).join(","), geometryType: "esriGeometryEnvelope", inSR: sr, outSR: sr, spatialRel: "esriSpatialRelIntersects", outFields: "*", returnGeometry: "true", maxAllowableOffset: "0.3", geometryPrecision: "2", f: "json" });
+        const r = await netGet(SQLC + lay + "/query?" + q); const j = JSON.parse(r.text);
+        if (j.error || !j.features || !j.features.length) throw 0;
+        const zf = pickZ(j); if (!zf) throw 0;
+        const lines = j.features.map((f, id) => ({ id, z: +f.attributes[zf], paths: ((f.geometry || {}).paths || []).map(pp => pp.map(q2 => toL(q2))) })).filter(l => isFinite(l.z) && l.paths.length);
+        if (lines.length < 2) throw 0;
+        CT = { key, st: "ok", lines, step: lay ? 5 : 1 }; buildDEM(); autoC.k = ""; draw(); panelInfo(); return;
+      } catch (e) {}
+    }
+    CT = { key, st: "err", lines: [], msg: "تعذّر تحميل الكنتور من جيومولج (تأكد من الإنترنت)" }; autoC.k = ""; panelInfo();
+  }
+  function buildDEM() {
+    const H = new Map(); let zmin = Infinity, zmax = -Infinity;
+    CT.lines.forEach(L => { zmin = Math.min(zmin, L.z); zmax = Math.max(zmax, L.z); L.paths.forEach(pp => { for (let i = 0; i + 1 < pp.length; i++) { const a = pp[i], b = pp[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2)); for (let k = 0; k < n; k++) { const q = [a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n], key = Math.floor(q[0] / 10) + "," + Math.floor(q[1] / 10); if (!H.has(key)) H.set(key, []); H.get(key).push([q[0], q[1], L.z, L.id]); } } }); });
+    CT.H = H; CT.zmin = zmin; CT.zmax = zmax;
+  }
+  function zAt(p) {   // استيفاء بين أقرب خطوط كنتور مختلفة (وزن عكسي للمسافة)
+    const cx = Math.floor(p[0] / 10), cy = Math.floor(p[1] / 10), near = new Map();
+    for (let rr = 0; rr <= 10; rr++) {
+      for (let i = cx - rr; i <= cx + rr; i++) for (let j = cy - rr; j <= cy + rr; j++) {
+        if (Math.max(Math.abs(i - cx), Math.abs(j - cy)) !== rr) continue;
+        (CT.H.get(i + "," + j) || []).forEach(q => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]), e = near.get(q[3]); if (!e || d < e.d) near.set(q[3], { d, z: q[2] }); });
+      }
+      if (near.size >= 2 && rr >= 2) break;
+    }
+    const L = [...near.values()].sort((a, b) => a.d - b.d).slice(0, 2); if (!L.length) return NaN;
+    if (L[0].d < 0.05) return L[0].z;
+    let sw = 0, sz = 0; L.forEach(x => { const w = 1 / x.d; sw += w; sz += w * x.z; }); return sz / sw;
+  }
+  function gradeOf(pts) {   // أقصى ميل على مسافة 10 م على طول المسار
+    if (pts.length < 2) return 0;
+    const sArr = [0], z = pts.map(zAt); for (let i = 1; i < pts.length; i++) sArr.push(sArr[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    let g = 0, j = 0;
+    for (let i = 0; i < pts.length; i++) { while (j < pts.length - 1 && sArr[j] - sArr[i] < 10) j++; const ds = sArr[j] - sArr[i]; if (ds > 3 && isFinite(z[i]) && isFinite(z[j])) g = Math.max(g, Math.abs(z[j] - z[i]) / ds); }
+    return g;
+  }
+  function slopeOf(r) {   // مستوى مُلائم: الميل العام واتجاهه داخل الجزء
+    const bb = bboxOf(r), P = [];
+    for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) { const q = [bb[0] + (bb[2] - bb[0]) * i / 12, bb[1] + (bb[3] - bb[1]) * j / 12]; if (inRing(q, r)) { const z = zAt(q); if (isFinite(z)) P.push([q[0], q[1], z]); } }
+    if (P.length < 6) return null;
+    const m = [0, 0, 0].map((_, k) => P.reduce((t, q) => t + q[k], 0) / P.length);
+    let xx = 0, xy = 0, yy = 0, xz = 0, yz = 0; P.forEach(q => { const x = q[0] - m[0], y = q[1] - m[1], z = q[2] - m[2]; xx += x * x; xy += x * y; yy += y * y; xz += x * z; yz += y * z; });
+    const det = xx * yy - xy * xy; if (Math.abs(det) < 1e-9) return null;
+    const a = (xz * yy - yz * xy) / det, b = (yz * xx - xz * xy) / det; return { a, b, S: Math.hypot(a, b) };
+  }
   let autoC = { k: "", r: null };
   function autoLots(P) {
     aDef();
-    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW + "|" + aRoads + aRW + "|" + aEx;
+    const r = P[0], key = JSON.stringify(r.slice(0, 6)) + r.length + "|" + dirIdx + "|" + aMin + "|" + aW + "|" + aRoads + aRW + "|" + aEx + "|" + (slopeReady() ? aSlope + CT.key : "");
     if (autoC.k === key) return autoC.r;
     const fe = frontEdges(r), dirs = [];
     const addDir = (th, w, f) => { const e = dirs.find(d => sameTh(d.th, th)); if (e) { e.w += w; e.f = e.f || f; } else dirs.push({ th, w, f }); };
@@ -342,11 +423,14 @@
       k.lots.forEach(g => lots.push(g.map(p => unrot(p, c, s)))); (k.rest || []).forEach(g => rest0.push(g.map(p => unrot(p, c, s))));
     }
     let res = { lots, bad, rest: rest0, roads: [], ra: 0, front: D0.f, deep: bands.length === 1 && H > 2.2 * dT ? H : 0 };
-    if (aRoads) {   // اقتراح طرق داخلية: نجرب عدة تخطيطات ونختار الأكثر قسائم صالحة
-      const alt = withRoads(R, lowF, highF, dT);
-      const un = g => g.map(p => unrot(p, c, s));
-      if (alt && (alt.bad < res.bad || (alt.bad === res.bad && alt.lots.length > res.lots.length)))
-        res = { lots: alt.lots.map(un), bad: alt.bad, rest: alt.rest.map(un), roads: alt.roads.map(un), ra: alt.ra, front: true, deep: 0, how: alt.how };
+    if (aRoads) {   // اقتراح طرق داخلية: نجرب عدة تخطيطات (ومع الميل: طرق موازية للكنتور) ونختار الأفضل
+      let all = withRoads(R, lowF, highF, dT, p => unrot(p, c, s));
+      if (slopeReady()) all = all.concat(contourRoads(r, fe, dT));
+      const lim = aSlope / 100, over = x => (slopeReady() && x.g != null && x.g > lim + 1e-9) ? 1 : 0;
+      all.sort((a, b) => over(a) - over(b) || a.bad - b.bad || b.lots.length - a.lots.length || (slopeReady() ? a.g - b.g : 0) || a.ra - b.ra);
+      const alt = all[0];
+      if (alt && (alt.bad < res.bad || (alt.bad === res.bad && alt.lots.length > res.lots.length) || (slopeReady() && res.deep)))
+        res = { ...alt, front: true, deep: 0, tried: all.length, overAll: all.every(x => over(x)) };
     }
     autoC = { k: key, r: res }; return res;
   }
@@ -365,24 +449,36 @@
       return { lots: L.map(g => g.map(Ti)), rest: rest.map(g => g.map(Ti)), ok: L.every(g => minWU(g) >= aW - 0.01) };
     }
     let n = Math.max(1, Math.min(Math.floor(A / aMin + 1e-9), Math.floor((rb[2] - rb[0]) / aW + 1e-9)));
-    for (; n >= 1; n--) {
-      const us = eqCuts(Rr, 0, n, rb), L = [];
-      for (let k = 0; k < n; k++) { const g = clipHalf(clipHalf(Rr, 1, 0, -(k ? us[k] : us[k] - 1)), -1, 0, k < n - 1 ? us[k + 1] : us[k + 1] + 1); if (g.length) L.push(g); }
-      if (L.every(g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01)) return { lots: L.map(g => g.map(Ti)), ok: true };
+    const okG = g => Math.abs(ringArea(g)) >= aMin - 0.01 && minWU(g) >= aW - 0.01;
+    const cell = (bs, k) => clipHalf(clipHalf(Rr, 1, 0, -(k ? bs[k] : bs[k] - 1)), -1, 0, k < bs.length - 2 ? bs[k + 1] : bs[k + 1] + 1);
+    let eq = null;
+    for (let m = n; m >= 1 && !eq; m--) { const us = eqCuts(Rr, 0, m, rb), L = []; for (let k = 0; k < m; k++) { const g = cell(us, k); if (g.length) L.push(g); } if (L.every(okG)) eq = L; }
+    // بديل: أبعاد متساوية للواجهة، والقطع الطرفية الضيقة (عند ضلع مائل) تُضم لجارتها — قسائم أكثر عند الأطراف المائلة
+    let un = null;
+    for (let m = n; m >= 1 && !un; m--) {
+      const bs = Array.from({ length: m + 1 }, (_, k) => rb[0] + (rb[2] - rb[0]) * k / m);
+      for (let guard = 0; guard < m; guard++) {
+        const G = bs.slice(0, -1).map((_, k) => cell(bs, k)), i = G.findIndex(g => !g.length || !okG(g));
+        if (i < 0 || bs.length <= 2) break;
+        const left = i > 0 ? Math.abs(ringArea(G[i - 1])) : Infinity, right = i < G.length - 1 ? Math.abs(ringArea(G[i + 1])) : Infinity;
+        bs.splice(left <= right ? i : i + 1, 1);
+      }
+      const G = bs.slice(0, -1).map((_, k) => cell(bs, k)).filter(g => g.length);
+      if (G.length && G.every(okG)) un = G;
     }
+    const best = eq && (!un || eq.length >= un.length) ? eq : un;
+    if (best) return { lots: best.map(g => g.map(Ti)), ok: true };
     return { lots: [row], ok: false };
   }
-  /* طرق مقترحة داخل الجزء بعرض aRW (بالإحداثيات المدوّرة: الواجهة أسفل). A = طرق متعامدة على الواجهة، B = طرق موازية + وصلة */
-  function withRoads(R0, lowF, highF, dT) {
+  /* طرق مقترحة داخل الجزء بعرض aRW. R0 بإحداثيات مدوّرة (الواجهة أسفل)، toLoc يعيد النقطة للإحداثيات المحلية.
+     A = طرق متعامدة على الواجهة، B = طرق موازية + وصلة. تُرجع كل البدائل (بالإحداثيات المحلية) مع ميل كل منها. */
+  function withRoads(R0, lowF, highF, dT, toLoc0) {
     let R = R0, flip = false;
     if (!lowF && highF) { R = R0.map(p => [-p[0], -p[1]]); flip = true; [lowF, highF] = [true, false]; }
+    const toLoc = flip ? (p => toLoc0([-p[0], -p[1]])) : toLoc0;
     const bb = bboxOf(R), Wu = bb[2] - bb[0], H = bb[3] - bb[1], w = aRW, B = 1e6, cands = [];
     const slabU = (g, a, b) => clipHalf(clipHalf(g, 1, 0, -a), -1, 0, b), slabV = (g, a, b) => clipHalf(clipHalf(g, 0, 1, -a), 0, -1, b);
-    const evalC = (roads, rows, how) => {
-      const lots = [], rest = []; let bad = 0;
-      rows.forEach(rw => { if (!rw.poly.length) return; if (Math.abs(ringArea(rw.poly)) < tgtA() - 0.01) { rest.push(rw.poly); return; } const k = cutRow(rw.poly, rw.ax); if (!k.ok) { rest.push(rw.poly); bad++; } else { lots.push(...k.lots); rest.push(...(k.rest || [])); } });
-      cands.push({ lots, rest, roads: roads.filter(g => g.length), ra: roads.reduce((t, g) => t + (g.length ? Math.abs(ringArea(g)) : 0), 0), bad, how });
-    };
+    const evalC = (roads, rows, how, lines) => cands.push(mkCand(R, roads, rows, how, lines, toLoc));
     const nA = Math.max(1, Math.round(Wu / (2 * dT + w)));
     for (const n of [nA - 1, nA, nA + 1]) {
       if (n < 1) continue; const d = (Wu - n * w) / (2 * n); if (d < 0.6 * dT || d < aW * 0.6) continue;
@@ -390,7 +486,8 @@
       const roads = xs.map(([a, b]) => slabU(R, a, b)), bnd = [[-B, xs[0][0]]];
       for (let k = 0; k < n - 1; k++) { const m = (xs[k][1] + xs[k + 1][0]) / 2; bnd.push([xs[k][1], m], [m, xs[k + 1][0]]); }
       bnd.push([xs[n - 1][1], B]);
-      evalC(roads, bnd.map(([a, b]) => ({ poly: slabU(R, a, b), ax: 1 })), n === 1 ? "طريق داخلي متعامد على الشارع" : n + " طرق متعامدة على الشارع");
+      evalC(roads, bnd.map(([a, b]) => ({ poly: slabU(R, a, b), ax: 1 })), n === 1 ? "طريق داخلي متعامد على الشارع" : n + " طرق متعامدة على الشارع",
+        xs.map(([a, b]) => lineIn(R, [(a + b) / 2, bb[1] - 1], [0, 1])));
     }
     const nB = Math.max(1, Math.round(H / (2 * dT + w)));
     for (const m of [nB - 1, nB, nB + 1]) {
@@ -410,13 +507,59 @@
         const vb = [[-B, ys[0][0]]]; for (let k = 0; k < m - 1; k++) { const mm = (ys[k][1] + ys[k + 1][0]) / 2; vb.push([ys[k][1], mm], [mm, ys[k + 1][0]]); } vb.push([ys[m - 1][1], B]);
         const rows = [];
         vb.forEach(([a, b]) => { const band = slabV(R, a, b); if (!band.length) return; (a >= vEnd - 1e-9 ? [band] : gaps.map(([x1, x2]) => slabU(band, x1, x2))).forEach(g => rows.push({ poly: g, ax: 0 })); });
-        evalC(roads, rows, (m === 1 ? "طريق داخلي موازٍ للشارع" : m + " طرق موازية للشارع") + (side === "LR" ? " ووصلتان من الجانبين" : " ووصلة جانبية"));
+        const lines = ys.map(([a, b]) => lineIn(R, [bb[0] - 1, (a + b) / 2], [1, 0])).concat(cs.map(([a, b]) => lineIn(slabV(R, -B, vEnd), [(a + b) / 2, bb[1] - 1], [0, 1])));
+        evalC(roads, rows, (m === 1 ? "طريق داخلي موازٍ للشارع" : m + " طرق موازية للشارع") + (side === "LR" ? " ووصلتان من الجانبين" : " ووصلة جانبية"), lines);
       }
     }
-    if (!cands.length) return null;
-    cands.sort((a, b) => a.bad - b.bad || b.lots.length - a.lots.length || a.ra - b.ra);
-    const c = cands[0], F = g => flip ? g.map(p => [-p[0], -p[1]]) : g;
-    return { lots: c.lots.map(F), rest: c.rest.map(F), roads: c.roads.map(F), ra: c.ra, bad: c.bad, how: c.how };
+    return cands;
+  }
+  /* بديل حسب الميل: طرق موازية لخطوط الكنتور (شبه مستوية)، تربطها وصلة مائلة بزاوية تجعل ميلها ≤ الحد، تبدأ من الشارع القائم */
+  function contourRoads(r, fe, dT) {
+    const g = slopeOf(r); if (!g || g.S <= aSlope / 100 * 0.85) return [];
+    const phi = Math.atan2(g.b, g.a) + Math.PI / 2, c = Math.cos(phi), s = Math.sin(phi), toLoc = p => unrot(p, c, s);
+    const R = r.map(p => rot(p, c, s)), bb = bboxOf(R), H = bb[3] - bb[1], w = aRW, cands = [];
+    const feR = fe.map(e => [rot(e.a, c, s), rot(e.b, c, s)]);
+    const nearFront = p => feR.some(([a, b]) => distSeg(p, a, b) < w);
+    const beta = Math.asin(Math.min(1, (aSlope / 100) * 0.85 / g.S));
+    const nB = Math.max(1, Math.round(H / (2 * dT + w)));
+    for (const m of [nB - 1, nB, nB + 1]) {
+      if (m < 1) continue; const d = (H - m * w) / (2 * m); if (d < 0.6 * dT || d < aW * 0.6) continue;
+      const ys = []; for (let k = 0; k < m; k++) { const y1 = bb[1] + d + k * (2 * d + w); ys.push([y1, y1 + w]); }
+      for (const sg of [1, -1]) for (const fx of [0.2, 0.5, 0.8]) {
+        const dir = [Math.cos(beta) * sg, Math.sin(beta)], nx = -dir[1], ny = dir[0];
+        // نقطة الوصلة على الحافة الدنيا أو العليا (أيهما على الشارع)
+        const x0 = bb[0] + (bb[2] - bb[0]) * fx, p0 = [x0, (bb[1] + bb[3]) / 2], c0 = nx * p0[0] + ny * p0[1];
+        const cl = lineIn(R, [p0[0] - dir[0] * 1e4, p0[1] - dir[1] * 1e4], dir);
+        if (cl.length < 2) continue;
+        if (feR.length && !nearFront(cl[0]) && !nearFront(cl[cl.length - 1]) && !ys.some(([a, b]) => { const l = lineIn(R, [bb[0] - 1, (a + b) / 2], [1, 0]); return l.length && (nearFront(l[0]) || nearFront(l[l.length - 1])); })) continue;
+        const side = (G, lo, hi) => { let o = G; if (lo != null) o = clipHalf(o, nx, ny, -(c0 + lo)); if (hi != null && o.length) o = clipHalf(o, -nx, -ny, c0 + hi); return o; };
+        const roads = [side(R, -w / 2, w / 2)], rows = [];
+        ys.forEach(([a, b]) => { const band = clipHalf(clipHalf(R, 0, 1, -a), 0, -1, b); roads.push(side(band, null, -w / 2), side(band, w / 2, null)); });
+        const vb = [[-1e6, ys[0][0]]]; for (let k = 0; k < m - 1; k++) { const mm = (ys[k][1] + ys[k + 1][0]) / 2; vb.push([ys[k][1], mm], [mm, ys[k + 1][0]]); } vb.push([ys[m - 1][1], 1e6]);
+        vb.forEach(([a, b]) => { const band = clipHalf(clipHalf(R, 0, 1, -a), 0, -1, b); if (!band.length) return; [side(band, null, -w / 2), side(band, w / 2, null)].forEach(q => rows.push({ poly: q, ax: 0 })); });
+        const lines = ys.map(([a, b]) => lineIn(R, [bb[0] - 1, (a + b) / 2], [1, 0])).concat([cl]);
+        cands.push(mkCand(R, roads, rows, (m === 1 ? "طريق موازٍ للكنتور" : m + " طرق موازية للكنتور") + " ووصلة مائلة حسب الميل", lines, toLoc));
+      }
+    }
+    return cands;
+  }
+  function mkCand(R, roads, rows, how, lines, toLoc) {
+    const lots = [], rest = []; let bad = 0;
+    rows.forEach(rw => { if (!rw.poly.length) return; if (Math.abs(ringArea(rw.poly)) < tgtA() - 0.01) { rest.push(rw.poly); return; } const k = cutRow(rw.poly, rw.ax); if (!k.ok) { rest.push(rw.poly); bad++; } else { lots.push(...k.lots); rest.push(...(k.rest || [])); } });
+    const RD = roads.filter(g => g.length > 2 && Math.abs(ringArea(g)) > 0.5), L = q => q.map(toLoc);
+    const out = { lots: lots.map(L), rest: rest.map(L), roads: RD.map(L), ra: RD.reduce((t, g) => t + Math.abs(ringArea(g)), 0), bad, how, g: null };
+    if (slopeReady()) out.g = Math.max(0, ...lines.filter(l => l.length > 1).map(l => gradeOf(l.map(toLoc))));
+    return out;
+  }
+  /* نقاط خط مستقيم (يبدأ من p باتجاه d) داخل المضلع R، كل 2 م */
+  function lineIn(R, p, d) {
+    const out = [], bb = bboxOf(R), L = Math.hypot(bb[2] - bb[0], bb[3] - bb[1]) + 2e4;
+    let t0 = 0; const dl = Math.hypot(d[0], d[1]), u = [d[0] / dl, d[1] / dl];
+    // ابدأ من أقرب نقطة للمضلع
+    const proj = q => (q[0] - p[0]) * u[0] + (q[1] - p[1]) * u[1];
+    const ts = R.map(proj); const a = Math.min(...ts) - 1, b = Math.max(...ts) + 1;
+    for (let t = Math.max(t0, a); t <= Math.min(L, b); t += 2) { const q = [p[0] + u[0] * t, p[1] + u[1] * t]; if (inRing(q, R)) out.push(q); else if (out.length) break; }
+    return out;
   }
   function doAutoAll() {
     aDef(); const PL = parcelsL(); let n = 0, bad = 0; const next = [], newRoads = [];
@@ -439,7 +582,7 @@
       D.parcels.splice(sel, 1, ...r.lots.map(g => ({ P: [g.map(toW)], t })), ...(r.rest || []).map(g => ({ P: [g.map(toW)], t: "block" })));
       if (r.roads && r.roads.length) { D.rp = (D.rp || []).concat(r.roads.map(g => g.map(toW))); rebuild(true); }
       sel = -1; saveD(); panel(); draw();
-      if (r.roads && r.roads.length) { toast(`أُفرز إلى ${r.lots.length} قسيمة مع ${r.how} بعرض ${aRW} م (${fmt(r.ra)} م²)` + (r.rest.length ? `، وبقيت ${r.rest.length} قطعة صغيرة غير مقسمة` : "")); return; }
+      if (r.roads && r.roads.length) { toast(`أُفرز إلى ${r.lots.length} قسيمة مع ${r.how} بعرض ${aRW} م (${fmt(r.ra)} م²)` + (r.g != null ? `، أقصى ميل ${(r.g * 100).toFixed(1)}%` : "") + (r.rest.length ? `، وبقيت ${r.rest.length} قطعة صغيرة غير مقسمة` : "")); return; }
       toast(r.bad ? "الجزء لا يتسع لقسيمة بهذه الشروط" : `أُفرز إلى ${r.lots.length} قسيمة متساوية` + (r.front ? "، واجهتها على الشارع" : "")); return;
     }
     const P = parcelsL()[sel], out = [];
@@ -514,9 +657,10 @@
     if (A) { const x0 = sx(A.box[0] - O[0]), y0 = sy(A.box[3] - O[1]), x1 = sx(A.box[2] - O[0]), y1 = sy(A.box[1] - O[1]); h += `<image href="${A.url}" x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" preserveAspectRatio="none"/>`; }
     else h += `<text x="50%" y="40" fill="#cfe0d4" font-size="13" text-anchor="middle">${sysOf(S.boundary) ? "…جاري تحميل الصورة الجوية" : "الإحداثيات ليست بنظام فلسطيني أو ITM — لا توجد صورة جوية"}</text>`;
     const PL = parcelsL(); NUM = numbering();
+    if (aSlopeOn && CT.st === "ok") CT.lines.forEach(L => { const major = Math.abs(L.z / 5 - Math.round(L.z / 5)) < 1e-6; L.paths.forEach(pp => h += `<polyline points="${pp.map(q => sx(q[0]).toFixed(1) + "," + sy(q[1]).toFixed(1)).join(" ")}" fill="none" stroke="${major ? "rgba(255,170,90,.9)" : "rgba(255,190,120,.45)"}" stroke-width="${major ? 1.3 : 0.7}"/>`); });
     fromMP(roadsMP).forEach(P => h += `<path d="${path(P)}" fill="rgba(70,70,70,.72)" stroke="#f5f5f5" stroke-width="1.2" stroke-dasharray="6 4" fill-rule="evenodd"/>`);
     PL.forEach((P, i) => { const ty = TYPES[D.parcels[i].t]; h += `<path d="${path(P)}" fill="${ty.f}" stroke="${i === sel || i === mergeA ? "#ff3b30" : ty.s}" stroke-width="${i === sel || i === mergeA ? 3.5 : 1.6}" fill-rule="evenodd"/>`; });
-    if (tool === "grid" && sel >= 0 && gMode === "auto") { const ar = autoLots(PL[sel]); (ar.roads || []).forEach(g => h += `<path d="${path([g])}" fill="rgba(60,60,60,.7)" stroke="#fff" stroke-width="1.2" stroke-dasharray="6 4"/>`); (ar.rest || []).forEach(g => h += `<path d="${path([g])}" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1"/>`); ar.lots.forEach(g => h += `<path d="${path([g])}" fill="none" stroke="${ar.bad ? "#ff6b5b" : "#fff"}" stroke-width="1.6" stroke-dasharray="5 3"/>`); }
+    if (tool === "grid" && sel >= 0 && gMode === "auto") { const ar = autoLots(PL[sel]); (ar.roads || []).forEach(g => h += `<path d="${path([g])}" fill="${ar.g != null && ar.g > aSlope / 100 + 1e-9 ? "rgba(200,40,30,.6)" : "rgba(60,60,60,.7)"}" stroke="#fff" stroke-width="1.2" stroke-dasharray="6 4"/>`); (ar.rest || []).forEach(g => h += `<path d="${path([g])}" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1"/>`); ar.lots.forEach(g => h += `<path d="${path([g])}" fill="none" stroke="${ar.bad ? "#ff6b5b" : "#fff"}" stroke-width="1.6" stroke-dasharray="5 3"/>`); }
     else if (tool === "grid" && sel >= 0) gridCells(PL[sel]).forEach(c => { const r = clipConvex(PL[sel][0], c); if (r.length) h += `<path d="${path([r])}" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="5 3"/>`; });
     h += `<path d="${path(land)}" fill="none" stroke="#ffe066" stroke-width="3" stroke-linejoin="round"/>`;
     land[0].forEach(p => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="4" fill="#ffe066" stroke="#7a5a00"/>`);

@@ -499,7 +499,7 @@ function layout(pxW) {
   const X = x => (mapCx + (x - cx) * mmPerM) * k, Y = y => (mapCy - (y - cy) * mmPerM) * k;
   const worldBox = [cx - (mapCx - F[0]) / mmPerM, cy - (F[3] - mapCy) / mmPerM, cx + (F[2] - mapCx) / mmPerM, cy + (mapCy - F[1]) / mmPerM];
   const rr = Math.max(0.35, Math.min(0.9, +ST.tilt || 0.6)), wcx = (worldBox[0] + worldBox[2]) / 2, wwh = (worldBox[2] - worldBox[0]) / 2;
-  const wvh = worldBox[3] - worldBox[1], aerBox = ST.view === "oblique" ? [wcx - wwh / rr, worldBox[1] - wvh * 0.02, wcx + wwh / rr, worldBox[3] + wvh * 0.08] : worldBox;
+  const wvh = worldBox[3] - worldBox[1], aerBox = ST.view === "oblique" ? [wcx - 1.15 * wwh / rr, worldBox[1] - wvh * 0.02, wcx + 1.15 * wwh / rr, worldBox[3] + wvh * 0.3] : worldBox;
   return { aerBox, w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, band, F, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
 }
 
@@ -770,7 +770,7 @@ function legendIcon(g, kind, x, y, w, u) {
    والقسائم والطرق والنصوص تُرسم متجهياً بعد الإسقاط، والقسائم ترتفع كألواح بسماكة خفيفة. للعرض فقط وليس بمقياس رسم. */
 function obliqueProj(L, FX) {
   const wb0 = L.worldBox, sY = (wb0[3] - wb0[1]) * 0.08, wb = [wb0[0], wb0[1] + sY, wb0[2], wb0[3] + sY], ww = wb[2] - wb[0], wh = wb[3] - wb[1], r = Math.max(0.35, Math.min(0.9, +ST.tilt || 0.6));   // النافذة تُزاح شمالاً لتنزل القطعة لوسط المنظور
-  const W = FX[2] - FX[0], H = FX[3] - FX[1], cx = (FX[0] + FX[2]) / 2, yt = FX[1] + H * 0.07, yb = FX[3] + H * 0.04;
+  const W = FX[2] - FX[0], H = FX[3] - FX[1], cx = (FX[0] + FX[2]) / 2, yt = FX[1] - H * 0.02, yb = FX[3] + H * 0.04;   // الأرض تبدأ من أعلى البرواز (بدون سماء)
   const zf = 1 / r, B = (yb - yt) / (1 - r), A = yb - B;
   const P = p => { const sx = (p[0] - wb[0]) / ww, t = (wb[3] - p[1]) / wh, z = 1 + (zf - 1) * (1 - t); return [cx + (sx - 0.5) * W / z, A + B / z, 1 / z]; };
   return { P, r, zf, A, B, yt, yb, W, H, cx, wb, ww, wh };
@@ -778,22 +778,20 @@ function obliqueProj(L, FX) {
 function shade(hex, f) { const n = parseInt(hex.slice(1), 16); const c = v => Math.max(0, Math.min(255, Math.round(v * f))); return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`; }
 function drawOblique(g, L, u, aer, FX) {
   const O = obliqueProj(L, FX), P = O.P;
-  // السماء/الأفق فوق الأرض البعيدة
-  const sky = g.createLinearGradient(0, FX[1], 0, O.yt + u * 4); sky.addColorStop(0, "#9fc3dc"); sky.addColorStop(1, "#e8e2cf");
-  g.fillStyle = sky; g.fillRect(FX[0], FX[1], O.W, O.yt - FX[1] + 2);
+  g.fillStyle = "#3a4632"; g.fillRect(FX[0], FX[1], O.W, O.H);
   // الصورة الجوية: سطر سطر
   if (aer && aer.img) {
     const b = aer.box, iw = aer.img.naturalWidth || aer.img.width, ih = aer.img.naturalHeight || aer.img.height, step = Math.max(1, Math.round(u * 0.12));
     for (let py = Math.floor(O.yt); py < FX[3]; py += step) {
-      const z = O.B / (py + step / 2 - O.A), t = 1 - (z - 1) / (O.zf - 1); if (t < 0 || t > 1.2) continue;
+      const z = O.B / (py + step / 2 - O.A), t = 1 - (z - 1) / (O.zf - 1); if (t < -0.1 || t > 1.2) continue;
       const wy = O.wb[3] - t * O.wh, half = 0.5 * z, x0 = O.wb[0] + (0.5 - half) * O.ww, x1 = O.wb[0] + (0.5 + half) * O.ww;
       const ix0 = (x0 - b[0]) / (b[2] - b[0]) * iw, ix1 = (x1 - b[0]) / (b[2] - b[0]) * iw, iy = (b[3] - wy) / (b[3] - b[1]) * ih;
       if (iy < 0 || iy >= ih) continue;
       g.drawImage(aer.img, ix0, iy, ix1 - ix0, Math.max(1, ih / O.H * step * z * 0.9), FX[0], py, O.W, step + 0.6);
     }
     // ضباب خفيف للبعيد
-    const fog = g.createLinearGradient(0, O.yt, 0, O.yt + O.H * 0.35); fog.addColorStop(0, "rgba(232,226,207,.55)"); fog.addColorStop(1, "rgba(232,226,207,0)");
-    g.fillStyle = fog; g.fillRect(FX[0], O.yt, O.W, O.H * 0.35);
+    const fog = g.createLinearGradient(0, FX[1], 0, FX[1] + O.H * 0.3); fog.addColorStop(0, "rgba(225,220,205,.32)"); fog.addColorStop(1, "rgba(225,220,205,0)");   // ضباب خفيف للبعيد فقط
+    g.fillStyle = fog; g.fillRect(FX[0], FX[1], O.W, O.H * 0.3);
   } else { g.fillStyle = "#3a4632"; g.fillRect(FX[0], O.yt, O.W, FX[3] - O.yt); }
   const pathP = (rr, lift) => { rr.forEach((p, i) => { const q = P(p), h = lift ? lift * q[2] : 0; g[i ? "lineTo" : "moveTo"](q[0], q[1] - h); }); g.closePath(); };
   // الطرق (على الأرض)

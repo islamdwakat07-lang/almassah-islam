@@ -82,7 +82,7 @@ table.t input{width:100%}
 
   <section class="card closed" id="cAer"><h2><span class="n">4</span>الصورة الجوية والمطابقة</h2>
     <div class="row"><label>المصدر<select id="aSrc"><option value="2025">جيومولج 2025</option><option value="2022">جيومولج 2022</option><option value="2019">جيومولج 2019</option><option value="none">بدون صورة</option><option value="custom">صورة أرفعها أنا</option></select></label><span id="aStat" class="pill"></span></div>
-    <div class="row" style="margin-top:6px"><button id="bEarth" style="width:100%">🌍 افتح موقع الأرض ثلاثي الأبعاد (Google Earth)</button></div>
+    <div class="row" style="margin-top:6px"><button id="bEarth" style="width:100%">🌍 افتح مكان الأرض في Google Earth (للمطابقة صدّر ملف KML من «التصدير»)</button></div>
     <p class="hint" id="aSys"></p>
     <div id="custBox" hidden>
       <div class="row"><label class="btn">🖼 اختر الصورة<input type="file" id="fImg" accept="image/*" hidden></label></div>
@@ -109,7 +109,10 @@ table.t input{width:100%}
     <div class="grid2">
       <label>حجم الورق<select id="sPaper"><option>A3</option><option>A2</option><option>A1</option><option>A0</option></select></label>
       <label>الاتجاه<select id="sOrient"><option value="l">أفقي</option><option value="p">عمودي</option></select></label>
-      <label>نوع الإخراج<select id="sView"><option value="plan">مسقط بمقياس الرسم</option><option value="oblique">منظور مائل ثلاثي الأبعاد</option></select></label>
+      <label>نوع الإخراج<select id="sView"><option value="plan">مسقط بمقياس الرسم</option><option value="oblique">منظور مائل ثلاثي الأبعاد (مسطّح)</option><option value="terrain">مجسّم على التضاريس الحقيقية</option></select></label>
+      <label>اتجاه النظر للمجسّم (°)<input id="sHead" type="range" min="0" max="359" step="5"></label>
+      <label>ميل الكاميرا للمجسّم (°)<input id="sCam" type="range" min="20" max="75" step="1"></label>
+      <label>تضخيم الارتفاعات<input id="sExag" type="range" min="1" max="3" step="0.1"></label>
       <label>ميل المنظور (للمنظور المائل)<input id="sTilt" type="range" min="0.4" max="0.85" step="0.05"></label>
       <label>مقياس رسم بتكتبه أنت 1:<input id="sScaleC" type="number" min="20" step="1" placeholder="فارغ = حسب القائمة"></label>
       <label>مقياس الرسم<select id="sScale"><option value="0">تلقائي</option><option>100</option><option>200</option><option>250</option><option>500</option><option>750</option><option>1000</option><option>1250</option><option>1500</option><option>2000</option><option>2500</option><option>5000</option></select></label>
@@ -121,7 +124,6 @@ table.t input{width:100%}
     <div class="row" style="margin-top:8px">
       <label><input type="checkbox" id="sVtx"> ترقيم الرؤوس</label>
       <label><input type="checkbox" id="sLen"> أطوال الأضلاع</label>
-      <label><input type="checkbox" id="sOwn"> خانة اسم المالك على القسيمة</label>
       <label><input type="checkbox" id="s3d"> الظلال المجسمة</label>
       <label><input type="checkbox" id="sNorth"> سهم الشمال</label>
     </div>
@@ -129,7 +131,8 @@ table.t input{width:100%}
 
   <section class="card" id="cExp"><h2><span class="n">7</span>التصدير</h2>
     <div class="row"><label>الدقة<select id="eDpi"><option value="150">150 نقطة/إنش</option><option value="200" selected>200 نقطة/إنش</option><option value="300">300 نقطة/إنش</option></select></label>
-      <button class="go" id="ePdf">📄 PDF</button><button class="go" id="ePng">🖼 PNG</button><button class="go" id="eDxf">📐 DXF</button></div>
+      <button class="go" id="ePdf">📄 PDF</button><button class="go" id="ePng">🖼 PNG</button><button class="go" id="eDxf">📐 DXF</button><button class="go" id="eKml">🌍 KML لـ Google Earth</button></div>
+    <p class="hint">ملف KML: افتحه بتطبيق Google Earth (من نافذة المشاركة أو من الملفات)، فتنفرش القسائم والطرق والحدود على الأرض الثلاثية الأبعاد بمكانها الحقيقي، وتقدر تلف حواليها.</p>
     <p class="hint">PDF وPNG بحجم الورق الحقيقي وبمقياس الرسم المختار (مقياس الطباعة صحيح عند الطباعة بحجم 100%). الرسم داخل PDF صورة عالية الدقة، والهندسة الدقيقة القابلة للتكبير بلا حدود موجودة في ملف DXF.</p>
     <div id="eStat" class="msg" hidden></div>
   </section>
@@ -144,8 +147,9 @@ const fmt = (n, d = 2) => (isFinite(n) ? n.toLocaleString("en-US", { minimumFrac
 function toast(m, ms = 3500) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms); }
 const KEY = "fanni-v1";
 let ST = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } })();
-const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
+const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, head: 0, cam: 42, exag: 1.3, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
 for (const k in DEF) if (ST[k] == null) ST[k] = JSON.parse(JSON.stringify(DEF[k]));
+ST.own = false;   // اسم المالك بالجدول فقط
 if (ST.alphaV !== 2) { ST.alpha = 0.3; ST.roadA = 0.45; ST.alphaV = 2; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) { toast("الذاكرة ممتلئة، لم تُحفظ الإعدادات"); } };
 
@@ -428,6 +432,7 @@ function loadAerial() {
   aerTimer = setTimeout(async () => {
     if (!M) return; const L = layout(1600); if (!L) return;
     const box = L.aerBox; $("aStat").textContent = "…جاري تحميل الصورة";
+    if (ST.view === "terrain" && M.sr) loadTerrain(terrainBox()).then(render);
     try { AER = await fetchAerial(box, L.W, L.H); $("aStat").textContent = AER ? "✓ الصورة محمّلة" : (ST.src === "none" ? "بدون صورة" : "لا صورة"); }
     catch (e) { AER = null; $("aStat").textContent = "⚠️ تعذّر تحميل الصورة (" + e.message + ")"; }
     render();
@@ -499,7 +504,7 @@ function layout(pxW) {
   const X = x => (mapCx + (x - cx) * mmPerM) * k, Y = y => (mapCy - (y - cy) * mmPerM) * k;
   const worldBox = [cx - (mapCx - F[0]) / mmPerM, cy - (F[3] - mapCy) / mmPerM, cx + (F[2] - mapCx) / mmPerM, cy + (mapCy - F[1]) / mmPerM];
   const rr = Math.max(0.35, Math.min(0.9, +ST.tilt || 0.6)), wcx = (worldBox[0] + worldBox[2]) / 2, wwh = (worldBox[2] - worldBox[0]) / 2;
-  const wvh = worldBox[3] - worldBox[1], aerBox = ST.view === "oblique" ? [wcx - 1.15 * wwh / rr, worldBox[1] - wvh * 0.02, wcx + 1.15 * wwh / rr, worldBox[3] + wvh * 0.3] : worldBox;
+  const wvh = worldBox[3] - worldBox[1], aerBox = ST.view === "terrain" ? terrainBox() : ST.view === "oblique" ? [wcx - 1.15 * wwh / rr, worldBox[1] - wvh * 0.02, wcx + 1.15 * wwh / rr, worldBox[3] + wvh * 0.3] : worldBox;
   return { aerBox, w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, band, F, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
 }
 
@@ -512,7 +517,7 @@ function drawSheet(cv, pxW, aer) {
   const FX = L.F.map(v => v * k);
   g.save(); g.beginPath(); g.rect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]); g.clip();
   g.fillStyle = "#2b3326"; g.fillRect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]);
-  if (ST.view === "oblique") drawOblique(g, L, u, aer, FX); else {
+  if (ST.view === "oblique") drawOblique(g, L, u, aer, FX); else if (ST.view === "terrain") drawTerrain(g, L, u, aer, FX); else {
   if (aer && aer.img) { const b = aer.box; g.drawImage(aer.img, L.X(b[0]), L.Y(b[3]), L.X(b[2]) - L.X(b[0]), L.Y(b[1]) - L.Y(b[3])); }
   // تعتيم خفيف خارج الأرض ليبرز المخطط
   g.save(); g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.rect(0, 0, L.W, L.H); ring(g, L, M.boundary); g.fill("evenodd"); g.restore();
@@ -583,8 +588,8 @@ function drawSheet(cv, pxW, aer) {
     M.V.forEach((p, i) => { const x = L.X(p[0]), y = L.Y(p[1]); sh(0.5, 0.05, 0.12); g.beginPath(); g.arc(x, y, r, 0, 7); g.fillStyle = "#fff"; g.fill(); nosh(); g.lineWidth = 0.22 * u; g.strokeStyle = ST.border; g.stroke(); g.fillStyle = "#1a1a1a"; g.fillText(String(i + 1), x, y + 0.05 * u); });
   }
   }
-  if (ST.north) northArrow(g, FX[2] - 7 * u, FX[3] - 7.5 * u, 4.2 * u);
-  if (ST.view === "oblique") obliqueCaption(g, L, u); else scaleBar(g, L, u);
+  if (ST.north) { if (ST.view === "terrain") { g.save(); g.translate(FX[2] - 7 * u, FX[3] - 7.5 * u); g.rotate(-(+ST.head || 0) * Math.PI / 180); northArrow(g, 0, 0, 4.2 * u); g.restore(); } else northArrow(g, FX[2] - 7 * u, FX[3] - 7.5 * u, 4.2 * u); }
+  if (ST.view !== "plan") obliqueCaption(g, L, u); else scaleBar(g, L, u);
   g.restore();
   frameCoords(g, L, u, FX);
   panel(g, L, u);
@@ -636,7 +641,7 @@ function northArrow(g, x, y, R) {
 /* البرواز: خط ذهبي مزدوج، وعلى محيطه قيم الإحداثيات (X أعلى وأسفل، Y يمين ويسار)، وتقاطعات خفيفة داخل الرسم */
 function frameCoords(g, L, u, FX) {
   const k = L.k, [x0, y0, x1, y1] = FX, wb = L.worldBox, b = L.band * k;
-  const stepM = niceStep((wb[2] - wb[0]) / 6), obl = ST.view === "oblique";
+  const stepM = niceStep((wb[2] - wb[0]) / 6), obl = ST.view !== "plan";
   g.save();
   g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 0.1 * u;
   if (!obl) for (let X = Math.ceil(wb[0] / stepM) * stepM; X <= wb[2]; X += stepM) for (let Y = Math.ceil(wb[1] / stepM) * stepM; Y <= wb[3]; Y += stepM) {
@@ -854,7 +859,7 @@ function drawOblique(g, L, u, aer, FX) {
 function obliqueCaption(g, L, u) {
   const k = L.k, bx = L.F[0] * k + 1.5 * u, by = L.F[3] * k - 7.1 * u, bw = 44 * u, bh = 5.6 * u;
   g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; rrect(g, bx, by, bw, bh, u); g.fillStyle = "rgba(10,10,10,.88)"; g.fill(); g.shadowBlur = 0; g.lineWidth = 0.3 * u; g.strokeStyle = gold(g, bx, by, bx + bw, by + bh); g.stroke();
-  g.font = `700 ${1.45 * u}px Plex, sans-serif`; g.fillStyle = "#f3d27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("منظور ثلاثي الأبعاد للعرض — بدون مقياس رسم", bx + bw / 2, by + bh * 0.36);
+  g.font = `700 ${1.45 * u}px Plex, sans-serif`; g.fillStyle = "#f3d27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ST.view === "terrain" ? "مجسّم على التضاريس الحقيقية (كنتور جيومولج كل " + ((TER.dem && TER.dem.step) || 1) + " م)" : "منظور ثلاثي الأبعاد للعرض — بدون مقياس رسم", bx + bw / 2, by + bh * 0.36);
   g.font = `400 ${1.15 * u}px Plex, sans-serif`; g.fillStyle = "#fff"; g.fillText("الأطوال والمساحات المكتوبة هي القيم الحقيقية", bx + bw / 2, by + bh * 0.72);
   g.restore();
 }
@@ -870,6 +875,151 @@ function openEarth() {
   };
   if (window.proj4) return go();
   const s = document.createElement("script"); s.src = "../geomolg/lib/proj4.js"; s.onload = go; s.onerror = () => toast("تعذّر تحميل أداة تحويل الإحداثيات"); document.head.appendChild(s);
+}
+
+/* ======================= منظور ثلاثي الأبعاد على التضاريس الحقيقية =======================
+   الارتفاعات من كنتور جيومولج (كل 1 م أو 5 م) ← شبكة ارتفاعات ← مجسّم WebGL تُفرش عليه الصورة الجوية والمخطط.
+   الأرقام والأطوال تُرسم بعد الإسقاط فتبقى واضحة. للعرض فقط (بدون مقياس رسم). */
+const TER = { key: "", st: "", dem: null, msg: "" };
+function terrainBox() {   // مربع حول القطعة يغطي ما تراه الكاميرا
+  const bb = bboxOf(M.boundary), cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2, R = Math.max(bb[2] - bb[0], bb[3] - bb[1]) * 0.95 + 30;
+  return [cx - R, cy - R, cx + R, cy + R];
+}
+async function loadTerrain(box) {
+  const key = box.map(v => v.toFixed(0)).join(",");
+  if (TER.key === key && (TER.st === "ok" || TER.st === "loading")) return;
+  Object.assign(TER, { key, st: "loading", dem: null, msg: "" });
+  const size = box[2] - box[0], lay = 0, off = size < 400 ? 2 : 4;   // طبقة 5 م في جيومولج معطلة، فنستعمل طبقة 1 م مع تبسيط الخطوط
+  try {
+    const q = new URLSearchParams({ geometry: box.map(v => v.toFixed(1)).join(","), geometryType: "esriGeometryEnvelope", inSR: M.sr, outSR: M.sr, spatialRel: "esriSpatialRelIntersects", outFields: "ELEVATION", returnGeometry: "true", maxAllowableOffset: off, geometryPrecision: 1, f: "json" });
+    const r = await fetch("https://orthophotos.geomolg.ps/adaptor/rest/services/ContourLines_02/MapServer/" + lay + "/query?" + q);
+    const j = await r.json(); if (j.error || !j.features || !j.features.length) throw new Error(j.error ? j.error.message : "لا كنتور هنا");
+    // نقاط الكنتور داخل المربع (كل 3 م تقريباً) في جدول تجزئة
+    const H = new Map(), pad = 30, bx = [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad]; let id = 0, zmin = Infinity, zmax = -Infinity;
+    j.features.forEach(f => { const z = parseFloat(f.attributes.ELEVATION); if (!isFinite(z)) return; id++;
+      (f.geometry.paths || []).forEach(pp => { for (let i = 0; i + 1 < pp.length; i++) { const a = pp[i], b = pp[i + 1];
+        if (Math.max(a[0], b[0]) < bx[0] || Math.min(a[0], b[0]) > bx[2] || Math.max(a[1], b[1]) < bx[1] || Math.min(a[1], b[1]) > bx[3]) continue;
+        const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3));
+        for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n, kk = Math.floor(x / 15) + "," + Math.floor(y / 15); if (!H.has(kk)) H.set(kk, []); H.get(kk).push([x, y, z, id]); }
+        zmin = Math.min(zmin, z); zmax = Math.max(zmax, z); } }); });
+    if (!H.size) throw new Error("لا كنتور داخل المنطقة");
+    const zAt = (x, y) => { const cx = Math.floor(x / 15), cy = Math.floor(y / 15), near = new Map();
+      for (let rr = 0; rr <= 8; rr++) { for (let i = cx - rr; i <= cx + rr; i++) for (let jj = cy - rr; jj <= cy + rr; jj++) { if (Math.max(Math.abs(i - cx), Math.abs(jj - cy)) !== rr) continue;
+          (H.get(i + "," + jj) || []).forEach(q => { const d = Math.hypot(q[0] - x, q[1] - y), e = near.get(q[3]); if (!e || d < e.d) near.set(q[3], { d, z: q[2] }); }); }
+        if (near.size >= 2 && rr >= 1) break; }
+      const L2 = [...near.values()].sort((a, b) => a.d - b.d).slice(0, 2); if (!L2.length) return NaN; if (L2[0].d < 0.05 || L2.length < 2) return L2[0].z;
+      return (L2[0].z / L2[0].d + L2[1].z / L2[1].d) / (1 / L2[0].d + 1 / L2[1].d); };
+    const N = 150, Z = new Float32Array((N + 1) * (N + 1)); let sum = 0, cnt = 0;
+    for (let r = 0; r <= N; r++) for (let c = 0; c <= N; c++) { const z = zAt(box[0] + (box[2] - box[0]) * c / N, box[1] + (box[3] - box[1]) * r / N); Z[r * (N + 1) + c] = z; if (isFinite(z)) { sum += z; cnt++; } }
+    const mean = cnt ? sum / cnt : 0; for (let i = 0; i < Z.length; i++) if (!isFinite(Z[i])) Z[i] = mean;
+    Object.assign(TER, { st: "ok", dem: { N, Z, box, mean, zmin, zmax, step: 1 } });
+  } catch (e) { Object.assign(TER, { st: "err", msg: e.message || String(e) }); }
+}
+function demZ(x, y) {   // ارتفاع نقطة (استيفاء ثنائي من الشبكة)
+  const D = TER.dem; if (!D) return 0; const { N, Z, box } = D;
+  const fx = Math.max(0, Math.min(N - 1e-6, (x - box[0]) / (box[2] - box[0]) * N)), fy = Math.max(0, Math.min(N - 1e-6, (y - box[1]) / (box[3] - box[1]) * N)), c = Math.floor(fx), r = Math.floor(fy), tx = fx - c, ty = fy - r, I = (rr, cc) => Z[rr * (N + 1) + cc];
+  return (I(r, c) * (1 - tx) + I(r, c + 1) * tx) * (1 - ty) + (I(r + 1, c) * (1 - tx) + I(r + 1, c + 1) * tx) * ty;
+}
+/* مصفوفات بسيطة (عمودية الترتيب كما يتوقع WebGL) */
+function mPersp(fov, asp, n, f) { const t = 1 / Math.tan(fov / 2); return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0]; }
+function mLook(e, c, up) { const z = norm3([e[0] - c[0], e[1] - c[1], e[2] - c[2]]), x = norm3(cross3(up, z)), y = cross3(z, x);
+  return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot3(x, e), -dot3(y, e), -dot3(z, e), 1]; }
+function mMul(a, b) { const o = new Array(16).fill(0); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) o[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k]; return o; }
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], norm3 = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+/* نسيج الأرض: الصورة الجوية + الطرق + القسائم + الحدود (بدون نصوص) */
+function terrainTexture(aer, box, S) {
+  const c = document.createElement("canvas"); c.width = c.height = S; const g = c.getContext("2d"), k = S / (box[2] - box[0]);
+  const T = { X: x => (x - box[0]) * k, Y: y => (box[3] - y) * k };
+  g.fillStyle = "#6f6a58"; g.fillRect(0, 0, S, S);
+  if (aer && aer.img) { const b = aer.box; g.drawImage(aer.img, T.X(b[0]), T.Y(b[3]), (b[2] - b[0]) * k, (b[3] - b[1]) * k); }
+  (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => { g.beginPath(); pg.forEach(r => ring(g, T, openR(r))); g.fillStyle = `rgba(48,50,54,${ST.roadA})`; g.fill("evenodd"); g.lineWidth = 0.3 * k; g.strokeStyle = "#cfcac0"; g.stroke(); });
+  g.save(); g.setLineDash([2 * k, 1.5 * k]); g.lineWidth = 0.2 * k; g.strokeStyle = "rgba(255,255,255,.85)";
+  let axes = [...M.axes, ...(M.roadAxes || [])]; if (!axes.length) axes = M.roadMP.map(pg => roadAxis(openR(pg[0]))).filter(Boolean);
+  axes.forEach(a => { g.beginPath(); a.forEach((p, i) => g[i ? "lineTo" : "moveTo"](T.X(p[0]), T.Y(p[1]))); g.stroke(); }); g.restore();
+  M.lots.forEach(l => { g.beginPath(); ring(g, T, l.ring); g.fillStyle = hexA(lotColor(l), Math.min(0.85, ST.alpha + 0.05)); g.fill(); g.lineJoin = "round"; g.lineWidth = 0.75 * k; g.strokeStyle = "#fff"; g.stroke(); g.lineWidth = 0.38 * k; g.strokeStyle = ST.border; g.stroke(); });
+  g.beginPath(); ring(g, T, M.boundary); g.lineWidth = 1.1 * k; g.strokeStyle = "#fff"; g.stroke(); g.lineWidth = 0.6 * k; g.strokeStyle = ST.border; g.stroke();
+  return c;
+}
+let GLC = null;
+function drawTerrain(g, L, u, aer, FX) {
+  const W = Math.round(FX[2] - FX[0]), H = Math.round(FX[3] - FX[1]);
+  g.fillStyle = "#4a4a40"; g.fillRect(FX[0], FX[1], W, H);
+  const msg = t => { g.fillStyle = "#f3d27a"; g.font = `700 ${2 * u}px Plex, sans-serif`; g.textAlign = "center"; g.fillText(t, FX[0] + W / 2, FX[1] + H / 2); };
+  if (!M.sr) { msg("التضاريس تحتاج إحداثيات فلسطيني أو ITM"); return; }
+  if (TER.st !== "ok") { msg(TER.st === "err" ? "تعذّر تحميل الكنتور: " + TER.msg : "…جاري تحميل التضاريس من كنتور جيومولج (قد يأخذ حتى دقيقة)"); return; }
+  const D = TER.dem, box = D.box, N = D.N, ex = +ST.exag || 1.3, c0 = centroid(M.boundary), z0 = demZ(c0[0], c0[1]);
+  // الشبكة (إحداثيات محلية حول مركز القطعة)
+  const nv = (N + 1) * (N + 1), P = new Float32Array(nv * 3), NM = new Float32Array(nv * 3), UV = new Float32Array(nv * 2), dx = (box[2] - box[0]) / N, dy = (box[3] - box[1]) / N;
+  for (let r = 0; r <= N; r++) for (let cc = 0; cc <= N; cc++) { const i = r * (N + 1) + cc; P[i * 3] = box[0] + dx * cc - c0[0]; P[i * 3 + 1] = box[1] + dy * r - c0[1]; P[i * 3 + 2] = (D.Z[i] - z0) * ex; UV[i * 2] = cc / N; UV[i * 2 + 1] = 1 - r / N; }
+  for (let r = 0; r <= N; r++) for (let cc = 0; cc <= N; cc++) { const i = r * (N + 1) + cc, zl = P[(r * (N + 1) + Math.max(0, cc - 1)) * 3 + 2], zr = P[(r * (N + 1) + Math.min(N, cc + 1)) * 3 + 2], zd = P[(Math.max(0, r - 1) * (N + 1) + cc) * 3 + 2], zu = P[(Math.min(N, r + 1) * (N + 1) + cc) * 3 + 2]; const n = norm3([zl - zr, zd - zu, 2 * dx]); NM.set(n, i * 3); }
+  const IDX = new Uint16Array(N * N * 6); let q = 0; for (let r = 0; r < N; r++) for (let cc = 0; cc < N; cc++) { const a = r * (N + 1) + cc, b = a + 1, d = a + N + 1, e = d + 1; IDX.set([a, b, d, b, e, d], q); q += 6; }
+  // الكاميرا: اتجاه النظر (0 = نحو الشمال) وزاوية الميل
+  const bb = bboxOf(M.boundary), R = Math.hypot(bb[2] - bb[0], bb[3] - bb[1]) / 2, hd = (+ST.head || 0) * Math.PI / 180, tl = (+ST.cam || 45) * Math.PI / 180, fov = 32 * Math.PI / 180;
+  const dist = R / Math.tan(fov / 2) * 0.82, eye = [-Math.sin(hd) * Math.cos(tl) * dist, -Math.cos(hd) * Math.cos(tl) * dist, Math.sin(tl) * dist], tgt = [0, 0, 0];
+  const MVP = mMul(mPersp(fov, W / H, dist * 0.05, dist * 6), mLook(eye, tgt, [0, 0, 1]));
+  // WebGL
+  if (!GLC) GLC = document.createElement("canvas"); GLC.width = W; GLC.height = H;
+  const gl = GLC.getContext("webgl", { preserveDrawingBuffer: true, antialias: true }); if (!gl) { msg("الجهاز لا يدعم الرسم ثلاثي الأبعاد (WebGL)"); return; }
+  const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); return o; }, pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, "attribute vec3 p;attribute vec3 n;attribute vec2 t;uniform mat4 m;uniform vec3 e;varying vec2 v;varying float l;varying float d;void main(){gl_Position=m*vec4(p,1.);v=t;l=max(dot(normalize(n),normalize(vec3(-.45,.55,.75))),0.);d=distance(p,e);}"));
+  gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, "precision mediump float;uniform sampler2D s;uniform vec2 f;varying vec2 v;varying float l;varying float d;void main(){vec3 c=texture2D(s,v).rgb*(.58+.52*l);float k=smoothstep(f.x,f.y,d);gl_FragColor=vec4(mix(c,vec3(.29,.29,.25),k*.9),1.);}"));
+  gl.linkProgram(pr); gl.useProgram(pr);
+  const buf = (data, name, size) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); const loc = gl.getAttribLocation(pr, name); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0); };
+  buf(P, "p", 3); buf(NM, "n", 3); buf(UV, "t", 2);
+  const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, IDX, gl.STATIC_DRAW);
+  const S = Math.min(4096, gl.getParameter(gl.MAX_TEXTURE_SIZE)), tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, terrainTexture(aer, box, S));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.uniformMatrix4fv(gl.getUniformLocation(pr, "m"), false, new Float32Array(MVP)); gl.uniform3fv(gl.getUniformLocation(pr, "e"), eye); gl.uniform2f(gl.getUniformLocation(pr, "f"), dist * 1.1, dist * 2.6);
+  gl.viewport(0, 0, W, H); gl.clearColor(0.29, 0.29, 0.25, 1); gl.enable(gl.DEPTH_TEST); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.drawElements(gl.TRIANGLES, IDX.length, gl.UNSIGNED_SHORT, 0);
+  g.drawImage(GLC, FX[0], FX[1], W, H);
+  // إسقاط النقاط للنصوص
+  const PR = (x, y) => { const p = [x - c0[0], y - c0[1], (demZ(x, y) - z0) * ex + 0.3], m = MVP, cx = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12], cy = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13], cw = m[3] * p[0] + m[7] * p[1] + m[11] * p[2] + m[15];
+    return [FX[0] + (cx / cw + 1) / 2 * W, FX[1] + (1 - cy / cw) / 2 * H, dist / cw]; };
+  g.save(); g.beginPath(); g.rect(FX[0], FX[1], W, H); g.clip();
+  if (ST.len) M.E.forEach(e => {   // الطول على منتصف الضلع
+    const a = PR(e.p[0], e.p[1]), b = PR(e.q[0], e.q[1]), s = Math.max(0.55, Math.min(1.3, (a[2] + b[2]) / 2)), fs = 1.35 * u * s, t = Math.hypot(e.q[0] - e.p[0], e.q[1] - e.p[1]).toFixed(2), pl = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    g.font = `700 ${fs}px Plex, sans-serif`; if (pl < g.measureText(t).width * 1.2 + 1.5 * u) return;
+    let an = Math.atan2(b[1] - a[1], b[0] - a[0]); if (an > Math.PI / 2) an -= Math.PI; if (an < -Math.PI / 2) an += Math.PI;
+    let mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    if (e.n === 1) { const lp = labelPt(e.lot.ring), c = PR(lp[0], lp[1]), nx = -(b[1] - a[1]) / pl, ny = (b[0] - a[0]) / pl, sg = ((c[0] - mx) * nx + (c[1] - my) * ny) > 0 ? 1 : -1; mx += nx * sg * fs; my += ny * sg * fs; }
+    g.save(); g.translate(mx, my); g.rotate(an); g.textAlign = "center"; g.textBaseline = "middle"; g.lineWidth = fs * 0.28; g.strokeStyle = "rgba(0,0,0,.85)"; g.lineJoin = "round"; g.strokeText(t, 0, 0); g.fillStyle = "#fff"; g.fillText(t, 0, 0); g.restore();
+  });
+  M.lots.slice().sort((a, b) => b.c[1] - a.c[1]).forEach(l => {   // رقم القسيمة ومساحتها
+    const lp = labelPt(l.ring), c = PR(lp[0], lp[1]), k2 = Math.max(0.5, Math.min(1.25, c[2] * Math.sqrt(l.a) / (R * 0.55)));
+    const x = c[0], y = c[1], Rb = 2.4 * u * k2;
+    g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = u; g.beginPath(); g.arc(x, y - Rb * 0.35, Rb, 0, 7); g.fillStyle = "#111"; g.fill(); g.restore();
+    g.beginPath(); g.arc(x, y - Rb * 0.35, Rb, 0, 7); g.lineWidth = 0.3 * u * k2; g.strokeStyle = gold(g, x, y - Rb * 1.3, x, y + Rb); g.stroke();
+    g.font = `700 ${2.3 * u * k2}px Plex, sans-serif`; g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(l.no), x, y - Rb * 0.45);
+    const at = fmt(l.a, l.a % 1 ? 2 : 0) + " m²"; g.font = `700 ${1.35 * u * k2}px Plex, sans-serif`; const tw = g.measureText(at).width + 1.5 * u * k2, th = 1.9 * u * k2, ty = y + Rb * 0.75;
+    rrect(g, x - tw / 2, ty - th / 2, tw, th, th / 2); g.fillStyle = "#111"; g.fill(); g.lineWidth = 0.2 * u * k2; g.strokeStyle = gold(g, x, ty - th, x, ty + th); g.stroke();
+    g.fillStyle = "#fff"; g.direction = "ltr"; g.fillText(at, x, ty); g.direction = "rtl";
+  });
+  if (ST.vtx) M.V.forEach((p, i) => { const q2 = PR(p[0], p[1]), r = 0.85 * u * Math.max(0.6, Math.min(1.2, q2[2])); g.beginPath(); g.arc(q2[0], q2[1], r, 0, 7); g.fillStyle = "#fff"; g.fill(); g.lineWidth = 0.2 * u; g.strokeStyle = ST.border; g.stroke(); g.font = `700 ${r * 1.1}px Plex, sans-serif`; g.fillStyle = "#1a1a1a"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(i + 1), q2[0], q2[1] + 0.04 * u); });
+  g.restore();
+}
+/* ملف KML لـ Google Earth: القسائم والطرق والحدود ملتصقة بالأرض، فتنطبق على التضاريس الثلاثية الأبعاد */
+async function exportKML() {
+  if (!M) { toast("ارفع ملف المخطط أولاً"); return; }
+  if (!M.sr) { toast("الإحداثيات ليست فلسطيني أو ITM — لا يمكن وضع المخطط على Google Earth"); return; }
+  if (!window.proj4) await new Promise(ok => { const s = document.createElement("script"); s.src = "../geomolg/lib/proj4.js"; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
+  if (!window.proj4) { toast("تعذّر تحميل أداة تحويل الإحداثيات"); return; }
+  proj4.defs("EPSG:28191", "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs");
+  proj4.defs("EPSG:2039", "+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-24.0024,-17.1032,-17.8444,-0.33077,-1.85269,1.66969,5.4248 +units=m +no_defs");
+  const T = p => { const [lo, la] = proj4("EPSG:" + M.sr, "EPSG:4326", p); return lo.toFixed(8) + "," + la.toFixed(8) + ",0"; };
+  const ringK = r => r.concat([r[0]]).map(T).join(" ");
+  const kc = (hex, a) => { const n = parseInt(hex.slice(1), 16); const h2 = v => v.toString(16).padStart(2, "0"); return h2(Math.round(a * 255)) + h2(n & 255) + h2((n >> 8) & 255) + h2(n >> 16); };
+  const x = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const poly = (name, r, style, desc) => `<Placemark><name>${x(name)}</name>${desc ? `<description>${x(desc)}</description>` : ""}<styleUrl>#${style}</styleUrl><Polygon><tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode><outerBoundaryIs><LinearRing><coordinates>${ringK(r)}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`;
+  let st = `<Style id="bnd"><LineStyle><color>ff2b26e8</color><width>4</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style><Style id="road"><LineStyle><color>ffc0cacf</color><width>1.5</width></LineStyle><PolyStyle><color>${kc("#303236", 0.55)}</color></PolyStyle></Style><Style id="lbl"><IconStyle><scale>0</scale></IconStyle><LabelStyle><scale>1.1</scale></LabelStyle></Style>`;
+  M.lots.forEach(l => { st += `<Style id="l${l.no}"><LineStyle><color>ff2b26e8</color><width>2.5</width></LineStyle><PolyStyle><color>${kc(lotColor(l), 0.45)}</color></PolyStyle></Style>`; });
+  let pm = poly("حدود الأرض", M.boundary, "bnd", "المساحة " + fmt(M.A) + " م²");
+  (M.roadDraw && M.roadDraw.length ? M.roadDraw : [...M.roadMP, ...M.exMP]).forEach(pg => { pm += poly("طريق", openR(pg[0]), "road"); });
+  M.lots.forEach(l => { pm += poly("قسيمة " + l.no, l.ring, "l" + l.no, "المساحة " + fmt(l.a) + " م²" + (ST.owners[l.no] ? " — " + ST.owners[l.no] : "")); const c = labelPt(l.ring); pm += `<Placemark><name>${l.no} — ${fmt(l.a, l.a % 1 ? 2 : 0)} م²</name><styleUrl>#lbl</styleUrl><Point><coordinates>${T(c)}</coordinates></Point></Placemark>`; });
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${x("مخطط إفراز " + (ST.info.parcel ? "قطعة " + ST.info.parcel : ""))}</name>${st}${pm}</Document></kml>`;
+  saveFile(baseName() + ".kml", new Blob([kml], { type: "application/vnd.google-earth.kml+xml" }));
+  toast("افتح الملف بتطبيق Google Earth: المخطط بينفرش على الأرض الثلاثية الأبعاد بمكانه");
 }
 
 /* ======================= المعاينة ======================= */
@@ -897,9 +1047,9 @@ $("bCenter").onclick = () => center(true);
 /* ======================= الإعدادات ======================= */
 function bindSettings() {
   const b = (id, k, conv = v => v, ev = "change") => { const e = $(id); if (e.type === "checkbox") e.checked = !!ST[k]; else e.value = ST[k]; e.addEventListener(ev, () => { ST[k] = e.type === "checkbox" ? e.checked : conv(e.value); save(); if (["paper", "orient", "scale", "panel", "view", "tilt", "scaleC"].includes(k)) loadAerial(); render(); }); };
-  b("sView", "view"); b("sTilt", "tilt", v => +v, "input"); b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
+  b("sView", "view"); b("sHead", "head", v => +v, "input"); b("sCam", "cam", v => +v, "input"); b("sExag", "exag", v => +v, "input"); b("sTilt", "tilt", v => +v, "input"); b("sScaleC", "scaleC", v => Math.max(0, Math.round(+v) || 0), "input");
   b("sPaper", "paper"); b("sOrient", "orient"); b("sScale", "scale", v => +v); b("sPanel", "panel", v => +v, "input"); b("sAlpha", "alpha", v => +v, "input"); b("sRoadA", "roadA", v => +v, "input"); b("sBorder", "border", v => v, "input");
-  b("sVtx", "vtx"); b("sLen", "len"); b("sOwn", "own"); b("s3d", "d3"); b("sNorth", "north");
+  b("sVtx", "vtx"); b("sLen", "len"); b("s3d", "d3"); b("sNorth", "north");
   $("tol").value = ST.tol; $("tol").oninput = () => { ST.tol = +$("tol").value || 0; save(); };
   $("aSrc").value = ST.src; $("custBox").hidden = ST.src !== "custom";
   if (ST.custBox) ["ciX0", "ciY0", "ciX1", "ciY1"].forEach((id, i) => $(id).value = ST.custBox[i] || "");
@@ -954,6 +1104,7 @@ async function exportCanvas() {
   const st = $("eStat"); st.hidden = false; st.textContent = `…جاري التجهيز (${ST.paper}، ${dpi} نقطة/إنش)`;
   await fontsReady();
   const L0 = layout(pxW); let aer = AER;
+  if (ST.view === "terrain" && M.sr) await loadTerrain(terrainBox());
   try { const a2 = await fetchAerial(L0.aerBox, L0.W, L0.H); if (a2) aer = a2; } catch (e) {}
   const cv = document.createElement("canvas"); const L = drawSheet(cv, pxW, aer);
   st.textContent = `✓ ${ST.paper} بمقياس 1:${L.sc}، ${L.W}×${L.H} بكسل (${dpi} نقطة/إنش)` + (dpi < +$("eDpi").value ? " — خُفّضت الدقة لحدود ذاكرة الجهاز" : "");
@@ -968,6 +1119,7 @@ $("ePdf").onclick = async () => {
   doc.addImage(r.cv.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, r.w, r.h);
   saveFile(baseName() + ".pdf", doc.output("blob"));
 };
+$("eKml").onclick = () => exportKML();
 $("eDxf").onclick = () => {
   if (!M) { toast("ارفع ملف المخطط أولاً"); return; }
   const o = [], f = v => (+v).toFixed(4), P = (...a) => a.forEach(x => o.push(String(x)));

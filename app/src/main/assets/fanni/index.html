@@ -45,6 +45,9 @@ table.t th{color:var(--gold2);font-weight:700}
 table.t input{width:100%}
 #pvWrap{position:relative;overflow:auto;background:#000;border:1px solid var(--gold);border-radius:12px;max-height:72vh;touch-action:pan-x pan-y}
 #pv{display:block;width:100%}
+#full{position:fixed;inset:0;z-index:99;background:#000;display:none;align-items:center;justify-content:center;overflow:hidden}
+#full.on{display:flex}#full img{position:absolute;left:50%;top:50%;max-width:none;box-shadow:0 0 0 1px #e2b54a}
+#full button{position:absolute;top:10px;left:10px;z-index:2}
 #pvWrap.pan{cursor:grab;touch-action:none}
 .pvbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
 .pill{font-size:12.5px;color:var(--mut)}
@@ -73,11 +76,12 @@ table.t input{width:100%}
 
   <section class="card" id="cPrev"><h2><span class="n">3</span>المعاينة</h2>
     <div class="pvbar">
-      <button id="zIn">＋</button><button id="zOut">－</button><button id="zFit">ملء</button>
+      <button id="zIn">＋</button><button id="zOut">－</button><button id="zFit">ملء</button><button id="bFull">⛶ صفحة كاملة</button>
       <button id="bPan">✋ تحريك المخطط</button><button id="bCenter">⌖ توسيط</button>
       <span class="pill" id="pvInfo"></span>
     </div>
     <div id="pvWrap"><canvas id="pv"></canvas></div>
+    <div id="full"><button id="fClose">✕ إغلاق</button><img id="fImg" alt=""></div>
   </section>
 
   <section class="card closed" id="cAer"><h2><span class="n">4</span>الصورة الجوية والمطابقة</h2>
@@ -107,7 +111,7 @@ table.t input{width:100%}
   <section class="card closed" id="cSet"><h2><span class="n">6</span>الإعدادات</h2>
     <div class="grid2">
       <label>حجم الورق<select id="sPaper"><option>A3</option><option>A2</option><option>A1</option><option>A0</option></select></label>
-      <label>الاتجاه<select id="sOrient"><option value="l">أفقي</option><option value="p">عمودي</option></select></label>
+      <label>الاتجاه<select id="sOrient"><option value="a">تلقائي حسب شكل الأرض</option><option value="l">أفقي</option><option value="p">عمودي</option></select></label>
       <label>مقياس رسم بتكتبه أنت 1:<input id="sScaleC" type="number" min="20" step="1" placeholder="فارغ = حسب القائمة"></label>
       <label>مقياس الرسم<select id="sScale"><option value="0">تلقائي</option><option>100</option><option>200</option><option>250</option><option>500</option><option>750</option><option>1000</option><option>1250</option><option>1500</option><option>2000</option><option>2500</option><option>5000</option></select></label>
       <label>عرض الهامش الأيمن %<input id="sPanel" type="range" min="22" max="40" step="1"></label>
@@ -141,10 +145,11 @@ const fmt = (n, d = 2) => (isFinite(n) ? n.toLocaleString("en-US", { minimumFrac
 function toast(m, ms = 3500) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms); }
 const KEY = "fanni-v1";
 let ST = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } })();
-const DEF = { paper: "A3", orient: "l", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, head: 0, cam: 42, exag: 1.3, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
+const DEF = { paper: "A3", orient: "a", scale: 0, panel: 29, alpha: 0.3, roadA: 0.45, border: "#e8262b", vtx: true, len: true, own: true, d3: true, north: true, tol: 0.5, src: "2022", view: "plan", tilt: 0.6, head: 0, cam: 42, exag: 1.3, scaleC: 0, info: {}, owners: {}, roadOf: {}, colors: {}, roles: {}, off: [0, 0], geo: null };
 for (const k in DEF) if (ST[k] == null) ST[k] = JSON.parse(JSON.stringify(DEF[k]));
 ST.own = false;   // اسم المالك بالجدول فقط
-ST.view = "plan"; ST.d3 = false;   // مخطط مسطّح فقط
+ST.view = "plan"; ST.d3 = false;
+if (ST.orientV !== 2) { ST.orient = "a"; ST.orientV = 2; }
 if (ST.alphaV !== 2) { ST.alpha = 0.3; ST.roadA = 0.45; ST.alphaV = 2; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) { toast("الذاكرة ممتلئة، لم تُحفظ الإعدادات"); } };
 
@@ -482,32 +487,42 @@ function renderLotTable() {
 /* ======================= التخطيط (ورق + مقياس) ======================= */
 const PAPER = { A3: [420, 297], A2: [594, 420], A1: [841, 594], A0: [1189, 841] };
 const SCALES = [100, 200, 250, 500, 750, 1000, 1250, 1500, 2000, 2500, 5000, 10000];
+/* أبعاد الورقة والبرواز لاتجاه معيّن: أفقي = الهامش يمين، عمودي = الهامش أسفل (بطاقات متجاورة) */
+function frameOf(o) {
+  let [w, h] = PAPER[ST.paper] || PAPER.A3; if (o === "p") [w, h] = [h, w];
+  const port = o === "p", s = Math.min(w, h), m = s * 0.025, band = s * 0.032, pf = (+ST.panel || 29) / 100;
+  const panW = port ? w - 2 * m : w * pf, panH = port ? h * pf * 0.82 : h - 2 * m;
+  const F = port ? [m + band, m + band, w - m - band, h - panH - 2 * m - band] : [m + band, m + band, w - panW - 2 * m - band, h - m - band];
+  return { w, h, port, m, band, panW, panH, F, mapW: F[2] - F[0], mapH: F[3] - F[1] };
+}
+function fitOf(fr) { const bb = bboxOf(M.boundary); return Math.max((bb[2] - bb[0]) / (fr.mapW * 0.88), (bb[3] - bb[1]) / (fr.mapH * 0.77)) * 1000; }
+/* الاتجاه الفعلي: تلقائي = الاتجاه الذي يعطي الأرض أكبر حجم على الورقة */
+function orientOf() { if (ST.orient === "l" || ST.orient === "p" || !M) return ST.orient === "p" ? "p" : "l"; return fitOf(frameOf("p")) < fitOf(frameOf("l")) * 0.92 ? "p" : "l"; }
+function paperWH() { const f = frameOf(orientOf()); return [f.w, f.h]; }
+const roundSc = f => { const st = f < 300 ? 10 : f < 1000 ? 25 : f < 3000 ? 50 : 100; return Math.ceil(f / st) * st; };
 function layout(pxW) {
   if (!M) return null;
-  let [w, h] = PAPER[ST.paper] || PAPER.A3; if (ST.orient === "p") [w, h] = [h, w];
-  const k = pxW / w, panW = w * (+ST.panel || 29) / 100, m = h * 0.025, band = h * 0.032;
-  // البرواز: منطقة الرسم يسار الهامش، وحوله شريط الإحداثيات
-  const F = [m + band, m + band, w - panW - 2 * m - band, h - m - band];
-  const mapW = F[2] - F[0], mapH = F[3] - F[1];
-  const bb = bboxOf(M.boundary), ww = bb[2] - bb[0], wh = bb[3] - bb[1];
-  // المقياس التلقائي: أكبر تكبير ممكن (القطعة تملأ البرواز مع هامش للعناصر)، مقرّب لقيمة مرتبة
-  let sc = +ST.scaleC > 0 ? +ST.scaleC : +ST.scale; const fitScale = Math.max(ww / (mapW * 0.88), wh / (mapH * 0.77)) * 1000;
-  if (!sc) { const st = fitScale < 300 ? 10 : fitScale < 1000 ? 25 : fitScale < 3000 ? 50 : 100; sc = Math.ceil(fitScale / st) * st; }
+  const fr = frameOf(orientOf()), { w, h, m, band, F, mapW, mapH, panW, panH, port } = fr, k = pxW / w;
+  const bb = bboxOf(M.boundary);
+  // المقياس: المختار إن كان يتّسع، وإلا أقرب مقياس مرتب يحتوي كل الرسمة داخل البرواز
+  const fitScale = fitOf(fr); let sc = +ST.scaleC > 0 ? +ST.scaleC : +ST.scale, want = sc, forced = false;
+  if (!sc) sc = roundSc(fitScale); else if (sc < fitScale * 0.98) { sc = roundSc(fitScale); forced = true; }
   const mmPerM = 1000 / sc;
-  const cx = (bb[0] + bb[2]) / 2 + (ST.off[0] || 0), cy = (bb[1] + bb[3]) / 2 + (ST.off[1] || 0);
   const mapCx = (F[0] + F[2]) / 2, mapCy = (F[1] + F[3]) / 2 - mapH * 0.075;   // مركز البرواز (مع رفع بسيط فوق مقياس الرسم)
+  // التحريك محصور بحيث تبقى الأرض كاملة داخل البرواز
+  const clamp = (v, lo, hi) => lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)), pad = 3 / mmPerM;
+  const cx = clamp((bb[0] + bb[2]) / 2 + (ST.off[0] || 0), bb[2] - (F[2] - mapCx) / mmPerM + pad, bb[0] + (mapCx - F[0]) / mmPerM - pad);
+  const cy = clamp((bb[1] + bb[3]) / 2 + (ST.off[1] || 0), bb[3] - (mapCy - F[1]) / mmPerM + pad, bb[1] + (F[3] - mapCy - mapH * 0.1) / mmPerM - pad);
   const X = x => (mapCx + (x - cx) * mmPerM) * k, Y = y => (mapCy - (y - cy) * mmPerM) * k;
   const worldBox = [cx - (mapCx - F[0]) / mmPerM, cy - (F[3] - mapCy) / mmPerM, cx + (F[2] - mapCx) / mmPerM, cy + (mapCy - F[1]) / mmPerM];
-  const rr = Math.max(0.35, Math.min(0.9, +ST.tilt || 0.6)), wcx = (worldBox[0] + worldBox[2]) / 2, wwh = (worldBox[2] - worldBox[0]) / 2;
-  const wvh = worldBox[3] - worldBox[1], aerBox = ST.view === "terrain" ? terrainBox() : ST.view === "oblique" ? [wcx - 1.15 * wwh / rr, worldBox[1] - wvh * 0.02, wcx + 1.15 * wwh / rr, worldBox[3] + wvh * 0.3] : worldBox;
-  return { aerBox, w, h, k, W: Math.round(w * k), H: Math.round(h * k), panW, m, band, F, mapW, mapH, sc, fitScale, mmPerM, X, Y, worldBox, cx, cy, tooSmall: sc < fitScale * 0.98 };
+  return { aerBox: worldBox, w, h, k, W: Math.round(w * k), H: Math.round(h * k), port, panW, panH, m, band, F, mapW, mapH, sc, want, forced, fitScale, mmPerM, X, Y, worldBox, cx, cy, u: Math.min(w, h) / 100 * k, tooSmall: false };
 }
 
 /* ======================= الرسم ======================= */
 async function fontsReady() { try { await Promise.all(["700 20px Plex", "400 20px Plex", "700 20px Kufi"].map(f => document.fonts.load(f))); } catch (e) {} }
 function drawSheet(cv, pxW, aer) {
   const L = layout(pxW); if (!L) return null;
-  cv.width = L.W; cv.height = L.H; const g = cv.getContext("2d"), k = L.k, u = L.h / 100 * k;   // u = 1% من ارتفاع الورقة بالبكسل
+  cv.width = L.W; cv.height = L.H; const g = cv.getContext("2d"), k = L.k, u = L.u;   // u = 1% من الضلع القصير للورقة بالبكسل
   g.fillStyle = "#0e0e0f"; g.fillRect(0, 0, L.W, L.H);
   const FX = L.F.map(v => v * k);
   g.save(); g.beginPath(); g.rect(FX[0], FX[1], FX[2] - FX[0], FX[3] - FX[1]); g.clip();
@@ -675,7 +690,12 @@ function scaleBar(g, L, u) {
   g.restore();
 }
 function panel(g, L, u) {
-  const k = L.k, x1 = (L.w - L.m) * k, w = L.panW * k, x0 = x1 - w, top = L.m * k, bottom = (L.h - L.m) * k;
+  const k = L.k, port = L.port, gap = 1.4 * u;
+  // صناديق البطاقات: أفقي = عمود يمين (معلومات/جدول/مفتاح)، عمودي = صف أسفل (معلومات يمين، جدول وسط، مفتاح يسار)
+  const PX0 = (port ? L.m : L.w - L.m - L.panW) * k, PX1 = (L.w - L.m) * k, PY0 = (port ? L.h - L.m - L.panH : L.m) * k, PY1 = (L.h - L.m) * k;
+  let x0, x1, w; const use = (a, b) => { x1 = a; w = b; x0 = a - b; };
+  const PW = PX1 - PX0, iW = port ? (PW - 2 * gap) * 0.33 : PW, tW = port ? (PW - 2 * gap) * 0.43 : PW, lW = port ? PW - 2 * gap - iW - tW : PW;
+  use(PX1, iW); const top = PY0, bottom = PY1;
   const card = (y, h, title) => {
     g.save(); g.shadowColor = "rgba(0,0,0,.7)"; g.shadowBlur = 1.4 * u; g.shadowOffsetY = 0.3 * u; rrect(g, x0, y, w, h, 1.4 * u); g.fillStyle = "rgba(8,8,8,.93)"; g.fill(); g.restore();
     rrect(g, x0, y, w, h, 1.4 * u); g.lineWidth = 0.35 * u; g.strokeStyle = gold(g, x0, y, x1, y + h); g.stroke();
@@ -684,33 +704,35 @@ function panel(g, L, u) {
   };
   g.save(); g.direction = "rtl";
   // 1) معلومات الأرض
-  const many = M.lots.length > 14, rows = INFO.map(([kk, n]) => [n, infoVal(kk)]), rh = (many ? 2.3 : 2.55) * u, infoH = 7.5 * u + rows.length * rh + 1.2 * u;
+  const many = M.lots.length > 14, rows = INFO.map(([kk, n]) => [n, infoVal(kk)]), rh = port ? Math.min(2.55 * u, (PY1 - PY0 - 8.7 * u) / rows.length) : (many ? 2.3 : 2.55) * u, infoH = port ? PY1 - PY0 : 7.5 * u + rows.length * rh + 1.2 * u;
   card(top, infoH, "معلومات مخطط الإفراز");
   houseIcon(g, x0 + 4.5 * u, top + 3.4 * u, 2.6 * u);
   g.textBaseline = "middle";
   rows.forEach(([n, v], i) => {
     const yy = top + 7.5 * u + i * rh + rh / 2;
-    g.font = `700 ${1.42 * u}px Plex, sans-serif`; g.textAlign = "right"; g.fillStyle = "#f3d27a"; g.fillText(n, x1 - 2.4 * u, yy);
+    g.font = `700 ${1.42 * u}px Plex, sans-serif`; const nw = g.measureText(n).width, nm = w * 0.43 - 3.2 * u; if (nw > nm) g.font = `700 ${1.42 * u * nm / nw}px Plex, sans-serif`; g.textAlign = "right"; g.fillStyle = "#f3d27a"; g.fillText(n, x1 - 2.4 * u, yy);
     g.fillStyle = "#e2b54a"; g.fillText(":", x1 - w * 0.43, yy);
     g.font = `400 ${1.42 * u}px Plex, sans-serif`; g.fillStyle = "#fff"; if (/^[\d.,\s-]+(m²)?$/.test(v || "")) { g.direction = "ltr"; g.textAlign = "right"; } g.fillText(fit(g, v || "", w * 0.52), x1 - w * 0.455, yy); g.direction = "rtl"; g.textAlign = "right";
     g.fillStyle = "rgba(226,181,74,.25)"; g.fillRect(x0 + 2 * u, yy + rh / 2 - 0.05 * u, w - 4 * u, 0.1 * u);
   });
   // 3) مفتاح الخريطة (أسفل)
   const legItems = [["حدود القطعة الكلية", "bnd"], ["حدود القسائم", "lot"], ["الطرق المقترحة", "road"], ["المباني القائمة", "bld"], ["أشجار وزراعة", "tree"], ["ألوان القسائم", "cols"]];
-  const lc = 2, lh = 2.9 * u, legH = 7.5 * u + Math.ceil(legItems.length / lc) * lh + 1 * u, legY = bottom - legH;
+  if (port) use(PX0 + lW, lW);
+  const lc = port ? 1 : 2, lh = port ? Math.min(2.9 * u, (PY1 - PY0 - 8.5 * u) / legItems.length) : 2.9 * u, legH = port ? PY1 - PY0 : 7.5 * u + Math.ceil(legItems.length / lc) * lh + 1 * u, legY = bottom - legH;
   card(legY, legH, "مفتاح الخريطة");
   legItems.forEach(([t, kind], i) => {
     const col = lc === 2 ? i % 2 : 0, row = lc === 2 ? Math.floor(i / 2) : i, cw2 = w / lc, cr = x1 - col * cw2;
     const yy = legY + 7.6 * u + row * lh + lh / 2, iw = lc === 2 ? 5 * u : 7 * u, ix = cr - cw2 + 2.4 * u;
-    g.font = `700 ${(lc === 2 ? 1.25 : 1.4) * u}px Plex, sans-serif`; g.textAlign = "right"; g.fillStyle = "#f1ece0"; g.fillText(t, cr - 2.4 * u, yy);
+    g.font = `700 ${(lc === 2 ? 1.25 : 1.4) * u}px Plex, sans-serif`; const tw = g.measureText(t).width, tm = cw2 - iw - 6.2 * u; if (tw > tm) g.font = `700 ${(lc === 2 ? 1.25 : 1.4) * u * tm / tw}px Plex, sans-serif`; g.textAlign = "right"; g.fillStyle = "#f1ece0"; g.fillText(t, cr - 2.4 * u, yy);
     legendIcon(g, kind, ix, yy, iw, u);
   });
   // 2) جدول القسائم (بين البطاقتين)
-  const tY = top + infoH + 1.4 * u, tH = legY - 1.4 * u - tY;
+  if (port) use(PX1 - iW - gap, tW);
+  const tY = port ? PY0 : top + infoH + 1.4 * u, tH = port ? PY1 - PY0 : legY - 1.4 * u - tY;
   card(tY, tH, "جدول القسائم");
   const lots = M.lots, n = lots.length, headH = 3.6 * u, sumH = 3.2 * u, roadH = 3.0 * u, avail = tH - 7.6 * u - headH - sumH - roadH - 1.6 * u;
   let cols = 1, rowH = Math.min(3.0 * u, avail / Math.max(1, n));
-  if (rowH < 2.0 * u) { cols = 2; rowH = Math.min(3.0 * u, avail / Math.ceil(n / 2)); }
+  while (rowH < 2.0 * u && cols < (port ? 4 : 3)) { cols++; rowH = Math.min(3.0 * u, avail / Math.ceil(n / cols)); }
   const fs = Math.max(0.8 * u, Math.min(1.4 * u, rowH * 0.6));
   const gw = (w - 3 * u - (cols - 1) * 1 * u) / cols;
   for (let cI = 0; cI < cols; cI++) {
@@ -718,7 +740,7 @@ function panel(g, L, u) {
     const cw = (cols > 1 ? [0.18, 0.37, 0.45] : [0.18, 0.32, 0.5]).map(f => f * gw); const cx = []; let xx = gx1; cw.forEach(c => { cx.push(xx - c / 2); xx -= c; });
     const hy = tY + 7.6 * u; g.fillStyle = "rgba(226,181,74,.16)"; g.fillRect(gx0, hy, gw, headH);
     g.font = `700 ${Math.min(1.3 * u, fs * 1.05)}px Plex, sans-serif`; g.textAlign = "center"; g.fillStyle = "#f3d27a";
-    (cols > 1 ? ["رقم", "المساحة m²", "المالك"] : ["رقم", "المساحة m²", "اسم المالك"]).forEach((t, i) => g.fillText(fit(g, t, cw[i] - 0.6 * u), cx[i], hy + headH / 2));
+    (cols > 2 ? ["#", "m²", "المالك"] : cols > 1 ? ["رقم", "المساحة m²", "المالك"] : ["رقم", "المساحة m²", "اسم المالك"]).forEach((t, i) => g.fillText(fit(g, t, cw[i] - 0.6 * u), cx[i], hy + headH / 2));
     list.forEach((l, i) => {
       const yy = hy + headH + i * rowH + rowH / 2;
       if (i % 2) { g.fillStyle = "rgba(255,255,255,.035)"; g.fillRect(gx0, yy - rowH / 2, gw, rowH); }
@@ -1022,11 +1044,20 @@ async function render() {
   await fontsReady();
   const L = drawSheet($("pv"), 1700, AER); if (!L) return;
   $("pv").style.width = (zoom * 100) + "%";
-  $("pvInfo").textContent = `${ST.paper} ${ST.orient === "p" ? "عمودي" : "أفقي"} · مقياس 1:${L.sc}${L.tooSmall ? " ⚠️ المقياس أصغر من اللازم، الأرض لن تتسع" : ""} · ${M.lots.length} قسيمة · ${M.V.length} رأس`;
+  $("pvInfo").textContent = `${ST.paper} ${L.port ? "عمودي" : "أفقي"}${ST.orient === "a" ? " (تلقائي)" : ""} · مقياس 1:${L.sc}${L.forced ? ` (1:${L.want} لا يتّسع على هذه الورقة)` : ""} · ${M.lots.length} قسيمة · ${M.V.length} رأس`;
 }
 $("zIn").onclick = () => { zoom = Math.min(5, zoom * 1.4); render(); };
 $("zOut").onclick = () => { zoom = Math.max(1, zoom / 1.4); render(); };
 $("zFit").onclick = () => { zoom = 1; render(); };
+/* صفحة كاملة: الورقة كلها على الشاشة، وتُدار تلقائياً إذا كانت أفقية والشاشة طولية */
+function fullFit() {
+  const im = $("fImg"), c = $("pv"), sw = innerWidth, sh = innerHeight, rot = (c.width > c.height) !== (sw > sh);
+  const ar = c.width / c.height, bw = rot ? sh : sw, bh = rot ? sw : sh, s = Math.min(bw / ar, bh) * 0.98;
+  im.style.width = s * ar + "px"; im.style.height = s + "px"; im.style.transform = `translate(-50%,-50%) rotate(${rot ? 90 : 0}deg)`;
+}
+$("bFull").onclick = () => { if (!M) return toast("ارفع ملف المخطط أولاً"); $("fImg").src = $("pv").toDataURL("image/jpeg", 0.92); fullFit(); $("full").classList.add("on"); };
+$("fClose").onclick = () => $("full").classList.remove("on");
+addEventListener("resize", () => { if ($("full").classList.contains("on")) fullFit(); });
 $("bPan").onclick = () => { panMode = !panMode; $("pvWrap").classList.toggle("pan", panMode); $("bPan").classList.toggle("go", panMode); toast(panMode ? "اسحب على المعاينة لتحريك المخطط داخل الورقة" : "انتهى التحريك"); };
 function center(r = true) { ST.off = [0, 0]; save(); if (r) { loadAerial(); render(); } }
 $("bCenter").onclick = () => center(true);
@@ -1091,7 +1122,7 @@ async function saveFile(name, blob) {
 const baseName = () => "ifraz-fanni-" + (ST.info.parcel ? "q" + ST.info.parcel + "-" : "") + new Date().toISOString().slice(0, 10);
 async function exportCanvas() {
   if (!M) { toast("ارفع ملف المخطط أولاً"); return null; }
-  let [w, h] = PAPER[ST.paper]; if (ST.orient === "p") [w, h] = [h, w];
+  const [w, h] = paperWH();
   let dpi = +$("eDpi").value; const maxPx = 30e6; const px = (w / 25.4 * dpi) * (h / 25.4 * dpi); if (px > maxPx) dpi = Math.floor(dpi * Math.sqrt(maxPx / px));
   const pxW = Math.round(w / 25.4 * dpi);
   const st = $("eStat"); st.hidden = false; st.textContent = `…جاري التجهيز (${ST.paper}، ${dpi} نقطة/إنش)`;

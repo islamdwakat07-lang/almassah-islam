@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>دفتر الملاحظات</title>
+<title>دفتر العمل</title>
 <link rel="stylesheet" href="../ifraz/fonts.css">
 <link rel="stylesheet" href="../theme.css">
 <style>
@@ -37,10 +37,22 @@ button{font-family:inherit;cursor:pointer}
 .r:last-child{border-bottom:0}
 .r .ck{flex:none;width:32px;height:32px;border-radius:50%;border:2px solid #b9c4bb;background:#fff;font-size:16px;color:#fff;display:grid;place-items:center}
 .r.done .ck{background:#2f8a4f;border-color:#2f8a4f}
-.r .nm{flex:1.45;min-width:0;font:700 15.5px "IBM Plex Sans Arabic";white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r .wk{flex:1.05;min-width:0;font-size:14px;color:#4a5a50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r.done .nm,.r.done .wk{text-decoration:line-through;color:#9aa49c}
-.r .fee{flex:none;width:70px;font:700 14.5px "IBM Plex Sans Arabic";padding:6px;border:1.5px solid var(--am-line);border-radius:10px;background:#fff;text-align:center;direction:ltr}
+.r{flex-direction:column;align-items:stretch!important}
+.r .top{display:flex;align-items:flex-start;gap:6px}
+.r .who{flex:1;min-width:0}
+.r .nm{display:block;font:700 16px/1.45 "IBM Plex Sans Arabic";white-space:normal;word-break:break-word}
+.r .wk{display:block;font-size:14px;color:#4a5a50;white-space:normal}
+.r .lgm{display:block;font-size:12.5px;font-weight:700;margin-top:2px}.lgm.bad{color:#b4232c}.lgm.ok{color:#1e6b4a}
+.st{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:8px}
+.st button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:10px;padding:6px 2px;font:700 12.5px/1.3 "IBM Plex Sans Arabic";color:#6b7368}
+.st button.on[data-s=new]{background:#56677a;border-color:#56677a;color:#fff}
+.st button.on[data-s=doing]{background:#c98a12;border-color:#c98a12;color:#fff}
+.st button.on[data-s=done]{background:#1e6b4a;border-color:#1e6b4a;color:#fff}
+.st button.on[data-s=paid]{background:#0d6f78;border-color:#0d6f78;color:#fff}
+.r .fwrap{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+.r .fwrap small{font-size:10.5px;color:var(--am-muted)}
+.r.s-paid .nm,.r.s-paid .wk{color:#7d8a80}
+.r .fee{flex:none;width:86px;font:700 14.5px "IBM Plex Sans Arabic";padding:6px;border:1.5px solid var(--am-line);border-radius:10px;background:#fff;text-align:center;direction:ltr}
 .r .ib{flex:none;width:36px;height:36px;border:0;border-radius:10px;background:#f3ead2;font-size:16px;display:grid;place-items:center}
 .r .day{display:block;font-size:11.5px;color:#8a5a00;font-weight:600}
 .r .day.late{color:#b4232c}
@@ -116,13 +128,14 @@ button{font-family:inherit;cursor:pointer}
 </style>
 </head>
 <body>
-<div class="am-bar"><span class="am-title"><img src="../img/t-notes.png" alt=""><b>دفتر الملاحظات</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-bar"><span class="am-title"><img src="../img/t-notes.png" alt=""><b>دفتر العمل</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
 <div class="am-spacer" aria-hidden="true"></div>
 <main>
   <section id="vWork">
     <div class="quick">
       <div class="qrow"><input id="qName" placeholder="اسم صاحب العمل"><button class="mic" type="button" data-mic="qName">🎤</button></div>
-      <div class="qrow"><input id="qWork" placeholder="نوع العمل"><button class="mic" type="button" data-mic="qWork">🎤</button><button class="plus" type="button" id="qAdd">＋ أضف</button></div>
+      <div class="qrow"><input id="qWork" placeholder="نوع العمل (ترخيص، إخراج قيد، تفصيلي…)"><button class="mic" type="button" data-mic="qWork">🎤</button></div>
+      <div class="qrow"><input id="qFee" inputmode="decimal" dir="ltr" placeholder="المبلغ المطلوب ₪" style="text-align:left"><button class="mic" type="button" data-mic="qFee">🎤</button><button class="plus" type="button" id="qAdd">＋ أضف</button></div>
     </div>
     <div class="sub" id="wSub"><button type="button" data-w="cur" class="on">الأعمال الحالية</button><button type="button" data-w="arch">🗄 الأرشيف</button></div>
     <div class="rows" id="wRows"></div>
@@ -158,7 +171,8 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&am
 const toast = t => { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1800); };
 const KEY = "jobs-v1";
 let jobs = []; try { jobs = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) {}
-jobs.forEach(j => { if (j.done == null) j.done = j.s === "done"; });   // من النسخة السابقة
+jobs.forEach(j => { if (j.done == null) j.done = j.s === "done"; if (!["new", "doing", "done", "paid"].includes(j.s)) j.s = j.done ? "done" : "new"; });   // من النسخة السابقة
+const STS = [["new", "جديد"], ["doing", "قيد العمل"], ["done", "انتهى العمل"], ["paid", "سُلّم واستُلم المبلغ"]], SORD = { doing: 0, new: 1, done: 2, paid: 3 };
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(jobs)); } catch (e) {} };
 const pad = n => String(n).padStart(2, "0");
 const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -183,31 +197,67 @@ function render() { renderWork(); const n = jobs.filter(j => j.arch && !j.finOnl
 function renderWork() {
   const arch = wSub === "arch";
   let list = jobs.filter(j => !j.finOnly && !!j.arch === arch);
-  list.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")) || a.t - b.t);
-  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : "لا أعمال بعد. اكتب الاسم ونوع العمل فوق (أو بصوتك) واضغط «أضف»."}</div>`; return; }
+  list.sort((a, b) => SORD[a.s] - SORD[b.s] || ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")) || a.t - b.t);
+  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : "لا أعمال بعد. اكتب الاسم ونوع العمل والمبلغ فوق (أو بصوتك) واضغط «أضف»."}</div>`; return; }
   const today = ymd(new Date());
-  $("#wRows").innerHTML = `<div class="hrow"><span style="width:32px"></span><span style="flex:1.45">الاسم</span><span style="flex:1.05">نوع العمل</span><span style="width:70px;text-align:center">المطلوب</span><span style="width:78px"></span></div>` + list.map(j => {
-    const d = j.date ? `<span class="day${j.date < today && !j.done ? " late" : ""}">🗓️ ${esc(dayName(j.date))}${j.time ? " " + esc(j.time) : ""}</span>` : "";
-    return `<div class="r${j.done ? " done" : ""}" data-id="${j.id}">
-      <button class="ck" type="button" data-done title="${j.done ? "إلغاء الشطب" : "انتهى العمل"}">${j.done ? "✓" : ""}</button>
-      <span class="nm">${esc(j.name || "—")}${d}</span><span class="wk">${esc(j.work || "")}</span>
-      <input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="${sym(j)}" data-fee>
-      <button class="ib" type="button" data-note title="ملاحظات">📝</button>
-      <button class="ib" type="button" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩" : "🗄"}</button></div>`;
+  $("#wRows").innerHTML = list.map(j => {
+    const d = j.date ? `<span class="day${j.date < today && SORD[j.s] < 2 ? " late" : ""}">🗓️ ${esc(dayName(j.date))}${j.time ? " " + esc(j.time) : ""}</span>` : "";
+    const r = lgOfJob(j); let lm = "";
+    if (r && N(r.due)) { const rem = N(r.due) - N(r.paid); lm = rem > 0 ? `<span class="lgm bad">💰 واصل ${M(N(r.paid))} · متبقي ${M(rem)} ₪</span>` : `<span class="lgm ok">💰 مدفوع كاملاً ✓</span>`; }
+    return `<div class="r s-${j.s}" data-id="${j.id}">
+      <div class="top"><div class="who"><span class="nm">${esc(j.name || "—")}</span>${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${d}${lm}</div>
+      <div class="fwrap"><input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المبلغ ₪" data-fee><small>المطلوب</small></div>
+      <button class="ib" type="button" data-note title="التفاصيل والملاحظات">📝</button>
+      <button class="ib" type="button" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩" : "🗄"}</button></div>
+      <div class="st">${STS.map(([k, t]) => `<button type="button" data-s="${k}" class="${j.s === k ? "on" : ""}">${t}</button>`).join("")}</div></div>`;
   }).join("");
 }
 $("#qAdd").addEventListener("click", () => {
   const name = $("#qName").value.trim(), work = $("#qWork").value.trim(); if (!name && !work) { toast("اكتب الاسم أو نوع العمل"); return; }
-  jobs.push({ id: newId(), t: Date.now(), name, work, done: false, cur: "ils" }); save();
-  $("#qName").value = ""; $("#qWork").value = ""; if (wSub !== "cur") $('#wSub [data-w="cur"]').click(); else render(); toast("أُضيف");
+  const fee = $("#qFee").value.trim(), j = { id: newId(), t: Date.now(), name, work, fee, s: "new", done: false, cur: "ils" }; jobs.push(j); save();
+  if (N(fee)) syncLedger(j).then(ok => { render(); if (ok) toast("أُضيف، والمبلغ رحل للسجل المالي"); });
+  $("#qName").value = ""; $("#qWork").value = ""; $("#qFee").value = ""; if (wSub !== "cur") $('#wSub [data-w="cur"]').click(); else render(); toast("أُضيف");
 });
 $("#wRows").addEventListener("click", e => {
   const r = e.target.closest("[data-id]"); if (!r) return; const j = jobs.find(x => x.id === r.dataset.id);
-  if (e.target.closest("[data-done]")) { j.done = !j.done; j.doneAt = j.done ? Date.now() : null; save(); render(); toast(j.done ? "✓ انتهى العمل" : "أُعيد للأعمال"); }
+  const sb = e.target.closest("[data-s]"); if (sb) { setStatus(j, sb.dataset.s); return; }
   else if (e.target.closest("[data-arch]")) { j.arch = !j.arch; save(); render(); toast(j.arch ? "🗄 نُقل إلى الأرشيف" : "↩ أُرجع من الأرشيف"); }
   else if (e.target.closest("[data-note]")) openNote(j);
 });
-$("#wRows").addEventListener("change", e => { const f = e.target.closest("[data-fee]"); if (!f) return; const j = jobs.find(x => x.id === f.closest("[data-id]").dataset.id); j.fee = f.value.trim(); save(); });
+$("#wRows").addEventListener("change", e => { const f = e.target.closest("[data-fee]"); if (!f) return; const j = jobs.find(x => x.id === f.closest("[data-id]").dataset.id); j.fee = f.value.trim(); save();
+  syncLedger(j).then(ok => { render(); if (ok) toast("💰 المبلغ رحل للسجل المالي"); }); });
+
+/* ---------- الربط مع السجل المالي (سجل إسلام) ---------- */
+const LG = { db: null, recs: [] };
+const nn = x => String(x || "").replace(/\s+/g, " ").trim();
+function lgLoad() { return new Promise(res => { try { const r = indexedDB.open("segl-aslam", 1);
+  r.onupgradeneeded = () => { const d = r.result; d.createObjectStore("customers", { keyPath: "id" }); d.createObjectStore("notes", { keyPath: "id" }); };
+  r.onsuccess = () => { LG.db = r.result; const q = LG.db.transaction("customers", "readonly").objectStore("customers").getAll(); q.onsuccess = () => { LG.recs = q.result || []; res(); }; q.onerror = () => res(); };
+  r.onerror = () => res(); } catch (e) { res(); } }); }
+function lgPut(rec) { return new Promise(res => { if (!LG.db) return res(false); try { const tx = LG.db.transaction("customers", "readwrite"); tx.objectStore("customers").put(rec);
+  tx.oncomplete = () => { const i = LG.recs.findIndex(x => x.id === rec.id); if (i >= 0) LG.recs[i] = rec; else LG.recs.push(rec); res(true); }; tx.onerror = () => res(false); } catch (e) { res(false); } }); }
+const lgOfJob = j => LG.recs.find(r => r.jobId === j.id) || (j.lgId && LG.recs.find(r => r.id === j.lgId));
+const catOf = w => /ترخيص/.test(w) ? "license" : /تفصيل/.test(w) ? "detailed" : /قيد/.test(w) ? "extract" : /مجدد/.test(w) ? "renew" : /اعتراض|مخطط عام|مخططات عامة/.test(w) ? "objection" : "private";
+const paysOf = r => Array.isArray(r.pays) ? r.pays.slice() : (N(r.paid) > 0 ? [{ a: String(N(r.paid)), d: r.date || "" }] : []);
+/* المبلغ المطلوب هنا = المبلغ المطلوب في السجل المالي (ينشئ المعاملة أو يحدّثها، ولا يمس الدفعات والتوزيع) */
+async function syncLedger(j) {
+  if (!LG.db) await lgLoad(); if (!LG.db) return false;
+  let r = lgOfJob(j); if (!r && !N(j.fee)) return false;
+  if (!r) r = LG.recs.find(x => !x.archived && !x.jobId && nn(x.name) && nn(x.name) === nn(j.name) && (!N(x.due) || N(x.due) === N(j.fee)));
+  const rec = r ? { ...r } : { id: "job-" + j.id, category: catOf(j.work || ""), created: Date.now(), currency: "شيكل", date: ymd(new Date(j.t || Date.now())), pays: [], paid: "0", notes: "" };
+  rec.jobId = j.id; rec.name = j.name || rec.name || "بدون اسم"; if (j.phone) rec.phone = j.phone; rec.due = String(N(j.fee)); if (!rec.notes && j.work) rec.notes = j.work;
+  j.lgId = rec.id; save(); return lgPut(rec);
+}
+/* الحالة: «سُلّم واستُلم المبلغ» يسجّل دفعة بالمتبقي في السجل المالي (وتُلغى لو رجعت عن الحالة) */
+async function setStatus(j, st) {
+  const was = j.s; if (was === st) return; j.s = st; j.done = st === "done" || st === "paid"; j.doneAt = j.done ? (j.doneAt || Date.now()) : null; save(); render();
+  if (!LG.db) await lgLoad(); const r = lgOfJob(j);
+  if (st === "paid" && r) { const rem = N(r.due) - N(r.paid); if (rem > 0) { const p = { a: String(rem), d: ymd(new Date()), auto: j.id }, pays = paysOf(r).concat(p);
+      await lgPut({ ...r, pays, paid: String(pays.reduce((t, x) => t + N(x.a), 0)) }); j.autoPay = 1; save(); render(); toast(`✓ سُلّم العمل، وسُجّل استلام ${M(rem)} ₪ بالسجل المالي`); return; } }
+  if (was === "paid" && j.autoPay && r) { const pays = paysOf(r).filter(x => x.auto !== j.id); await lgPut({ ...r, pays, paid: String(pays.reduce((t, x) => t + N(x.a), 0)) }); j.autoPay = 0; save(); render(); toast("أُلغيت دفعة الاستلام من السجل المالي"); return; }
+  toast(STS.find(x => x[0] === st)[1]);
+}
+lgLoad().then(() => render());
 
 /* ---------- صفحة الملاحظات ---------- */
 let nJob = null;
@@ -222,7 +272,7 @@ $("#nPhone").addEventListener("input", contact);
 $("#nDays").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (!b) return; setDay(b.dataset.d); $("#nDate").value = b.dataset.d === "" ? "" : ymd(new Date(Date.now() + 864e5 * +b.dataset.d)); if (b.dataset.d === "") $("#nTime").value = ""; });
 $("#nSave").addEventListener("click", () => {
   Object.assign(nJob, { name: $("#nName").value.trim(), work: $("#nWork").value.trim(), phone: $("#nPhone").value.trim(), date: $("#nDate").value, time: $("#nTime").value, note: $("#nNote").value.trim() });
-  save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُفظ");
+  save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُفظ"); if (lgOfJob(nJob)) syncLedger(nJob).then(() => render());
 });
 let delAsk = 0;
 $("#nDel").addEventListener("click", () => { if (Date.now() - delAsk > 3000) { delAsk = Date.now(); toast("اضغط مرة ثانية للحذف النهائي"); return; } jobs = jobs.filter(x => x !== nJob); save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُذف"); });
@@ -244,7 +294,7 @@ function listen(cb) {
   const r = new R(); r.lang = "ar-JO"; r.onresult = e => cb(e.results[0][0].transcript); r.onerror = () => cb(null, "error"); r.start();
 }
 const AR_NUM = { "صفر": "0", "واحد": "1", "اثنين": "2", "اثنان": "2", "ثلاثة": "3", "ثلاث": "3", "اربعة": "4", "أربعة": "4", "خمسة": "5", "خمس": "5", "ستة": "6", "ست": "6", "سبعة": "7", "سبع": "7", "ثمانية": "8", "ثمان": "8", "تسعة": "9", "تسع": "9" };
-const NUMF = new Set(["nPhone"]);
+const NUMF = new Set(["nPhone", "qFee"]);
 function micTo(b, f, numeric) {
   b.classList.add("on");
   listen((text, err) => {

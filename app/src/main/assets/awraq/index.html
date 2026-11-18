@@ -394,6 +394,15 @@ svg.i .f{fill:currentColor;fill-opacity:.2;stroke:none}
 .lg-bal .stat{display:flex;flex-direction:column;gap:2px}
 .lg-bal .stat span{font-size:12px}
 .lg-bal .stat b{font-size:17px;direction:ltr;text-align:right}
+.lg-bal .stat.wide{grid-column:1/-1}
+.lg-bal button.stat{font:inherit;color:inherit;text-align:right;border:0;cursor:pointer}
+.lg-bal .stat small{font-size:11px;opacity:.85}
+.lg-pays{display:flex;flex-direction:column;gap:6px}
+.lg-pay{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:8px 12px;font-size:14px}
+.lg-pay b{margin-inline-start:auto}.lg-pay button{border:0;background:none;color:var(--bad);font-size:16px;cursor:pointer}
+.lg-pay.none{color:var(--muted);justify-content:center}
+.mf-rem.warn{background:#fff4dc;color:#8a5a00}
+.l-card.pty{cursor:default}.pty-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .lg-bal .stat b.z{color:#8ff0c6}
 .lg-bal .stat:last-child:nth-child(odd){grid-column:1/-1}
 .l-card{display:flex;flex-direction:column;gap:6px;text-align:start;background:var(--surface);border-radius:20px;padding:13px 14px;box-shadow:var(--sh1);border-inline-start:4px solid var(--bad)}
@@ -1463,7 +1472,7 @@ function citForm(c){const sec=c?c.sec:curV().s;FORM={cid:c?c.id:null,sec};const 
 const ctx=el=>{const v=curV();const c=findCit(v.cid);const k=el.closest('[data-k]')?.dataset.k||v.k;return{v,c,it:findItem(c,k)}};
 async function delPages(ids){buildRefs();for(const id of ids){if((REFS.get(id)||0)<=1){dropUrl(id);await DB.del('pages',id)}}}
 const ACT={
- back:()=>back(), ovClose:()=>closeOverlay(),
+ back:()=>{if(stack.length<=1&&curV().v!=='home'&&window.AndroidBridge&&AndroidBridge.close){AndroidBridge.close();return}back()}, ovClose:()=>closeOverlay(),
  toastAct:()=>{$('#toast').hidden=true;toastFn&&toastFn()},
  cfOk:()=>{CF&&CF();closeOverlay()},
  tbOk:()=>{TB&&TB();closeOverlay()},
@@ -1577,7 +1586,8 @@ const LG_CATS=[
  {id:'renew',name:'معاملة التسجيل المجدد',ic:'rotate'},
  {id:'extract',name:'اخراجات القيد',ic:'scroll'},
  {id:'objection',name:'مخططات اعتراض او مخططات عامة',ic:'parcel'},
- {id:'private',name:'شغل خاص اسلام',ic:'idcard'}];
+ {id:'private',name:'شغل خاص اسلام',ic:'idcard'},
+ {id:'old',name:'من السجل المالي القديم',ic:'cash',hidden:1}];
 const LG_CUR=[{k:'شيكل',s:'₪'},{k:'دينار',s:'د.أ'},{k:'دولار',s:'$'}];
 const LG_GROUPS=[
  {label:'رصيد المساحين',cats:['private'],sub:'survAmt'},
@@ -1590,12 +1600,13 @@ const LG_SUBS={
  draftAmt:{flag:'draftPaid',l:'مبلغ الرسامين'},
  extractAmt:{flag:'extractPaid',l:'مبلغ اخراج القيد'},
  lawyerAmt:{flag:'lawyerPaid',l:'مبلغ محامي التسليم'},
+ dadAmt:{flag:'dadPaid',l:'مبلغ أبي'},
  otherAmt:{flag:'otherPaid',l:'مبلغ لطرف آخر (إن وجد)'}};
 const LG_CAT_SUBS={
  license:['survAmt','draftAmt','extractAmt','lawyerAmt','otherAmt'],
  detailed:['survAmt','draftAmt','otherAmt'],
  renew:['survAmt','draftAmt','lawyerAmt','otherAmt'],
- extract:['otherAmt'],lawyer:['otherAmt'],private:['otherAmt'],drafters:['otherAmt'],owedbalance:['otherAmt'],
+ extract:['survAmt','dadAmt','otherAmt'],old:['survAmt','draftAmt','extractAmt','lawyerAmt','dadAmt','otherAmt'],lawyer:['otherAmt'],private:[],drafters:['otherAmt'],owedbalance:['otherAmt'],
  objection:['survAmt','draftAmt','otherAmt']};
 
 const LDB={db:null,
@@ -1617,20 +1628,28 @@ function lgGroupTotals(g){const t={};for(const c of lgCust){const cur=c.currency
   if(g.cats.includes(c.category))t[cur]=(t[cur]||0)+lgRemain(c);
   if(num(c[g.sub])&&!c[LG_SUBS[g.sub].flag])t[cur]=(t[cur]||0)+num(c[g.sub])}return t}
 const lgCustRemainAll=()=>lgByCur(lgCust,c=>Math.max(0,lgRemain(c)));
+/* الأطراف: كل جزء موزَّع ولم يُسلَّم بعد = مستحق لصاحبه. «بإيدك منها» = حصته مما قبضته فعلاً من الزبون */
+const LG_PARTIES=[['survAmt','المساحين','للمساحين'],['draftAmt','الرسام','للرسام'],['extractAmt','إخراج القيد','لإخراج القيد'],['lawyerAmt','المحامي','للمحامي'],['dadAmt','أبي','لأبي'],['otherAmt','طرف آخر','لطرف آخر']];
+const lgRatio=c=>{const d=num(c.due);return d>0?Math.max(0,Math.min(1,num(c.paid)/d)):0};
+function lgParty(k){const owe={},hand={},list=[];for(const c of lgCust){const v=num(c[k]);if(!v||c[LG_SUBS[k].flag])continue;const cur=c.currency||'شيكل';
+  owe[cur]=(owe[cur]||0)+v;hand[cur]=(hand[cur]||0)+v*lgRatio(c);list.push(c)}return{owe,hand,list}}
+const lgPays=c=>Array.isArray(c.pays)?c.pays:(num(c.paid)>0?[{a:String(num(c.paid)),d:c.date||''}]:[]);
 
 /* بطاقة القسم في الشاشة الرئيسية */
 function ledgerTile(){const n=lgCust.length,open=lgCust.filter(c=>!lgSettled(c)).length,rem=lgCurLines(lgCustRemainAll());
  return `<button class="tile wide sec-ledger" data-act="openLedger"><span class="sec-ico">${I.cash}</span><span class="t-txt"><b>سجل إسلام</b><small class="num">${n?`${n} زبون · ${open?`${open} غير مسدّد`:'الكل مسدّد'}`:'الزبائن والأرصدة والملاحظات'}</small>${n&&rem[0]!=='0'?`<small class="num" dir="ltr" style="text-align:right">متبقٍ ${rem.join(' · ')}</small>`:''}</span>${I.chev}</button>`}
 
 VIEWS.ledger=()=>{
- const bal=LG_GROUPS.map(g=>{const l=lgCurLines(lgGroupTotals(g));return `<div class="stat"><span>${g.label}</span>${l.map(x=>`<b class="num${x==='0'?' z':''}">${x}</b>`).join('')}</div>`}).join('');
+ const remL=lgCurLines(lgCustRemainAll());
+ const bal=`<div class="stat wide"><span>على الزبائن (المتبقي)</span>${remL.map(x=>`<b class="num${x==='0'?' z':''}">${x}</b>`).join('')}</div>`+LG_PARTIES.map(([k,n,ln])=>{const P=lgParty(k),l=lgCurLines(P.owe),h=lgCurLines(P.hand);
+  return `<button class="stat" data-act="lgParty" data-k="${k}"><span>${ln}</span>${l.map(x=>`<b class="num${x==='0'?' z':''}">${x}</b>`).join('')}${P.list.length?`<small class="num">بإيدك منها ${h.join(' · ')}</small>`:''}</button>`}).join('');
  const tile=c=>{const cs=lgCust.filter(x=>x.category===c.id),open=cs.filter(x=>!lgSettled(x)).length,pct=cs.length?Math.round((cs.length-open)*100/cs.length):0;
   return `<button class="tile sec-ledger" data-act="lgOpenCat" data-c="${c.id}"><span class="sec-ico">${I[c.ic]}</span><b>${c.name}</b><small class="num">${cs.length?`${cs.length} زبون · ${open?`${open} غير مسدّد`:'مسدّد'}`:'لا يوجد زبائن'}</small><div class="bar"><i style="width:${pct}%"></i></div></button>`};
- return `<header class="hero lg-hero">${CONTOURS}<div class="hero-in"><div class="hero-top"><button class="logo" data-act="back" aria-label="رجوع" style="color:#fff">${I.back}</button><div><div class="brand">سجل إسلام</div><p>الزبائن والأرصدة والملاحظات</p></div></div>
+ return `<header class="hero lg-hero">${CONTOURS}<div class="hero-in"><div class="hero-top"><button class="logo" data-act="back" aria-label="رجوع" style="color:#fff">${I.back}</button><div><div class="brand">سجل إسلام</div><p>الحسابات: لكل معاملة مبلغ ودفعات وتوزيع</p></div></div>
  <div class="lg-bal">${bal}</div></div></header>
  <main class="home-body">${LG_OK?'':`<p class="err">تعذّر فتح تخزين السجل على هذا الجهاز</p>`}
  ${(()=>{const last=lgNotes.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<button class="note-card${last?'':' empty-n'}" data-act="lgOpenNotes"><span class="ti">${I.note}</span><span class="nt"><b>ملاحظات${lgNotes.length?` <span class="num">(${lgNotes.length})</span>`:''}</b>${last?`<span>${esc(String(last.text).split('\n')[0])}</span>`:`<small>اضغط لكتابة ملاحظة بالكتابة أو بالصوت</small>`}</span></button>`})()}
- <div class="eyebrow">العناوين</div><div class="tiles">${LG_CATS.map(tile).join('')}</div>
+ <div class="eyebrow">العناوين</div><div class="tiles">${LG_CATS.filter(c=>!c.hidden||lgCust.some(x=>x.category===c.id)).map(tile).join('')}</div>
  <p class="home-note">${I.lock}السجل محفوظ على هذا الجهاز، منفصل عن أوراق المواطنين.</p></main>`};
 
 function lgCard(c){const cur=lgCurOf(c),r=lgRemain(c),done=lgSettled(c),due=num(c.due),pct=due>0?Math.max(0,Math.min(100,num(c.paid)*100/due)):(done?100:0);
@@ -1649,6 +1668,13 @@ VIEWS.lcat=v=>{const cat=LG_CATS.find(c=>c.id===v.c)||{name:''},cs=lgCust.filter
  return `<header class="top"><button class="icon-btn" data-act="back" aria-label="رجوع">${I.back}</button><h1>${esc(cat.name)}<span class="sub num">${cs.length} زبون · متبقٍ ${rem.join(' · ')}</span></h1></header>
  <main class="wrap"><div class="search">${I.search}<input id="lq" placeholder="ابحث بالاسم أو الهاتف" value="${esc(v.q||'')}" autocomplete="off"></div>${archRow(lgCust.filter(c=>c.category===v.c&&c.archived).length,'lgOpenArch',`data-c="${v.c}"`,'أرشيف '+esc(cat.name))}<div id="llist" style="display:flex;flex-direction:column;gap:10px">${lgListHtml(v.c,v.q)}</div></main>
  <div class="bottom"><button class="btn primary big grow" data-act="lgAdd">${I.plus} إضافة زبون</button></div>`};
+VIEWS.lparty=v=>{const n=(LG_PARTIES.find(x=>x[0]===v.k)||[,''])[1],P=lgParty(v.k),fl=LG_SUBS[v.k].flag;
+ const rows=P.list.slice().sort((a,b)=>lgRatio(b)-lgRatio(a)).map(c=>{const cur=lgCurOf(c),sh=num(c[v.k]),cat=LG_CATS.find(x=>x.id===c.category);
+  return `<div class="l-card pty"><span class="r1"><b>${esc(c.name||'بدون اسم')}</b><span class="l-amt bad">${lgFmt(sh,cur.s)}</span></span>
+  <span class="r2"><span>${esc(cat?cat.name:'')}</span><span class="num">الزبون دفع ${Math.round(lgRatio(c)*100)}% · بإيدك ${lgFmt(sh*lgRatio(c),cur.s)}</span></span>
+  <span class="pty-acts"><button class="btn" data-act="lgEdit" data-id="${c.id}">فتح المعاملة</button><button class="btn primary" data-act="lgPartyPaid" data-id="${c.id}" data-k="${v.k}">${I.check} سلّمته</button></span></div>`}).join('');
+ return `<header class="top"><button class="icon-btn" data-act="back" aria-label="رجوع">${I.back}</button><h1>مستحقات ${esc(n)}<span class="sub num">إلهم ${lgCurLines(P.owe).join(' · ')} · بإيدك منها ${lgCurLines(P.hand).join(' · ')}</span></h1></header>
+ <main class="wrap" style="display:flex;flex-direction:column;gap:10px">${rows||`<div class="empty"><span class="empty-ico">${I.check}</span><b>لا يوجد مستحقات حالياً</b><span>كل حصصه مسلّمة</span></div>`}</main>`};
 VIEWS.lnotes=()=>{const ns=lgNotes.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
  return `<header class="top"><button class="icon-btn" data-act="back" aria-label="رجوع">${I.back}</button><h1>ملاحظات سجل إسلام</h1></header>
  <main class="wrap">${ns.length?`<div class="lg-paper">${ns.map(n=>`<button class="lg-line" data-act="lgNote" data-id="${n.id}">${esc(n.text)}${n.createdAt?`<small class="num">${new Date(n.createdAt).toLocaleDateString('en-GB')}</small>`:''}</button>`).join('')}</div>`:`<div class="empty"><span class="empty-ico">${I.note}</span><b>لا توجد ملاحظات بعد</b><span>اضغط «ملاحظة جديدة»</span></div>`}</main>
@@ -1657,18 +1683,22 @@ VIEWS.lnotes=()=>{const ns=lgNotes.slice().sort((a,b)=>(b.createdAt||0)-(a.creat
 /* نموذج الزبون */
 let LGF=null;
 const today=()=>new Date().toISOString().slice(0,10);
-function lgForm(c){const isNew=!c;c=c||{id:uid(),category:curV().c,name:'',phone:'',due:'',paid:'',currency:'شيكل',notes:'',date:today()};
- const subs=LG_CAT_SUBS[c.category]||[];LGF={c,isNew,cur:c.currency||'شيكل',pay:Object.fromEntries(subs.map(k=>[LG_SUBS[k].flag,!!c[LG_SUBS[k].flag]]))};
+function lgForm(c,forceNew){const isNew=forceNew||!c;c=c||{id:uid(),category:curV().c||'license',name:'',phone:'',due:'',paid:'',currency:'شيكل',notes:'',date:today()};
+ const subs=LG_CAT_SUBS[c.category]||[];LGF={c,isNew,cur:c.currency||'شيكل',pays:JSON.parse(JSON.stringify(lgPays(c))),pay:Object.fromEntries(subs.map(k=>[LG_SUBS[k].flag,!!c[LG_SUBS[k].flag]]))};
  const cat=LG_CATS.find(x=>x.id===c.category);const mo={num:1,attr:'inputmode="decimal" dir="ltr"'};
  openOverlay(`<div class="sheet form"><h2>${isNew?'زبون جديد':'بيانات الزبون'}<span style="display:block;font-size:13px;font-weight:400;color:var(--muted)">${esc(cat?cat.name:'')}</span></h2>
+ <label class="fld" for="lg_cat"><span>نوع المعاملة</span><select id="lg_cat" class="lg-date">${LG_CATS.filter(x=>!x.hidden||x.id===c.category).map(x=>`<option value="${x.id}" ${x.id===c.category?'selected':''}>${x.name}</option>`).join('')}</select></label>
  ${field('lg_name','اسم الزبون',c.name)}${field('lg_phone','رقم الهاتف',c.phone,{num:1,attr:'inputmode="tel" dir="ltr"'})}
  <label class="fld" for="lg_date"><span>تاريخ القيد</span><input id="lg_date" class="lg-date" type="date" value="${esc(c.date||today())}"></label>
  <div class="money-form"><div class="mf-title">${I.cash} الحساب</div>
-  <div class="two">${field('lg_due','المبلغ المطلوب كاملاً',c.due,mo)}${field('lg_paid','المدفوع من الزبون',c.paid,mo)}</div>
+  ${field('lg_due','المبلغ المطلوب كاملاً',c.due,mo)}
+  <div class="mf-title" style="margin-top:4px">الدفعات الواصلة من الزبون</div><div id="lg_pays" class="lg-pays"></div>
+  <div class="two">${field('lg_pay','دفعة جديدة','',mo)}<label class="fld" for="lg_payd"><span>تاريخها</span><input id="lg_payd" class="lg-date" type="date" value="${today()}"></label></div>
+  <button type="button" class="btn" data-act="lgAddPay">${I.plus} إضافة الدفعة</button>
   <div class="cur-row" id="lg_cur">${LG_CUR.map(x=>`<button type="button" data-act="lgCur" data-c="${x.k}" class="${x.k===LGF.cur?'on':''}">${x.k} ${x.s}</button>`).join('')}</div>
   <div class="mf-rem" id="lg_rem"></div></div>
  ${subs.length?`<div class="money-form"><div class="mf-title">${I.merge} توزيع المبلغ على الأطراف</div>${subs.map(k=>{const d=LG_SUBS[k],on=LGF.pay[d.flag];
-  return `<div class="lg-sub">${field('lg_'+k,d.l,c[k]&&num(c[k])?c[k]:'',mo)}<button type="button" class="pay-tg${on?' on':''}" data-act="lgPay" data-f="${d.flag}">${I.check}${on?'مدفوع':'غير مدفوع'}</button></div>`}).join('')}</div>`:''}
+  return `<div class="lg-sub">${field('lg_'+k,d.l,c[k]&&num(c[k])?c[k]:'',mo)}<button type="button" class="pay-tg${on?' on':''}" data-act="lgPay" data-f="${d.flag}">${I.check}${on?'سُلّم':'لم يُسلّم'}</button></div>`}).join('')}<div class="mf-rem" id="lg_un"></div></div>`:''}
  ${field('lg_notes','ملاحظات',c.notes)}
  <p class="err" id="lg_err" hidden>اكتب اسم الزبون أولاً</p>
  ${isNew?'':`<div class="lg-acts"><button class="btn" data-act="lgPdf">${I.send} مشاركة PDF</button><button class="btn wa" data-act="lgWa"><span class="wa-badge">${I.wa}</span> تذكير واتساب</button></div>`}
@@ -1676,13 +1706,19 @@ function lgForm(c){const isNew=!c;c=c||{id:uid(),category:curV().c,name:'',phone
  <div class="row-btns"><button class="btn primary" data-act="lgSave">${isNew?'إضافة':'حفظ التعديل'}</button><button class="btn" data-act="ovClose">إلغاء</button></div>
  ${isNew?'':`<button class="btn" data-act="lgArch">${I.archive} ${c.archived?'إرجاعه من الأرشيف':'نقله إلى الأرشيف'}</button>`}
  ${isNew?'':`<button class="btn danger-link" data-act="lgDel">حذف الزبون</button>`}</div>`,'bottom-ov');
- const upd=()=>{const r=num($('#lg_due').value)-num($('#lg_paid').value),el=$('#lg_rem'),s=(LG_CUR.find(x=>x.k===LGF.cur)||LG_CUR[0]).s;if(!el)return;
-  el.className='mf-rem '+(r>0?'bad':'ok');el.innerHTML=`<span>المتبقي على الزبون</span><b class="num" dir="ltr">${lgFmt(r,s)}</b>`};
- LGF.upd=upd;['lg_due','lg_paid'].forEach(id=>{const e=$('#'+id);e.addEventListener('input',upd);e.addEventListener('change',upd)});upd();
+ const upd=()=>{const s=(LG_CUR.find(x=>x.k===LGF.cur)||LG_CUR[0]).s,due=num($('#lg_due').value),paid=LGF.pays.reduce((t,p)=>t+num(p.a),0)+num($('#lg_pay').value),r=due-paid,el=$('#lg_rem');if(!el)return;
+  $('#lg_pays').innerHTML=LGF.pays.length?LGF.pays.map((p,i)=>`<div class="lg-pay"><span class="num">${esc(p.d||'')}</span><b class="num" dir="ltr">${lgFmt(num(p.a),s)}</b><button type="button" data-act="lgDelPay" data-i="${i}" aria-label="حذف الدفعة">✕</button></div>`).join(''):'<div class="lg-pay none">لا دفعات بعد</div>';
+  el.className='mf-rem '+(r>0?'bad':'ok');el.innerHTML=`<span>${r>0?'المتبقي على الزبون':r<0?'دفع زيادة':'الزبون دفع كامل المبلغ ✓'}</span><b class="num" dir="ltr">${lgFmt(Math.abs(r),s)}</b>`;
+  const un=$('#lg_un');if(un){const dist=subs.reduce((t,k)=>t+num($('#lg_'+k).value),0),u=due-dist;un.className='mf-rem '+(Math.abs(u)<0.005?'ok':u>0?'warn':'bad');
+   un.innerHTML=Math.abs(u)<0.005?`<span>المبلغ كله موزّع ✓</span><b></b>`:u>0?`<span>غير موزّع بعد (للمساحين؟)</span><b class="num" dir="ltr">${lgFmt(u,s)}</b>`:`<span>الموزّع أكثر من المطلوب بـ</span><b class="num" dir="ltr">${lgFmt(-u,s)}</b>`}};
+ LGF.upd=upd;['lg_due','lg_pay',...subs.map(k=>'lg_'+k)].forEach(id=>{const e=$('#'+id);if(!e)return;e.addEventListener('input',upd);e.addEventListener('change',upd)});upd();
+ const cs=$('#lg_cat');if(cs)cs.onchange=()=>{const r=lgCollect(),nw=LGF.isNew;r.category=cs.value;closeOverlay(()=>lgForm(r,nw))};
  if(isNew)setTimeout(()=>$('#lg_name')?.focus(),250)}
 function lgCollect(){const g=id=>($('#'+id)?.value||'').trim();const c=LGF.c,subs=LG_CAT_SUBS[c.category]||[];
  const rec={id:c.id,category:c.category,created:c.created||Date.now(),name:g('lg_name'),phone:latin(g('lg_phone')),date:g('lg_date')||today(),
-  due:String(num(g('lg_due'))),paid:String(num(g('lg_paid'))),currency:LGF.cur,notes:g('lg_notes')};if(c.citId)rec.citId=c.citId;if(c.archived){rec.archived=true;rec.archivedAt=c.archivedAt}
+  due:String(num(g('lg_due'))),currency:LGF.cur,notes:g('lg_notes')};
+ const pend=num(g('lg_pay'));if(pend>0){LGF.pays.push({a:String(pend),d:g('lg_payd')||today()});const e=$('#lg_pay');if(e)e.value=''}
+ rec.pays=LGF.pays.slice();rec.paid=String(rec.pays.reduce((t,p)=>t+num(p.a),0));if(c.citId)rec.citId=c.citId;if(c.archived){rec.archived=true;rec.archivedAt=c.archivedAt}
  for(const k of subs){rec[k]=String(num(g('lg_'+k)));rec[LG_SUBS[k].flag]=!!LGF.pay[LG_SUBS[k].flag]}return rec}
 async function lgPut(rec){await LDB.put('customers',rec);const i=lgCust.findIndex(x=>x.id===rec.id);if(i>=0)lgCust[i]=rec;else lgCust.push(rec)}
 
@@ -1729,7 +1765,12 @@ Object.assign(ACT,{
   try{await lgPut(rec)}catch(e){toast('تعذّر الحفظ');return}closeOverlay(()=>{rerender();toast(to?'نُقل الزبون إلى الأرشيف':'أُرجع الزبون من الأرشيف')})},
  lgEdit:el=>lgForm(lgCust.find(c=>c.id===el.dataset.id)),
  lgCur:el=>{LGF.cur=el.dataset.c;document.querySelectorAll('#lg_cur button').forEach(b=>b.classList.toggle('on',b===el));LGF.upd()},
- lgPay:el=>{const f=el.dataset.f;LGF.pay[f]=!LGF.pay[f];el.classList.toggle('on',LGF.pay[f]);el.innerHTML=I.check+(LGF.pay[f]?'مدفوع':'غير مدفوع')},
+ lgPay:el=>{const f=el.dataset.f;LGF.pay[f]=!LGF.pay[f];el.classList.toggle('on',LGF.pay[f]);el.innerHTML=I.check+(LGF.pay[f]?'سُلّم':'لم يُسلّم')},
+ lgAddPay:()=>{const a=num($('#lg_pay').value);if(!(a>0)){toast('اكتب مبلغ الدفعة');return}LGF.pays.push({a:String(a),d:$('#lg_payd').value||today()});$('#lg_pay').value='';LGF.upd()},
+ lgDelPay:el=>{LGF.pays.splice(+el.dataset.i,1);LGF.upd()},
+ lgParty:el=>go({v:'lparty',k:el.dataset.k}),
+ lgPartyPaid:async el=>{const c=lgCust.find(x=>x.id===el.dataset.id),k=el.dataset.k;if(!c)return;const n={...c,[LG_SUBS[k].flag]:true};await lgPut(n);rerender();
+  toast('سُجّل التسليم',{label:'تراجع',fn:async()=>{await lgPut({...n,[LG_SUBS[k].flag]:false});rerender()}})},
  lgSave:async()=>{const rec=lgCollect();if(!rec.name){$('#lg_err').hidden=false;return}
   try{await lgPut(rec)}catch(e){toast('تعذّر الحفظ');return}closeOverlay(()=>{rerender();toast(LGF&&LGF.isNew?'أُضيف الزبون':'حُفظ التعديل')})},
  lgDel:async()=>{const c=LGF.c;closeOverlay(async()=>{if(!await confirmBox(`حذف الزبون «${esc(c.name)}» من السجل نهائياً؟`))return;
@@ -1766,6 +1807,23 @@ Object.assign(ACT,{
  lgFromCit:()=>{const c=findCit(curV().cid),r=lgOf(c);if(r)lgForm(r)},
  lgLinkCit:async()=>{const c=findCit(curV().cid);const r=await lgFromCit(c);if(!r)return;rerender();toast('أُضيف إلى سجل إسلام، عبّئ الحساب');lgForm(r)}
 });
+/* دمج «السجل المالي» القديم (وسجل إخراجات القيد) في سجل إسلام — مرة واحدة، بدون تكرار */
+async function lgMergeFinance(){if(!LG_OK)return;let done=null;try{done=localStorage.getItem('fin-merged-v1')}catch(e){}if(done)return;
+ const rd=k=>{try{const a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}};
+ const CURM={ils:'شيكل',jod:'دينار',usd:'دولار'},ymd=t=>{const d=new Date(t||Date.now());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ const MAPS={main:{surv:'survAmt',draw:'draftAmt',law:'lawyerAmt',reg:'extractAmt',oth:'otherAmt'},reg:{surv:'survAmt',dad:'dadAmt',oth:'otherAmt'}};
+ let n=0;
+ for(const[src,key,cat]of[['main','fin-v1','old'],['reg','fin-reg-v1','extract']])for(const j of rd(key)){
+  const id='fin-'+src+'-'+j.id;if(lgCust.some(x=>x.id===id))continue;
+  const due=num(j.fee),pays=(j.pays||[]).map(p=>({a:String(num(p.a)),d:p.d||''})).filter(p=>num(p.a)>0);
+  if(lgCust.some(x=>normName(x.name)===normName(j.name)&&num(x.due)===due&&due>0))continue;
+  const parts=j.parts||{},notes=[j.work,j.fin_note,parts.oth&&parts.oth.n?'الطرف الآخر: '+parts.oth.n:''].filter(Boolean).join(' · ');
+  const rec={id,category:cat,created:j.t||Date.now(),name:j.name||'بدون اسم',phone:latin(j.phone||''),date:ymd(j.t),due:String(due),pays,paid:String(pays.reduce((t,p)=>t+num(p.a),0)),currency:CURM[j.cur]||'شيكل',notes};
+  for(const[a,b]of Object.entries(MAPS[src])){const v=parts[a];if(v&&num(v.a)){rec[b]=String(num(v.a));rec[LG_SUBS[b].flag]=!!v.ok}}
+  if(j.arch||j.done){rec.archived=true;rec.archivedAt=j.doneAt||Date.now()}
+  await lgPut(rec);n++}
+ try{localStorage.setItem('fin-merged-v1',String(Date.now()))}catch(e){}
+ if(n)setTimeout(()=>toast(`نُقلت ${n} معاملة من «السجل المالي» القديم إلى سجل إسلام`),900)}
 async function lgOpen(){try{await LDB.open();lgCust=await LDB.all('customers');lgNotes=await LDB.all('notes');LG_OK=true}catch(e){console.error(e);LG_OK=false}}
 
 /* ===================== زر الرجوع في الهاتف ===================== */
@@ -1824,7 +1882,8 @@ async function repair(){const keys=new Set(await DB.run('pages','readonly',o=>o.
  ORPHANS=[...keys].filter(k=>!used.has(k))}
 (async()=>{history.replaceState({n:1},'');
  try{await DB.open();citizens=await DB.all('citizens');for(const c of citizens)await migrate(c);await repair();navigator.storage?.persist?.()}catch(e){console.error(e);toast('تعذّر فتح التخزين على هذا الجهاز')}
- await lgOpen();
+ await lgOpen();try{await lgMergeFinance()}catch(e){console.error(e)}
+ if(location.hash==='#ledger'){stack.length=0;stack.push({v:'ledger'})}
  render();APP_READY=true;window.checkNativeFiles()})();
 </script>
 </body>

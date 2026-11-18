@@ -131,7 +131,8 @@ public class AwraqActivity extends Activity {
             }
         });
 
-        webView.loadUrl(APP_URL);
+        String start = getIntent() != null ? getIntent().getStringExtra("url") : null;
+        webView.loadUrl(start != null && start.startsWith("https://appassets.androidplatform.net/assets/awraq/") ? start : APP_URL);
     }
 
     /* زر الرجوع في الهاتف: يرجع داخل التطبيق، ويغلقه فقط من الشاشة الرئيسية */
@@ -687,6 +688,11 @@ public class AwraqActivity extends Activity {
                 } catch (Exception ignored) {
                 }
             });
+        }
+
+        @JavascriptInterface
+        public void close() {
+            runOnUiThread(() -> finish());
         }
 
         @JavascriptInterface

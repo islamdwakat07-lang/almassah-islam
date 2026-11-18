@@ -106,7 +106,12 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri u = request.getUrl();
-                if ("appassets.androidplatform.net".equals(u.getHost())) return false;
+                if ("appassets.androidplatform.net".equals(u.getHost())) {
+                    // «أوراق المواطنين» تعمل في شاشة خاصة بها (كاميرا، ماسح، PDF، إرسال)
+                    String path = u.getPath();
+                    if (path != null && path.startsWith("/assets/awraq/")) { startActivity(new Intent(MainActivity.this, AwraqActivity.class)); return true; }
+                    return false;
+                }
                 if (MapActivity.isGovmap(u)) { openMapActivity(u.toString()); return true; }
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { }
                 return true;

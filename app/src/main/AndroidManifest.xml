@@ -13,6 +13,12 @@
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
     </queries>
 
     <application
@@ -20,6 +26,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
+        android:largeHeap="true"
         android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
 
         <meta-data android:name="app.developer" android:value="Islam Dweikat - إسلام دويكات" />
@@ -56,6 +63,12 @@
                 <data android:scheme="content" android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".AwraqActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".MapActivity"

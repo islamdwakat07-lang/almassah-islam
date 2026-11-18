@@ -308,11 +308,16 @@ window.__back = () => (cur ? (closeSheet(), 1) : 0);
 document.querySelectorAll("a.hit, .proj a").forEach(a => a.addEventListener("click", e => {
   if (/^https?:/.test(a.getAttribute("href"))) { e.preventDefault(); location.href = a.getAttribute("href"); return; }   // موقع خارجي يفتح في المتصفح
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (/^awraq\//.test(a.getAttribute("href"))) { e.preventDefault(); location.href = a.getAttribute("href"); return; }   // شاشة مستقلة: بدون تعتيم
   e.preventDefault(); document.body.classList.add("leaving");
   setTimeout(() => { location.href = a.getAttribute("href"); }, 160);
 }));
 document.addEventListener("click", e => { const a = e.target.closest(".proj a"); if (a) { e.preventDefault(); location.href = a.getAttribute("href"); } });
 addEventListener("pageshow", () => { document.body.classList.remove("leaving"); closeSheet(); fitNav(); });
+// أدوات تفتح في شاشة مستقلة (أوراق المواطنين): الصفحة لا تتغير، فنرجع الشاشة ظاهرة عند العودة
+const unfade = () => document.body.classList.remove("leaving");
+document.addEventListener("visibilitychange", () => { if (!document.hidden) unfade(); });
+addEventListener("focus", unfade);
 </script>
 </body>
 </html>

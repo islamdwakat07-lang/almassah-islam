@@ -581,6 +581,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // الرجوع من شاشة مستقلة (أوراق المواطنين): نتأكد أن الصفحة الرئيسية ظاهرة
+        if (web != null) web.evaluateJavascript("document.body && document.body.classList.remove('leaving')", null);
         if (MapActivity.printData != null && web != null) {
             final String d = MapActivity.printData;
             MapActivity.printData = null;

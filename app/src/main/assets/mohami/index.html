@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="mohami">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مكتبة المحامي</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:var(--am-ink)}
+main{max-width:680px;margin:0 auto;padding:10px 12px 60px}
+.hidden{display:none!important}
+button,input,select,textarea{font-family:inherit}
+.am-home{padding:4px 10px!important;font-size:12.5px!important;gap:4px!important}
+.am-home svg{width:14px!important;height:14px!important}
+/* الرأس */
+.office{background:linear-gradient(160deg,#8a1f2d,#5e1420);color:#fff;border-radius:18px;padding:16px 14px;text-align:center;box-shadow:0 8px 20px -10px rgba(94,20,32,.7);margin-bottom:12px}
+.office h1{margin:0;font:700 24px var(--am-title)}
+.office p{margin:4px 0 0;font-size:14px;opacity:.92}
+/* البطاقات */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.doc{border:0;background:#fffdf6;border-radius:18px;padding:18px 10px;box-shadow:0 4px 14px -6px rgba(0,0,0,.25),inset 0 0 0 1.5px var(--am-line);display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;color:var(--am-ink)}
+.doc .ic{width:64px;height:64px;border-radius:18px;display:grid;place-items:center}
+.doc .ic svg{width:34px;height:34px}
+.doc b{font:700 16px "IBM Plex Sans Arabic";line-height:1.5;text-align:center}
+.doc small{color:var(--am-muted);font-size:12.5px;text-align:center}
+/* النموذج */
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:#8a1f2d;font:700 15px "IBM Plex Sans Arabic";padding:4px 0;margin-bottom:6px;cursor:pointer}
+.ftitle{font:700 20px var(--am-title);color:#5e1420;margin:0 0 8px}
+fieldset{border:0;background:#fffdf6;border-radius:16px;padding:10px 12px 12px;margin:0 0 10px;box-shadow:inset 0 0 0 1.5px var(--am-line)}
+.lg{font:700 15px "IBM Plex Sans Arabic";color:#8a1f2d;padding:0;margin-bottom:4px}
+.f{display:block;margin-top:8px}
+.f>span{display:block;font-size:13px;color:var(--am-muted);margin-bottom:2px}
+.in{display:flex;gap:6px}
+.in input,.in textarea,.in select{flex:1;min-width:0;width:100%;font:500 16px "IBM Plex Sans Arabic";padding:9px 11px;border:1.5px solid var(--am-line);border-radius:12px;background:#fff;color:var(--am-ink)}
+.in textarea{min-height:64px;resize:vertical;line-height:1.6}
+.in input:focus,.in textarea:focus,.in select:focus{outline:2px solid #c0626e;border-color:transparent}
+.mic,.cal{flex:none;width:44px;border:0;border-radius:12px;font-size:18px;color:#fff;background:linear-gradient(160deg,#a8323f,#6e1824);cursor:pointer}
+.cal{background:linear-gradient(160deg,#1b7049,#0c3b26)}
+.mic.on{animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.1)}}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:700}
+.chk input{width:20px;height:20px;accent-color:#8a1f2d}
+.clause{display:flex;gap:6px;align-items:flex-start;margin-top:8px}
+.clause .in{flex:1}
+.del{flex:none;width:40px;height:44px;border:0;border-radius:12px;background:#f3e1e3;color:#8a1f2d;font-size:18px;cursor:pointer}
+.add{width:100%;margin-top:10px;border:1.5px dashed #c0626e;background:#fff;color:#8a1f2d;border-radius:12px;padding:9px;font:700 15px "IBM Plex Sans Arabic";cursor:pointer}
+.prevh{display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px}
+.prevh b{font:700 16px "IBM Plex Sans Arabic";color:#5e1420}
+.prevh small{color:var(--am-muted)}
+#prev{display:flex;flex-direction:column;gap:10px}
+#prev canvas{width:100%;height:auto;background:#fff;border-radius:6px;box-shadow:0 6px 18px -8px rgba(0,0,0,.45)}
+.acts{position:sticky;bottom:0;display:grid;grid-template-columns:2fr 1fr;gap:8px;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(248,242,226,0),var(--am-ivory) 30%)}
+.acts button{border:0;border-radius:14px;padding:12px 8px;font:700 16px "IBM Plex Sans Arabic";cursor:pointer}
+.go{background:linear-gradient(160deg,#a8323f,#6e1824);color:#fff;box-shadow:0 6px 16px -8px rgba(110,24,36,.8)}
+.ghost{background:#fffdf6;color:#8a1f2d;box-shadow:inset 0 0 0 1.5px #d9a9af}
+.hint{font-size:12.5px;color:var(--am-muted);margin:6px 2px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1d2a22;color:#fff;padding:10px 16px;border-radius:12px;font-size:14.5px;z-index:99;max-width:90vw;text-align:center}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-mohami.png" alt=""><b>مكتبة المحامي</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <section id="vHome">
+    <div class="office"><h1>مكتبة المحامي</h1><p>مكتب المحامي عبدالله دويكات · 0594333138</p></div>
+    <div class="grid" id="docs"></div>
+    <p class="hint" style="text-align:center;margin-top:14px">املأ الخانات، شوف المعاينة، واضغط «PDF» فيُحفظ في التنزيلات وتقدر ترسله مباشرة. البيانات تبقى محفوظة على جهازك.</p>
+  </section>
+  <section id="vForm" class="hidden">
+    <button class="back" id="bBack">→ رجوع للمكتبة</button>
+    <h2 class="ftitle" id="fTitle"></h2>
+    <form id="form" onsubmit="return false"></form>
+    <div class="prevh"><b>المعاينة</b><small id="pgInfo"></small></div>
+    <div id="prev"></div>
+    <div class="acts"><button class="go" id="bPdf">📄 حفظ وإرسال PDF</button><button class="ghost" id="bClear">تفريغ الخانات</button></div>
+  </section>
+</main>
+<div id="toast" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let toastT; function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3000); }
+
+/* ===== بيانات المكتب ===== */
+const LAW = { full: "عبدالله إسماعيل عبدالله دويكات", id: "854544970", city: "نابلس", short: "عبدالله دويكات", phone: "0594333138" };
+const DOTS = "......................";
+const v = (x, dots = DOTS) => (x == null || String(x).trim() === "") ? dots : String(x).trim();
+
+/* ===== تفقيط: الرقم بالكلمات ===== */
+function tafqit(n) {
+  n = Math.floor(Math.abs(+n)); if (!isFinite(n) || n === 0) return n === 0 ? "صفر" : "";
+  const ones = ["", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة", "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر", "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر"];
+  const tens = ["", "", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون"];
+  const hund = ["", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة"];
+  const b1000 = x => { const p = [], h = Math.floor(x / 100), r = x % 100; if (h) p.push(hund[h]); if (r) p.push(r < 20 ? ones[r] : (r % 10 ? ones[r % 10] + " و" + tens[Math.floor(r / 10)] : tens[r / 10])); return p.join(" و"); };
+  const grp = (x, one, two, few, many) => x === 1 ? one : x === 2 ? two : x <= 10 ? b1000(x) + " " + few : b1000(x) + " " + many;
+  const parts = [], mil = Math.floor(n / 1e6), th = Math.floor(n / 1000) % 1000, r = n % 1000;
+  if (mil) parts.push(grp(mil, "مليون", "مليونان", "ملايين", "مليون"));
+  if (th) parts.push(grp(th, "ألف", "ألفان", "آلاف", "ألف"));
+  if (r) parts.push(b1000(r));
+  return parts.join(" و");
+}
+
+/* ===== محرك الصفحات: نص عربي مضبوط (يمين لشمال) مع تسطير، على صفحات A4 ===== */
+const PW = 595, PH = 842;
+const FONT = '"IBM Plex Sans Arabic", Tahoma, sans-serif';
+function Doc(scale, opt = {}) {
+  const D = { pages: [], S: scale, M: opt.margin || 46, fs: opt.fs || 12.5, lh: opt.lh || 1.85, y: 0, g: null };
+  D.page = () => { const c = document.createElement("canvas"); c.width = Math.round(PW * D.S); c.height = Math.round(PH * D.S); const g = c.getContext("2d"); g.scale(D.S, D.S); g.fillStyle = "#fff"; g.fillRect(0, 0, PW, PH); g.fillStyle = "#111"; g.strokeStyle = "#111"; g.direction = "rtl"; D.pages.push(c); D.g = g; D.y = D.M; if (opt.onPage) opt.onPage(D); return g; };
+  D.font = (w, s) => { D.g.font = `${w} ${s}px ${FONT}`; };
+  D.need = h => { if (D.y + h > PH - D.M - (opt.footer || 0)) D.page(); };
+  D.center = (t, s, w = 700, gap = 1.6) => { D.font(w, s); D.need(s * gap); D.g.textAlign = "center"; D.g.fillText(t, PW / 2, D.y + s); D.y += s * gap; };
+  D.rule = (gap = 14) => { D.g.lineWidth = 1.1; D.g.beginPath(); D.g.moveTo(D.M, D.y); D.g.lineTo(PW - D.M, D.y); D.g.stroke(); D.y += gap; };
+  D.lr = (right, left, s, w = 400) => { D.font(w, s); D.need(s * 1.9); const g = D.g; g.textAlign = "right"; g.fillText(right, PW - D.M, D.y + s); g.save(); g.direction = "ltr"; g.textAlign = "left"; if (left) { g.direction = /[؀-ۿ]/.test(left) ? "rtl" : "ltr"; g.textAlign = g.direction === "rtl" ? "left" : "left"; g.fillText(left, D.M, D.y + s); } g.restore(); D.y += s * 1.9; };
+  /* فقرات من مقاطع {t, u} — u = تسطير. «\n» = فقرة جديدة */
+  D.para = (segs, o = {}) => {
+    const s = o.fs || D.fs, W = PW - 2 * D.M, lh = s * (o.lh || D.lh); D.font(o.w || 400, s);
+    // كلمات: كل كلمة تعرف إن كان بعدها فراغ؛ والكلمات الملتصقة (بدون فراغ) تبقى معاً في السطر
+    const paras = [[]];
+    segs.forEach(sg => { const parts = String(sg.t).split(/(\n)/); parts.forEach(pt => { if (pt === "\n") { paras.push([]); return; } const P = paras[paras.length - 1]; pt.replace(/(\s+)|([^\s]+)/g, (m, sp, w) => { if (sp) { if (P.length) P[P.length - 1].sp = true; } else P.push({ w, u: !!sg.u, sp: false }); return m; }); }); });
+    const spw = D.g.measureText(" ").width;
+    paras.forEach((P, pi) => {
+      if (!P.length) { if (pi) D.y += lh * 0.45; return; }
+      const units = []; let cur = null; P.forEach((tk, i) => { tk.wd = D.g.measureText(tk.w).width; if (!cur) { cur = { tk: [], wd: 0 }; units.push(cur); } cur.tk.push(tk); cur.wd += tk.wd; if (tk.sp || i === P.length - 1) cur = null; });
+      const lines = []; let ln = [], lw = 0;
+      units.forEach(un => { const add = (ln.length ? spw : 0) + un.wd; if (ln.length && lw + add > W) { lines.push(ln); ln = [un]; lw = un.wd; } else { ln.push(un); lw += add; } });
+      if (ln.length) lines.push(ln);
+      lines.forEach((L, li) => {
+        D.need(lh); const g = D.g; D.font(o.w || 400, s);
+        const last = li === lines.length - 1, tot = L.reduce((a, un) => a + un.wd, 0);
+        const gap = (!last && L.length > 1 && o.justify !== false) ? (W - tot) / (L.length - 1) : spw;
+        let x = o.align === "center" && last ? PW / 2 + (tot + gap * (L.length - 1)) / 2 : PW - D.M; const by = D.y + s;
+        g.textAlign = "right"; g.direction = "rtl";
+        L.forEach((un, ui) => {
+          un.tk.forEach((tk, ti) => { g.fillText(tk.w, x, by); if (tk.u) { const nx = un.tk[ti + 1]; ul(g, x - tk.wd, x, by, s); } x -= tk.wd; });
+          const nu = L[ui + 1]; if (nu && un.tk[un.tk.length - 1].u && nu.tk[0].u) ul(g, x - gap, x, by, s);
+          x -= gap;
+        });
+        D.y += lh;
+      });
+      if (pi < paras.length - 1) D.y += lh * (o.pgap != null ? o.pgap : 0.35);
+    });
+  };
+  /* صف تواقيع بعدة أعمدة */
+  D.signs = (labels, s = 11.5) => { D.need(70); const g = D.g, W = PW - 2 * D.M, cw = W / labels.length; D.font(700, s); g.textAlign = "center"; labels.forEach((t, i) => { const cx = PW - D.M - cw * i - cw / 2; g.fillText(t, cx, D.y + s); D.font(400, s); g.fillText("......................", cx, D.y + s * 3.4); D.font(700, s); }); D.y += s * 5; };
+  D.page();
+  return D;
+}
+function ul(g, x0, x1, by, s) { g.save(); g.lineWidth = 0.6; g.beginPath(); g.moveTo(x0, by + s * 0.32); g.lineTo(x1, by + s * 0.32); g.stroke(); g.restore(); }
+function pageNumbers(D) { if (D.pages.length < 2) return; D.pages.forEach((c, i) => { const g = c.getContext("2d"); g.setTransform(D.S, 0, 0, D.S, 0, 0); g.fillStyle = "#333"; g.font = `400 10.5px ${FONT}`; g.textAlign = "center"; g.direction = "ltr"; g.fillText(`${i + 1} / ${D.pages.length}`, PW / 2, PH - 24); }); }
+function letterhead(D, title) { D.center(title, 16, 700, 1.55); D.center("مكتب المحامي", 13, 400, 1.4); D.center(LAW.short, 13, 400, 1.4); D.center(LAW.phone, 13, 400, 1.2); D.y += 4; D.rule(24); }
+
+/* ===== الوثائق ===== */
+const ICONS = {
+  swap: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>',
+  clip: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>',
+  money: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg>'
+};
+const DOCS = [
+  { id: "sale", title: "اتفاقية بيع", sub: "بيع حصص أو قطعة أرض", icon: "swap", bg: "#f3e5f5", fg: "#7b1fa2", file: "اتفاقية بيع",
+    fields: [
+      ["g", "الفريق الأول (البائع)"], ["p1n", "اسم الفريق الأول"], ["p1i", "رقم هوية الفريق الأول", { num: 1 }], ["p1r", "مكان سكن الفريق الأول"],
+      ["g", "الفريق الثاني (المشتري)"], ["p2n", "اسم الفريق الثاني"], ["p2i", "رقم هوية الفريق الثاني", { num: 1 }], ["p2r", "مكان سكن الفريق الثاني"],
+      ["g", "بيانات الأرض"], ["own", "وصف ملكية الفريق الأول", { def: "حصص ارثية مشاعية في قطعتي", area: 1 }], ["2", ["qit", "رقم القطعة", { ph: "مثال: 52 و58" }], ["hawd", "رقم الحوض", { num: 1 }]],
+      ["loc", "من أراضي (اسم المنطقة)"], ["qada", "القضاء", { def: "نابلس" }],
+      ["wish", "رغبة الفريق الثاني بالشراء", { def: "كامل حصص الفريق الأول الارثية المشاعية و/او الاصلية المشاعية بالغا مابلغت في قطعتي", area: 1 }],
+      ["sell", "رغبة الفريق الأول بالبيع", { def: "كامل حصصه الارثية المشاعية و/او الاصلية المشاعية بالغا مابلغت في قطعتي", area: 1 }],
+      ["g", "شروط البيع"], ["price", "الثمن (بالكلمات والأرقام)", { ph: "مثال: ثمانية الاف واربعمائة وثمانون (8480) دينار اردني", area: 1 }],
+      ["office", "جهة التسجيل", { def: "دائرة تسجيل أراضي حورون و/او كاتب عدل نابلس و/او كاتب عدل القدس", area: 1 }],
+      ["2", ["pen", "مبلغ الغرامة (دينار)", { def: "10000", num: 1 }], ["court", "محاكم", { def: "نابلس" }]],
+      ["2", ["pages", "عدد الصفحات", { def: "صفحتين" }], ["copies", "عدد النسخ", { def: "ثلاثة (3)" }]],
+      ["date", "التاريخ", { date: 1 }], ["clauses"]
+    ] },
+  { id: "wakala", title: "وكالة خصوصية اخراج قيد وتنظيم", sub: "تسجيل أراضي ودائرة التنظيم", icon: "doc", bg: "#fce4ec", fg: "#8a1f2d", file: "وكالة خصوصية",
+    fields: [
+      ["g", "الموكل"], ["n1", "اسم الموكل الرباعي"], ["i1", "رقم هوية الموكل", { num: 1 }],
+      ["two", "إضافة موكل ثانٍ لنفس الوكالة", { check: 1 }], ["n2", "اسم الموكل الثاني الرباعي", { if: "two" }], ["i2", "رقم هوية الموكل الثاني", { num: 1, if: "two" }],
+      ["g", "الأرض"], ["2", ["hawd", "رقم الحوض", { num: 1 }], ["qit", "رقم القطعة"]], ["site", "اسم الموقع"], ["town", "اسم البلد (من أراضي)"],
+      ["office", "دائرة تسجيل الأراضي", { def: "حورون و/أو قدوم و/أو سالم و/أو بيت ايل" }], ["qada", "القضاء", { def: "نابلس" }],
+      ["date", "التاريخ", { date: 1 }]
+    ] },
+  { id: "tanzim", title: "إقرار للتنظيم", sub: "عدم وجود مصادرة على القطعة", icon: "clip", bg: "#ede7f6", fg: "#4527a0", file: "اقرار للتنظيم",
+    fields: [
+      ["g", "مقدّم الإقرار"], ["n", "اسم مقدّم الإقرار"], ["i", "رقم الهوية", { num: 1 }],
+      ["g", "الأرض"], ["2", ["qit", "رقم القطعة"], ["hawd", "رقم الحوض", { num: 1 }]], ["town", "اسم القرية"], ["req", "رقم طلب المعلومات (اختياري)"],
+      ["date", "التاريخ", { date: 1 }]
+    ] },
+  { id: "receipt", title: "إقرار استلام مبلغ", sub: "مبلغ مستلم مع التفقيط", icon: "money", bg: "#e0f2f1", fg: "#00695c", file: "اقرار استلام مبلغ",
+    fields: [
+      ["g", "المُقِر (مستلم المبلغ)"], ["rn", "اسم المستلم"], ["ri", "رقم هوية المستلم", { num: 1 }], ["rr", "مكان السكن"],
+      ["g", "الدافع"], ["pn", "اسم الدافع"], ["pi", "رقم هوية الدافع", { num: 1 }],
+      ["g", "المبلغ"], ["2", ["amt", "المبلغ بالأرقام", { num: 1 }], ["cur", "العملة", { sel: ["دينار أردني", "شيكل", "دولار أمريكي"] }]],
+      ["words", "المبلغ بالكلمات (يُكتب تلقائياً)"], ["how", "طريقة الدفع", { def: "نقداً" }],
+      ["why", "وذلك (سبب الدفع)", { ph: "مثال: بدل ثمن حصص في قطعة الأرض رقم 52 حوض 12 من أراضي عصيرة الشمالية", area: 1 }],
+      ["date", "التاريخ", { date: 1 }]
+    ] }
+];
+
+/* نص كل وثيقة → صفحات */
+const RENDER = {
+  wakala(d, S) {
+    const D = Doc(S, { fs: 12.5 }); letterhead(D, "وكالة خصوصية");
+    const two = !!d.two, T = [], t = (x, u) => T.push({ t: x, u }), off = v(d.office);
+    if (two) { t("نحن الموقعان أدناه اسمانا "); t(v(d.n1)); t(" / هوية رقم "); t(v(d.i1), 1); t(" و"); t(v(d.n2)); t(" / هوية رقم "); t(v(d.i2), 1); t(" قد وكلنا عنا"); }
+    else { t("أنا الموقع اسمي "); t(v(d.n1)); t(" / هوية رقم "); t(v(d.i1), 1); t(" قد وكلت عني"); }
+    t(` المحامي ${LAW.full} هوية رقم `); t(LAW.id, 1); t(" من "); t(LAW.city, 1);
+    t(" ليقدم و/أو يتابع استصدار اخراج قيد لدى دائرة تسجيل الأراضي في "); t(off); t(" ويرافع فيها على مأمور دائرة تسجيل أراضي "); t(off); t(" وأمام دائرة تسجيل أراضي "); t(off); t(" والتي موضوعها: ");
+    t(two ? "تقديم معاملة اصدار سند تسجيل و/أو اخراج قيد بأسمائنا و/أو باسم أي مورث من مورثينا و/أو مورثي مورثينا" : "تقديم معاملة اصدار سند تسجيل و/أو اخراج قيد باسمي و/أو باسم أي مورث من مورثيني و/أو مورثين مورثيني", 1);
+    t(" وذلك في قطعة الأرض رقم "); t(v(d.qit)); t(" من الحوض رقم "); t(v(d.hawd)); t(" موقع "); t(v(d.site)); t(" من أراضي "); t(v(d.town)); t(" قضاء "); t(v(d.qada));
+    t(two ? " وبذات الوقت مراجعة دائرة التنظيم وتقديم المعاملة أمام هذه الدوائر في أي منطقة من المناطق المذكورة أعلاه وأوكلناه بالتوقيع على جميع الطلبات والتعهدات والإقرارات وكافة الأوراق الخاصة بتقديم المعاملة لدى دائرة تسجيل الأراضي ودائرة التنظيم وذلك حتى حصولنا على كافة الموافقات اللازمة واستلام الردود وناتج المعاملات من وصول و/أو اخراجات قيد بأسمائنا في قطعة الأرض الموصوفة أعلاه وعمل كل ما يلزم لذلك والتوقيع على كافة الأوراق اللازمة لهذا الخصوص كما وكلناه باستلام ناتج المعاملات."
+      : " وبذات الوقت مراجعة دائرة التنظيم وتقديم المعاملة أمام هذه الدوائر في أي منطقة من المناطق المذكورة أعلاه وأوكله بالتوقيع على جميع الطلبات والتعهدات والإقرارات وكافة الأوراق الخاصة بتقديم المعاملة لدى دائرة تسجيل الأراضي ودائرة التنظيم وذلك حتى حصولي على كافة الموافقات اللازمة واستلام الردود وناتج المعاملات من وصول و/أو اخراجات قيد باسمي في قطعة الأرض الموصوفة أعلاه وعمل كل ما يلزم لذلك والتوقيع على كافة الأوراق اللازمة لهذا الخصوص كما وكلته باستلام ناتج المعاملات.");
+    D.para(T); D.y += 26;
+    D.lr("تحريراً في هذا اليوم " + v(d.date, "......../......../............"), "أصادق على صحة التوقيع والتوكيل", 12);
+    D.lr(two ? "الموكلان" : "الموكل", "المحامي " + LAW.short, 12, 700);
+    return D;
+  },
+  sale(d, S) {
+    const D = Doc(S, { fs: 12.5, footer: 18 });
+    D.center("اتفاقية بيع", 18, 700, 1.9);
+    const P = (arr) => { D.para(arr); D.y += 6; };
+    const t = x => ({ t: x }), u = x => ({ t: x, u: 1 });
+    P([t("إنه في يوم الموافق "), u(v(d.date, "__/__/____")), t(" تم الاتفاق بين كل من:")]);
+    P([{ t: "الفريق الأول: ", u: 0 }, u(v(d.p1n)), t("، حامل هوية رقم "), u(v(d.p1i)), t("، ومكان سكنه "), u(v(d.p1r)), t(".")]);
+    P([t("الفريق الثاني: "), u(v(d.p2n)), t("، حامل هوية رقم "), u(v(d.p2i)), t("، ومكان سكنه "), u(v(d.p2r)), t(".")]);
+    D.para([t("المقدمة:")], { w: 700 }); D.y += 4;
+    P([t("حيث ان الفريق الاول يملك ويتصرف في "), u(v(d.own)), t(" الارض رقم "), u(v(d.qit)), t(" بحوض رقم "), u(v(d.hawd)), t(" من اراضي "), u(v(d.loc)), t(" قضاء "), u(v(d.qada)), t(' (ويشار اليها فيما يلي بـ"الارض الموصوفه اعلاه").')]);
+    P([t("وحيث ان الفريق الثاني يرغب بشراء "), u(v(d.wish)), t(" الارض الموصوفه اعلاه.")]);
+    P([t("وحيث ان الفريق الاول يرغب في بيع "), u(v(d.sell)), t(" الارض الموصوفه اعلاه الى الفريق الثاني.")]);
+    D.para([t("لذلك اتفق الطرفان على ما يلي:")], { w: 700 }); D.y += 4;
+    P([t("اولا: تعتبر المقدمة اعلاه جزءا لا يتجزأ من هذا العقد.")]);
+    P([t("ثانيا: باع الفريق الاول للفريق الثاني الارض الموصوفه اعلاه بالثمن الاجمالي والنهائي "), u(v(d.price)), t(" يدفع على النحو المتفق عليه بين الطرفين.")]);
+    P([t("ثالثا: يتم تسجيل هذا البيع لدى "), u(v(d.office)), t(" ويتحمل الطرفان الرسوم كل حسب ما يخصه قانونا.")]);
+    P([t("رابعا: في حال امتناع اي من الطرفين عن تنفيذ التزاماته الواردة في هذا العقد، يتحمل الطرف الممتنع غرامة مالية قدرها "), u(v(d.pen)), t(" دينار اردني للطرف الاخر، دون الاخلال بحقه بالمطالبة بالتنفيذ العيني.")]);
+    P([t("خامسا: في حال نشوء اي خلاف حول تفسير او تنفيذ هذا العقد يرجع الطرفان الى محاكم "), u(v(d.court)), t(" المختصة.")]);
+    P([t("سادسا: حرر هذا العقد من "), u(v(d.pages)), t(" ووقع منه "), u(v(d.copies)), t(" نسخ متطابقة، احتفظ كل طرف بنسخة منها.")]);
+    P([t("سابعا: يقر الفريق الاول بان الارض الموصوفه اعلاه خالية من اي رهن او حجز او دعوى او حق للغير، وانه المالك الشرعي والحقيقي لها.")]);
+    P([t("ثامنا: يتم تسليم الارض الموصوفه اعلاه للفريق الثاني فور اتمام اجراءات التسجيل او على النحو المتفق عليه بين الطرفين.")]);
+    P([t("تاسعا: يلتزم الفريق الاول بضمان التعرض والاستحقاق للفريق الثاني وفقا للقواعد العامة في القانون.")]);
+    P([t("عاشرا: كل ما لم يرد عليه نص خاص في هذا العقد يخضع لاحكام القانون المعمول به.")]);
+    P([t("حادي عشر: يعتبر هذا العقد ملزما لطرفيه وورثتهما وخلفهما القانوني من بعدهما.")]);
+    (d.clauses || []).forEach((c, i) => P([t(ordinal(i + 12) + ": "), u(v(c))]));
+    D.y += 22; D.signs(["الفريق الأول", "الفريق الثاني", "شاهد", "شاهد"]);
+    pageNumbers(D); return D;
+  },
+  tanzim(d, S) {
+    const D = Doc(S, { fs: 12.5 }), g = D.g, R = PW - D.M, L = D.M;
+    const hl = (ar, he, s, w) => { D.font(w, s); g.textAlign = "right"; g.direction = "rtl"; g.fillText(ar, R, D.y + s); g.textAlign = "left"; g.fillText(he, L, D.y + s); D.y += s * 1.55; };
+    hl("يهودا والسامرة", "יהודה ושומרון", 11, 400); hl("دائرة التنظيم المركزية", "לשכת התכנון המרכזי", 12.5, 700); hl("رام الله - ص.ب 731 تلفون: 953372 - 952324", "רמאללה ת.ד. 731 טל: 953372 - 952324", 11, 400);
+    D.y += 2; D.rule(30); D.center("اقرار", 17, 700, 2.2);
+    const u = x => ({ t: x, u: 1 }), t = x => ({ t: x });
+    D.para([t("أنا الموقع أدناه "), u(v(d.n)), t(" حامل هوية رقم "), u(v(d.i)), t("، اقر بذلك أن قطعة رقم "), u(v(d.qit)), t(" بحوض رقم "), u(v(d.hawd)), t(" من أراضي قرية "), u(v(d.town)), t("، والتي قمت بتقديم طلب معلومات رقم "), u(v(d.req)),
+      t(" على القطعة المذكورة أعلاه إلى دائرة التنظيم، هي قطعة لا يوجد عليها مصادرة حسب أمر قائد عسكري صدر بموجب صلاحياته بناء على نظام رقم 119 من أنظمة الدفاع (حالة الطوارئ) 1945، كما اقر أنه لم تتم مصادرة أي بناء قائم أو كان قائماً على الأرض المذكورة أعلاه.")]);
+    D.y += 40; D.lr("مقدم الطلب: " + (d.n ? d.n : DOTS), "التاريخ: " + v(d.date, "......../......../............"), 12);
+    D.y += 10; D.lr("التوقيع: " + DOTS, "", 12);
+    return D;
+  },
+  receipt(d, S) {
+    const D = Doc(S, { fs: 13 });
+    D.center("إقرار استلام مبلغ", 18, 700, 1.7); D.center(`مكتب المحامي ${LAW.short} · ${LAW.phone}`, 11, 400, 1.3); D.y += 4; D.rule(30);
+    const u = x => ({ t: x, u: 1 }), t = x => ({ t: x });
+    const amt = String(d.amt || "").replace(/[^\d.]/g, ""), cur = d.cur || "دينار أردني", words = (d.words || "").trim() || (amt ? tafqit(amt) : "");
+    D.para([t("أنا الموقع أدناه "), u(v(d.rn)), t(" حامل هوية رقم "), u(v(d.ri)), ...(d.rr ? [t(" من سكان "), u(d.rr)] : []), t("، أقر وأنا بكامل أهليتي المعتبرة شرعاً وقانوناً بأنني قد استلمت من "), u(v(d.pn)), t(" حامل هوية رقم "), u(v(d.pi)),
+      t(" مبلغاً وقدره "), u(amt ? Number(amt).toLocaleString("en-US") : DOTS), t(" ("), u(words ? words : DOTS), t(") " + cur + " فقط لا غير، "), u(v(d.how)), t("، وذلك "), u(v(d.why)), t(".")]);
+    D.y += 8;
+    D.para([t("وبذلك تكون ذمة الدافع بريئة من هذا المبلغ، وهذا إقرار مني بالاستلام وقعت عليه بإرادتي الحرة ودون أي ضغط أو إكراه.")]);
+    D.y += 26; D.lr("تحريراً في " + v(d.date, "......../......../............"), "", 12);
+    D.y += 18; D.signs(["المُقِر بالاستلام", "الدافع", "شاهد", "شاهد"]);
+    return D;
+  }
+};
+function ordinal(n) { const u = ["", "واحد", "اثنان", "ثلاثة", "اربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"]; if (n === 12) return "ثاني عشر"; if (n >= 13 && n <= 19) return ["", "", "", "ثالث", "رابع", "خامس", "سادس", "سابع", "ثامن", "تاسع"][n - 10] + " عشر"; if (n === 20) return "عشرون"; if (n > 20 && n < 30) return "ال" + ["", "حادي", "ثاني", "ثالث", "رابع", "خامس", "سادس", "سابع", "ثامن", "تاسع"][n - 20] + " والعشرون"; return String(n); }
+
+/* ===== الواجهة ===== */
+let CUR = null, DATA = {};
+const KEY = id => "mohami-" + id;
+function loadData(doc) { let d = {}; try { d = JSON.parse(localStorage.getItem(KEY(doc.id)) || "{}") || {}; } catch (e) {} forEachField(doc, (k, o) => { if (d[k] == null && o.def != null) d[k] = o.def; if (d[k] == null && o.sel) d[k] = o.sel[0]; }); if (doc.id === "sale" && !Array.isArray(d.clauses)) d.clauses = []; return d; }
+function saveData() { try { localStorage.setItem(KEY(CUR.id), JSON.stringify(DATA)); } catch (e) {} }
+function forEachField(doc, fn) { doc.fields.forEach(f => { if (f[0] === "2") { fn(f[1][0], f[1][2] || {}); fn(f[2][0], f[2][2] || {}); } else if (f[0] !== "g" && f[0] !== "clauses") fn(f[0], f[2] || {}); }); }
+function home() {
+  $("docs").innerHTML = DOCS.map(d => `<button class="doc" data-id="${d.id}"><span class="ic" style="background:${d.bg};color:${d.fg}">${ICONS[d.icon]}</span><b>${d.title}</b><small>${d.sub}</small></button>`).join("");
+  document.querySelectorAll(".doc").forEach(b => b.onclick = () => { history.pushState({ f: b.dataset.id }, ""); openDoc(b.dataset.id); });
+}
+function fieldHtml(k, label, o = {}) {
+  if (o.check) return `<label class="chk"><input type="checkbox" data-k="${k}" ${DATA[k] ? "checked" : ""}> ${label}</label>`;
+  const val = esc(DATA[k] == null ? "" : DATA[k]), ph = esc(o.ph || "");
+  let inner;
+  if (o.sel) inner = `<select data-k="${k}">${o.sel.map(s => `<option ${s === DATA[k] ? "selected" : ""}>${s}</option>`).join("")}</select>`;
+  else if (o.area) inner = `<textarea data-k="${k}" placeholder="${ph}">${val}</textarea><button type="button" class="mic" data-mic="${k}" aria-label="إدخال صوتي">🎤</button>`;
+  else if (o.date) inner = `<input data-k="${k}" value="${val}" placeholder="يوم/شهر/سنة"><input type="date" data-dp="${k}" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none"><button type="button" class="cal" data-cal="${k}" aria-label="اختيار التاريخ">📅</button>`;
+  else inner = `<input data-k="${k}" value="${val}" placeholder="${ph}" ${o.num ? 'inputmode="numeric"' : ""}><button type="button" class="mic" data-mic="${k}" data-num="${o.num ? 1 : ""}" aria-label="إدخال صوتي">🎤</button>`;
+  return `<label class="f${o.if ? " if-" + o.if : ""}" ${o.if && !DATA[o.if] ? 'hidden' : ""}><span>${label}</span><div class="in">${inner}</div></label>`;
+}
+function openDoc(id) {
+  CUR = DOCS.find(d => d.id === id); if (!CUR) return; DATA = loadData(CUR);
+  $("vHome").classList.add("hidden"); $("vForm").classList.remove("hidden"); $("fTitle").textContent = CUR.title; scrollTo(0, 0);
+  let h = "", open = false;
+  CUR.fields.forEach(f => {
+    if (f[0] === "g") { if (open) h += "</fieldset>"; h += `<fieldset><div class="lg">${f[1]}</div>`; open = true; }
+    else if (f[0] === "2") h += `<div class="row2">${fieldHtml(...f[1])}${fieldHtml(...f[2])}</div>`;
+    else if (f[0] === "clauses") { if (open) h += "</fieldset>"; open = false; h += `<fieldset><div class="lg">بنود إضافية</div><div id="clauses"></div><button type="button" class="add" id="addCl">＋ إضافة بند</button></fieldset>`; }
+    else { if (f[0] === "date" && open) { h += '</fieldset><fieldset><div class="lg">التاريخ</div>'; } h += fieldHtml(...f); }
+  });
+  if (open) h += "</fieldset>";
+  $("form").innerHTML = h; drawClauses(); bindForm(); preview();
+}
+function drawClauses() {
+  const box = $("clauses"); if (!box) return;
+  box.innerHTML = DATA.clauses.map((c, i) => `<div class="clause"><div class="f" style="flex:1;margin:0"><span>${ordinal(i + 12)}</span><div class="in"><textarea data-cl="${i}">${esc(c)}</textarea><button type="button" class="mic" data-micl="${i}">🎤</button></div></div><button type="button" class="del" data-del="${i}" aria-label="حذف البند">🗑</button></div>`).join("");
+  box.querySelectorAll("[data-cl]").forEach(e => e.oninput = () => { DATA.clauses[+e.dataset.cl] = e.value; changed(); });
+  box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { DATA.clauses.splice(+b.dataset.del, 1); drawClauses(); changed(); });
+  box.querySelectorAll("[data-micl]").forEach(b => b.onclick = () => voice(b, txt => { const i = +b.dataset.micl; DATA.clauses[i] = ((DATA.clauses[i] || "") + " " + txt).trim(); drawClauses(); changed(); }));
+  const a = $("addCl"); if (a) a.onclick = () => { DATA.clauses.push(""); drawClauses(); changed(); const ts = box.querySelectorAll("textarea"); if (ts.length) ts[ts.length - 1].focus(); };
+}
+let wordsAuto = true;
+function bindForm() {
+  const F = $("form");
+  wordsAuto = !(DATA.words && DATA.words !== tafqit(DATA.amt));
+  F.querySelectorAll("[data-k]").forEach(e => {
+    const k = e.dataset.k, ev = e.type === "checkbox" || e.tagName === "SELECT" ? "change" : "input";
+    e.addEventListener(ev, () => {
+      DATA[k] = e.type === "checkbox" ? e.checked : e.value;
+      if (e.type === "checkbox") F.querySelectorAll(".if-" + k).forEach(x => x.hidden = !e.checked);
+      if (k === "amt" && CUR.id === "receipt" && wordsAuto) { const w = F.querySelector('[data-k="words"]'); DATA.words = DATA.amt ? tafqit(String(DATA.amt).replace(/[^\d]/g, "")) : ""; if (w) w.value = DATA.words; }
+      if (k === "words") wordsAuto = !e.value.trim();
+      changed();
+    });
+  });
+  F.querySelectorAll("[data-mic]").forEach(b => b.onclick = () => voice(b, txt => {
+    const k = b.dataset.mic, e = F.querySelector(`[data-k="${k}"]`); if (b.dataset.num) txt = toDigits(txt);
+    e.value = e.tagName === "TEXTAREA" && e.value.trim() ? e.value.trim() + " " + txt : txt; e.dispatchEvent(new Event("input"));
+  }));
+  F.querySelectorAll("[data-cal]").forEach(b => b.onclick = () => { const dp = F.querySelector(`[data-dp="${b.dataset.cal}"]`); try { dp.showPicker(); } catch (e) { dp.focus(); dp.click(); } });
+  F.querySelectorAll("[data-dp]").forEach(dp => dp.onchange = () => { if (!dp.value) return; const [y, m, d] = dp.value.split("-"); const e = F.querySelector(`[data-k="${dp.dataset.dp}"]`); e.value = `${+d}/${+m}/${y}`; e.dispatchEvent(new Event("input")); });
+}
+let pvT; function changed() { saveData(); clearTimeout(pvT); pvT = setTimeout(preview, 250); }
+async function fontsReady() { try { await Promise.all(["400 13px \"IBM Plex Sans Arabic\"", "700 13px \"IBM Plex Sans Arabic\""].map(f => document.fonts.load(f, "عربي"))); } catch (e) {} }
+async function preview() {
+  if (!CUR) return; await fontsReady();
+  const D = RENDER[CUR.id](DATA, Math.min(2, (window.devicePixelRatio || 1) * ($("prev").clientWidth || 360) / PW));
+  $("prev").innerHTML = ""; D.pages.forEach(c => $("prev").appendChild(c));
+  $("pgInfo").textContent = D.pages.length > 1 ? D.pages.length + " صفحات A4" : "صفحة A4";
+}
+/* ===== الإدخال الصوتي ===== */
+const voiceCb = {}; let vSeq = 0;
+window.onNativeVoice = (id, text) => { const cb = voiceCb[id]; delete voiceCb[id]; if (cb) cb(text); };
+window.onNativeVoiceError = (id, err) => { const cb = voiceCb[id]; delete voiceCb[id]; if (cb) cb(null, err); };
+function listen(cb) {
+  if (window.AndroidBridge && AndroidBridge.startVoice) { const id = "m" + (++vSeq); voiceCb[id] = cb; try { AndroidBridge.startVoice(id); } catch (e) { delete voiceCb[id]; cb(null, "error"); } return; }
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition; if (!R) { cb(null, "unavailable"); return; }
+  const r = new R(); r.lang = "ar-JO"; r.onresult = e => cb(e.results[0][0].transcript); r.onerror = () => cb(null, "error"); r.start();
+}
+function voice(b, fn) { b.classList.add("on"); listen((txt, err) => { b.classList.remove("on"); if (txt) fn(txt.trim()); else if (err === "unavailable") toast("الإدخال الصوتي غير متوفر على هذا الجهاز"); }); }
+function toDigits(s) { s = String(s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); return /\d/.test(s) ? s.replace(/[^\d/]/g, "") : s; }
+/* ===== PDF ===== */
+async function makePdf() {
+  if (!CUR) return; const b = $("bPdf"); b.disabled = true; const old = b.textContent; b.textContent = "…جاري التجهيز";
+  try {
+    if (!window.jspdf) await new Promise(ok => { const s = document.createElement("script"); s.src = "../jspdf.umd.min.js"; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
+    if (!window.jspdf) throw new Error("تعذّر تحميل مكتبة PDF");
+    await fontsReady();
+    const D = RENDER[CUR.id](DATA, 3.2), pdf = new jspdf.jsPDF({ unit: "pt", format: "a4", compress: true });
+    D.pages.forEach((c, i) => { if (i) pdf.addPage("a4", "p"); pdf.addImage(c.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, PW, PH, undefined, "FAST"); });
+    const who = (DATA.n1 || DATA.n || DATA.p1n || DATA.rn || "").trim().split(/\s+/).slice(0, 2).join(" ");
+    const name = (CUR.file + (who ? " - " + who : "")).replace(/[\\/:*?"<>|]+/g, "-") + ".pdf";
+    const blob = pdf.output("blob");
+    if (window.AndroidBridge && AndroidBridge.saveFile) {
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
+      AndroidBridge.saveFile(name, b64, "application/pdf");
+    } else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000); toast("حُفظ " + name); }
+  } catch (e) { toast("تعذّر إنشاء PDF: " + (e.message || e)); }
+  finally { b.disabled = false; b.textContent = old; }
+}
+$("bPdf").onclick = makePdf;
+$("bClear").onclick = () => { if (!confirm("تفريغ كل الخانات في «" + CUR.title + "»؟")) return; try { localStorage.removeItem(KEY(CUR.id)); } catch (e) {} openDoc(CUR.id); };
+function showHome() { CUR = null; $("vForm").classList.add("hidden"); $("vHome").classList.remove("hidden"); }
+$("bBack").onclick = () => history.back();
+addEventListener("popstate", e => { if (e.state && e.state.f) openDoc(e.state.f); else showHome(); });
+home();
+</script>
+</body>
+</html>

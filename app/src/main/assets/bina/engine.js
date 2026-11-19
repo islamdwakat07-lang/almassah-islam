@@ -209,7 +209,7 @@
         // تدقيق: نزلق الشكل بخطوات 1 سم نحو الشارع (أو الخلف) ما دام داخل الغلاف، فيلتصق بخط الارتداد تماماً
         if (slideW) {
           const du = slideW[0] * F.d[0] + slideW[1] * F.d[1], dvv = slideW[0] * F.n[0] + slideW[1] * F.n[1];
-          for (const st of [0.1, 0.01]) for (let k = 0; k < 400; k++) { if (verifyW(toW(shapeL, ox + du * st, oy + dvv * st))) { ox += du * st; oy += dvv * st; } else break; }
+          for (const st of [0.1, 0.01, 0.002]) for (let k = 0; k < 400; k++) { if (verifyW(toW(shapeL, ox + du * st, oy + dvv * st))) { ox += du * st; oy += dvv * st; } else break; }
         }
         return Object.assign({ kind, name, dir: D.name, dirIdx: D.i, local: shapeL, ox, oy, poly: toW(shapeL, ox, oy), area: Math.abs(ringArea(shapeL)) }, info);
       };
@@ -228,6 +228,29 @@
           o = mk("roundAll", "كل الزوايا مقوّسة – " + f.lab, shapes.roundAll(f.w, h2, R2), { w: f.w, h: h2, R: R2 }); if (o) opts.push(o);
           const fb = Math.min(2.5, f.w * 0.14), h3 = (A - bowArea(f.w, fb)) / f.w;
           if (h3 > 5) { o = mk("bowFront", "واجهة مقوّسة نحو الشارع – " + f.lab, shapes.bowFront(f.w, h3, fb), { w: f.w, h: h3, f: fb }); if (o) opts.push(o); }
+        }
+      }
+      // يملأ العرض بين الارتدادات الجانبية: أعرض بناء ممكن ملاصق للشارع (مهم للأراضي الضيقة)
+      if (D === dirs[0] && pref !== "mid") {
+        const fw = fits.slice().sort((a, b) => b.w - a.w)[0];
+        if (fw && fw.w < wMax - 1.5 * s) {
+          const build = w => { const h = A / w;
+            if (!arcs) return { kind: "rect", shape: shapes.rect(w, h), info: { w, h } };
+            const R = Math.min(3, w / 4, h / 4), k1 = (4 - Math.PI) / 4 * R * R * 2, h1 = (A + k1) / w;
+            return { kind: "roundFront", shape: shapes.roundFront(w, h1, R), info: { w, h: h1, R } }; };
+          let w = fw.w, b0 = build(w);
+          let o = mk(b0.kind, (arcs ? "زاويتان أماميتان مقوّستان" : "مستطيل") + " – يملأ العرض بين الارتدادات الجانبية", b0.shape, b0.info);
+          if (o) {
+            // توسيع بخطوات 5 سم ثم 1 سم يميناً ويساراً حتى يلمس خطي الارتداد الجانبيين (العمق يقل ليبقى نفس المساحة)
+            let ox = o.ox, oy = o.oy;
+            for (const st of [0.05, 0.01, 0.002]) for (let k = 0; k < 600; k++) {
+              const bL = build(w + st), okL = within(toW(bL.shape, ox - st, oy), env.ring), okR = !okL && within(toW(bL.shape, ox, oy), env.ring);
+              if (okL) { w += st; ox -= st; } else if (okR) w += st; else break;
+            }
+            const b = build(w);
+            Object.assign(o, b.info, { local: b.shape, ox, oy, poly: toW(b.shape, ox, oy), area: Math.abs(ringArea(b.shape)) });
+            opts.push(o);
+          }
         }
       }
       // أشكال L (زوايا قائمة): أعرض من المستطيل في الأمام مع جناح خلفي
@@ -267,14 +290,34 @@
   }
 
   /* ---------- الأعمدة ---------- */
+  /* تقسيم واجهة إلى بحور، كل بحر لا يزيد عن MAXS (5 م) بين محاور الأعمدة
+     eq: متساوية بأقل عدد · eqp: متساوية بعمود إضافي · sym: متماثلة بحر وسطي أوسع · svc: بحر 3 م للدرج/الخدمات ثم متساوية */
+  const MAXS = 5.0;
+  function spansOf(seg, mode) {
+    const n0 = Math.max(1, Math.ceil(seg / MAXS - 1e-6)), eq = n => Array(n).fill(seg / n);
+    if (seg <= MAXS + 1e-6 && mode !== "eqp") return [seg];
+    if (mode === "eqp") { const n = n0 + 1; return seg / n >= 2.4 ? eq(n) : eq(n0); }
+    if (mode === "sym") {
+      const n = Math.max(3, n0); if (seg / n < 2.4) return eq(n0);
+      // البحر/البحران الأوسطيان أوسع بـ 25% من الطرفيين، والكل ≤ 5 م
+      const mid = n % 2 ? 1 : 2, w = Array.from({ length: n }, (_, k) => (n % 2 ? k === (n - 1) / 2 : k === n / 2 - 1 || k === n / 2) ? 1.25 : 1);
+      let sc = seg / w.reduce((a, b) => a + b, 0); let r = w.map(v => v * sc);
+      if (Math.max(...r) > MAXS + 1e-6) { const big = MAXS, rest = (seg - big * mid) / (n - mid); if (rest > 0 && rest <= MAXS) r = w.map(v => v > 1 ? big : rest); else return eq(Math.max(n, n0)); }
+      return r;
+    }
+    if (mode === "svc") {
+      if (seg < 7) return eq(n0);
+      const rest = seg - 3, n = Math.max(1, Math.ceil(rest / MAXS - 1e-6));
+      return [3, ...Array(n).fill(rest / n)];
+    }
+    return eq(n0);
+  }
   function splitAxis(L, breaks, mode) {
     const pts = [0, ...breaks.filter(b => b > 0.5 && b < L - 0.5).sort((a, b) => a - b), L], out = [0];
     for (let k = 0; k + 1 < pts.length; k++) {
-      const seg = pts[k + 1] - pts[k];
-      let n = mode === "few" ? Math.ceil(seg / 5.5 - 1e-6) : mode === "short" ? Math.ceil(seg / 3.8 - 1e-6) : Math.ceil(seg / 4.6 - 1e-6);
-      while (seg / n > 5.5 + 1e-6) n++;
-      n = Math.max(1, n);
-      for (let i = 1; i <= n; i++) out.push(pts[k] + seg * i / n);
+      let acc = pts[k];
+      const sp = spansOf(pts[k + 1] - pts[k], mode);
+      sp.forEach((v, i) => { acc += v; out.push(i === sp.length - 1 ? pts[k + 1] : acc); });
     }
     return out;
   }
@@ -284,7 +327,8 @@
     for (const p of sh) { mu = Math.min(mu, p[0]); mv = Math.min(mv, p[1]); xu = Math.max(xu, p[0]); xv = Math.max(xv, p[1]); }
     const W = o.w, H = o.h;
     const bx = o.kind === "L" ? [o.side === "r" ? W - o.w2 : o.w2] : [], by = o.kind === "L" ? [o.h1] : [];
-    const xs = splitAxis(W, bx, mode), ys = splitAxis(H, by, mode);
+    const [mx, my] = String(mode).includes("|") ? String(mode).split("|") : [mode, mode];
+    const xs = splitAxis(W, bx, mx), ys = splitAxis(H, by, my);
     const inShape = p => pip(p, sh) || sh.some((a, k) => segDist(p, a, sh[(k + 1) % sh.length]) < 0.03);
     const cols = [];
     xs.forEach((x, ix) => ys.forEach((y, iy) => {

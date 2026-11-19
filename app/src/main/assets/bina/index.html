@@ -324,14 +324,15 @@ document.addEventListener("click", e => { if (e.target && e.target.id === "useMa
 $("#opts").addEventListener("click", e => { const b = e.target.closest("[data-o]"); if (!b) return; document.querySelectorAll(".opt").forEach(x => x.setAttribute("aria-pressed", x === b)); select(+b.dataset.o); });
 
 /* ---------- البناء المختار ---------- */
-const COLM = [["mid", "بحور متوسطة (حتى ~4.6 م)"], ["few", "أقل عدد أعمدة (حتى 5.5 م)"], ["short", "بحور قصيرة (حتى ~3.8 م)"]];
-let colMode = "mid", colList = [];
+const COLM = [["eq|eq", "بحور متساوية – أقل عدد أعمدة"], ["sym|sym", "متماثلة – بحور وسطى أوسع للصالة"], ["svc|eq", "بحر 3 م للدرج والخدمات على العرض"], ["eq|svc", "بحر 3 م للدرج والخدمات على العمق"],
+  ["sym|eq", "واجهة متماثلة وعمق متساوٍ"], ["eqp|eqp", "بحور أقصر – أعمدة أكثر"]];
+let colMode = "eq|eq", colList = [];
 function select(i) {
   SEL = RES.options[i]; st.sel = i; save();
   // خيارات الأعمدة بلا تكرار
-  colList = []; for (const [m, n] of COLM) { const c = Bina.columns(SEL, m, st.P); if (!colList.some(x => x.c.xs.length === c.xs.length && x.c.ys.length === c.ys.length)) colList.push({ m, n, c }); }
+  colList = []; for (const [m, n] of COLM) { const c = Bina.columns(SEL, m, st.P); const sig = c.xs.map(v => v.toFixed(2)).join() + "/" + c.ys.map(v => v.toFixed(2)).join(); if (!colList.some(x => x.sig === sig)) colList.push({ m, n, c, sig }); }
   if (!colList.some(x => x.m === colMode)) colMode = colList[0].m;
-  $("#colChips").innerHTML = colList.map(x => `<button type="button" data-m="${x.m}" aria-pressed="${x.m === colMode}">${x.n} · ${x.c.count} عمود</button>`).join("");
+  $("#colChips").innerHTML = colList.map(x => `<button type="button" data-m="${x.m}" aria-pressed="${x.m === colMode}">${x.n} · ${x.c.count} عمود · أكبر بحر ${fmt(x.c.maxSpan)} م</button>`).join("");
   $("#cSel").classList.remove("hide"); drawSel();
   $("#cSel").scrollIntoView({ behavior: "smooth", block: "start" });
 }

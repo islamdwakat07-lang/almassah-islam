@@ -55,7 +55,7 @@
       const L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 1e-6) return;
       const nx = -(b[1] - a[1]) / L * d, ny = (b[0] - a[0]) / L * d;
       cuts.push([[[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny], [a[0] + nx, a[1] + ny]]]);
-      [a, b].forEach(q => { const c = circle(q, d, 48); c.push(c[0]); cuts.push([c]); });
+      [a, b].forEach(q => { const c = circle(q, d / Math.cos(Math.PI / 48) + 1e-4, 48); c.push(c[0]); cuts.push([c]); });
     });
     const base = [[...P.map(p => p.slice()), P[0].slice()]];
     let res = cuts.length ? pc.difference(base, ...cuts) : [base];
@@ -232,8 +232,10 @@
       }
       // يملأ العرض بين الارتدادات الجانبية: أعرض بناء ممكن ملاصق للشارع (مهم للأراضي الضيقة)
       if (D === dirs[0] && pref !== "mid") {
-        const fw = fits.slice().sort((a, b) => b.w - a.w)[0];
-        if (fw && fw.w < wMax - 1.5 * s) {
+        // أعرض مستطيل يلامس خط الارتداد (أول صف من الشبكة من جهة الشارع أو الخلف)
+        const atEdge = f => pref === "back" ? (f.pl.j + Math.round(A / f.w / s)) >= g.nv - 2 : f.pl.j <= 1;
+        const fw = fits.filter(atEdge).sort((a, b) => b.w - a.w)[0];
+        if (fw && fw.w < wMax - 1.5 * s && !opts.some(x => x.dirIdx === D.i && Math.abs(x.w - fw.w) < 0.3)) {
           const build = w => { const h = A / w;
             if (!arcs) return { kind: "rect", shape: shapes.rect(w, h), info: { w, h } };
             const R = Math.min(3, w / 4, h / 4), k1 = (4 - Math.PI) / 4 * R * R * 2, h1 = (A + k1) / w;
@@ -263,6 +265,28 @@
           const o = mk("L", "شكل L – جناح خلفي " + (side === "r" ? "يمين" : "يسار"), shapes.L(w, h1, w2, h2, side), { w, h: h1 + h2, w2, h1, h2, side });
           if (o && !opts.some(x => x.kind === "L" && x.dir === D.name && x.side === side)) { opts.push(o); nL++; }
         }
+      }
+    }
+    // شكل يتبع خطوط الارتداد نفسها: من خط الارتداد الأمامي (أو الخلفي) بكامل العرض المسموح حتى تكتمل المساحة
+    if (pref !== "mid") {
+      const pc = G.polygonClipping, F = F0, envL = env.ring.map(F.loc);
+      let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+      envL.forEach(p => { u0 = Math.min(u0, p[0]); u1 = Math.max(u1, p[0]); v0 = Math.min(v0, p[1]); v1 = Math.max(v1, p[1]); });
+      const ringE = [[...envL, envL[0]]];
+      const cut = t => { const band = pref === "back" ? [[[u0 - 1, t], [u1 + 1, t], [u1 + 1, v1 + 1], [u0 - 1, v1 + 1], [u0 - 1, t]]] : [[[u0 - 1, v0 - 1], [u1 + 1, v0 - 1], [u1 + 1, t], [u0 - 1, t], [u0 - 1, v0 - 1]]];
+        const r = pc.intersection(ringE, band); let best = null, ba = 0;
+        for (const poly of r) { const q = clean(poly[0]); const a = Math.abs(ringArea(q)) - poly.slice(1).reduce((x, h) => x + Math.abs(ringArea(h)), 0); if (a > ba) { ba = a; best = q; } }
+        return { ring: best, area: ba }; };
+      let lo = v0, hi = v1, res = null;
+      for (let k = 0; k < 45; k++) { const t = (lo + hi) / 2, a = cut(t).area;
+        if (pref === "back") { if (a > A) lo = t; else hi = t; } else { if (a < A) lo = t; else hi = t; } }
+      const t = pref === "back" ? lo : hi; res = cut(t);
+      if (res.ring && Math.abs(res.area - A) < Math.max(0.5, A * 0.01) && res.ring.length >= 3) {
+        const R = ccw(res.ring); let mu = Infinity, mv = Infinity, xu = -Infinity, xv = -Infinity;
+        R.forEach(p => { mu = Math.min(mu, p[0]); mv = Math.min(mv, p[1]); xu = Math.max(xu, p[0]); xv = Math.max(xv, p[1]); });
+        const local = R.map(p => [p[0] - mu, p[1] - mv]);
+        opts.unshift({ kind: "fill", name: "يتبع خطوط الارتداد – يستغل كل سم", dir: dirs[0].name, dirIdx: dirs[0].i, local, ox: mu, oy: mv,
+          poly: R.map(F.wld), area: Math.abs(ringArea(R)), w: xu - mu, h: xv - mv });
       }
     }
     if (!opts.length) out.warn.push("لم أجد شكلاً بهذه المساحة يحترم كل الارتدادات. جرّب مساحة أصغر أو ارتدادات أقل.");
@@ -322,7 +346,46 @@
     return out;
   }
   const COL = [0.25, 0.5];
+  /* أعمدة لشكل غير منتظم (يتبع خطوط الارتداد): صفوف بعرض الشكل، وأعمدة طرفية على الحد المائل لكل صف */
+  function columnsFill(o, mode, P) {
+    const sh = o.local, W = o.w, H = o.h;
+    const [mx, my] = String(mode).includes("|") ? String(mode).split("|") : [mode, mode];
+    const xs = splitAxis(W, [], mx), ys = splitAxis(H, [], my);
+    const inShape = p => pip(p, sh) || sh.some((a, k) => segDist(p, a, sh[(k + 1) % sh.length]) < 0.03);
+    const rowSpan = y => { const X = []; sh.forEach((p, i) => { const q = sh[(i + 1) % sh.length]; if ((p[1] - y) * (q[1] - y) <= 0 && p[1] !== q[1]) X.push(p[0] + (y - p[1]) / (q[1] - p[1]) * (q[0] - p[0])); });
+      X.sort((a, b) => a - b); return X.length >= 2 ? [X[0], X[X.length - 1]] : null; };
+    const cols = [];
+    ys.forEach((y0, iy) => {
+      const yy = Math.min(H - 0.13, Math.max(0.13, y0)), sp = rowSpan(yy); if (!sp) return;
+      const xa = sp[0] + 0.13, xb = sp[1] - 0.13, row = [xa];
+      xs.forEach(x => { if (x > xa + 1.5 && x < xb - 1.5) row.push(x); });
+      row.push(xb);
+      // لا يزيد أي بحر عن 5 م
+      for (let k = 0; k + 1 < row.length; k++) if (row[k + 1] - row[k] > MAXS + 1e-6) { const n = Math.ceil((row[k + 1] - row[k]) / MAXS); const add = []; for (let j = 1; j < n; j++) add.push(row[k] + (row[k + 1] - row[k]) * j / n); row.splice(k + 1, 0, ...add); k += add.length; }
+      row.forEach((x, ix) => cols.push({ p: [x, y0], ix, iy, edge: true }));
+    });
+    cols.forEach(c => {
+      const longX = c.iy === 0 || c.iy === ys.length - 1; c.a = longX ? COL[1] : COL[0]; c.b = longX ? COL[0] : COL[1];
+      let [x, y] = c.p; const cx = W / 2, cy = H / 2;
+      const inside = (x, y) => [[x - c.a / 2, y - c.b / 2], [x + c.a / 2, y - c.b / 2], [x + c.a / 2, y + c.b / 2], [x - c.a / 2, y + c.b / 2]].every(q => inShape(q));
+      for (let k = 0; k < 120 && !inside(x, y); k++) { const dx = cx - x, dy = cy - y, d = Math.hypot(dx, dy) || 1; x += dx / d * 0.01; y += dy / d * 0.01; }
+      c.p = [x, y];
+    });
+    const spans = arr => arr.slice(1).map((v, k) => v - arr[k]);
+    const F = frame(P, o.dirIdx), w = q => F.wld([q[0] + o.ox, q[1] + o.oy]);
+    const rectW = c => [[-c.a / 2, -c.b / 2], [c.a / 2, -c.b / 2], [c.a / 2, c.b / 2], [-c.a / 2, c.b / 2]].map(([u, v]) => w([c.p[0] + u, c.p[1] + v]));
+    let maxSpan = Math.max(...spans(ys));
+    ys.forEach((_, iy) => { const r = cols.filter(c => c.iy === iy).map(c => c.p[0]).sort((a, b) => a - b); spans(r).forEach(v => maxSpan = Math.max(maxSpan, v)); });
+    return {
+      mode, xs, ys, spansX: spans(xs), spansY: spans(ys), count: cols.length,
+      cols: cols.map(c => ({ c: w(c.p), poly: rectW(c), ix: c.ix, iy: c.iy })),
+      axesX: xs.map(x => [w([x, -1.5]), w([x, H + 1.5])]),
+      axesY: ys.map(y => [w([-1.5, y]), w([W + 1.5, y])]),
+      maxSpan
+    };
+  }
   function columns(o, mode, P) {
+    if (o.kind === "fill") return columnsFill(o, mode, P);
     const sh = o.local; let mu = Infinity, mv = Infinity, xu = -Infinity, xv = -Infinity;
     for (const p of sh) { mu = Math.min(mu, p[0]); mv = Math.min(mv, p[1]); xu = Math.max(xu, p[0]); xv = Math.max(xv, p[1]); }
     const W = o.w, H = o.h;

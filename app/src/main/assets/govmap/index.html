@@ -143,7 +143,7 @@ function remember(p) {
   save(st); renderHist();
 }
 function renderHist() {
-  $("#hist").innerHTML = st.hist.length ? st.hist.map((h, i) => `<div class="h"><button class="use" type="button" data-i="${i}"><span>X ${h.x}</span><span>Y ${h.y}</span></button><button class="del" type="button" data-d="${i}" aria-label="حذف">✕</button></div>`).join("") : '<p class="empty">لا توجد نقاط بعد.</p>';
+  $("#hist").innerHTML = st.hist.length ? st.hist.map((h, i) => `<div class="h"><button class="use" type="button" data-i="${i}">${h.n ? `<span style="direction:rtl;font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;margin-left:auto">${h.n.replace(/[<>&]/g,"")}</span>` : ""}<span>X ${h.x}</span><span>Y ${h.y}</span></button><button class="del" type="button" data-d="${i}" aria-label="حذف">✕</button></div>`).join("") : '<p class="empty">لا توجد نقاط بعد.</p>';
 }
 $("#hist").addEventListener("click", e => {
   const u = e.target.closest("[data-i]"), d = e.target.closest("[data-d]");

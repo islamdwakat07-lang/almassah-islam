@@ -69,6 +69,10 @@ select:disabled{opacity:.55}
 .noDims .dimLbl{display:none}
 .pdfBtn{margin:4px 0 8px;background:linear-gradient(180deg,#9a5a1c,#7a4512)}
 .pinIcon{filter:drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+.pSum{border:1.5px solid var(--am-gold-500,#c9a24a);border-radius:14px;padding:8px 10px;margin:8px 0;background:#fffaf0}
+.pBtns{display:grid;gap:8px;margin-top:8px}
+.pBtns .go{margin:0}
+.pBtns .go.sec{background:#fffaf0;color:var(--am-green-800,#0f5a37);box-shadow:0 0 0 1.5px var(--am-gold-500,#c9a24a)}
 </style>
 <script src="../archive.js"></script>
 </head>
@@ -438,6 +442,70 @@ $("#goP").addEventListener("click", async () => {
   finally { $("#goP").disabled = false; }
 });
 
+/* ---------- ملخص القطعة + فتحها على GOV إسلام ---------- */
+let LAST_ID = [];
+const ringOf = g => (g && g.rings || []).slice().sort((a, b) => Math.abs(ringArea(b)) - Math.abs(ringArea(a)))[0] || [];
+function inside(pt, r) { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+/* نقطة داخل القطعة: مركز الثقل، وإن وقع خارجها (قطعة معوجّة) فمنتصف أطول خط أفقي يمر بها */
+function innerPoint(r) {
+  let A = 0, cx = 0, cy = 0;
+  for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length], f = a[0] * b[1] - b[0] * a[1]; A += f; cx += (a[0] + b[0]) * f; cy += (a[1] + b[1]) * f; }
+  if (Math.abs(A) > 1e-9) { cx /= 3 * A; cy /= 3 * A; if (inside([cx, cy], r)) return [cx, cy]; }
+  const ys = r.map(p => p[1]), y0 = Math.min(...ys), y1 = Math.max(...ys); let best = null;
+  for (let k = 1; k < 20; k++) { const y = y0 + (y1 - y0) * k / 20, xs = [];
+    for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; if ((a[1] > y) !== (b[1] > y)) xs.push(a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); }
+    xs.sort((p, q) => p - q); for (let i = 0; i + 1 < xs.length; i += 2) { const w = xs[i + 1] - xs[i]; if (!best || w > best.w) best = { w, x: (xs[i] + xs[i + 1]) / 2, y }; } }
+  return best ? [best.x, best.y] : r[0];
+}
+const toITM = p => proj4("EPSG:28191", "EPSG:2039", p);
+/* حقول طبقات المعلومات تأتي أحياناً بأسمائها الإنجليزية وأحياناً بأسمائها العربية */
+function idAttr(re, ...fs) { for (const r of LAST_ID) { if (!re.test(arName(r.layerName) + "|" + r.layerName) || !r.attributes) continue;
+  for (const f of fs) { const v = r.attributes[f]; if (v != null && String(v).trim() && !/^(null|غير متوفر)$/i.test(String(v).trim())) return String(v).trim(); } } return ""; }
+function parcelBox() {
+  const box = $("#pBox"); if (!box) return;
+  if (!curParcel || !curParcel.geom) { box.innerHTML = ""; return; }
+  const r = ringOf(curParcel.geom); if (r.length < 3) { box.innerHTML = ""; return; }
+  const q = curParcel.q || {}, a = curParcel.attrs || {}, area = Math.abs(ringArea(r));
+  const c = toITM(innerPoint(r));
+  const NAT = /الطبيعية|Non-Registered/i;
+  const natNo = idAttr(NAT, "BlockNumber", "رقم الحوض"), natName = idAttr(NAT, "BlockName_Arabic", "اسم الحوض"), site = idAttr(NAT, "SiteName_Arabic", "اسم الموقع");
+  const regName = idAttr(/أحواض التسوية|Blocks-Registered/i, "BLOCK_A", "اسم الحوض");
+  const abc = idAttr(/أ، ب، ج|A, B, C/i, "LandClassificationValue_Arabic", "التصنيف");
+  const plot = q.plot || a.Plot_NO || a.ParcelNumber || "", blk = q.bn || a.BLOCK_NO || a.BlockNumber || "", vil = q.vil || a.VILLAGE_A || a.CommunityName_Arabic || "";
+  const row = (k, v) => v ? `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>` : "";
+  box.innerHTML = `<div class="res pSum"><h4>ملخص القطعة</h4><table>
+    ${row("القطعة", [plot && "قطعة " + plot, blk && "حوض " + blk, vil].filter(Boolean).join(" – "))}
+    ${row("المساحة من الحدود المرسومة", Math.round(area).toLocaleString("en-US") + " م²")}
+    ${row("اسم الحوض", regName && regName !== String(blk) ? regName : "")}
+    ${row("الحوض الطبيعي", [natNo, natName && natName !== natNo ? natName : ""].filter(Boolean).join(" – "))}
+    ${row("اسم الموقع", site)}
+    ${row("المنطقة", abc)}
+    ${row("مركز القطعة ITM", "X " + c[0].toFixed(2) + "   Y " + c[1].toFixed(2))}
+    </table>${LAST_ID.length ? "" : '<p class="msg" style="color:var(--am-muted)">…جاري جلب الحوض الطبيعي والمنطقة</p>'}
+    <div class="pBtns"><button class="go" type="button" id="toGov">🗺️ افتح القطعة على GOV إسلام</button>
+    <button class="go sec" type="button" id="cpITM">📋 نسخ إحداثيات الرؤوس ITM</button></div><p class="msg" id="pMsg2"></p></div>`;
+}
+function govOpen() {
+  const r = ringOf(curParcel && curParcel.geom); if (r.length < 3) return;
+  const c = toITM(innerPoint(r)), x = Math.round(c[0] * 100) / 100, y = Math.round(c[1] * 100) / 100;
+  let g = {}; try { g = JSON.parse(localStorage.getItem("govmap-xy-v1") || "null") || {}; } catch (e) {}
+  const q = curParcel.q || {}, a = curParcel.attrs || {};
+  const n = ["قطعة " + (q.plot || a.Plot_NO || a.ParcelNumber || ""), "حوض " + (q.bn || a.BLOCK_NO || a.BlockNumber || ""), q.vil || a.VILLAGE_A || a.CommunityName_Arabic || ""].filter(v => v && !/ $/.test(v)).join(" – ");
+  g.hist = [{ x, y, t: Date.now(), n }, ...(g.hist || []).filter(h => !(h.x === x && h.y === y))].slice(0, 20);
+  try { localStorage.setItem("govmap-xy-v1", JSON.stringify(g)); } catch (e) {}
+  const u = `https://www.govmap.gov.il/?c=${x},${y}&z=${g.z != null ? g.z : 9}&lay=${g.lay || "189,188,181"}&b=${g.b || "1"}`;
+  if (window.AndroidBridge && AndroidBridge.openMap) AndroidBridge.openMap(u, g.open === "ext"); else window.open(u, "_blank", "noopener");
+}
+async function copyITM() {
+  const r = corners(ringOf(curParcel && curParcel.geom)); if (r.length < 3) return;
+  const q = curParcel.q || {};
+  const t = (q.plot ? `قطعة ${q.plot} حوض ${q.bn} ${q.vil} – إحداثيات ITM\n` : "إحداثيات ITM\n") + r.map((p, i) => { const m = toITM(p); return `${i + 1}\t${m[0].toFixed(2)}\t${m[1].toFixed(2)}`; }).join("\n");
+  let ok = false;
+  try { if (window.AndroidBridge && AndroidBridge.copy) { AndroidBridge.copy(t); ok = true; } else { await navigator.clipboard.writeText(t); ok = true; } } catch (e) {}
+  const m = $("#pMsg2"); if (m) { m.textContent = ok ? `نُسخت إحداثيات ${r.length} رؤوس (رقم، X، Y).` : t; m.style.color = ok ? "#1e6b4a" : ""; }
+}
+document.addEventListener("click", e => { const id = e.target && e.target.id; if (id === "toGov") govOpen(); else if (id === "cpITM") copyITM(); });
+
 /* ---------- identify (what's at a point) ---------- */
 const LABELS = { AgriculturalValue_Arabic: "القيمة الزراعية", GOV_A: "المحافظة", VILLAGE_A: "البلدة", BLOCK_A: "اسم الحوض", BLOCK_NO: "رقم الحوض", SUB_BLOCK_A: "اسم الحي", SUB_BLOCK_NO: "رقم الحي", Plot_NO: "رقم القطعة", Shape_Area: "المساحة (م²)", SHAPE_Area: "المساحة (م²)", "Shape.STArea()": "المساحة (م²)",
   VILLAGE_NO: "رقم البلدة", BlockNumber: "رقم الحوض", BlockName_Arabic: "اسم الحوض", CommunityName_Arabic: "التجمع", SiteName_Arabic: "اسم الموقع", ParcelNumber: "رقم القطعة", QuarterNumber: "رقم الحي", QuarterName_Arabic: "اسم الحي", GovernorateName_Arabic: "المحافظة", RegistrationType_Arabic: "نوع التسجيل" };
@@ -465,11 +533,11 @@ function fmtXY(x, y) {
 }
 function showInfo(title, groups, xy) {
   $("#infoTitle").textContent = title;
-  $("#infoBody").innerHTML = '<button class="go pdfBtn" type="button" id="pdfBtn" hidden>📄 تصدير مخطط القطعة PDF</button>' + (xy ? `<div class="xyline">${fmtXY(xy[0], xy[1])}</div>` : "") + groups.map(g =>
+  $("#infoBody").innerHTML = '<button class="go pdfBtn" type="button" id="pdfBtn" hidden>📄 تصدير مخطط القطعة PDF</button><div id="pBox"></div>' + (xy ? `<div class="xyline">${fmtXY(xy[0], xy[1])}</div>` : "") + groups.map(g =>
     `<div class="res"><h4>${esc(g.title)}</h4><table>${Object.entries(g.attrs).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("") || '<tr><td colspan="2">—</td></tr>'}</table></div>`).join("") + '<div id="idMore"></div>';
   showSheet("#shInfo"); pdfBtnState();
 }
-function pdfBtnState() { const b = $("#pdfBtn"); if (b) b.hidden = !curParcel; }
+function pdfBtnState() { const b = $("#pdfBtn"); if (b) b.hidden = !curParcel; parcelBox(); }
 document.addEventListener("click", e => { if (e.target && e.target.id === "pdfBtn") pdfOptions(); });
 function pdfOptions() {
   const o = st.pdf || { grid: false, sys: "pg", page: false };
@@ -496,6 +564,7 @@ async function identifyAt(x, y, append) {
     mapExtent: [a[0], a[1], b[0], b[1]].join(","), imageDisplay: s.x + "," + s.y + ",96", returnGeometry: "true" }, w.cfg.tk ? { token: TK } : {}))
     .then(j => ({ w, j })).catch(() => null));
   const out = (await Promise.all(jobs)).filter(Boolean);
+  LAST_ID = out.flatMap(({ j }) => j.results || []);
   const groups = []; let parcelGeom = null, parcelAttrs = null;
   const order = LAYERS.map(l => l.svc);
   out.sort((p, q) => order.indexOf(p.w.cfg.svc) - order.indexOf(q.w.cfg.svc));

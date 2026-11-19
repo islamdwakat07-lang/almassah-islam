@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="bina">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>تصميم البناء</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif}
+main{max-width:620px;margin:0 auto;padding:12px 14px 60px}
+h1{font:700 26px/1.3 var(--am-title);color:var(--am-green-800);margin:6px 0 2px}
+.lead{color:var(--am-muted);margin:0 0 12px;font-size:14.5px}
+.card{background:var(--am-card);border:1.5px solid var(--am-line);border-radius:18px;padding:14px;box-shadow:0 10px 22px -16px rgba(8,42,27,.5),inset 0 1px 0 #fff;margin-bottom:12px}
+h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+h2 .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--am-btn);color:#f3dc93;font:700 15px "IBM Plex Sans Arabic";box-shadow:0 0 0 1.5px var(--am-gold-400)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px;color:var(--am-green-800);min-width:0}
+label.f small{font-weight:500;color:var(--am-muted)}
+input,select,textarea{font:500 18px "IBM Plex Mono",monospace;direction:ltr;text-align:left;padding:10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;color:var(--am-ink);width:100%;min-width:0}
+select{font:600 15px "IBM Plex Sans Arabic",Tahoma,sans-serif;direction:rtl;text-align:right}
+textarea{font-size:14px;min-height:110px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--am-gold-500)}
+.go{display:block;width:100%;margin-top:12px;border:0;border-radius:999px;padding:13px;font:700 18px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400),0 8px 16px -8px rgba(8,42,27,.7);cursor:pointer}
+.go:active{transform:scale(.98)}
+.go:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{flex:1;border:1.5px solid var(--am-gold-500);border-radius:999px;padding:10px 12px;background:#fffaf0;color:var(--am-green-800);font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;cursor:pointer;white-space:nowrap;text-align:center}
+.btn:active{background:var(--am-gold-300)}
+.pick{position:relative;overflow:hidden}
+.pick input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.seg{display:flex;border:1.5px solid var(--am-line);border-radius:999px;overflow:hidden;background:#fffdf6}
+.seg button{flex:1;border:0;background:none;padding:10px 6px;font:700 14.5px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:var(--am-green-800);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--am-btn);color:#fff6d6}
+.msg{margin:10px 0 0;padding:9px 12px;border-radius:12px;font-size:14px}
+.msg.warn{background:#fbf0d2;border:1px solid var(--am-gold-500);color:#7a4e00}
+.msg.bad{background:#fde3e1;border:1px solid #d14b3f;color:#8a1c12}
+.msg.ok{background:#e3efe2;border:1px solid #9cc5a5;color:#1e6b4a}
+.note{font-size:13px;color:var(--am-muted);margin:8px 0 0}
+.draw{background:#fff;border:1.5px solid var(--am-line);border-radius:14px;overflow:hidden;touch-action:manipulation}
+.draw svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--am-ink);margin-top:8px}
+.legend i{display:inline-block;width:18px;height:5px;border-radius:3px;vertical-align:middle;margin-inline-end:5px}
+.edges{display:grid;gap:6px;margin-top:10px}
+.edge{display:flex;align-items:center;gap:8px;font-size:14px}
+.edge b{min-width:58px;color:var(--am-green-800)}
+.edge span{font-family:"IBM Plex Mono",monospace;color:var(--am-muted);direction:ltr;min-width:70px}
+.edge select{padding:6px 10px;font-size:14px;flex:1}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stats div{background:#fffaf0;border:1.5px solid var(--am-line);border-radius:14px;padding:8px 10px}
+.stats b{display:block;font:700 20px "IBM Plex Mono",monospace;color:var(--am-green-800);direction:ltr;text-align:right}
+.stats span{font-size:12.5px;color:var(--am-muted)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;padding:6px;cursor:pointer;text-align:right;font:inherit;color:inherit}
+.opt[aria-pressed=true]{border-color:var(--am-gold-500);box-shadow:0 0 0 2px var(--am-gold-400);background:#fffaf0}
+.opt svg{width:100%;height:auto;display:block;border-radius:10px;background:#fff}
+.opt b{display:block;font-size:13.5px;line-height:1.4;margin:6px 2px 2px;color:var(--am-green-800)}
+.opt small{display:block;font-size:12px;color:var(--am-muted);font-family:"IBM Plex Mono","IBM Plex Sans Arabic",monospace}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+th{background:var(--am-green-800);color:#f3dc93;padding:6px 4px;font-weight:700}
+td{padding:5px 4px;border-bottom:1px solid #eadfbf;text-align:center}
+td.v{font-family:"IBM Plex Mono",monospace;direction:ltr}
+.okc{color:#1e6b4a;font-weight:700}.badc{color:#b91c1c;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1.5px solid var(--am-line);border-radius:999px;background:#fffdf6;padding:8px 12px;font:700 13.5px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:var(--am-green-800);cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--am-btn);color:#fff6d6;border-color:var(--am-gold-500)}
+details summary{cursor:pointer;font-weight:700;color:var(--am-green-800);font-size:14px;margin-top:10px}
+.hide{display:none!important}
+</style>
+<script src="../archive.js"></script>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-bina.png" alt=""><b>تصميم البناء</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <h1>تصميم البناء</h1>
+  <p class="lead">أدخل حدود الأرض والارتدادات ومساحة البناء، ويقترح التطبيق أشكال بناء تحترم الارتدادات، ثم خيارات للأعمدة.</p>
+
+  <section class="card">
+    <h2><span class="n">1</span>حدود الأرض</h2>
+    <div class="row" style="margin-top:0">
+      <label class="btn pick">📂 ملف DXF للأرض<input type="file" id="file" accept=".dxf,application/dxf,image/vnd.dxf,*/*"></label>
+      <button class="btn" id="demo" type="button">أرض مثال للتجربة</button>
+    </div>
+    <details id="manBox"><summary>إدخال الإحداثيات يدوياً</summary>
+      <p class="note">كل رأس في سطر: X ثم Y (مسافة أو فاصلة)، بالترتيب حول الأرض.</p>
+      <textarea id="man" placeholder="175000.00, 180000.00&#10;175030.00, 180002.00&#10;…"></textarea>
+      <button class="btn" id="manGo" type="button" style="width:100%;margin-top:8px">اعتمد الإحداثيات</button>
+    </details>
+    <p class="note" id="pInfo">الملف: بوليلاين مغلق لحدود الأرض. إن كان في الملف أكثر من بوليلاين، يؤخذ الأكبر.</p>
+  </section>
+
+  <section class="card hide" id="cEdges">
+    <h2><span class="n">2</span>الشارع والارتدادات</h2>
+    <p class="note" id="edgeHint" style="margin-top:0">اضغط على ضلع الشارع في الرسم. بعدها يحدد التطبيق الأضلاع الجانبية والخلفية، وتستطيع تغيير أي ضلع بالضغط عليه.</p>
+    <div class="draw" id="pDraw"></div>
+    <div class="legend"><span><i style="background:#d9480f"></i>أمامي (شارع)</span><span><i style="background:#1c64d8"></i>جانبي</span><span><i style="background:#7e22ce"></i>خلفي</span></div>
+    <div class="edges" id="edges"></div>
+    <div class="grid3" style="margin-top:12px">
+      <label class="f">أمامي <small>(م)</small><input id="sF" inputmode="decimal" value="5"></label>
+      <label class="f">جانبي <small>(م)</small><input id="sS" inputmode="decimal" value="3"></label>
+      <label class="f">خلفي <small>(م)</small><input id="sB" inputmode="decimal" value="3"></label>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <label class="f">نسبة البناء <small>(% من مساحة الأرض)</small><input id="cov" inputmode="decimal" value="50"></label>
+      <label class="f">مساحة البناء المطلوبة <small>(م²)</small><input id="area" inputmode="decimal" value="180"></label>
+    </div>
+    <div style="margin-top:12px"><div class="f" style="font-weight:700;font-size:14px;color:var(--am-green-800);margin-bottom:6px">شكل البناء</div>
+      <div class="seg" id="style"><button type="button" data-v="rect" aria-pressed="true">زوايا قائمة</button><button type="button" data-v="arc" aria-pressed="false">بأقواس</button></div></div>
+    <label class="f" style="margin-top:10px">مكان البناء في الأرض<select id="pref"><option value="front">قريب من الشارع</option><option value="mid">في وسط الأرض</option><option value="back">نحو الخلف</option></select></label>
+    <button class="go" id="run" type="button">اقترح أشكال البناء</button>
+    <div id="runMsg"></div>
+  </section>
+
+  <section class="card hide" id="cRes">
+    <h2><span class="n">3</span>خيارات البناء</h2>
+    <div class="stats" id="stats"></div>
+    <div id="resMsg"></div>
+    <div class="opts" id="opts" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card hide" id="cSel">
+    <h2><span class="n">4</span>البناء المختار والأعمدة</h2>
+    <div class="draw" id="sDraw"></div>
+    <div style="margin-top:10px"><div style="font-weight:700;font-size:14px;color:var(--am-green-800);margin-bottom:6px">خيارات الأعمدة</div><div class="chips" id="colChips"></div></div>
+    <div id="selInfo"></div>
+    <p class="note">⚠️ هذه دراسة أولية تساعد في التفكير. مقاسات الأعمدة (25×50 سم) وأماكنها النهائية وتسليحها يحددها مهندس إنشائي، والمخطط المعماري للترخيص يعدّه مهندس مرخّص.</p>
+    <div class="row">
+      <button class="btn" id="exDxf" type="button">⬇ ملف DXF لأوتوكاد</button>
+      <button class="btn" id="exPdf" type="button">⬇ مخطط PDF</button>
+    </div>
+    <p class="note" id="exMsg"></p>
+  </section>
+</main>
+<script src="../polygon-clipping.umd.min.js"></script>
+<script src="../jspdf.umd.min.js"></script>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const KEY = "bina-v1";
+const TCOL = { front: "#d9480f", side: "#1c64d8", back: "#7e22ce" }, TNAME = { front: "أمامي", side: "جانبي", back: "خلفي" };
+const fmt = (v, d = 2) => Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const num = s => parseFloat(String(s == null ? "" : s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/٫/g, ".").replace(/[^\d.\-]/g, ""));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let st = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } })();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+let RES = null, SEL = null, COLS = null;
+
+/* ---------- قراءة DXF ---------- */
+function parseDXF(txt) {
+  const L = txt.split(/\r?\n/), polys = []; let i = 0, sec = "";
+  const pairs = []; for (; i + 1 < L.length; i += 2) pairs.push([parseInt(L[i].trim(), 10), L[i + 1].trim()]);
+  for (let k = 0; k < pairs.length; k++) {
+    const [c, v] = pairs[k];
+    if (c === 2 && pairs[k - 1] && pairs[k - 1][1] === "SECTION") sec = v;
+    if (sec !== "ENTITIES" && sec !== "BLOCKS") continue;
+    if (c === 0 && v === "LWPOLYLINE") {
+      const pts = []; let flag = 0, x = null;
+      for (k++; k < pairs.length && pairs[k][0] !== 0; k++) { const [cc, vv] = pairs[k];
+        if (cc === 70) flag = +vv; if (cc === 10) x = +vv; if (cc === 20 && x != null) { pts.push([x, +vv]); x = null; } }
+      k--; polys.push({ pts, closed: (flag & 1) === 1 });
+    } else if (c === 0 && v === "POLYLINE") {
+      let flag = 0; for (k++; k < pairs.length && pairs[k][0] !== 0; k++) if (pairs[k][0] === 70) flag = +pairs[k][1];
+      const pts = [];
+      while (k < pairs.length && pairs[k][1] === "VERTEX") { let x = null, y = null; for (k++; k < pairs.length && pairs[k][0] !== 0; k++) { if (pairs[k][0] === 10) x = +pairs[k][1]; if (pairs[k][0] === 20) y = +pairs[k][1]; } if (x != null && y != null) pts.push([x, y]); }
+      k--; polys.push({ pts, closed: (flag & 1) === 1 });
+    }
+  }
+  let best = null, ba = 0;
+  for (const p of polys) {
+    let pts = p.pts; if (pts.length < 3) continue;
+    const f = pts[0], l = pts[pts.length - 1], closedGeom = Math.hypot(f[0] - l[0], f[1] - l[1]) < 0.01;
+    if (!p.closed && !closedGeom) continue;
+    const a = Math.abs(Bina.ringArea(Bina.clean(pts))); if (a > ba) { ba = a; best = pts; }
+  }
+  return best;
+}
+function setParcel(P, name) {
+  P = Bina.ccw(Bina.clean(P));
+  if (P.length < 3) { $("#pInfo").textContent = "لم أجد حدود أرض صالحة."; return; }
+  st.P = P; st.name = name || ""; st.types = new Array(P.length).fill("side"); st.hasFront = false; st.sel = null; save();
+  RES = SEL = null; $("#cRes").classList.add("hide"); $("#cSel").classList.add("hide");
+  showParcel();
+  $("#cEdges").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("#file").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const P = parseDXF(await f.text()); if (!P) { $("#pInfo").textContent = "لم أجد بوليلاين مغلقاً في الملف. احفظ حدود الأرض كبوليلاين مغلق (DXF نصي ASCII)."; return; } setParcel(P, f.name.replace(/\.dxf$/i, "")); }
+  catch (er) { $("#pInfo").textContent = "تعذّرت قراءة الملف."; }
+  e.target.value = "";
+});
+$("#demo").addEventListener("click", () => setParcel([[175000, 180000], [175030, 180002], [175032, 180026], [175004, 180031], [174998, 180014]], "أرض مثال"));
+$("#manGo").addEventListener("click", () => {
+  const P = $("#man").value.split(/\n+/).map(l => (l.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).match(/-?\d+(?:\.\d+)?/g) || [])).filter(m => m.length >= 2).map(m => [+m[0], +m[1]]);
+  if (P.length < 3) { $("#pInfo").textContent = "أدخل ثلاثة رؤوس على الأقل."; return; }
+  setParcel(P, "إدخال يدوي");
+});
+
+/* ---------- الرسم ---------- */
+function view(pts, W, H, pad) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of pts) { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }
+  const k = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1)), ox = (W - (x1 - x0) * k) / 2, oy = (H - (y1 - y0) * k) / 2;
+  const T = p => [ox + (p[0] - x0) * k, H - (oy + (p[1] - y0) * k)];
+  T.k = k; return T;
+}
+const pathOf = (r, T) => "M" + r.map(p => T(p).map(v => v.toFixed(1)).join(",")).join("L") + "Z";
+function svgParcel(o) {   // o: {W,H,pad,edges:true,env,bld,cols,labels}
+  const P = st.P, W = o.W, H = o.H, T = view(P, W, H, o.pad || 30);
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans Arabic,Tahoma,sans-serif">`;
+  s += `<path d="${pathOf(P, T)}" fill="#f4efe0" stroke="none"/>`;
+  if (o.env) s += `<path d="${pathOf(o.env, T)}" fill="#e3f1e4" stroke="#2f855a" stroke-width="1.3" stroke-dasharray="6 4"/>`;
+  if (o.axes) o.axes.forEach(a => { const p = T(a.l[0]), q = T(a.l[1]);
+    s += `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="#8a6514" stroke-width=".8" stroke-dasharray="8 3 2 3"/>`;
+    s += `<circle cx="${q[0]}" cy="${q[1]}" r="9" fill="#fff" stroke="#8a6514" stroke-width="1"/><text x="${q[0]}" y="${q[1] + 3.5}" font-size="10" text-anchor="middle" fill="#8a6514" font-weight="700">${a.t}</text>`; });
+  if (o.bld) s += `<path d="${pathOf(o.bld, T)}" fill="rgba(201,154,46,.38)" stroke="#7a4512" stroke-width="2"/>`;
+  if (o.cols) o.cols.forEach(c => s += `<path d="${pathOf(c.poly, T)}" fill="#111" stroke="none"/>`);
+  P.forEach((a, i) => {
+    const b = P[(i + 1) % P.length], pa = T(a), pb = T(b), t = st.types[i] || "side";
+    s += `<line x1="${pa[0]}" y1="${pa[1]}" x2="${pb[0]}" y2="${pb[1]}" stroke="${o.edges ? TCOL[t] : "#333"}" stroke-width="${o.edges ? 4 : 2}" stroke-linecap="round"/>`;
+    if (o.edges) {
+      s += `<line data-e="${i}" x1="${pa[0]}" y1="${pa[1]}" x2="${pb[0]}" y2="${pb[1]}" stroke="transparent" stroke-width="26" style="cursor:pointer"/>`;
+      const mx = (pa[0] + pb[0]) / 2, my = (pa[1] + pb[1]) / 2, L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const nx = -(pb[1] - pa[1]), ny = pb[0] - pa[0], nl = Math.hypot(nx, ny) || 1, off = 14;
+      s += `<g pointer-events="none"><circle cx="${mx + nx / nl * off}" cy="${my + ny / nl * off}" r="10" fill="${TCOL[t]}"/><text x="${mx + nx / nl * off}" y="${my + ny / nl * off + 4}" font-size="11" text-anchor="middle" fill="#fff" font-weight="700">${i + 1}</text></g>`;
+    }
+  });
+  if (o.labels) o.labels.forEach(l => { const p = T(l.p); s += `<text x="${p[0]}" y="${p[1]}" font-size="${l.fs || 11}" text-anchor="middle" fill="${l.c || "#5a3a0c"}" font-weight="700" ${l.rot != null ? `transform="rotate(${l.rot} ${p[0]} ${p[1]})"` : ""} paint-order="stroke" stroke="#fff" stroke-width="3">${l.t}</text>`; });
+  return s + "</svg>";
+}
+function showParcel() {
+  const P = st.P; $("#cEdges").classList.remove("hide");
+  const a = Math.abs(Bina.ringArea(P));
+  $("#pInfo").innerHTML = `<b>${esc(st.name || "الأرض")}</b> – مساحتها <b dir="ltr">${fmt(a)}</b> م² – ${P.length} أضلاع`;
+  $("#pDraw").innerHTML = svgParcel({ W: 600, H: 440, edges: true });
+  $("#edgeHint").innerHTML = st.hasFront ? "حدّد نوع كل ضلع بالضغط عليه في الرسم أو من القائمة." : "<b>اضغط على ضلع الشارع في الرسم.</b> بعدها يحدد التطبيق الأضلاع الجانبية والخلفية، وتستطيع تغيير أي ضلع.";
+  $("#edges").innerHTML = P.map((p, i) => { const q = P[(i + 1) % P.length]; return `<div class="edge"><b>ضلع ${i + 1}</b><span>${fmt(Math.hypot(q[0] - p[0], q[1] - p[1]))} م</span>
+    <select data-i="${i}">${["front", "side", "back"].map(t => `<option value="${t}" ${st.types[i] === t ? "selected" : ""}>${TNAME[t]}</option>`).join("")}</select></div>`; }).join("");
+}
+$("#pDraw").addEventListener("click", e => {
+  const l = e.target.closest("[data-e]"); if (!l) return; const i = +l.dataset.e;
+  if (!st.hasFront) { st.types = Bina.autoTypes(st.P, [i]); st.hasFront = true; }
+  else { const order = ["front", "side", "back"]; st.types[i] = order[(order.indexOf(st.types[i]) + 1) % 3]; }
+  save(); showParcel(); stale();
+});
+$("#edges").addEventListener("change", e => { const s = e.target.closest("select[data-i]"); if (!s) return; st.types[+s.dataset.i] = s.value; st.hasFront = st.types.includes("front"); save(); showParcel(); stale(); });
+function stale() { if (RES) { $("#runMsg").innerHTML = '<p class="msg warn">غيّرت المعطيات. اضغط «اقترح أشكال البناء» لتحديث الخيارات.</p>'; } }
+
+/* ---------- الإدخال ---------- */
+const prmIds = { sF: "front", sS: "side", sB: "back", cov: "cover", area: "area" };
+function readPrm() {
+  const p = {}; for (const [id, k] of Object.entries(prmIds)) p[k] = num($("#" + id).value);
+  p.style = ($("#style [aria-pressed=true]") || {}).dataset ? $("#style [aria-pressed=true]").dataset.v : "rect";
+  p.pref = $("#pref").value; st.prm = p; save(); return p;
+}
+function applyPrm() { const p = st.prm || {}; for (const [id, k] of Object.entries(prmIds)) if (p[k] != null && isFinite(p[k])) $("#" + id).value = p[k];
+  if (p.style) document.querySelectorAll("#style button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === p.style)); if (p.pref) $("#pref").value = p.pref; }
+$("#style").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; document.querySelectorAll("#style button").forEach(x => x.setAttribute("aria-pressed", x === b)); readPrm(); stale(); });
+Object.keys(prmIds).forEach(id => $("#" + id).addEventListener("input", () => { readPrm(); stale(); }));
+$("#pref").addEventListener("change", () => { readPrm(); stale(); });
+
+/* ---------- الاقتراح ---------- */
+$("#run").addEventListener("click", () => {
+  $("#runMsg").innerHTML = "";
+  if (!st.P) return;
+  if (!st.types.includes("front")) { $("#runMsg").innerHTML = '<p class="msg bad">حدد ضلع الشارع (الأمامي) أولاً بالضغط عليه في الرسم.</p>'; return; }
+  const p = readPrm();
+  for (const k of ["front", "side", "back"]) if (!(p[k] >= 0)) { $("#runMsg").innerHTML = '<p class="msg bad">أدخل الارتدادات الثلاثة بالأمتار.</p>'; return; }
+  if (!(p.area > 0)) { $("#runMsg").innerHTML = '<p class="msg bad">أدخل مساحة البناء المطلوبة.</p>'; return; }
+  $("#run").disabled = true; $("#run").textContent = "…جاري البحث عن أشكال";
+  setTimeout(() => {
+    try { RES = Bina.propose(st.P, st.types, p); } catch (er) { RES = null; $("#runMsg").innerHTML = '<p class="msg bad">تعذّر الحساب: ' + esc(er.message) + "</p>"; }
+    $("#run").disabled = false; $("#run").textContent = "اقترح أشكال البناء";
+    if (RES) showRes();
+  }, 30);
+});
+function showRes() {
+  $("#cRes").classList.remove("hide"); $("#cSel").classList.add("hide"); SEL = null;
+  const R = RES, p = st.prm;
+  $("#stats").innerHTML = `<div><b>${fmt(R.parcelArea)}</b><span>مساحة الأرض م²</span></div>
+    <div><b>${R.env ? fmt(R.env.area) : "—"}</b><span>المساحة بعد الارتدادات م²</span></div>
+    <div><b>${p.cover > 0 ? fmt(R.parcelArea * p.cover / 100) : "—"}</b><span>المسموح حسب نسبة ${p.cover || "—"}% م²</span></div>
+    <div><b>${fmt(p.area)}</b><span>مساحة البناء المطلوبة م²</span></div>`;
+  $("#resMsg").innerHTML = R.warn.map(w => `<p class="msg ${R.over || !R.options.length ? "bad" : "warn"}">${esc(w)}</p>`).join("")
+    + (R.over && R.allowed > 20 ? `<button class="btn" id="useMax" type="button" style="width:100%;margin-top:8px">استخدم أكبر مساحة مسموحة (${fmt(Math.floor(R.allowed))} م²)</button>` : "");
+  $("#opts").innerHTML = R.options.map((o, i) => `<button class="opt" type="button" data-o="${i}" aria-pressed="false">${svgParcel({ W: 300, H: 230, pad: 12, env: R.env.ring, bld: o.poly })}
+    <b>${esc(o.name)}</b><small>${fmt(o.area, 1)} م² · ${fmt(o.w, 2)} × ${fmt(o.h, 2)} م</small><small>${esc(o.dir)}</small></button>`).join("");
+  $("#cRes").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+document.addEventListener("click", e => { if (e.target && e.target.id === "useMax") { $("#area").value = Math.floor(RES.allowed); readPrm(); $("#run").click(); } });
+$("#opts").addEventListener("click", e => { const b = e.target.closest("[data-o]"); if (!b) return; document.querySelectorAll(".opt").forEach(x => x.setAttribute("aria-pressed", x === b)); select(+b.dataset.o); });
+
+/* ---------- البناء المختار ---------- */
+const COLM = [["mid", "بحور متوسطة (حتى ~4.6 م)"], ["few", "أقل عدد أعمدة (حتى 5.5 م)"], ["short", "بحور قصيرة (حتى ~3.8 م)"]];
+let colMode = "mid", colList = [];
+function select(i) {
+  SEL = RES.options[i]; st.sel = i; save();
+  // خيارات الأعمدة بلا تكرار
+  colList = []; for (const [m, n] of COLM) { const c = Bina.columns(SEL, m, st.P); if (!colList.some(x => x.c.xs.length === c.xs.length && x.c.ys.length === c.ys.length)) colList.push({ m, n, c }); }
+  if (!colList.some(x => x.m === colMode)) colMode = colList[0].m;
+  $("#colChips").innerHTML = colList.map(x => `<button type="button" data-m="${x.m}" aria-pressed="${x.m === colMode}">${x.n} · ${x.c.count} عمود</button>`).join("");
+  $("#cSel").classList.remove("hide"); drawSel();
+  $("#cSel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("#colChips").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; colMode = b.dataset.m; document.querySelectorAll("#colChips button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawSel(); });
+const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+function selDrawing(W, H) {
+  COLS = (colList.find(x => x.m === colMode) || colList[0]).c;
+  const axes = [...COLS.axesX.map((l, k) => ({ l, t: String(k + 1) })), ...COLS.axesY.map((l, k) => ({ l, t: LET[k] || "?" }))];
+  // أطوال أضلاع البناء الرئيسية
+  const labels = [];
+  const B = SEL.poly, F = Bina.frame(st.P, SEL.dirIdx);
+  const wv = (u, v) => F.wld([u + SEL.ox, v + SEL.oy]);
+  labels.push({ p: wv(SEL.w / 2, SEL.h + 2.2), t: fmt(SEL.w, 2) + " م", c: "#7a4512", fs: 12 });
+  labels.push({ p: wv(-2.2, SEL.h / 2), t: fmt(SEL.h, 2) + " م", c: "#7a4512", fs: 12 });
+  labels.push({ p: wv(SEL.w / 2, SEL.h / 2), t: fmt(SEL.area, 1) + " m²", c: "#5a3a0c", fs: 15 });
+  return svgParcel({ W, H, pad: 40, env: RES.env.ring, bld: B, cols: COLS.cols, axes, labels });
+}
+function drawSel() {
+  $("#sDraw").innerHTML = selDrawing(600, 480);
+  const d = SEL.dist, p = st.prm, row = (t, need, got) => `<tr><td>${t}</td><td class="v">${fmt(need)}</td><td class="v">${isFinite(got) ? fmt(got) : "—"}</td><td class="${!isFinite(got) || got + 0.005 >= need ? "okc" : "badc"}">${!isFinite(got) || got + 0.005 >= need ? "✓" : "✗"}</td></tr>`;
+  const spans = a => a.map(v => fmt(v, 2)).join(" · ");
+  $("#selInfo").innerHTML = `<table><tr><th>الحد</th><th>الارتداد المطلوب</th><th>أقرب مسافة للبناء</th><th></th></tr>
+    ${row("أمامي (شارع)", p.front, d.front)}${row("جانبي", p.side, d.side)}${row("خلفي", p.back, d.back)}</table>
+    <table><tr><th colspan="2">${esc(SEL.name)}</th></tr>
+    <tr><td>مساحة البناء (م²)</td><td class="v">${fmt(SEL.area, 1)}</td></tr>
+    <tr><td>الأبعاد (م)</td><td class="v">${fmt(SEL.w)} × ${fmt(SEL.h)}</td></tr>
+    <tr><td>نسبة البناء الفعلية</td><td class="v">${fmt(SEL.area / RES.parcelArea * 100, 1)}%</td></tr>
+    <tr><td>عدد الأعمدة</td><td class="v">${COLS.count}</td></tr>
+    <tr><td>البحور بالعرض 1،2،3… (م)</td><td class="v">${spans(COLS.spansX)}</td></tr>
+    <tr><td>البحور بالعمق A،B،C… (م)</td><td class="v">${spans(COLS.spansY)}</td></tr></table>`;
+  $("#exMsg").textContent = "";
+}
+
+/* ---------- التصدير ---------- */
+function saveFile(name, b64, mime) {
+  if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, b64, mime); return; }
+  const a = document.createElement("a"); a.href = "data:" + mime + ";base64," + b64; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+const b64u = s => btoa(unescape(encodeURIComponent(s)));
+$("#exDxf").addEventListener("click", () => {
+  if (!SEL) return;
+  const o = []; const g = (c, v) => o.push(String(c), String(v));
+  const layers = [["PARCEL", 7], ["SETBACK", 3], ["BUILDING", 30], ["COLUMNS", 5], ["AXES", 8], ["TEXT", 2]];
+  g(0, "SECTION"); g(2, "TABLES"); g(0, "TABLE"); g(2, "LAYER"); g(70, layers.length);
+  layers.forEach(([n, c]) => { g(0, "LAYER"); g(2, n); g(70, 0); g(62, c); g(6, "CONTINUOUS"); });
+  g(0, "ENDTAB"); g(0, "ENDSEC"); g(0, "SECTION"); g(2, "ENTITIES");
+  const poly = (r, ly) => { g(0, "POLYLINE"); g(8, ly); g(66, 1); g(70, 1); r.forEach(p => { g(0, "VERTEX"); g(8, ly); g(10, p[0].toFixed(3)); g(20, p[1].toFixed(3)); }); g(0, "SEQEND"); g(8, ly); };
+  const line = (a, b, ly) => { g(0, "LINE"); g(8, ly); g(10, a[0].toFixed(3)); g(20, a[1].toFixed(3)); g(11, b[0].toFixed(3)); g(21, b[1].toFixed(3)); };
+  const text = (p, t, h, ly) => { g(0, "TEXT"); g(8, ly); g(10, p[0].toFixed(3)); g(20, p[1].toFixed(3)); g(40, h); g(1, t); };
+  poly(st.P, "PARCEL"); poly(RES.env.ring, "SETBACK"); poly(SEL.poly, "BUILDING");
+  COLS.cols.forEach(c => poly(c.poly, "COLUMNS"));
+  COLS.axesX.forEach((l, k) => { line(l[0], l[1], "AXES"); text(l[1], String(k + 1), 0.6, "AXES"); });
+  COLS.axesY.forEach((l, k) => { line(l[0], l[1], "AXES"); text(l[1], LET[k] || "?", 0.6, "AXES"); });
+  const F = Bina.frame(st.P, SEL.dirIdx), c = F.wld([SEL.w / 2 + SEL.ox, SEL.h / 2 + SEL.oy]);
+  text(c, `A=${SEL.area.toFixed(1)} m2  ${SEL.w.toFixed(2)}x${SEL.h.toFixed(2)}`, 0.5, "TEXT");
+  g(0, "ENDSEC"); g(0, "EOF");
+  saveFile("تصميم البناء - " + (st.name || "أرض") + ".dxf", b64u(o.join("\r\n")), "application/dxf");
+  $("#exMsg").textContent = "طبقات الملف: PARCEL الأرض، SETBACK حد الارتدادات، BUILDING البناء، COLUMNS الأعمدة، AXES المحاور.";
+});
+$("#exPdf").addEventListener("click", async () => {
+  if (!SEL || !window.jspdf) return;
+  $("#exMsg").textContent = "…جاري تجهيز الملف";
+  const W = 1600, H = 1100, d = SEL.dist, p = st.prm;
+  const draw = selDrawing(1100, 1000).replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "");
+  const lines = [["الأرض", st.name || "—"], ["مساحة الأرض", fmt(RES.parcelArea) + " م²"], ["الارتدادات (أمامي/جانبي/خلفي)", `${fmt(p.front)} / ${fmt(p.side)} / ${fmt(p.back)} م`],
+    ["المساحة بعد الارتدادات", fmt(RES.env.area) + " م²"], ["الشكل", SEL.name], ["مساحة البناء", fmt(SEL.area, 1) + " م²"], ["الأبعاد", fmt(SEL.w) + " × " + fmt(SEL.h) + " م"],
+    ["نسبة البناء", fmt(SEL.area / RES.parcelArea * 100, 1) + "%"], ["أقرب مسافة: أمامي/جانبي/خلفي", [d.front, d.side, d.back].map(v => isFinite(v) ? fmt(v) : "—").join(" / ") + " م"],
+    ["الأعمدة", COLS.count + " عمود 25×50 سم"], ["البحور بالعرض", COLS.spansX.map(v => fmt(v)).join(" · ")], ["البحور بالعمق", COLS.spansY.map(v => fmt(v)).join(" · ")]];
+  const side = lines.map((l, k) => `<text x="1580" y="${190 + k * 62}" font-size="22" fill="#5d6458" text-anchor="end">${esc(l[0])}</text><text x="1580" y="${218 + k * 62}" font-size="25" font-weight="700" fill="#0c3b26" text-anchor="end">${esc(l[1])}</text>`).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="IBM Plex Sans Arabic,Tahoma,sans-serif" direction="rtl">
+    <rect width="${W}" height="${H}" fill="#fff"/><rect x="12" y="12" width="${W - 24}" height="${H - 24}" fill="none" stroke="#0c3b26" stroke-width="4"/>
+    <text x="1580" y="80" font-size="40" font-weight="700" fill="#0c3b26" text-anchor="end">تصميم البناء – دراسة أولية</text>
+    <line x1="1180" y1="110" x2="1580" y2="110" stroke="#c99a2e" stroke-width="3"/>
+    <g transform="translate(40,60)">${draw}</g>${side}
+    <text x="1580" y="${H - 60}" font-size="18" fill="#7a4512" text-anchor="end">دراسة أولية – الأعمدة والتسليح يحددها مهندس إنشائي</text></svg>`;
+  try {
+    const img = new Image(); img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    await img.decode();
+    const c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(img, 0, 0);
+    const { jsPDF } = window.jspdf, doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.addImage(c.toDataURL("image/jpeg", 0.92), "JPEG", 5, 5, 287, 287 * H / W);
+    saveFile("تصميم البناء - " + (st.name || "أرض") + ".pdf", doc.output("datauristring").split(",")[1], "application/pdf");
+    $("#exMsg").textContent = "";
+  } catch (er) { $("#exMsg").textContent = "تعذّر تجهيز PDF."; }
+});
+
+/* ---------- البداية ---------- */
+applyPrm();
+if (st.P && st.P.length >= 3) { if (!st.types || st.types.length !== st.P.length) st.types = new Array(st.P.length).fill("side"); showParcel(); }
+</script>
+</body>
+</html>

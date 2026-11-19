@@ -26,6 +26,10 @@
       if (!d.file || !d.file.name) return null;
       return { id: d.file.name, title: "خنزيرة – " + d.file.name.replace(/\.dxf$/i, ""), sub: "ملف " + d.file.name };
     } },
+    "bina-v1": { name: "تصميم البناء", img: "img/c-bina.jpg", href: "bina/index.html", info(d) {
+      if (!Array.isArray(d.P) || d.P.length < 3) return null; const p = d.prm || {};
+      return { id: d.P.map(q => q.join(",")).join(";"), title: "تصميم بناء – " + (d.name || "أرض"), sub: (p.area ? "مساحة " + p.area + " م² · " : "") + "ارتدادات " + [p.front, p.side, p.back].filter(v => v != null).join("/") + " م" };
+    } },
     "level-v1": { name: "دفتر الليفل", img: "img/c-level.jpg", href: "level/index.html", info(d) {
       if (!d.bm || !Array.isArray(d.rows) || !d.rows.length) return null;
       return { id: String(d.t || d.bm.name + "|" + d.bm.z), title: "ميزانية من " + d.bm.name + " (" + Number(d.bm.z).toFixed(3) + ")", sub: d.rows.filter(r => r.k !== "BS").length + " قراءة · " + d.rows.filter(r => r.k === "BS").length + " محطات" };

@@ -317,7 +317,7 @@ function showRes() {
   $("#resMsg").innerHTML = R.warn.map(w => `<p class="msg ${R.over || !R.options.length ? "bad" : "warn"}">${esc(w)}</p>`).join("")
     + (R.over && R.allowed > 20 ? `<button class="btn" id="useMax" type="button" style="width:100%;margin-top:8px">استخدم أكبر مساحة مسموحة (${fmt(Math.floor(R.allowed))} م²)</button>` : "");
   $("#opts").innerHTML = R.options.map((o, i) => `<button class="opt" type="button" data-o="${i}" aria-pressed="false">${svgParcel({ W: 300, H: 230, pad: 12, env: R.env.ring, bld: o.poly })}
-    <b>${esc(o.name)}</b><small>${fmt(o.area, 1)} م² · ${fmt(o.w, 2)} × ${fmt(o.h, 2)} م</small><small>${esc(o.dir)}</small></button>`).join("");
+    <b>${esc(o.name)}</b><small>${fmt(o.area, 1)} م² · ${fmt(o.w, 2)} × ${fmt(o.h, 2)} م</small><small>${esc(o.dir)}</small><small>عن الشارع ${fmt(o.dist.front)} م</small></button>`).join("");
   $("#cRes").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 document.addEventListener("click", e => { if (e.target && e.target.id === "useMax") { $("#area").value = Math.floor(RES.allowed); readPrm(); $("#run").click(); } });

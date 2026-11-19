@@ -38,6 +38,12 @@
       for (let j = 0; j < A.length; j++) if (segX(a, b, A[j], A[(j + 1) % A.length])) return false; }
     return true;
   }
+  function polySegDist(B, a, b) {   // أقرب مسافة بين مضلع وقطعة
+    let m = Infinity;
+    for (const p of B) m = Math.min(m, segDist(p, a, b));
+    for (let i = 0; i < B.length; i++) { const c = B[i], d = B[(i + 1) % B.length]; m = Math.min(m, segDist(a, c, d), segDist(b, c, d)); }
+    return m;
+  }
   function circle(c, r, n) { const o = []; for (let i = 0; i < n; i++) { const t = 2 * Math.PI * i / n; o.push([c[0] + r * Math.cos(t), c[1] + r * Math.sin(t)]); } return o; }
 
   /* ---------- غلاف البناء: الأرض ناقص شريط بعرض الارتداد حول كل ضلع ---------- */
@@ -91,7 +97,7 @@
     return best;
   }
   /* مكان شكل عام (قائمة إزاحات نقاط داخله) */
-  function placeShape(g, offs, ni, nj, pref, verify) {
+  function placeShape(g, offs, ni, nj, pref, verify, scorer) {
     const cu = (g.nu - 1) / 2, cvv = (g.nv - 1) / 2, cand = [];
     for (let j = 0; j + nj < g.nv; j++) for (let i = 0; i + ni < g.nu; i++) {
       // اختبار سريع لزوايا الصندوق المحيط بالشكل أولاً غير ممكن (الشكل ليس مستطيلاً)، لذا نختبر النقاط
@@ -99,7 +105,7 @@
       for (let k = 0; k < offs.length; k += 2) { if (!g.ins[(j + offs[k + 1]) * g.nu + i + offs[k]]) { ok = false; break; } }
       if (!ok) continue;
       const mu = i + ni / 2, mv = j + nj / 2;
-      cand.push({ i, j, sc: pref === "back" ? -mv * 1000 + Math.abs(mu - cu) : pref === "mid" ? Math.hypot(mu - cu, mv - cvv) * 1000 : mv * 1000 + Math.abs(mu - cu) });
+      cand.push({ i, j, sc: scorer ? scorer(i, j) : pref === "back" ? -mv * 1000 + Math.abs(mu - cu) : pref === "mid" ? Math.hypot(mu - cu, mv - cvv) * 1000 : mv * 1000 + Math.abs(mu - cu) });
     }
     cand.sort((a, b) => a.sc - b.sc);
     for (const c of cand.slice(0, 400)) if (!verify || verify(c)) return c;
@@ -164,6 +170,23 @@
     if (Math.min(dA, Math.PI - dA) > 5 * Math.PI / 180) dirs.push({ i: li, name: "موازٍ لأطول ضلع" });
 
     const s = prm.step || 0.2, pref = prm.pref || "front", arcs = prm.style === "arc";
+    // حواف الشارع والخلف الحقيقية (للتموضع بغض النظر عن اتجاه البناء)
+    const segsOf = t => types.map((x, i) => x === t ? [P[i], P[(i + 1) % P.length]] : null).filter(Boolean);
+    const FS = segsOf("front"), BS = segsOf("back");
+    const F0 = frame(P, dirs[0].i), envC = env.ring.map(F0.loc);
+    let cu0 = 0; { let a0 = Infinity, a1 = -Infinity; envC.forEach(p => { a0 = Math.min(a0, p[0]); a1 = Math.max(a1, p[0]); }); cu0 = (a0 + a1) / 2; }
+    const envCen = (() => { let x = 0, y = 0; env.ring.forEach(p => { x += p[0]; y += p[1]; }); return [x / env.ring.length, y / env.ring.length]; })();
+    const dTo = (B, S) => { let m = Infinity; for (const [a, b] of S) m = Math.min(m, polySegDist(B, a, b)); return m; };
+    const cenOf = B => { let x = 0, y = 0; B.forEach(p => { x += p[0]; y += p[1]; }); return [x / B.length, y / B.length]; };
+    // درجة المكان: الأقل أفضل. قرب الشارع = ألصق ما يمكن بخط الارتداد الأمامي ثم في المنتصف على طول الشارع
+    const placeScore = B => {
+      const c = cenOf(B), side = Math.abs(F0.loc(c)[0] - cu0);
+      if (pref === "mid") return Math.hypot(c[0] - envCen[0], c[1] - envCen[1]);
+      if (pref === "back") return (BS.length ? Math.round(dTo(B, BS) / s) : -Math.round(dTo(B, FS) / s)) * 1000 + side;
+      return Math.round(dTo(B, FS) / s) * 1000 + side;
+    };
+    // اتجاه الانزلاق النهائي (عالمي): نحو الشارع أو بعيداً عنه
+    const slideW = pref === "front" ? [-F0.n[0], -F0.n[1]] : pref === "back" ? [F0.n[0], F0.n[1]] : null;
     const opts = [];
     for (const D of dirs) {
       const F = frame(P, D.i), envL = env.ring.map(F.loc), g = grid(envL, s);
@@ -179,12 +202,15 @@
       }
       const mk = (kind, name, shapeL, info) => {
         const o = offsetsOf(shapeL, s);
-        const pl = placeShape(g, o.offs, o.ni, o.nj, pref, c => verifyW(toW(shapeL, g.u0 + c.i * s - o.mu, g.v0 + c.j * s - o.mv)));
+        const at = (i, j) => toW(shapeL, g.u0 + i * s - o.mu, g.v0 + j * s - o.mv);
+        const pl = placeShape(g, o.offs, o.ni, o.nj, pref, c => verifyW(at(c.i, c.j)), (i, j) => placeScore(at(i, j)));
         if (!pl) return null;
         let ox = g.u0 + pl.i * s - o.mu, oy = g.v0 + pl.j * s - o.mv;
-        // تدقيق: نزلق الشكل بخطوات صغيرة نحو المكان المفضّل ما دام داخل الغلاف (فتصير المسافة مطابقة للارتداد)
-        const dv = pref === "back" ? 0.02 : pref === "mid" ? 0 : -0.02;
-        if (dv) for (let k = 0; k < Math.ceil(s / 0.02) + 2; k++) { if (verifyW(toW(shapeL, ox, oy + dv))) oy += dv; else break; }
+        // تدقيق: نزلق الشكل بخطوات 1 سم نحو الشارع (أو الخلف) ما دام داخل الغلاف، فيلتصق بخط الارتداد تماماً
+        if (slideW) {
+          const du = slideW[0] * F.d[0] + slideW[1] * F.d[1], dvv = slideW[0] * F.n[0] + slideW[1] * F.n[1];
+          for (const st of [0.1, 0.01]) for (let k = 0; k < 400; k++) { if (verifyW(toW(shapeL, ox + du * st, oy + dvv * st))) { ox += du * st; oy += dvv * st; } else break; }
+        }
         return Object.assign({ kind, name, dir: D.name, dirIdx: D.i, local: shapeL, ox, oy, poly: toW(shapeL, ox, oy), area: Math.abs(ringArea(shapeL)) }, info);
       };
       if (!fits.length) continue;
@@ -219,6 +245,16 @@
     if (!opts.length) out.warn.push("لم أجد شكلاً بهذه المساحة يحترم كل الارتدادات. جرّب مساحة أصغر أو ارتدادات أقل.");
     // المسافات إلى الحدود لكل خيار
     opts.forEach(o => { o.dist = distances(o.poly, P, types); o.id = Math.random().toString(36).slice(2, 8); });
+    if (pref === "front" && opts.length && FS.length) {
+      const minF = Math.min(...opts.map(o => o.dist.front));
+      if (minF > prm.front + 0.1) {
+        // عرض المتاح قرب الشارع (مقطع الغلاف بعد خط الارتداد الأمامي بنصف متر)
+        const vq = Math.min(...envC.map(p => p[1])) + 0.5, xsI = [];
+        envC.forEach((p, i) => { const q = envC[(i + 1) % envC.length]; if ((p[1] - vq) * (q[1] - vq) < 0) xsI.push(p[0] + (vq - p[1]) / (q[1] - p[1]) * (q[0] - p[0])); });
+        xsI.sort((x, y) => x - y); let wq = 0; for (let k = 0; k + 1 < xsI.length; k += 2) wq = Math.max(wq, xsI[k + 1] - xsI[k]);
+        out.warn.push(`الأرض قرب الشارع ضيقة: العرض المتاح للبناء عند خط الارتداد الأمامي حوالي ${fmt(wq, 1)} م فقط، وهو أضيق من أشكال البناء المقترحة، لذلك أقرب ما يصل إليه البناء ${fmt(minF, 2)} م من الشارع. ليلتصق البناء بخط الارتداد الأمامي قلّل المساحة أو الارتداد الجانبي.`);
+      }
+    }
     out.options = opts;
     return out;
   }

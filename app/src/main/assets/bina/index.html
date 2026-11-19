@@ -84,8 +84,9 @@ details summary{cursor:pointer;font-weight:700;color:var(--am-green-800);font-si
       <label class="btn pick">📂 ملف DXF للأرض<input type="file" id="file" accept=".dxf,application/dxf,image/vnd.dxf,*/*"></label>
       <button class="btn" id="demo" type="button">أرض مثال للتجربة</button>
     </div>
+    <button class="btn" id="pasteP" type="button" style="width:100%;margin-top:8px">📋 لصق إحداثيات حقيقية</button>
     <details id="manBox"><summary>إدخال الإحداثيات يدوياً</summary>
-      <p class="note">كل رأس في سطر: X ثم Y (مسافة أو فاصلة)، بالترتيب حول الأرض.</p>
+      <p class="note">كل رأس في سطر: X ثم Y (مسافة أو فاصلة)، بالترتيب حول الأرض. ويقبل أيضاً ناتج أمر LIST من أوتوكاد (X= … Y= …) أو عمودين منسوخين من Excel.</p>
       <textarea id="man" placeholder="175000.00, 180000.00&#10;175030.00, 180002.00&#10;…"></textarea>
       <button class="btn" id="manGo" type="button" style="width:100%;margin-top:8px">اعتمد الإحداثيات</button>
     </details>
@@ -128,6 +129,7 @@ details summary{cursor:pointer;font-weight:700;color:var(--am-green-800);font-si
     <div id="selInfo"></div>
     <p class="note">⚠️ هذه دراسة أولية تساعد في التفكير. مقاسات الأعمدة (25×50 سم) وأماكنها النهائية وتسليحها يحددها مهندس إنشائي، والمخطط المعماري للترخيص يعدّه مهندس مرخّص.</p>
     <div class="row">
+      <button class="btn" id="cpCad" type="button" style="flex-basis:100%">📋 نسخ للأوتوكاد (بالإحداثيات الحقيقية)</button>
       <button class="btn" id="exDxf" type="button">⬇ ملف DXF لأوتوكاد</button>
       <button class="btn" id="exPdf" type="button">⬇ مخطط PDF</button>
     </div>
@@ -193,10 +195,38 @@ $("#file").addEventListener("change", async e => {
   e.target.value = "";
 });
 $("#demo").addEventListener("click", () => setParcel([[175000, 180000], [175030, 180002], [175032, 180026], [175004, 180031], [174998, 180014]], "أرض مثال"));
-$("#manGo").addEventListener("click", () => {
-  const P = $("#man").value.split(/\n+/).map(l => (l.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).match(/-?\d+(?:\.\d+)?/g) || [])).filter(m => m.length >= 2).map(m => [+m[0], +m[1]]);
-  if (P.length < 3) { $("#pInfo").textContent = "أدخل ثلاثة رؤوس على الأقل."; return; }
-  setParcel(P, "إدخال يدوي");
+/* قراءة إحداثيات من نص: أمر LIST في أوتوكاد، أو أسطر X,Y، أو أعمدة Excel (مع رقم نقطة أو Z) */
+function parseCoords(txt) {
+  const t = String(txt || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g, ".");
+  const xy = [...t.matchAll(/X\s*=\s*(-?\d+(?:\.\d+)?)\s*,?\s*Y\s*=\s*(-?\d+(?:\.\d+)?)/gi)].map(m => [+m[1], +m[2]]);
+  let P = xy;
+  if (xy.length < 3) P = t.split(/\n+/).map(l => {
+    const n = (l.match(/-?\d+(?:\.\d+)?/g) || []).map(Number); if (n.length < 2) return null;
+    const big = n.filter(v => Math.abs(v) >= 1000);           // إحداثيات حقيقية (تتجاهل رقم النقطة والمنسوب)
+    return big.length >= 2 ? big.slice(0, 2) : n.slice(0, 2);
+  }).filter(Boolean);
+  const out = [];
+  for (const p of P) { const q = out[out.length - 1]; if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-4) out.push(p); }
+  if (out.length > 3 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) < 1e-4) out.pop();
+  return out;
+}
+function useCoords(txt, name) {
+  const P = parseCoords(txt);
+  if (P.length < 3) { $("#pInfo").textContent = "لم أجد ثلاثة رؤوس على الأقل. الصيغة: كل رأس في سطر X,Y"; return false; }
+  $("#man").value = P.map(p => p[0].toFixed(3) + ", " + p[1].toFixed(3)).join("\n");
+  setParcel(P, name); return true;
+}
+$("#manGo").addEventListener("click", () => useCoords($("#man").value, "إدخال يدوي"));
+$("#man").addEventListener("paste", e => { const t = e.clipboardData && e.clipboardData.getData("text"); if (t && parseCoords(t).length >= 3) { e.preventDefault(); useCoords(t, "إحداثيات ملصوقة"); } });
+async function readClip() {
+  try { if (window.AndroidBridge && AndroidBridge.paste) { const t = AndroidBridge.paste(); if (t) return t; } } catch (e) {}
+  try { return await navigator.clipboard.readText(); } catch (e) { return ""; }
+}
+$("#pasteP").addEventListener("click", async () => {
+  const t = await readClip();
+  if (t && useCoords(t, "إحداثيات ملصوقة")) return;
+  $("#manBox").open = true; $("#man").focus();
+  $("#pInfo").textContent = t ? "النص المنسوخ لا يحتوي إحداثيات أرض (3 رؤوس على الأقل)." : "الحافظة فارغة. انسخ الإحداثيات أولاً، أو الصقها في المربع بالضغط المطوّل.";
 });
 
 /* ---------- الرسم ---------- */
@@ -341,6 +371,33 @@ function saveFile(name, b64, mime) {
   const a = document.createElement("a"); a.href = "data:" + mime + ";base64," + b64; a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
 const b64u = s => btoa(unescape(encodeURIComponent(s)));
+/* نص AutoLISP يُلصق في سطر الأوامر فيرسم كل شيء بالإحداثيات الحقيقية (لا يتأثر بالـ OSNAP أو الإدخال الديناميكي) */
+function cadScript() {
+  const n = v => v.toFixed(3), pts = r => r.map(p => `(${n(p[0])} ${n(p[1])})`).join("");
+  const L = [];
+  L.push(`(defun bina:ly (nm c) (if (not (tblsearch "LAYER" nm)) (entmake (list '(0 . "LAYER") '(100 . "AcDbSymbolTableRecord") '(100 . "AcDbLayerTableRecord") (cons 2 nm) '(70 . 0) (cons 62 c) '(6 . "Continuous")))))`);
+  L.push(`(defun bina:pl (ly ps) (entmake (append (list '(0 . "LWPOLYLINE") '(100 . "AcDbEntity") (cons 8 ly) '(100 . "AcDbPolyline") (cons 90 (length ps)) '(70 . 1)) (mapcar '(lambda (p) (cons 10 p)) ps))))`);
+  L.push(`(defun bina:ln (a b) (entmake (list '(0 . "LINE") '(8 . "BINA-AXES") (cons 10 a) (cons 11 b))))`);
+  L.push(`(defun bina:tx (p h s ly) (entmake (list '(0 . "TEXT") (cons 8 ly) (cons 10 p) (cons 40 h) (cons 1 s))))`);
+  L.push(`(foreach l '(("BINA-PARCEL" 7) ("BINA-SETBACK" 3) ("BINA-BUILDING" 30) ("BINA-COLUMNS" 5) ("BINA-AXES" 8) ("BINA-TEXT" 2)) (bina:ly (car l) (cadr l)))`);
+  L.push(`(bina:pl "BINA-PARCEL" '(${pts(st.P)}))`);
+  L.push(`(bina:pl "BINA-SETBACK" '(${pts(RES.env.ring)}))`);
+  L.push(`(bina:pl "BINA-BUILDING" '(${pts(SEL.poly)}))`);
+  COLS.cols.forEach(c => L.push(`(bina:pl "BINA-COLUMNS" '(${pts(c.poly)}))`));
+  COLS.axesX.forEach((l, k) => L.push(`(bina:ln '(${n(l[0][0])} ${n(l[0][1])}) '(${n(l[1][0])} ${n(l[1][1])}))(bina:tx '(${n(l[1][0])} ${n(l[1][1])}) 0.5 "${k + 1}" "BINA-AXES")`));
+  COLS.axesY.forEach((l, k) => L.push(`(bina:ln '(${n(l[0][0])} ${n(l[0][1])}) '(${n(l[1][0])} ${n(l[1][1])}))(bina:tx '(${n(l[1][0])} ${n(l[1][1])}) 0.5 "${LET[k] || "?"}" "BINA-AXES")`));
+  const F = Bina.frame(st.P, SEL.dirIdx), c = F.wld([SEL.w / 2 + SEL.ox, SEL.h / 2 + SEL.oy]);
+  L.push(`(bina:tx '(${n(c[0])} ${n(c[1])}) 0.5 "A=${SEL.area.toFixed(1)} m2  ${SEL.w.toFixed(2)}x${SEL.h.toFixed(2)}" "BINA-TEXT")`);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; st.P.forEach(p => { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); });
+  L.push(`(command "_.ZOOM" "_W" '(${n(x0 - 3)} ${n(y0 - 3)}) '(${n(x1 + 3)} ${n(y1 + 3)}))(princ "BINA: done")(princ)`);
+  return L.join("\n") + "\n";
+}
+$("#cpCad").addEventListener("click", async () => {
+  if (!SEL) return; const t = cadScript();
+  try { if (window.AndroidBridge && AndroidBridge.copy) AndroidBridge.copy(t); else await navigator.clipboard.writeText(t);
+    $("#exMsg").innerHTML = "✓ نُسخ. في أوتوكاد اضغط في سطر الأوامر ثم <b>Ctrl+V</b> و Enter، فيُرسم الأرض والارتدادات والبناء والأعمدة والمحاور <b>بالإحداثيات الحقيقية</b> على طبقات BINA-… . لنقله من الهاتف للكمبيوتر الصقه لنفسك في واتساب ويب ثم انسخه من هناك.";
+  } catch (e) { $("#exMsg").textContent = "تعذّر النسخ."; }
+});
 $("#exDxf").addEventListener("click", () => {
   if (!SEL) return;
   const o = []; const g = (c, v) => o.push(String(c), String(v));

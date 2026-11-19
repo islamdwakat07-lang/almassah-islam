@@ -543,6 +543,17 @@ public class MainActivity extends Activity {
             if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("حصص", text));
         }
 
+        /* قراءة نص الحافظة (زر «لصق») */
+        @JavascriptInterface
+        public String paste() {
+            try {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm == null || !cm.hasPrimaryClip() || cm.getPrimaryClip().getItemCount() == 0) return "";
+                CharSequence t = cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this);
+                return t == null ? "" : t.toString();
+            } catch (Exception e) { return ""; }
+        }
+
         /* حفظ ملف كبير على دفعات (النسخة الاحتياطية الشاملة) في مجلد التنزيلات ثم مشاركته */
         @JavascriptInterface
         public boolean saveBegin(String name, String mime) {

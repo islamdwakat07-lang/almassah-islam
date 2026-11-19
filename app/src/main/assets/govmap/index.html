@@ -290,7 +290,8 @@ window.govPrintImg = async function (d) {
     if (o.stamp) drawStamp(ctx, mm(41), ty0 + rh * rows.length / 2, Math.min(mm(30), Math.max(mm(22), rh * rows.length / 2 - mm(1))));
     const ds = new Date(), dstr = ds.getFullYear() + "/" + String(ds.getMonth() + 1).padStart(2, "0") + "/" + String(ds.getDate()).padStart(2, "0");
     txt(ctx, "الإحداثيات محسوبة للاستئناس، وليست مخططاً مساحياً رسمياً.", W - mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458");
-    txt(ctx, `تاريخ الإصدار ${dstr}`, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
+    let av = ""; try { av = window.AndroidBridge && AndroidBridge.appVersion ? " · نسخة التطبيق " + AndroidBridge.appVersion() : ""; } catch (e) {}
+    txt(ctx, `تاريخ الإصدار ${dstr}${av}`, mm(10), mm(287), `500 ${mm(2.9)}px ${AF}`, "#5d6458", "left");
 
     const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
     doc.addImage(cv.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297);

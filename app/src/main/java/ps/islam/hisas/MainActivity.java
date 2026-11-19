@@ -76,6 +76,13 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         setContentView(web);
 
+        // بعد كل تحديث للتطبيق: نمسح ذاكرة الصفحات المؤقتة حتى تُحمَّل أدوات النسخة الجديدة وليس نسخة قديمة محفوظة
+        try {
+            long vc = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            android.content.SharedPreferences sp = getSharedPreferences("app", Context.MODE_PRIVATE);
+            if (sp.getLong("cacheVer", -1) != vc) { web.clearCache(true); sp.edit().putLong("cacheVer", vc).apply(); }
+        } catch (Exception ignored) { }
+
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);

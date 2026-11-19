@@ -351,6 +351,15 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> Toast.makeText(MainActivity.this, text, Toast.LENGTH_LONG).show());
     }
 
+    private OutputStream bkOut;
+    private Uri bkUri;
+    private String bkMime;
+
+    private void bkClose() {
+        try { if (bkOut != null) bkOut.close(); } catch (Exception ignored) { }
+        bkOut = null;
+    }
+
     private void share(final Uri uri, final String mime) {
         runOnUiThread(() -> {
             Intent s = new Intent(Intent.ACTION_SEND);
@@ -525,6 +534,54 @@ public class MainActivity extends Activity {
         public void copy(String text) {
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("حصص", text));
+        }
+
+        /* حفظ ملف كبير على دفعات (النسخة الاحتياطية الشاملة) في مجلد التنزيلات ثم مشاركته */
+        @JavascriptInterface
+        public boolean saveBegin(String name, String mime) {
+            bkClose();
+            try {
+                bkMime = mime;
+                String safe = name.replaceAll("[\\\\/:*?\"<>|]", "-");
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues v = new ContentValues();
+                    v.put(MediaStore.Downloads.DISPLAY_NAME, safe);
+                    v.put(MediaStore.Downloads.MIME_TYPE, mime);
+                    v.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    bkUri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                    if (bkUri == null) return false;
+                    bkOut = getContentResolver().openOutputStream(bkUri);
+                } else {
+                    File dir = new File(getCacheDir(), "exports");
+                    dir.mkdirs();
+                    File f = new File(dir, safe);
+                    bkOut = new FileOutputStream(f);
+                    bkUri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", f);
+                }
+                return bkOut != null;
+            } catch (Exception e) {
+                bkClose();
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean saveChunk(String base64) {
+            try {
+                if (bkOut == null) return false;
+                bkOut.write(Base64.decode(base64, Base64.DEFAULT));
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public void saveEnd(String name) {
+            bkClose();
+            if (bkUri == null) return;
+            toast("حُفظت النسخة في التنزيلات: " + name);
+            share(bkUri, bkMime == null ? "application/octet-stream" : bkMime);
         }
 
         @JavascriptInterface

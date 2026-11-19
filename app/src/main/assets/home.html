@@ -55,10 +55,18 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
 .chips button[aria-pressed=true]{background:var(--green-2);color:#fff6d6}
 .proj .acts{display:flex;flex-direction:column;gap:6px}
 .proj .acts .btn{padding:6px 12px;font-size:13px}
+.fbk{background:linear-gradient(160deg,#17613f,#0c3b26);color:#f8f2e2;border-radius:18px;padding:14px;margin:6px 0 14px;box-shadow:0 0 0 1.5px var(--gold-2,#c99a2e)}
+.fbk>b{display:block;font-size:17px;color:#f3dc93}
+.fbk p{margin:6px 0 10px;font-size:13.5px;line-height:1.7;color:#e7efe1}
+.fbk-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fbk-btns .btn{justify-content:center;text-align:center;background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#0c3b26;border:0}
+.fbk-btns .btn.alt{background:#fffaf0}
+.fbk-msg{margin:10px 0 0!important;font-weight:700;color:#f3dc93!important;min-height:1em}
 .close{position:absolute;top:12px;inset-inline-end:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gold-2);background:#fff;color:var(--green-2);font-size:18px;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="archive.js"></script>
+<script src="fullbackup.js"></script>
 </head>
 <body>
 <div class="screen">
@@ -166,14 +174,17 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
 <section class="sheet" id="sh-archive" role="dialog" aria-modal="true" aria-labelledby="t-arc">
   <div class="grab"></div><button class="close" type="button" aria-label="إغلاق">✕</button>
   <h3 id="t-arc">الأرشيف</h3>
+  <div class="fbk">
+    <b>💾 النسخة الاحتياطية الشاملة</b>
+    <p>ملف واحد فيه كل شيء: دفتر العمل، السجل المالي، أوراق المواطنين بصورها، مكتبة المحامي، الأرشيف، وبيانات كل الأدوات. احفظه أو أرسله لنفسك، واسترجعه على أي هاتف.</p>
+    <div class="fbk-btns"><button class="btn" type="button" id="fbSave">⬇ حفظ نسخة شاملة</button><label class="btn alt">⬆ استرجاع نسخة<input type="file" id="fbLoad" accept="*/*" hidden></label></div>
+    <p class="fbk-msg" id="arcMsg"></p>
+  </div>
   <p class="empty" style="padding-bottom:6px">كل عمل تقوم به في أي أداة يُحفظ هنا تلقائياً، ويبقى محفوظاً حتى تحذفه أنت.</p>
   <input id="arcQ" class="arc-q" type="search" placeholder="🔍 ابحث باسم البلدة، القطعة، الملف…">
   <div id="arcChips" class="chips"></div>
   <div id="arcList"></div>
-  <h4>نسخة احتياطية</h4>
-  <p class="empty">احفظ الأرشيف كله في ملف على الهاتف أو أرسله لنفسك، واسترجعه على أي هاتف.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="arcExp">⬇ حفظ نسخة</button><label class="btn" style="background:#fffaf0;color:var(--green-2)">⬆ استرجاع نسخة<input type="file" id="arcImp" accept=".json,application/json,*/*" hidden></label></div>
-  <p class="empty" id="arcMsg"></p>
+
   <details style="margin-top:10px"><summary style="font-weight:700;color:var(--green-2);cursor:pointer">العمل المفتوح حالياً في الأدوات</summary>
     <p class="empty">مسح العمل المفتوح لتبدأ من جديد. يبقى منه نسخة في الأرشيف.</p>
     <div id="dataList"></div>
@@ -281,17 +292,25 @@ $("#arcList").addEventListener("click", async e => {
     await Archive.remove(r.dataset.rm); arcItems = await Archive.list(); drawArchive();
   }
 });
-const b64u = s => btoa(unescape(encodeURIComponent(s)));
-$("#arcExp").addEventListener("click", async () => {
-  const txt = await Archive.exportAll(), name = "أرشيف المهندس إسلام " + new Date().toISOString().slice(0, 10) + ".json";
-  if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(name, b64u(txt), "application/json");
-  else { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "application/json" })); a.download = name; a.click(); }
-  $("#arcMsg").textContent = "✓ حُفظت النسخة في التنزيلات (" + arcItems.length + " عمل).";
+/* النسخة الاحتياطية الشاملة */
+const fbMsg = t => { $("#arcMsg").textContent = t; };
+let fbBusy = false;
+$("#fbSave").addEventListener("click", async () => {
+  if (fbBusy) return; fbBusy = true; fbMsg("…جاري تجهيز النسخة");
+  try { const r = await FullBackup.make(fbMsg), name = FullBackup.fileName(); await FullBackup.save(r.file, name, fbMsg);
+    fbMsg(`✓ حُفظت النسخة في التنزيلات (${(r.file.size / 1048576).toFixed(1)} ميغا: ${r.nrec} سجل، ${r.nfiles} صورة وملف). أرسلها لنفسك على واتساب أو الإيميل لتبقى بأمان.`); }
+  catch (e) { fbMsg("✗ تعذّر حفظ النسخة: " + (e.message || e)); }
+  fbBusy = false;
 });
-$("#arcImp").addEventListener("change", async e => {
-  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
-  try { const n = await Archive.importAll(await f.text()); $("#arcMsg").textContent = "✓ استُرجع " + n + " عمل."; renderArchive(); }
-  catch (err) { $("#arcMsg").textContent = "✗ هذا ليس ملف نسخة احتياطية من التطبيق."; }
+$("#fbLoad").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f || fbBusy) return;
+  if (!confirm("استرجاع النسخة «" + f.name + "»؟\n\n• أوراق المواطنين والسجل المالي والأرشيف: تُضاف للموجود، والمكرر يُستبدل بنسخته.\n• بيانات الأدوات (دفتر العمل وغيره): تُستبدل بما في النسخة.")) return;
+  fbBusy = true; fbMsg("…جاري قراءة النسخة");
+  try { const r = await FullBackup.restore(f, fbMsg);
+    fbMsg(r.kind === "json" ? "✓ استُرجع " + r.n + " عمل إلى الأرشيف." : r.kind === "awraq" ? `✓ استُرجعت نسخة أوراق المواطنين (${r.n} سجل).` : `✓ تم الاسترجاع (${r.n} سجل) من نسخة ${new Date(r.created).toLocaleDateString("en-GB")}.`);
+    try { renderData(); renderArchive(); } catch (er) {} }
+  catch (err) { fbMsg("✗ " + (err.message || err)); }
+  fbBusy = false;
 });
 
 let cur = null;

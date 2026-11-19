@@ -210,15 +210,42 @@ async function placeInfo(x, y) {
     parcel: clean(P["رقم القطعة"]), natNo: clean(N.BlockNumber), natName: clean(N.BlockName_Arabic), site: clean(N.SiteName_Arabic) };
   return I;
 }
+/* يجد دبوس GovMap الأزرق في الصورة (رأسه = مكان النقطة الصحيح). يرجع {x,y} بالبكسل أو null */
+function findPin(im) {
+  const W = im.naturalWidth || im.width, H = im.naturalHeight || im.height, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0); const D = g.getImageData(0, 0, W, H).data;
+  const blue = i => { const r = D[i], gg = D[i + 1], b = D[i + 2]; return b > 150 && b - r > 85 && b - gg > 35 && r < 130; };
+  const white = i => D[i] > 225 && D[i + 1] > 225 && D[i + 2] > 225;
+  const seen = new Uint8Array(W * H), best = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = y * W + x; if (seen[k] || !blue(k * 4)) continue;
+    let n = 0, x0 = x, x1 = x, y0 = y, y1 = y; const st = [k]; seen[k] = 1;
+    while (st.length) { const q = st.pop(), qx = q % W, qy = (q - qx) / W; n++; if (qx < x0) x0 = qx; if (qx > x1) x1 = qx; if (qy < y0) y0 = qy; if (qy > y1) y1 = qy;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = qx + dx, ny = qy + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue; const m = ny * W + nx; if (!seen[m] && blue(m * 4)) { seen[m] = 1; st.push(m); } } }
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1, fill = n / (bw * bh), asp = bh / bw;
+    if (bw < 12 || bh < 16 || bw > W * 0.12 || bh > H * 0.12 || asp < 1.05 || asp > 2.4 || fill < 0.4) continue;
+    // ثقب أبيض في الجزء العلوي (نقطة الدبوس)
+    let wh = 0; for (let yy = y0; yy < y0 + bh * 0.6; yy++) for (let xx = x0 + bw * 0.25; xx < x0 + bw * 0.75; xx++) if (white((yy * W + Math.round(xx)) * 4)) wh++;
+    if (wh < 4) continue;
+    // الرأس: أسفل نقطة في الدبوس
+    let tx = 0, tn = 0; for (let xx = x0; xx <= x1; xx++) if (blue((y1 * W + xx) * 4)) { tx += xx; tn++; }
+    best.push({ x: tn ? tx / tn : (x0 + x1) / 2, y: y1 + 1, n });
+  }
+  best.sort((a, b) => b.n - a.n); return best[0] || null;
+}
 window.govPrintImg = async function (d) {
   const o = prRead(); $("#prBox").open = true; $("#prCard").scrollIntoView({ behavior: "smooth", block: "start" });
   pMsg("…جاري تجهيز مخطط PDF", "ok");
   try {
     await Promise.all([`700 20px ${AF}`, `600 20px ${AF}`, `500 20px ${AF}`, `700 20px ${TF}`, `500 20px ${MF}`].map(f => document.fonts.load(f).catch(() => 0)));
     const im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("صورة")); i.src = d.img; });
-    const res = d.res, gx0 = d.cx - d.mx * res, gy1 = d.cy + d.my * res, gx1 = gx0 + d.w * res, gy0 = gy1 - d.h * res;
     // the GOV point (the one typed in) — may differ from the centre if the map was moved
     const P = st.hist && st.hist[0] ? { x: +st.hist[0].x, y: +st.hist[0].y } : { x: d.cx, y: d.cy };
+    // دبوس GovMap الأزرق هو المكان الصحيح للنقطة: نثبّت الصورة عليه (المقياس يبقى كما حُسب)
+    let pin = null; try { pin = findPin(im); } catch (e) {}
+    if (pin) { const ex = d.cx + (pin.x - d.mx) * d.res, ey = d.cy - (pin.y - d.my) * d.res;
+      if (Math.hypot(ex - P.x, ey - P.y) < Math.max(d.w, d.h) * d.res * 0.45) { d.cx = P.x; d.cy = P.y; d.mx = pin.x; d.my = pin.y; d.pinned = true; } }
+    const res = d.res, gx0 = d.cx - d.mx * res, gy1 = d.cy + d.my * res, gx1 = gx0 + d.w * res, gy0 = gy1 - d.h * res;
     const ctrPG = proj4("EPSG:2039", "EPSG:28191", [P.x, P.y]);
     pMsg("…جاري جلب اسم البلد والحوض من الموقع", "ok");
     const G = await placeInfo(ctrPG[0], ctrPG[1]).catch(() => ({}));
@@ -273,7 +300,7 @@ window.govPrintImg = async function (d) {
       ...(migrash ? [["المجرش (מגרש)", migrash]] : []), ...(plan ? [["المخطط (תכנית)", plan]] : []), ...(area && (gush || helka) ? [["المساحة (שטח)", area + " م²"]] : []),
       ["النقطة – ITM", `X ${P.x.toFixed(2)}   Y ${P.y.toFixed(2)}`],
       ["خط العرض / الطول", `${ll[1].toFixed(6)}°N   ${ll[0].toFixed(6)}°E`],
-      ["مقياس الرسم", "1:" + Sr.toLocaleString("en-US") + (d.cal ? "   ·   معايَر من الصورة" : "   ·   تقريبي")],
+      ["مقياس الرسم", "1:" + Sr.toLocaleString("en-US") + (d.cal ? "   ·   معايَر من الصورة" : "   ·   تقريبي") + (d.pinned ? "   ·   مثبّت على دبوس GovMap" : "")],
       ["شبكة الإطار", pg ? "فلسطينية (Palestine 1923 Grid)" : "إسرائيلية ITM (Israel TM Grid)"],
     ];
     const ty0 = mm(fy + fhmm + 10), rh = Math.min(mm(5.6), (mm(281) - ty0) / rows.length);

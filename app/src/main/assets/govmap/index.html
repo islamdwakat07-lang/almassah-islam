@@ -76,8 +76,7 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
       <summary>🖨️ طباعة مخطط الموقع PDF</summary>
       <div class="pset">
         <p class="note" style="margin:0">تفتح خارطة GovMap على نقطتك، كبّر أو صغّر حتى يعجبك المنظر، ثم اضغط «🖨 طباعة» أعلى الخارطة. يطبع التطبيق ما هو ظاهر على الشاشة لحظة الضغط بالضبط (بكل الطبقات المفتوحة) ويضع حولها الإحداثيات الحقيقية في صفحة A4.</p>
-        <div><div class="f" style="margin-bottom:6px">الإحداثيات على الإطار</div>
-          <div class="seg"><label><input type="radio" name="psys" value="itm" checked>إسرائيلية ITM</label><label><input type="radio" name="psys" value="pg">فلسطينية</label></div></div>
+        <div hidden><input type="radio" name="psys" value="itm" checked></div>
         <label class="f"><span>عنوان المخطط <small>(اختياري — اسم البلد والحوض يُجلبان تلقائياً من موقع النقطة)</small></span><input id="pT" style="font:500 16px 'IBM Plex Sans Arabic',Tahoma,sans-serif" placeholder="تلقائي: اسم البلد من الموقع"></label>
         <label class="chk"><input type="checkbox" id="pStamp" checked>إضافة ختمي على المخطط</label>
         <button class="go pr" id="pGo" type="button">🗺️ افتح الخارطة للطباعة</button>
@@ -236,9 +235,9 @@ window.govPrintImg = async function (d) {
     const X = x => F.x + (x - gx0) / gw * F.w, Y = y => F.y + (gy1 - y) / gh * F.h;
 
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const ctx = cv.getContext("2d");
-    const blkTxt = G.blkNo ? "حوض " + G.blkNo + (G.blkName ? " " + G.blkName : "") : G.natNo ? "حوض " + G.natNo + (G.natName ? " " + G.natName : "") + " (طبيعي)" : "";
+    const blkTxt = G.natNo ? "حوض " + G.natNo + (G.site || G.natName ? " – " + (G.site || G.natName) : "") : "";
     const title = o.title || (G.town ? G.town + (G.gov ? " – " + G.gov : "") : "مخطط موقع نقطة");
-    frameHeader(ctx, W, title, "\u2066ITM  X " + P.x + "   Y " + P.y + "\u2069" + (blkTxt ? "  ·  " + blkTxt + (G.parcel ? " · قطعة " + G.parcel : "") : gush ? "  ·  גוש " + gush + (helka ? " חלקה " + helka : "") : ""));
+    frameHeader(ctx, W, title, "\u2066ITM  X " + P.x + "   Y " + P.y + "\u2069" + (blkTxt ? "  ·  " + blkTxt : gush ? "  ·  גוש " + gush + (helka ? " חלקה " + helka : "") : ""));
 
     ctx.save(); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.clip();
     ctx.fillStyle = "#e9e3cf"; ctx.fillRect(F.x, F.y, F.w, F.h); ctx.drawImage(im, F.x, F.y, F.w, F.h);
@@ -254,7 +253,7 @@ window.govPrintImg = async function (d) {
     ctx.restore();
     ctx.strokeStyle = GREEN; ctx.lineWidth = mm(.6); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.stroke();
     // the picture is in ITM: numbers on the frame in ITM, or converted to the Palestinian grid
-    const pg = o.sys === "pg";
+    const pg = false;   // الإحداثيات الإسرائيلية ITM فقط
     drawGrid(ctx, F, { gx0, gx1, gy0, gy1, X, Y, gw, light: true, to: (x, y) => pg ? proj4("EPSG:2039", "EPSG:28191", [x, y]) : [x, y], from: (x, y) => pg ? proj4("EPSG:28191", "EPSG:2039", [x, y]) : [x, y] }, pg);
     northArrow(ctx, F.x + mm(12), F.y + mm(16), mm(9));
     const nice = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000], target = gw / 5, Lm = nice.reduce((a, c) => Math.abs(c - target) < Math.abs(a - target) ? c : a), Lp = Lm / gw * F.w;
@@ -268,15 +267,11 @@ window.govPrintImg = async function (d) {
 
     const rows = [
       ...(G.town ? [["البلدة", G.town + (G.gov ? " – " + G.gov : "")]] : []),
-      ...(G.blkNo ? [["حوض التسوية", G.blkNo + (G.blkName ? " – " + G.blkName : "")]] : []),
-      ...(G.quarter ? [["الحي", G.quarter]] : []),
-      ...(G.parcel ? [["القطعة", G.parcel]] : []),
-      ...(G.natNo ? [["الحوض الطبيعي", G.natNo + (G.natName ? " – " + G.natName : "")]] : []),
-      ...(G.site && G.site !== G.natName ? [["الموقع", G.site]] : []),
+      ...(G.natNo ? [["رقم الحوض الطبيعي", G.natNo]] : []),
+      ...(G.site || G.natName ? [["اسم الموقع", G.site || G.natName]] : []),
       ...(gush ? [["الحوض (גוש)", gush]] : []), ...(helka ? [["القطعة (חלקה)", helka]] : []),
       ...(migrash ? [["المجرش (מגרש)", migrash]] : []), ...(plan ? [["المخطط (תכנית)", plan]] : []), ...(area && (gush || helka) ? [["المساحة (שטח)", area + " م²"]] : []),
       ["النقطة – ITM", `X ${P.x.toFixed(2)}   Y ${P.y.toFixed(2)}`],
-      ["النقطة – فلسطين", `X ${ctrPG[0].toFixed(2)}   Y ${ctrPG[1].toFixed(2)}`],
       ["خط العرض / الطول", `${ll[1].toFixed(6)}°N   ${ll[0].toFixed(6)}°E`],
       ["مقياس الرسم", "1:" + Sr.toLocaleString("en-US") + (d.cal ? "   ·   معايَر من الصورة" : "   ·   تقريبي")],
       ["شبكة الإطار", pg ? "فلسطينية (Palestine 1923 Grid)" : "إسرائيلية ITM (Israel TM Grid)"],
@@ -299,7 +294,7 @@ window.govPrintImg = async function (d) {
 
     const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
     doc.addImage(cv.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297);
-    const name = (`مخطط موقع ${G.town ? G.town + " " : ""}${G.blkNo ? "حوض " + G.blkNo + " " : ""}${G.parcel ? "قطعة " + G.parcel + " " : ""}${gush ? "גוש " + gush + " " : ""}${helka ? "חלקה " + helka + " " : ""}X${Math.round(P.x)} Y${Math.round(P.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
+    const name = (`مخطط موقع ${G.town ? G.town + " " : ""}${G.natNo ? "حوض " + G.natNo + " " : ""}${gush ? "גוש " + gush + " " : ""}${helka ? "חלקה " + helka + " " : ""}X${Math.round(P.x)} Y${Math.round(P.y)}.pdf`).replace(/[\\/:*?"<>|]/g, "-");
     if (window.AndroidBridge && AndroidBridge.saveFile) AndroidBridge.saveFile(name, doc.output("datauristring").split(",")[1], "application/pdf");
     else doc.save(name);
     window.__lastGovPdf = cv;

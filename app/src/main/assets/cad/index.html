@@ -122,6 +122,8 @@ td.m{font-family:"IBM Plex Mono",monospace;direction:ltr}
     <button type="button" data-c="rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 3v5h-5"/><rect x="9" y="9" width="6" height="6" fill="currentColor" stroke="none" opacity=".5"/></svg>تدوير</button>
     <button type="button" data-c="move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/><path d="M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg>نقل</button>
     <button type="button" data-c="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>نسخ</button>
+    <button type="button" data-a="clip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>نسخ للحافظة</button>
+    <button type="button" data-a="paste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="13" height="17" rx="2"/><path d="M8 4V2.8h5V4"/><circle cx="17.5" cy="16.5" r="4.5" fill="#082a1b"/><path d="M17.5 13v7M14 16.5h7"/></svg>لصق بالإحداثيات</button>
     <button type="button" data-c="text"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14v3h-2V6h-4v12h2v2H9v-2h2V6H7v1H5z"/></svg>نص</button>
     <button type="button" data-c="erase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M15.5 3.5l5 5L10 19H5.5l-3-3z"/><path d="M9.5 9.5l5 5" /><path d="M10 19h11"/><path d="M15.5 3.5l5 5-5.9 5.9-5-5z" fill="currentColor" fill-opacity=".35"/></svg>ممحاة</button>
     <button type="button" data-a="layers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>الطبقات</button>
@@ -897,7 +899,7 @@ function pickPanel() {
     if (e.t === "L") L += dist(e.p[0], e.p[1]); if (e.t === "P") { L += plLen(e); if (e.cl) { A += plArea(e); nA++; } } if (e.t === "C") { L += 2 * Math.PI * e.r; A += Math.PI * e.r * e.r; nA++; } if (e.t === "A") L += flatLen(e); });
   showPanel(`<h3>محدد: ${pick.length} عنصر</h3><p class="hint" style="margin:0 0 6px">${Object.entries(cnt).map(([k2, v]) => `${k2} ${v}`).join(" · ")}</p>
   <div class="kv"><b>مجموع الأطوال</b><span class="n">${f3(L)} م</span>${nA ? `<b>مجموع المساحات (${nA})</b><span class="n">${f2(A)} م²</span>` : ""}</div>
-  <div class="pb"><button type="button" class="red" data-act="pdel">🗑 حذف المحدد</button><button type="button" data-act="pmv">✥ نقل</button><button type="button" data-act="pcp">⧉ نسخ</button><button type="button" data-act="prot">🔄 تدوير</button>
+  <div class="pb"><button type="button" class="red" data-act="pdel">🗑 حذف المحدد</button><button type="button" data-act="pmv">✥ نقل</button><button type="button" data-act="pcp">⧉ نسخ</button><button type="button" data-act="pclip">📋 نسخ للحافظة</button><button type="button" data-act="prot">🔄 تدوير</button>
   <label style="display:inline-flex;gap:4px;align-items:center">طبقة: <select data-act="ply" style="font:600 13px 'IBM Plex Sans Arabic';padding:4px;border-radius:8px"><option value="">—</option>${Object.keys(D.layers).map(n => `<option>${esc(n)}</option>`).join("")}</select></label>
   <button type="button" data-act="pclr">إلغاء التحديد</button></div>`);
 }
@@ -973,6 +975,7 @@ $("#pBody").addEventListener("click", e => {
   if (a === "verts" && en) vertsPanel(en);
   if (a === "pdel") { const n = pick.length; delMany(pick); pick = []; hidePanel(); updPrompt(); toast(`حُذف ${n} عنصر — «تراجع» يرجعها`); }
   if (a === "pmv" || a === "pcp" || a === "prot") setCmd({ pmv: "move", pcp: "copy", prot: "rotate" }[a]);
+  if (a === "pclip") clipCopy();
   if (a === "pclr") { pick = []; hidePanel(); updPrompt(); redraw(); }
   if (a === "sidetxt" && en && en.t === "P") {
     const h = dimH || autoH(), out = [], ly = "أبعاد"; ensureLayer(ly, 3);
@@ -1157,6 +1160,33 @@ $("#snapBtn").addEventListener("click", () => { if (panel.classList.contains("on
 updSnapBtn();
 document.querySelector('#tools [data-a="layers"]').addEventListener("click", () => { if (panel.classList.contains("on") && $("#pBody h3") && $("#pBody h3").textContent === "الطبقات") hidePanel(); else layersPanel(); });
 document.querySelector('#tools [data-a="undo"]').addEventListener("click", doUndo);
+/* الحافظة: نسخ عناصر من ملف ولصقها في نفس الإحداثيات الحقيقية في ملف آخر (مثل Ctrl+Shift+V في أوتوكاد) */
+const CLIP_KEY = "cad-clip";
+function clipCopy() {
+  const list = pick.length ? pick.slice() : sel ? [sel] : [];
+  if (!list.length) {
+    setCmd("sel"); boxOn = true; $("#selBtn").setAttribute("aria-pressed", true);
+    toast("حدد العناصر أولاً (اضغط عليها أو اسحب مربعاً) ثم اضغط «نسخ للحافظة»"); return;
+  }
+  const layers = {}; list.forEach(e => { if (D.layers[e.ly]) layers[e.ly] = D.layers[e.ly]; });
+  try { localStorage.setItem(CLIP_KEY, JSON.stringify({ ents: list, layers, from: D.name, t: Date.now() }, clean)); }
+  catch (e) { toast("العناصر كثيرة جداً على الحافظة"); return; }
+  toast(`نُسخ ${list.length} عنصر — افتح الملف الآخر واضغط «لصق بالإحداثيات»`);
+}
+function clipPaste() {
+  let c = null; try { c = JSON.parse(localStorage.getItem(CLIP_KEY) || "null"); } catch (e) {}
+  if (!c || !Array.isArray(c.ents) || !c.ents.length) { toast("الحافظة فارغة — حدد عناصر واضغط «نسخ للحافظة» أولاً"); return; }
+  if (!D.name) { D = { name: "رسم جديد", t: Date.now(), ents: [], layers: { "0": { c: 7, on: true } }, cur: "0" }; undo = []; setTitle(); }
+  const wasEmpty = !D.ents.length;
+  Object.entries(c.layers || {}).forEach(([n, L]) => { if (!D.layers[n]) D.layers[n] = { c: L.c || 7, on: true, ...(L.lt ? { lt: L.lt } : {}) }; });
+  const list = JSON.parse(JSON.stringify(c.ents));
+  setCmd("sel"); addEnts(list); pick = list.slice();
+  if (wasEmpty) fit();
+  pickPanel(); updPrompt(); redraw();
+  toast(`لُصق ${list.length} عنصر في نفس الإحداثيات${c.from ? " من «" + c.from + "»" : ""}`);
+}
+document.querySelector('#tools [data-a="clip"]').addEventListener("click", clipCopy);
+document.querySelector('#tools [data-a="paste"]').addEventListener("click", clipPaste);
 window.__back = () => { if ($("#menu").classList.contains("on")) { $("#menu").classList.remove("on"); return 1; } if (panel.classList.contains("on")) { hidePanel(); return 1; } if (pts.length) { pts = []; updPrompt(); redraw(); return 1; } if (cmd !== "sel") { setCmd("sel"); return 1; } return 0; };
 
 /* ---------- البداية ---------- */

@@ -205,7 +205,7 @@ async function placeInfo(x, y) {
   const ok = v => v != null && String(v).trim() !== "" && !/^null$/i.test(String(v).trim()) && String(v).trim() !== "0";
   const R = (blk.find(r => r.layerId === 0) || {}).attributes || {}, N = (blk.find(r => r.layerId === 1) || {}).attributes || {}, P = (par[0] || {}).attributes || {};
   const clean = v => ok(v) ? String(v).replace(/\(\d+\)\s*$/, "").trim() : "";
-  const I = { town: clean(R.VILLAGE_A) || clean(P["اسم التجمع"]) || clean(N.CommunityName_Arabic), gov: clean(R.GOV_A) || (ok(P["اسم المحافظة"]) ? "محافظة " + clean(P["اسم المحافظة"]) : ""),
+  const I = { town: clean(N.CommunityName_Arabic) || clean(P["اسم التجمع"]) || clean(R.VILLAGE_A), gov: clean(R.GOV_A) || (ok(P["اسم المحافظة"]) ? "محافظة " + clean(P["اسم المحافظة"]) : ""),
     blkNo: clean(R.BLOCK_NO) || clean(P["رقم الحوض"]), blkName: clean(R.BLOCK_A) || clean(P["اسم الحوض"]), quarter: ok(R.SUB_BLOCK_NO) ? clean(R.SUB_BLOCK_NO) + (clean(R.SUB_BLOCK_A) ? " – " + clean(R.SUB_BLOCK_A) : "") : "",
     parcel: clean(P["رقم القطعة"]), natNo: clean(N.BlockNumber), natName: clean(N.BlockName_Arabic), site: clean(N.SiteName_Arabic) };
   return I;
@@ -271,10 +271,12 @@ window.govPrintImg = async function (d) {
     const px = X(P.x), py = Y(P.y);
     if (px > F.x && px < F.x + F.w && py > F.y && py < F.y + F.h) {
       const r = mm(4.2);
-      [["#fff", mm(1.4)], ["#d11b1b", mm(.6)]].forEach(([c, w]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.moveTo(px - r * 1.8, py); ctx.lineTo(px - r * .45, py); ctx.moveTo(px + r * .45, py); ctx.lineTo(px + r * 1.8, py); ctx.moveTo(px, py - r * 1.8); ctx.lineTo(px, py - r * .45); ctx.moveTo(px, py + r * .45); ctx.lineTo(px, py + r * 1.8); ctx.stroke(); });
+      ctx.save(); ctx.globalAlpha = .7;   // مؤشر خفيف لا يغطي المباني
+      [["rgba(255,255,255,.6)", mm(.55)], ["#e01b1b", mm(.28)]].forEach(([c, w]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.moveTo(px - r * 1.8, py); ctx.lineTo(px - r * .45, py); ctx.moveTo(px + r * .45, py); ctx.lineTo(px + r * 1.8, py); ctx.moveTo(px, py - r * 1.8); ctx.lineTo(px, py - r * .45); ctx.moveTo(px, py + r * .45); ctx.lineTo(px, py + r * 1.8); ctx.stroke(); });
+      ctx.restore();
       const lab = `X ${P.x}  Y ${P.y}`; ctx.font = `700 ${mm(3)}px ${MF}`; const tw = ctx.measureText(lab).width + mm(4);
       const lx = Math.min(F.x + F.w - tw - mm(2), px + r * 2), ly = Math.max(F.y + mm(4), py - r * 2.2);
-      rr(ctx, lx, ly - mm(2.6), tw, mm(5.2), mm(1.2)); ctx.fillStyle = "rgba(255,255,255,.93)"; ctx.fill(); ctx.strokeStyle = "#d11b1b"; ctx.lineWidth = 2; ctx.stroke();
+      rr(ctx, lx, ly - mm(2.6), tw, mm(5.2), mm(1.2)); ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fill(); ctx.strokeStyle = "rgba(209,27,27,.7)"; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.fillStyle = "#d11b1b"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.direction = "ltr"; ctx.fillText(lab, lx + mm(2), ly + mm(.2));
     }
     ctx.restore();

@@ -100,7 +100,7 @@ async function exportReport(an, opts, onStep) {
   summaryRows(an).forEach(r => rows.push(r));
   rows.push(["المركز – فلسطين", `X ${cx.toFixed(2)}   Y ${cy.toFixed(2)}`]);
   rows.push(["المركز – ITM", `X ${itm[0].toFixed(2)}   Y ${itm[1].toFixed(2)}`]);
-  const restr = an.groups.filter(g => !["village", "block", "abc"].includes(g.l.k));
+  const restr = an.groups.filter(g => !["village", "block", "abc", "drain"].includes(g.l.k));   // أحواض الصرف لا تُكتب في التقرير
   rows.push(["__h", restr.length ? "القيود والمخططات الواقعة على " + (isP ? "القطعة" : "الموقع") : "لا توجد قيود أو مخططات من طبقات الإدارة المدنية على " + (isP ? "القطعة" : "الموقع")]);
   restr.forEach(g => g.items.forEach(it => {
     rows.push(["◼" + g.l.k + "|" + g.l.n, it.t + (it.area != null ? "   ·   " + fA(it.area) + "  " + ISO("(" + (it.pct * 100).toFixed(1) + "%)") : "")]);

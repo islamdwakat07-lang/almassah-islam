@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="madani">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>فحص الأرض</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../geomolg/lib/leaflet.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.5 "IBM Plex Sans Arabic",Tahoma,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+.am-spacer{flex:none}
+.top{flex:none;background:var(--am-card);border-bottom:1.5px solid var(--am-line);box-shadow:0 6px 14px -10px rgba(8,42,27,.5);z-index:5;position:relative}
+.tabs{display:flex;gap:6px;padding:8px 10px 0}
+.tab{flex:1;border:1.5px solid var(--am-line);border-bottom:0;border-radius:14px 14px 0 0;background:#f3ead2;color:var(--am-green-800);font:700 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:8px 4px;cursor:pointer}
+.tab[aria-selected=true]{background:var(--am-btn);color:#fff6d6;border-color:var(--am-gold-500)}
+.tab.fold{flex:none;width:44px}
+.pane{padding:10px;border-top:2px solid var(--am-gold-500)}
+.pane[hidden]{display:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:3px;font-weight:700;font-size:13px;color:var(--am-green-800);min-width:0}
+label.f small{font-weight:500;color:var(--am-muted)}
+select,input{font:500 16px "IBM Plex Sans Arabic",Tahoma,sans-serif;padding:8px 10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;color:var(--am-ink);width:100%;min-width:0}
+input.num{font-family:"IBM Plex Mono",monospace;direction:ltr;text-align:left}
+select:focus,input:focus{outline:2px solid var(--am-gold-500);outline-offset:0}
+.go{margin-top:8px;width:100%;border:0;border-radius:999px;padding:11px;font:700 17px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#fff;background:var(--am-btn);box-shadow:0 0 0 1.5px var(--am-gold-400),0 6px 12px -6px rgba(0,0,0,.4);cursor:pointer}
+.go:disabled{opacity:.6}
+.go.sec{background:#fffaf0;color:var(--am-green-800);box-shadow:0 0 0 1.5px var(--am-gold-500)}
+.go.pdf{background:linear-gradient(180deg,#9a5a1c,#7a4512)}
+.seg{display:flex;border:1.5px solid var(--am-line);border-radius:999px;overflow:hidden;margin-bottom:8px}
+.seg label{flex:1;text-align:center;padding:7px 2px;font-weight:700;font-size:12.5px;cursor:pointer;color:var(--am-green-800)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--am-btn);color:#fff}
+.msg{margin:6px 0 0;font-size:13px;color:#7a4e00}
+.msg:empty{display:none}
+.mapwrap{flex:1;min-height:0;position:relative;display:flex}
+#map{flex:1;min-height:0;background:#e9e3cf}
+.leaflet-container{font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
+.busy{position:absolute;z-index:600;top:10px;left:50%;transform:translateX(-50%);background:#fff8e1;border:1.5px solid var(--am-gold-500);border-radius:999px;padding:4px 14px;font-size:13px;color:var(--am-green-800);display:none;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.busy.on{display:block}
+.hint{position:absolute;z-index:500;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(12,59,38,.88);color:#fff6d6;border-radius:999px;padding:5px 14px;font-size:12.5px;pointer-events:none;white-space:nowrap}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1000;max-height:62vh;display:flex;flex-direction:column;background:var(--am-card);border-top:3px solid var(--am-gold-500);border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.25);transform:translateY(105%);transition:transform .25s}
+.sheet.on{transform:none}
+.sheet.big{max-height:88vh}
+.sheet header{display:flex;align-items:center;gap:8px;padding:10px 14px 6px;border-bottom:1px solid var(--am-line)}
+.sheet header h3{margin:0;flex:1;font:700 17px var(--am-title);color:var(--am-green-800)}
+.x,.grow{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--am-gold-500);background:#fff;color:var(--am-green-800);font-size:16px;cursor:pointer;flex:none}
+.sheet .body{overflow:auto;padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.res{border:1.5px solid var(--am-line);border-radius:14px;background:#fffdf6;margin:8px 0;overflow:hidden}
+.res h4{margin:0;padding:6px 10px;background:#f3ead2;color:var(--am-green-800);font-size:14px;display:flex;align-items:center;gap:8px}
+.res h4 .sw{width:16px;height:16px;border-radius:4px;border:2px solid;flex:none}
+.res h4 em{font-style:normal;margin-inline-start:auto;font:700 13px "IBM Plex Mono",monospace;direction:ltr}
+.res table{width:100%;border-collapse:collapse;font-size:14px}
+.res td{padding:4px 10px;border-top:1px solid #efe5cb;vertical-align:top}
+.res td:first-child{color:var(--am-muted);width:40%}
+.res td:last-child{font-weight:700;word-break:break-word}
+.res .it{padding:6px 10px;border-top:1px solid #efe5cb}
+.res .it b{display:block;color:var(--am-ink)}
+.res .it small{color:var(--am-muted);display:block}
+.big-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.big-stat div{border:1.5px solid var(--am-gold-500);border-radius:14px;padding:6px 10px;background:#fffaf0}
+.big-stat b{display:block;font:700 18px "IBM Plex Mono",monospace;direction:ltr;text-align:right;color:var(--am-green-800)}
+.big-stat span{font-size:12px;color:var(--am-muted)}
+.ok{color:#15803d}
+.xyline{direction:ltr;text-align:left;font:500 13px "IBM Plex Mono",monospace;background:#f6efd9;border-radius:10px;padding:6px 10px;margin:6px 0}
+.pick{display:grid;gap:6px}
+.pick button{text-align:right;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;padding:8px 10px;font:600 14px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:var(--am-ink);cursor:pointer}
+.bar{height:10px;border-radius:999px;background:#efe5cb;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#17613f,#c99a2e);width:0}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 2px;font-weight:600}
+.chk input{width:22px;height:22px;accent-color:#17613f;flex:none}
+.note{font-size:12.5px;color:var(--am-muted);margin:6px 0}
+</style>
+<script src="../archive.js"></script>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><img src="../img/t-madani.png" alt=""><b>فحص الأرض</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<div class="top">
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tP" aria-selected="true" type="button">حوض وقطعة</button>
+    <button class="tab" role="tab" id="tX" aria-selected="false" type="button">إحداثيات</button>
+    <button class="tab" role="tab" id="tD" aria-selected="false" type="button">💾 البيانات</button>
+    <button class="tab fold" id="tFold" type="button" aria-label="إخفاء">▲</button>
+  </div>
+  <div class="pane" id="pP">
+    <div class="grid">
+      <label class="f full">البلدة <small>(اختياري، يفيد لأن أرقام الأحواض تتكرر بين البلدات)</small><select id="vil"><option value="">…جاري التحميل</option></select></label>
+      <label class="f">رقم الحوض<input id="gush" class="num" inputmode="numeric" autocomplete="off"></label>
+      <label class="f">رقم القطعة<input id="parc" class="num" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <button class="go" id="goP" type="button">ابحث وافحص القطعة</button>
+    <p class="msg" id="msgP"></p>
+  </div>
+  <div class="pane" id="pX" hidden>
+    <div class="seg">
+      <label><input type="radio" name="sys" value="auto" checked>تلقائي</label>
+      <label><input type="radio" name="sys" value="pg">فلسطين</label>
+      <label><input type="radio" name="sys" value="itm">ITM</label>
+      <label><input type="radio" name="sys" value="wgs">خط عرض/طول</label>
+    </div>
+    <div class="grid">
+      <label class="f">Y <small>(شمال / خط العرض)</small><input id="cy" class="num" inputmode="decimal" autocomplete="off"></label>
+      <label class="f">X <small>(شرق / خط الطول)</small><input id="cx" class="num" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <button class="go" id="goX" type="button">افحص هذا المكان</button>
+    <p class="msg" id="msgX"></p>
+  </div>
+  <div class="pane" id="pD" hidden>
+    <div id="offState" class="note"></div>
+    <div class="bar" id="bar" hidden><i></i></div>
+    <p class="msg" id="msgD"></p>
+    <button class="go" id="goD" type="button">⬇️ احفظ كل بيانات الضفة على الجهاز</button>
+    <label class="chk"><input type="checkbox" id="useLocal" checked>استعمل البيانات المحفوظة (تعمل بدون إنترنت وحتى لو أُغلق الموقع)</label>
+  </div>
+</div>
+<div class="mapwrap">
+  <div id="map"></div>
+  <div class="busy" id="busy">جاري التحميل…</div>
+  <div class="hint" id="hint">اضغط على أي مكان في الخريطة لفحصه</div>
+</div>
+<section class="sheet" id="sh" aria-label="النتيجة">
+  <header><h3 id="shTitle">النتيجة</h3><button class="grow" type="button" id="shGrow" aria-label="تكبير">↕</button><button class="x" type="button" id="shX" aria-label="إغلاق">✕</button></header>
+  <div class="body" id="shBody"></div>
+</section>
+<script src="../geotoken.js"></script>
+<script src="../geomolg/lib/leaflet.js"></script>
+<script src="../geomolg/lib/proj4.js"></script>
+<script src="../geomolg/lib/proj4leaflet.js"></script>
+<script src="../jspdf.umd.min.js"></script>
+<script src="../polygon-clipping.umd.min.js"></script>
+<script src="layers.js"></script>
+<script src="data.js"></script>
+<script src="pdfkit.js"></script>
+<script src="report.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const busy = t => { const b = $("#busy"); b.textContent = t || ""; b.classList.toggle("on", !!t); };
+
+/* ---------- الخريطة (نظام فلسطين مع صور جيومولج) ---------- */
+const RES = [529.1677250021168, 264.5838625010584, 132.2919312505292, 66.1459656252646, 33.0729828126323, 16.933367200067735, 8.466683600033868, 4.233341800016934, 2.116670900008467, 1.0583354500042335, 0.5291677250021167, 0.26458386250105836, 0.13229193125052918, 0.06614596562526459];
+const crs = new L.Proj.CRS("EPSG:28191", PG, { origin: [-4839400, 6616800], resolutions: RES });
+const pgLL = p => crs.unproject(L.point(p[0], p[1])), llPG = ll => { const p = crs.project(ll); return [p.x, p.y]; };
+const map = L.map("map", { crs, maxZoom: 13, minZoom: 1, zoomSnap: 1, attributionControl: true }).setView(pgLL([175000, 180000]), 3);
+const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
+let base = L.tileLayer(REST + "Orthophotos_WB_2022_15cm_tif_PG1923_05/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 13, maxZoom: 13, attribution: "صورة جوية: جيومولج" }).addTo(map);
+(async () => { try { const tk = window.geoToken ? await geoToken() : ""; if (!tk) return; const nb = L.tileLayer(REST + "Orthophotos_WB_2025_15cm_tif_PG1923/MapServer/tile/{z}/{y}/{x}?token=" + tk, { maxNativeZoom: 12, maxZoom: 13, attribution: "صورة جوية 2025: جيومولج" }); nb.once("tileload", () => { map.removeLayer(base); base = nb; }); nb.addTo(map); } catch (e) {} })();
+const over = L.layerGroup().addTo(map);
+
+/* ---------- التبويبات ---------- */
+const tabs = { tP: "pP", tX: "pX", tD: "pD" };
+Object.keys(tabs).forEach(t => $("#" + t).onclick = () => { Object.entries(tabs).forEach(([a, b]) => { $("#" + a).setAttribute("aria-selected", a === t); $("#" + b).hidden = a !== t; }); if (t === "tD") showOff(); setTimeout(() => map.invalidateSize(), 50); });
+$("#tFold").onclick = () => { const h = !$("#pP").hidden || !$("#pX").hidden || !$("#pD").hidden; if (h) { ["pP", "pX", "pD"].forEach(p => $("#" + p).hidden = true); $("#tFold").textContent = "▼"; } else { const t = Object.keys(tabs).find(t => $("#" + t).getAttribute("aria-selected") === "true"); $("#" + tabs[t]).hidden = false; $("#tFold").textContent = "▲"; } setTimeout(() => map.invalidateSize(), 50); };
+
+/* ---------- لوحة النتيجة ---------- */
+const sh = $("#sh");
+const openSheet = (title, html) => { $("#shTitle").textContent = title; $("#shBody").innerHTML = html; sh.classList.add("on"); $("#shBody").scrollTop = 0; };
+$("#shX").onclick = () => sh.classList.remove("on", "big");
+$("#shGrow").onclick = () => sh.classList.toggle("big");
+
+let CUR = null;   // آخر تحليل
+function drawResult(an) {
+  over.clearLayers();
+  an.groups.forEach(g => { if (["village", "block"].includes(g.l.k)) return; g.items.forEach(it => (it.parts || [it.ringsPG]).forEach(rp => { if (!rp) return;
+    over.addLayer(L.polygon(rp.map(r => r.map(pgLL)), { color: g.l.c, weight: 1.6, fillColor: g.l.c, fillOpacity: g.l.kind === "zone" ? 0 : .22, dashArray: g.l.kind === "zone" ? "8 6" : null, interactive: false })); })); });
+  if (an.parcel) { const pl = L.polygon(an.ringsPG.map(r => r.map(pgLL)), { color: "#fff", weight: 5, fill: false, interactive: false }).addTo(over); L.polygon(an.ringsPG.map(r => r.map(pgLL)), { color: "#d11b1b", weight: 2.5, fillOpacity: .08, interactive: false }).addTo(over); map.fitBounds(pl.getBounds(), { maxZoom: 12, paddingBottomRight: [0, sh.offsetHeight * .6] }); }
+  else { const ll = pgLL(webToPG(an.point)); L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#d11b1b", fillOpacity: 1 }).addTo(over); }
+}
+function resultHtml(an) {
+  const isP = !!an.parcel, a = isP ? an.parcel.a : {};
+  const c = isP ? (() => { const b = bboxOf({ rings: an.ringsPG }); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; })() : webToPG(an.point);
+  const itm = conv("pg", "itm", c);
+  let h = "";
+  if (isP) h += `<div class="big-stat"><div><b>${an.total.toLocaleString("en-US", { maximumFractionDigits: 1 })}</b><span>المساحة م² (من الحدود)</span></div><div><b>${a.GUSH_NO ?? "—"} / ${a.PARCEL ?? "—"}</b><span>الحوض / القطعة</span></div></div>`;
+  else h += `<p class="note">${an.inParcel === false ? "المكان غير واقع في قطعة مسجلة بطبقة القطع (قد تكون أرضاً غير مسوّاة)." : ""}</p>`;
+  h += `<div class="xyline">PG  X ${c[0].toFixed(2)}  Y ${c[1].toFixed(2)}<br>ITM X ${itm[0].toFixed(2)}  Y ${itm[1].toFixed(2)}</div>`;
+  const sum = summaryRows(an);
+  if (isP && (a.PARCELATZIA || a.M_M_NUMBER)) sum.push(["الإفراز / م.م", [a.PARCELATZIA, a.M_M_NUMBER].filter(Boolean).join(" · ")]);
+  if (sum.length) h += `<div class="res"><h4>الموقع</h4><table>${sum.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</table></div>`;
+  const restr = an.groups.filter(g => !["village", "block", "abc"].includes(g.l.k));
+  if (!restr.length) h += `<p class="ok"><b>✓ لا توجد قيود أو مخططات من طبقات الإدارة المدنية على ${isP ? "القطعة" : "هذا المكان"}.</b></p>`;
+  restr.forEach(g => { h += `<div class="res"><h4><span class="sw" style="border-color:${g.l.c};background:${g.l.c}33"></span>${esc(g.l.n)}${g.items[0].area != null ? `<em>${(g.items.reduce((s, i) => s + i.pct, 0) * 100).toFixed(1)}%</em>` : ""}</h4>` +
+    g.items.map(it => `<div class="it"><b>${esc(it.t)}${it.area != null ? ` · ${fA(it.area)} (${(it.pct * 100).toFixed(1)}%)` : ""}</b>${it.d.filter(d => !it.t.includes(String(d[1]))).slice(0, 6).map(d => `<small>${esc(d[0])}: ${esc(d[1])}</small>`).join("")}</div>`).join("") + `</div>`; });
+  if (an.errors.length) h += `<p class="msg">تعذّر فحص ${an.errors.length} طبقة: ${esc(an.errors[0])}</p>`;
+  h += `<div class="seg" style="margin-top:10px"><label><input type="radio" name="osys" value="pg" checked>شبكة فلسطين</label><label><input type="radio" name="osys" value="itm">شبكة ITM</label></div>
+    <button class="go pdf" id="pdfBtn" type="button">📄 تقرير PDF مع الصورة الجوية</button>
+    <p class="note">المعلومات من موقع الإدارة المدنية «معلومات للجمهور» للاستئناس، وليست وثيقة رسمية. بعض الأسماء تظهر بالعبرية كما هي في المصدر.</p>`;
+  return h;
+}
+function show(an) {
+  CUR = an; drawResult(an);
+  const a = an.parcel ? an.parcel.a : null;
+  openSheet(a ? `قطعة ${a.PARCEL ?? ""} · حوض ${a.GUSH_NO ?? ""}` : "معلومات المكان", resultHtml(an));
+  $("#pdfBtn").onclick = async () => {
+    const b = $("#pdfBtn"), old = b.textContent; b.disabled = true;
+    try { const sys = (document.querySelector("input[name=osys]:checked") || {}).value; const n = await exportReport(an, { sys }, s => b.textContent = "…" + s); b.textContent = "✓ حُفظ: " + n; setTimeout(() => b.textContent = old, 4000); }
+    catch (e) { b.textContent = "تعذّر: " + e.message; setTimeout(() => b.textContent = old, 5000); }
+    finally { b.disabled = false; }
+  };
+}
+
+/* ---------- الفحص ---------- */
+async function inspectParcel(f) {
+  busy("…جاري فحص القطعة");
+  try { show(await analyzeParcel(f, n => busy("…فحص: " + n))); } catch (e) { openSheet("خطأ", `<p class="msg">${esc(e.message)}</p>`); } finally { busy(""); }
+}
+async function inspectPoint(p3857) {
+  busy("…جاري الفحص");
+  try {
+    const ps = await query(LBY.parcel, { x: p3857[0], y: p3857[1] });
+    if (ps.length) return inspectParcel(ps[0]);
+    const an = await analyzePoint(p3857); an.inParcel = false; show(an);
+  } catch (e) { openSheet("خطأ", `<p class="msg">${esc(e.message)}</p>`); } finally { busy(""); }
+}
+map.on("click", e => { $("#hint").style.display = "none"; inspectPoint(pgToWeb(llPG(e.latlng))); });
+
+$("#goX").onclick = () => {
+  const x = +$("#cx").value.replace(/,/g, "."), y = +$("#cy").value.replace(/,/g, "."), m = $("#msgX"); m.textContent = "";
+  if (!isFinite(x) || !isFinite(y) || !x || !y) { m.textContent = "اكتب X و Y بالأرقام"; return; }
+  let sys = document.querySelector("input[name=sys]:checked").value, p;
+  if (sys === "auto") sys = guessSys(x, y);
+  if (sys === "wgs" || sys === "wgs-lonlat") { const lon = x >= 34 && x <= 36 ? x : y, lat = lon === x ? y : x; p = conv("wgs", "web", [lon, lat]); sys = "wgs"; }   // خط الطول 34–36 وخط العرض 31–33 بأي ترتيب
+  else if (sys === "web") p = [x, y];
+  else p = conv(sys, "web", [x, y]);
+  const pg = webToPG(p); if (pg[0] < 100000 || pg[0] > 270000 || pg[1] < 50000 || pg[1] > 260000) { m.textContent = "الإحداثي خارج الضفة الغربية – تأكد من النظام (فلسطين أو ITM)"; return; }
+  m.textContent = "النظام المستعمل: " + ({ pg: "فلسطين 1923", itm: "ITM", wgs: "خط عرض/طول", web: "Web Mercator" })[sys];
+  map.setView(pgLL(pg), 11); inspectPoint(p);
+};
+
+/* البحث بالحوض والقطعة */
+let VL = [];
+(async () => {
+  await offInfo(); PREFER_LOCAL = $("#useLocal").checked;
+  try { VL = await villages(); $("#vil").innerHTML = `<option value="">كل البلدات</option>` + VL.map((v, i) => `<option value="${i}">${esc(v.ar ? v.ar + " — " + v.he : v.he)}</option>`).join(""); }
+  catch (e) { $("#vil").innerHTML = `<option value="">كل البلدات</option>`; $("#msgP").textContent = "تعذّر تحميل قائمة البلدات: " + e.message; }
+})();
+$("#goP").onclick = async () => {
+  const g = $("#gush").value.trim(), p = $("#parc").value.trim(), m = $("#msgP"); m.textContent = "";
+  if (!/^\d+$/.test(g)) { m.textContent = "اكتب رقم الحوض"; return; }
+  if (p && !/^\d+$/.test(p)) { m.textContent = "رقم القطعة أرقام فقط"; return; }
+  const vi = $("#vil").value, v = vi !== "" ? VL[+vi] : null;
+  busy("…جاري البحث");
+  try {
+    const res = await findParcel(g, p, v);
+    if (!res.length) { m.textContent = `لم أجد ${p ? "القطعة " + p + " في " : ""}الحوض ${g}${v ? " في أراضي " + (v.ar || v.he) : ""}. جرّب بدون اختيار البلدة، أو تأكد من الرقم.`; return; }
+    if (res.length === 1) return inspectParcel(res[0]);
+    // أكثر من نتيجة: نعرض البلدة لكل واحدة
+    const vl = await villages();
+    const lines = res.slice(0, 60).map((f, i) => { const b = bboxOf(f.g), c = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], vv = vl.find(x => pip(c, x.g.rings)); return `<button type="button" data-i="${i}">حوض ${f.a.GUSH_NO} · قطعة ${f.a.PARCEL} — ${esc(vv ? (vv.ar || vv.he) : "")}</button>`; });
+    openSheet(`${res.length} نتيجة – اختر`, `<p class="note">رقم الحوض ${g} موجود في أكثر من بلدة. اختر القطعة:</p><div class="pick">${lines.join("")}</div>`);
+    $("#shBody").querySelectorAll("[data-i]").forEach(b => b.onclick = () => inspectParcel(res[+b.dataset.i]));
+  } catch (e) { m.textContent = "تعذّر البحث: " + e.message; } finally { busy(""); }
+};
+
+/* ---------- البيانات المحفوظة ---------- */
+async function showOff() {
+  const o = await offInfo(), s = $("#offState");
+  if (!o) { s.innerHTML = "<b>لا توجد نسخة محفوظة بعد.</b> الفحص الآن مباشر من موقع الإدارة المدنية (يحتاج إنترنت). احفظ البيانات على الجهاز لتبقى معك حتى لو أُغلق الموقع."; $("#goD").textContent = "⬇️ احفظ كل بيانات الضفة على الجهاز"; return; }
+  const d = new Date(o.date), n = Object.values(o.layers).reduce((a, b) => a + b, 0);
+  s.innerHTML = `<b class="ok">✓ نسخة محفوظة على الجهاز</b> بتاريخ ${d.toLocaleDateString("en-GB")} · ${n.toLocaleString("en-US")} عنصراً في ${Object.keys(o.layers).length} طبقة (منها ${(o.layers.parcel || 0).toLocaleString("en-US")} قطعة).`;
+  $("#goD").textContent = "🔄 حدّث النسخة المحفوظة من الموقع";
+}
+$("#useLocal").onchange = e => { PREFER_LOCAL = e.target.checked; };
+$("#goD").onclick = async () => {
+  const b = $("#goD"), bar = $("#bar"), m = $("#msgD"); b.disabled = true; bar.hidden = false; m.textContent = "";
+  try {
+    await downloadAll((name, i, n, k, t) => { bar.firstElementChild.style.width = ((i + (t ? k / t : 0)) / n * 100).toFixed(1) + "%"; m.textContent = `${i + 1}/${n} · ${name}` + (t ? ` · ${k.toLocaleString("en-US")} / ${t.toLocaleString("en-US")}` : ""); });
+    m.textContent = "✓ اكتمل الحفظ. الأداة تعمل الآن بدون إنترنت (الصورة الجوية تحتاج إنترنت)."; VILLAGES = null; await DB.put("villages", null); showOff();
+  } catch (e) { m.textContent = "توقف الحفظ: " + e.message + " — اضغط مرة ثانية للمتابعة من جديد."; }
+  finally { b.disabled = false; setTimeout(() => bar.hidden = true, 1500); }
+};
+</script>
+</body>
+</html>

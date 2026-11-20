@@ -59,7 +59,7 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
         <div class="hud"><div class="coordbox" id="scale"></div><div class="coordbox" id="coords">X — · Y —</div></div>
       </div>
       <aside class="panel" id="panel">
-        <button class="grabber" data-a="sheet" aria-label="تكبير أو تصغير اللوحة"></button>
+        <button class="grabber" id="grab" aria-label="اسحب لتكبير أو تصغير اللوحة"><i></i><small>اسحب ↕</small></button>
         <div class="panel-body" id="pbody"></div>
       </aside>
     </div>
@@ -92,6 +92,34 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     s.textContent = ev.status === "saving" ? "جارٍ الحفظ…" : ev.status === "saved" ? `محفوظ تلقائياً ${where}` : "تعذّر الحفظ، سأعيد المحاولة مع التعديل التالي";
     s.style.color = ev.status === "error" ? "var(--danger)" : "";
   });
+
+  /* ---------- لوحة الهاتف: تُسحب للأعلى والأسفل (صغيرة / نصف / كامل الشاشة) ---------- */
+  const mainEl = $(".main", root) as HTMLElement, grab = $("#grab", root) as HTMLElement;
+  const MINH = 112;
+  const snaps = () => { const H = mainEl.clientHeight; return [MINH, Math.round(H * 0.46), Math.max(MINH, H - 6)]; };
+  function setSheet(h: number, anim = true) {
+    const [lo, , hi] = snaps(); h = Math.max(lo, Math.min(hi, h));
+    panel.style.transition = anim ? "" : "none";
+    mainEl.style.setProperty("--sheet-h", h + "px");
+    panel.classList.toggle("min", h <= lo + 1);
+    panel.classList.toggle("full", h >= hi - 1);
+  }
+  let sdrag: { y: number; h: number; moved: boolean; t: number; lastY: number } | null = null;
+  grab.addEventListener("pointerdown", (e: PointerEvent) => { sdrag = { y: e.clientY, h: panel.getBoundingClientRect().height, moved: false, t: e.timeStamp, lastY: e.clientY }; grab.setPointerCapture(e.pointerId); e.preventDefault(); });
+  grab.addEventListener("pointermove", (e: PointerEvent) => {
+    if (!sdrag) return; const dy = sdrag.y - e.clientY;
+    if (Math.abs(dy) > 5) sdrag.moved = true;
+    if (sdrag.moved) { panel.classList.remove("min"); setSheet(sdrag.h + dy, false); }
+    sdrag.lastY = e.clientY;
+  });
+  const endSheet = (e: PointerEvent) => {
+    if (!sdrag) return; const d = sdrag; sdrag = null; const s = snaps(); const cur = panel.getBoundingClientRect().height;
+    if (!d.moved) { setSheet(cur <= s[0] + 1 ? s[1] : cur >= s[2] - 1 ? s[1] : s[2]); return; }   // ضغطة: تكبير/تصغير
+    const v = (d.y - e.clientY) / Math.max(1, e.timeStamp - d.t);                                   // سرعة السحب
+    if (Math.abs(v) > 0.6) { setSheet(v > 0 ? s.find((x) => x > cur + 4) ?? s[2] : [...s].reverse().find((x) => x < cur - 4) ?? s[0]); return; }
+    setSheet(s.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a)));
+  };
+  grab.addEventListener("pointerup", endSheet); grab.addEventListener("pointercancel", endSheet);
 
   /* ---------- الرسم ---------- */
   function resize() { const r = cw.getBoundingClientRect(); vp.setSize(r.width, r.height); }
@@ -325,7 +353,7 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     const re = e.target.closest("[data-row-e]"); if (re && !e.target.closest("input,select")) { sel = { kind: "edge", i: +re.dataset.rowE }; renderScene(); renderPanel(); }
     const rv = e.target.closest("[data-row-v]"); if (rv && !e.target.closest("input,button")) { sel = { kind: "vertex", i: +rv.dataset.rowV }; renderScene(); renderPanel(); }
   });
-  function goStep(s: Step) { step = s; pending = false; if (document.activeElement && pbody.contains(document.activeElement)) (document.activeElement as any).blur(); if (s !== "land" && tool === "draw" && P.parcel.closed) tool = "select"; renderAll(); pbody.scrollTop = 0; panel.classList.remove("min"); }
+  function goStep(s: Step) { step = s; pending = false; if (document.activeElement && pbody.contains(document.activeElement)) (document.activeElement as any).blur(); if (s !== "land" && tool === "draw" && P.parcel.closed) tool = "select"; renderAll(); pbody.scrollTop = 0; if (panel.classList.contains("min")) setSheet(snaps()[1]); }
   $("#steps", root).addEventListener("click", (e: any) => { const b = e.target.closest("[data-step]"); if (b && !b.disabled) goStep(b.dataset.step); });
 
   /* ---------- الأوامر ---------- */
@@ -348,7 +376,6 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     else if (a === "export") doExport();
     else if (a === "paste") pasteDialog();
     else if (a === "clear") clearDialog();
-    else if (a === "sheet") panel.classList.toggle("min");
     else if (a === "autotypes") commit(ops.resetAutoTypes(P));
     else if (a === "saveprof") { if (!P.rules.profileName || P.rules.profileName === "مخصّص") { toast("اكتب اسم النظام أولاً (مثلاً: بلدية عصيرة – منطقة سكن أ)"); return; } saveProfile(P.rules); toast(`حُفظ نظام «${P.rules.profileName}» لاستخدامه في مشاريع أخرى`); renderPanel(); }
     else if (a === "delprof") { const v = ($("#profSel", root) as any)?.value; if (!v) return toast("اختر النظام من القائمة أولاً"); deleteProfile(v); renderPanel(); toast("حُذف النظام المحفوظ"); }

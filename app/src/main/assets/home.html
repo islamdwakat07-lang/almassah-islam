@@ -63,6 +63,37 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
 .fbk-btns .btn.alt{background:#fffaf0}
 .fbk-msg{margin:10px 0 0!important;font-weight:700;color:#f3dc93!important;min-height:1em}
 .close{position:absolute;top:12px;inset-inline-end:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gold-2);background:#fff;color:var(--green-2);font-size:18px;cursor:pointer}
+/* ---------- الشاشات الكبيرة (اللابتوب) ---------- */
+.side,.cards{display:contents}
+.side>.ui{order:0}.sky{order:2}.fill{order:3}.spacer{order:4}
+@media (min-width:760px) and (max-width:1099px){
+  .screen{max-width:1100px}
+  .side>.ui{width:100%;max-width:640px;align-self:center}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 16px 4px;order:1}
+  .cards .gap{display:none}
+}
+@media (min-width:1100px){
+  :root{--side:420px}
+  .screen{max-width:none;display:grid;grid-template-columns:var(--side) minmax(0,1fr);align-items:start;background:radial-gradient(120% 90% at 60% 0%,#0f4a2e 0%,#023a1a 70%)}
+  .side{display:flex;flex-direction:column;grid-column:1;grid-row:1;position:sticky;top:0;height:100vh;overflow:auto;background:#0c3b26;box-shadow:0 0 30px rgba(0,0,0,.35);padding-bottom:var(--navh,110px)}
+  .side .sky{margin-top:auto}
+  .cards{display:grid;grid-column:2;grid-row:1;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:22px;padding:28px 30px 40px;align-content:start}
+  .cards .gap,.fill,.spacer{display:none}
+  .cards .ui{border-radius:26px;transition:transform .18s,filter .18s}
+  .cards .ui:hover{transform:translateY(-3px);filter:drop-shadow(0 10px 18px rgba(0,0,0,.35))}
+  .nav{left:auto;right:0;width:var(--side)}
+  .nav .ui{max-width:none}
+}
+.deskproj{display:none}
+@media (min-width:1100px){
+  .deskproj{display:block;margin:14px 16px 8px;padding:12px 14px;border-radius:20px;background:linear-gradient(180deg,#fffaf0,#f3ead2);box-shadow:0 0 0 1.5px #e6c35f}
+  .deskproj h3{margin:0 0 8px;font:700 20px/1.3 var(--f-title);color:var(--green-2)}
+  .deskproj .dp{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;align-items:center;padding:8px;border-radius:14px;text-decoration:none;color:inherit;border:1px solid transparent}
+  .deskproj .dp:hover{background:#fffdf7;border-color:#e6c35f}
+  .deskproj .dp img{width:44px;height:44px;border-radius:10px;object-fit:cover}
+  .deskproj .dp b{display:block;color:var(--green-2);font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .deskproj .dp small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="archive.js"></script>
@@ -70,6 +101,7 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
 </head>
 <body>
 <div class="screen">
+<aside class="side">
   <div class="ui"><img src="img/ui-p1.jpg" alt="المهندس إسلام: أدوات المساحة في تطبيق واحد">
     <button class="hit" type="button" data-sheet="projects" aria-label="مشاريعي" style="left:77.68%;top:75.89%;width:17.96%;height:19.29%"></button>
     <a class="hit" href="cad/index.html" aria-label="أوتوكاد" style="left:59.72%;top:75.89%;width:17.96%;height:19.29%"></a>
@@ -77,6 +109,10 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
     <button class="hit" type="button" data-sheet="archive" aria-label="الأرشيف" style="left:23.80%;top:75.89%;width:17.96%;height:19.29%"></button>
     <button class="hit" type="button" data-sheet="about" aria-label="حول التطبيق" style="left:5.84%;top:75.89%;width:17.96%;height:19.29%"></button>
   </div>
+  <section class="deskproj" aria-label="آخر أعمالي"><h3>آخر أعمالي</h3><div id="projList2"></div></section>
+  <img class="sky" src="img/ui-sky.jpg" alt="دقة .. احترافية .. لنتائج أفضل">
+</aside>
+<main class="cards">
   <div class="gap" style="background-image:url(img/ui-g1.png)"></div>
   <div class="ui"><img src="img/ui-p2.jpg" alt="">
     <a class="hit" href="index.html" aria-label="حاسب الكواشين" style="left:3.19%;top:3.16%;width:94.05%;height:89.12%"></a>
@@ -129,7 +165,7 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   <div class="ui"><img src="img/ui-p9.jpg" alt="">
     <a class="hit" href="level/index.html" aria-label="دفتر الليفل" style="left:3.19%;top:0.70%;width:94.05%;height:90.88%"></a>
   </div>
-  <img class="sky" src="img/ui-sky.jpg" alt="دقة .. احترافية .. لنتائج أفضل">
+</main>
   <div class="fill"></div>
   <div class="spacer"></div>
 </div>
@@ -258,6 +294,8 @@ function projects() {
 }
 function renderProjects() {
   const ps = projects();
+  const box2 = document.getElementById("projList2");
+  if (box2) box2.innerHTML = ps.length ? ps.slice(0, 8).map(p => `<a class="dp" href="${p.href}"><img src="${p.img}" alt=""><span><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></span></a>`).join("") : '<p class="empty">لا يوجد عمل محفوظ بعد. افتح أي أداة وابدأ، ويظهر عملك هنا.</p>';
   $("#projList").innerHTML = ps.length ? ps.map(p => `<div class="proj"><img src="${p.img}" alt=""><div><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></div><a class="btn" href="${p.href}">افتح</a></div>`).join("") + '<p class="empty">يُحفظ العمل تلقائياً في كل أداة، ويظهر هنا آخر عمل مفتوح فيها.</p>'
     : '<p class="empty">لا يوجد عمل محفوظ بعد. افتح حاسب الكواشين أو الإفراز وابدأ، ويظهر عملك هنا.</p>';
 }
@@ -341,7 +379,7 @@ document.querySelectorAll("a.hit, .proj a").forEach(a => a.addEventListener("cli
   setTimeout(() => { location.href = a.getAttribute("href"); }, 160);
 }));
 document.addEventListener("click", e => { const a = e.target.closest(".proj a"); if (a) { e.preventDefault(); location.href = a.getAttribute("href"); } });
-addEventListener("pageshow", () => { document.body.classList.remove("leaving"); closeSheet(); fitNav(); });
+addEventListener("pageshow", () => { document.body.classList.remove("leaving"); closeSheet(); fitNav(); try { renderProjects(); } catch (e) {} });
 // أدوات تفتح في شاشة مستقلة (أوراق المواطنين): الصفحة لا تتغير، فنرجع الشاشة ظاهرة عند العودة
 const unfade = () => document.body.classList.remove("leaving");
 document.addEventListener("visibilitychange", () => { if (!document.hidden) unfade(); });

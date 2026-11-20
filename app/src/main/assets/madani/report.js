@@ -1,5 +1,6 @@
 /* تحليل القطعة أو النقطة + تقرير PDF بصورة جوية وتهشير القيود — فحص الأرض · المهندس إسلام */
 "use strict";
+const SITE = "#1d4ed8";   // لون تحديد القطعة أو الموقع (أزرق)
 const ANALYZE = LAYERS.filter(l => ["zone", "restrict", "plan", "info", "village", "block"].includes(l.kind));
 const ISO = s => "⁦" + s + "⁩";
 const fA = v => (v >= 100 ? Math.round(v).toLocaleString("en-US") : v.toFixed(1)) + " م²";
@@ -152,14 +153,14 @@ async function exportReport(an, opts, onStep) {
     }); });
   // القطعة أو النقطة
   if (isP) {
-    path(an.ringsPG); ctx.strokeStyle = "#fff"; ctx.lineWidth = mm(1.5); ctx.stroke(); ctx.strokeStyle = RED; ctx.lineWidth = mm(.8); ctx.stroke();
+    path(an.ringsPG); ctx.strokeStyle = "#fff"; ctx.lineWidth = mm(1.5); ctx.stroke(); ctx.strokeStyle = SITE; ctx.lineWidth = mm(.8); ctx.stroke();
     an.ringsPG.forEach(r => { const sg = Math.sign(ringArea(r)) || 1; r.forEach((a, i) => { const b = r[(i + 1) % r.length], d = Math.hypot(b[0] - a[0], b[1] - a[1]); const ux = X(b[0]) - X(a[0]), uy = Y(b[1]) - Y(a[1]), L = Math.hypot(ux, uy); if (L < mm(9) || opts.lens !== true) return;   // أطوال الأضلاع لا تُكتب إلا إذا طُلبت
       const nx = -uy / L * -sg, ny = ux / L * -sg; let ang = Math.atan2(uy, ux); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
       ctx.save(); ctx.translate((X(a[0]) + X(b[0])) / 2 + nx * mm(3.2), (Y(a[1]) + Y(b[1])) / 2 + ny * mm(3.2)); ctx.rotate(ang); const s = d.toFixed(2); ctx.font = `700 ${mm(2.8)}px ${MF}`; const tw = ctx.measureText(s).width + mm(2);
-      rr(ctx, -tw / 2, -mm(2), tw, mm(4), mm(1)); ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fill(); ctx.strokeStyle = RED; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = RED; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr"; ctx.fillText(s, 0, mm(.2)); ctx.restore(); }); });
+      rr(ctx, -tw / 2, -mm(2), tw, mm(4), mm(1)); ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fill(); ctx.strokeStyle = SITE; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = SITE; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr"; ctx.fillText(s, 0, mm(.2)); ctx.restore(); }); });
   } else {
-    const px = X(cx), py = Y(cy); ctx.beginPath(); ctx.arc(px, py, mm(2.2), 0, 7); ctx.fillStyle = RED; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = mm(.6); ctx.stroke();
-    ctx.beginPath(); ctx.arc(px, py, mm(6), 0, 7); ctx.strokeStyle = RED; ctx.lineWidth = mm(.5); ctx.stroke();
+    const px = X(cx), py = Y(cy); ctx.beginPath(); ctx.arc(px, py, mm(2.2), 0, 7); ctx.fillStyle = SITE; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = mm(.6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(px, py, mm(6), 0, 7); ctx.strokeStyle = SITE; ctx.lineWidth = mm(.5); ctx.stroke();
   }
   ctx.restore();
   ctx.strokeStyle = GREEN; ctx.lineWidth = mm(.6); rr(ctx, F.x, F.y, F.w, F.h, mm(2)); ctx.stroke();
@@ -175,15 +176,15 @@ async function exportReport(an, opts, onStep) {
   txt(ctx, "مقياس الرسم 1:" + S.toLocaleString("en-US"), sx + Math.max(Lp, mm(34)) / 2, sy - mm(8), `700 ${mm(2.8)}px ${AF}`, GREEN, "center");
   // مفتاح الخريطة: شريط تحت الصورة الجوية (بعد أرقام الإحداثيات)
   {
-    const items = (isP ? [{ n: "حدود القطعة", c: RED, line: 1 }] : [{ n: "الموقع المفحوص", c: RED, dot: 1 }]).concat(used);
+    const items = (isP ? [{ n: "حدود القطعة", c: SITE, line: 1 }] : [{ n: "الموقع المفحوص", c: SITE, dot: 1 }]).concat(used);
     const ly = F.y + F.h + mm(9), lh2 = mm(LEG), cols = items.length > 9 ? 4 : 3, rows2 = Math.max(1, Math.ceil(items.length / cols));
     const ih = Math.min(mm(4.6), (lh2 - mm(2)) / rows2), cw = F.w / cols;
     rr(ctx, F.x, ly, F.w, lh2, mm(1.5)); ctx.fillStyle = "#fffaf0"; ctx.fill(); ctx.strokeStyle = "#d8c79a"; ctx.lineWidth = 2; ctx.stroke();
     items.forEach((l, k) => {
       const col = k % cols, row = Math.floor(k / cols), x1 = F.x + F.w - col * cw - mm(2), y = ly + (lh2 - ih * rows2) / 2 + ih * row + ih / 2, bx = x1 - mm(5);
       const bh = Math.min(mm(3), ih * .7);
-      if (l.line) { ctx.strokeStyle = RED; ctx.lineWidth = mm(.7); ctx.strokeRect(bx, y - bh / 2, mm(5), bh); }
-      else if (l.dot) { ctx.beginPath(); ctx.arc(bx + mm(2.5), y, mm(1.2), 0, 7); ctx.fillStyle = RED; ctx.fill(); }
+      if (l.line) { ctx.strokeStyle = SITE; ctx.lineWidth = mm(.7); ctx.strokeRect(bx, y - bh / 2, mm(5), bh); }
+      else if (l.dot) { ctx.beginPath(); ctx.arc(bx + mm(2.5), y, mm(1.2), 0, 7); ctx.fillStyle = SITE; ctx.fill(); }
       else if (l.kind === "zone") { ctx.strokeStyle = l.c; ctx.lineWidth = mm(.5); ctx.setLineDash([mm(1.5), mm(1)]); ctx.strokeRect(bx, y - bh / 2, mm(5), bh); ctx.setLineDash([]); }
       else { ctx.fillStyle = l.c + "33"; ctx.fillRect(bx, y - bh / 2, mm(5), bh); ctx.fillStyle = hatchPattern(ctx, l.c, l.h || 45); ctx.fillRect(bx, y - bh / 2, mm(5), bh); ctx.strokeStyle = l.c; ctx.lineWidth = 2; ctx.strokeRect(bx, y - bh / 2, mm(5), bh); }
       fitTxt(ctx, l.n, bx - mm(1.5), y, cw - mm(9), Math.min(mm(2.6), ih * .62), "600", AF, INK, "right");

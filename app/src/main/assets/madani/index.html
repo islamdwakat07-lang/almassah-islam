@@ -168,8 +168,8 @@ function drawResult(an) {
   over.clearLayers();
   an.groups.forEach(g => { if (["village", "block"].includes(g.l.k)) return; g.items.forEach(it => (it.parts || [it.ringsPG]).forEach(rp => { if (!rp) return;
     over.addLayer(L.polygon(rp.map(r => r.map(pgLL)), { color: g.l.c, weight: 1.6, fillColor: g.l.c, fillOpacity: g.l.kind === "zone" ? 0 : .22, dashArray: g.l.kind === "zone" ? "8 6" : null, interactive: false })); })); });
-  if (an.parcel) { const pl = L.polygon(an.ringsPG.map(r => r.map(pgLL)), { color: "#fff", weight: 5, fill: false, interactive: false }).addTo(over); L.polygon(an.ringsPG.map(r => r.map(pgLL)), { color: "#d11b1b", weight: 2.5, fillOpacity: .08, interactive: false }).addTo(over); map.fitBounds(pl.getBounds(), { maxZoom: 12, paddingBottomRight: [0, sh.offsetHeight * .6] }); }
-  else { const ll = pgLL(webToPG(an.point)); L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#d11b1b", fillOpacity: 1 }).addTo(over); }
+  if (an.parcel) { const pl = L.polygon(an.ringsPG.map(r => r.map(pgLL)), { color: "#fff", weight: 5, fill: false, interactive: false }).addTo(over); L.polygon(an.ringsPG.map(r => r.map(pgLL)), { color: "#1d4ed8", weight: 2.5, fillOpacity: .08, interactive: false }).addTo(over); map.fitBounds(pl.getBounds(), { maxZoom: 12, paddingBottomRight: [0, sh.offsetHeight * .6] }); }
+  else { const ll = pgLL(webToPG(an.point)); L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#1d4ed8", fillOpacity: 1 }).addTo(over); }
 }
 function resultHtml(an) {
   const isP = !!an.parcel, a = isP ? an.parcel.a : {};

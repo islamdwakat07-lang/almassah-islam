@@ -23,7 +23,6 @@ const LAYERS = [
   { k: "road",    n: "مخططات طرق",                        u: "אתר_חופש_המידע_עדכון_שכבות/FeatureServer/75", kind: "plan", c: "#f59e0b", h: -15 },
   { k: "planp",   n: "مخططات القرى الفلسطينية",           u: "תכניות_ישובים_במגזר_הפלסטיניי_חופש_המידע/FeatureServer/0", kind: "plan", c: "#2563eb" },
   { k: "plani",   n: "مخططات المستوطنات",                 u: "תכניות_ישובים_במגזר_הישראלי_חופש_המידע/FeatureServer/0", kind: "restrict", c: "#9333ea", h: -75 },
-  { k: "planm",   n: "مخططات من عهد الانتداب",            u: W + "/FeatureServer/14", kind: "plan", c: "#64748b" },
   { k: "quarry",  n: "مخططات تعدين ومحاجر",               u: W + "/FeatureServer/32", kind: "restrict", c: "#78350f", h: 105 },
   { k: "indus",   n: "مناطق صناعية إسرائيلية",            u: W + "/FeatureServer/33", kind: "restrict", c: "#475569", h: 135 },
   { k: "dump",    n: "مكبات نفايات",                      u: W + "/FeatureServer/34", kind: "restrict", c: "#57534e", h: 165 },
@@ -68,12 +67,13 @@ const FIELD_AR = {
   p_afkada_p: "تاريخ نشر الإيداع", p_confirm_d: "تاريخ المصادقة", p_landuse_des: "استعمال الأرض", EZOR: "المنطقة"
 };
 const SKIP = /^(OBJECTID|FID|Shape__|SHAPE|GlobalID|CreationDate|Creator|EditDate|Editor|created_|last_edited|CREATED_|LAST_EDITED|MINHAL_|PERIMETER|OS_LO|X|Y|POINT_X|POINT_Y|שם_הי|SETTL_NAME|rp_)/i;
-const isDate = (k, v) => typeof v === "number" && v > 1e11 && v < 4e12 && /(_d|_da|_di|_p|_pi|date|תוקף|_D)$/i.test(k);
+const isDate = (k, v) => typeof v === "number" && Math.abs(v) > 1e11 && v < 4e12 && /(_d|_da|_di|_p|_pi|date|תוקף|_D)$/i.test(k);
 const fmtDate = v => { const d = new Date(v); return d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0"); };
 
 /* قيمة مقروءة لحقل */
 function val(layer, k, v, meta) {
   if (v == null || v === "" || v === " ") return null;
+  if (/^(gush_no|parcel|GUSH_NO|PARCEL)$/.test(k) && v === 0) return null;   // صفر = غير محدد
   if (layer.k === "abc" && k === "EZOR") return ABC[v] || String(v);
   if (layer.k === "state" && k === "type") return STATE[v] || String(v);
   if (layer.k === "council" && k === "MUNICIPAL_DISTR") return COUNCIL[v] || String(v);

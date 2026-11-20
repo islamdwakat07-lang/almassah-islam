@@ -1,0 +1,36 @@
+{
+  "name": "almassah-islam",
+  "productName": "المهندس إسلام",
+  "version": "1.0.0",
+  "description": "تطبيق المهندس إسلام لأدوات المساحة – نسخة ويندوز",
+  "main": "main.js",
+  "author": "Islam Dweikat",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "ps.islam.almassah.desktop",
+    "productName": "المهندس إسلام",
+    "artifactName": "almassah-islam-setup.${ext}",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "package.json"],
+    "extraResources": [{ "from": "../app/src/main/assets", "to": "assets" }],
+    "win": { "target": "nsis", "icon": "build/icon.png" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "المهندس إسلام",
+      "language": "1025"
+    }
+  }
+}

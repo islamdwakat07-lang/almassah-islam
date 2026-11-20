@@ -57,5 +57,34 @@ jobs:
           gh release delete latest --cleanup-tag --yes || true
           gh release create latest almassah-islam.apk \
             --title "المساح إسلام (آخر نسخة)" \
-            --notes "ملف APK جاهز للتثبيت على الأندرويد: حاسب الكواشين + الإفراز + حاسبة الجرف. تُحدَّث هذه النسخة تلقائياً مع كل تعديل." \
+            --notes "almassah-islam.apk للأندرويد، و almassah-islam-setup.exe لويندوز (اللابتوب). تُحدَّث هذه النسخة تلقائياً مع كل تعديل." \
             --latest
+
+  # نسخة ويندوز (Electron): نفس صفحات التطبيق، تُضاف لنفس الإصدار بعد نشر الـ APK
+  windows:
+    needs: build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Windows installer
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          VER=$(sed -n 's/.*versionName "\([^"]*\)".*/\1/p' ../app/build.gradle)
+          npm ci
+          npx electron-builder --win nsis --x64 --publish never -c.extraMetadata.version="$VER"
+          ls -la dist
+
+      - name: Upload installer to the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload latest desktop/dist/almassah-islam-setup.exe --clobber

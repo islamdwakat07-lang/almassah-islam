@@ -1,5 +1,5 @@
 /**
- * مساحة العمل: أربع خطوات للهاوي (الأرض ← الشارع ← الاشتراطات ← النتيجة) فوق رسم هندسي تفاعلي.
+ * مساحة العمل: خمس خطوات للهاوي (الأرض ← الشارع ← الاشتراطات ← النتيجة ← المبنى) فوق رسم هندسي تفاعلي.
  * الواجهة فقط: الحسابات من المحرك، والحفظ من طبقة البيانات.
  */
 import { analyzeParcel, bbox, closestOnSeg, dist, ParcelInfo, Pt } from "../engine/geometry";
@@ -7,6 +7,7 @@ import { buildableZone, ZoneResult } from "../engine/setbacks";
 import { verifyZone } from "../engine/verify";
 import { explain, Explanation } from "../engine/explain";
 import { countStreets } from "../engine/classify";
+import { generateMassing, MassResult, MassOption } from "../engine/massing";
 import { parseDXF, UNIT_NAMES } from "../io/dxf-read";
 import { parseCoords } from "../io/coords";
 import { exportDXF } from "../io/export";
@@ -20,11 +21,12 @@ import { $, $$, esc, fmt, fmtCoord, fmtDMS, readNum, toast, sheet, icon } from "
 
 const TYPE_COLOR: Record<string, string> = { front: "var(--front)", side: "var(--side)", back: "var(--back)" };
 const HIT = 18;
-type Step = "land" | "street" | "rules" | "result";
-const STEPS: Array<[Step, string]> = [["land", "الأرض"], ["street", "الشارع"], ["rules", "الاشتراطات"], ["result", "النتيجة"]];
+type Step = "land" | "street" | "rules" | "result" | "building";
+const STEPS: Array<[Step, string]> = [["land", "الأرض"], ["street", "الشارع"], ["rules", "الاشتراطات"], ["result", "النتيجة"], ["building", "المبنى"]];
 
 export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
   let P = project, info: ParcelInfo | null = null, zone: ZoneResult | null = null, ex: Explanation | null = null, ver: any = null;
+  let mass: MassResult | null = null, massKey = "";
   let sel: { kind: "vertex" | "edge"; i: number } | null = null, cursor: Pt | null = null;
   let tool: "select" | "draw" | "pan" = P.parcel.closed ? "select" : "draw", showAngles = false;
   let step: Step = !P.parcel.closed ? "land" : !P.streets.length ? "street" : "result";
@@ -75,7 +77,13 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     zone = info && info.valid ? buildableZone(r, effectiveSetbacks(P), { join: P.rules.join, miterLimit: P.rules.miterLimit }) : null;
     ver = zone && zone.ok ? verifyZone(r, zone, 0.1) : null;
     ex = zone ? explain(zone, P.edges.map(e => e.type), countStreets(r, P.streets), P.rules.coverage, P.rules.maxFloors, ver) : null;
+    // المرحلة 2: أشكال المبنى (تُعاد فقط إذا تغيّر ما يؤثر عليها)
+    const M = ops.massingOf(P), A = info && info.area || 0;
+    const covMax = P.rules.coverage != null ? A * P.rules.coverage / 100 : null;
+    const key = JSON.stringify([r, effectiveSetbacks(P), P.streets, P.rules.join, P.rules.miterLimit, covMax, M.target]);
+    if (key !== massKey) { massKey = key; mass = zone && zone.ok && M.target ? generateMassing({ parcel: r, zone, fronts: P.streets, setbacks: effectiveSetbacks(P), target: M.target, coverageMax: covMax }) : null; }
   }
+  const chosen = (): MassOption | null => { if (!mass || !mass.options.length) return null; const c = ops.massingOf(P).choice; return mass.options.find(o => o.id === c) || mass.options[0]; };
   function commit(next: Project, record = true) {
     if (!next || next === P) return;
     if (record) hist.push(P);
@@ -146,6 +154,19 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     const path = (ring: Pt[]) => "M" + ring.map(p => T(p[0], p[1]).map(v => v.toFixed(2)).join(" ")).join("L") + "Z";
     if (n >= 3 && P.parcel.closed) out.push(`<path d="${path(r)}" fill="rgba(243,234,216,.035)"/>`);
     if (zone && zone.parts.length) out.push(`<path d="${zone.parts.map(pt => [pt.outer, ...pt.holes].map(path).join("")).join("")}" fill="var(--zone-fill)" fill-rule="evenodd" stroke="var(--zone)" stroke-width="1.6" stroke-dasharray="7 5"/>`);
+    const B = step === "building" ? chosen() : null;
+    if (B) {
+      out.push(`<path d="${path(B.ring)}" fill="rgba(214,169,86,.28)" stroke="var(--brass-2)" stroke-width="2.4" stroke-linejoin="round"/>`);
+      const bn = B.ring.length;
+      for (let i = 0; i < bn; i++) {
+        if (!B.rect && bn > 6) break;
+        const A1 = B.ring[i], A2 = B.ring[(i + 1) % bn], a = T(...A1), b = T(...A2), L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 40 || (B.rect && i > 1)) continue;
+        let ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+        out.push(label((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, fmt(dist(A1, A2)), "var(--brass-2)", ang, 11));
+      }
+      const c = B.ring.reduce((acc, p) => [acc[0] + p[0] / bn, acc[1] + p[1] / bn], [0, 0]) as Pt, cs = T(...c);
+      out.push(label(cs[0], cs[1], fmt(B.area) + " م²", "var(--text)", 0, 13));
+    }
     const cross = new Set((info && info.issues[0] && info.issues[0].pairs ? info.issues[0].pairs.flat() : []) as number[]);
     for (let i = 0; i < (P.parcel.closed ? n : n - 1); i++) {
       const a = T(...r[i]), b = T(...r[(i + 1) % n]), isSel = sel && sel.kind === "edge" && sel.i === i, e = P.edges[i];
@@ -205,6 +226,7 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     if (!P.parcel.closed || !(info && info.valid)) return "locked";
     if (s === "street") return P.streets.length ? "done" : "todo";
     if (s === "rules") return "done";
+    if (s === "building") return mass && mass.ok ? "done" : "todo";
     return "todo";
   }
   function renderSteps() {
@@ -212,9 +234,9 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
   }
   let pending = false;
   function renderPanel() {
-    if (pbody.contains(document.activeElement) && (document.activeElement as any).matches("input,select,textarea")) { pending = true; return; }
+    if (pbody.contains(document.activeElement) && (document.activeElement as any).matches("input:not([type=radio]):not([type=checkbox]),select,textarea")) { pending = true; return; }
     pending = false;
-    pbody.innerHTML = step === "land" ? landStep() : step === "street" ? streetStep() : step === "rules" ? rulesStep() : resultStep();
+    pbody.innerHTML = step === "land" ? landStep() : step === "street" ? streetStep() : step === "rules" ? rulesStep() : step === "result" ? resultStep() : buildingStep();
   }
   pbody.addEventListener("focusout", () => setTimeout(() => { if (pending && !pbody.contains(document.activeElement)) renderPanel(); }, 0));
   const nextBtn = (to: Step, t: string) => `<button class="btn primary next" data-go="${to}">${t} ←</button>`;
@@ -306,9 +328,44 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     </div>
     ${ver ? `<p class="chip ${ver.ok ? "ok" : "err"} big"><i></i>${ver.ok ? "تم التحقق: لا تجاوز لأي ارتداد" : "تحذير: وُجدت مخالفة في التحقق"}</p>` : ""}
     <ul class="explain">${(ex ? ex.lines : []).map(l => `<li class="${l.tone}"><b aria-hidden="true">${tone[l.tone]}</b><span>${esc(l.text)}</span></li>`).join("")}</ul>
-    <div class="row"><button class="btn primary" data-a="export">${icon.download}تصدير DXF بالإحداثيات الحقيقية</button></div>
+    ${zone && zone.ok ? nextBtn("building", "التالي: صمّم المبنى") : ""}
+    <div class="row"><button class="btn" data-a="export">${icon.download}تصدير DXF بالإحداثيات الحقيقية</button></div>
     <p class="note">الملف يحوي: حدود الأرض (PARCEL)، المنطقة الصالحة للبناء (BUILDABLE_ZONE)، أطوال الأضلاع والارتدادات والمساحات (LABELS)، وأرقام الرؤوس.</p>
     <p class="note">هذه دراسة أولية تساعدك على الفهم والتخطيط. المخطط الرسمي للترخيص يعدّه مهندس مرخّص.</p>`;
+  }
+
+  function thumb(o: MassOption) {
+    const r = ringOf(P) as Pt[], b = bbox(r), k = 56 / Math.max(b.w, b.h), X = (p: Pt) => `${(4 + (p[0] - b.x0) * k).toFixed(1)} ${(4 + (b.y1 - p[1]) * k).toFixed(1)}`;
+    const pth = (ring: Pt[]) => "M" + ring.map(X).join("L") + "Z";
+    return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="${pth(r)}" fill="none" stroke="var(--parcel)" stroke-width="1.2"/>${zone ? zone.parts.map(pt => `<path d="${pth(pt.outer)}" fill="none" stroke="var(--zone)" stroke-width="1" stroke-dasharray="2 2"/>`).join("") : ""}
+      ${P.streets.map(i => `<path d="M${X(r[i])}L${X(r[(i + 1) % r.length])}" stroke="var(--front)" stroke-width="3" stroke-opacity=".5"/>`).join("")}<path d="${pth(o.ring)}" fill="rgba(214,169,86,.45)" stroke="var(--brass-2)" stroke-width="1.2"/></svg>`;
+  }
+  function buildingStep() {
+    const M = ops.massingOf(P), A = info && info.area || 0, cur = chosen();
+    const covMax = P.rules.coverage != null ? A * P.rules.coverage / 100 : null;
+    const allowed = ex ? ex.allowed : 0;
+    return `
+    <div class="sect"><h3>مساحة البناء</h3>
+      <p class="note">اكتب مساحة الطابق الأرضي اللي بدك تبنيها، وأنا أقترح لك أشكالاً للمبنى داخل حدود الارتداد. كل شكل مفحوص: ولا سنتيمتر خارج الارتداد.</p>
+      <label class="field"><span>مساحة الطابق المطلوبة <small>م²</small></span><input class="input num big" inputmode="decimal" data-mass="target" value="${M.target ?? ""}" placeholder="مثلاً ${allowed ? Math.floor(Math.min(allowed, 180)) : 150}"></label>
+      <p class="note">أقصى مساحة مسموحة للطابق: <b class="num">${fmt(allowed)}</b> م² ${ex && ex.limitedBy === "coverage" ? `(حسب نسبة البناء ${P.rules.coverage}%)` : "(داخل الارتدادات)"}</p></div>
+    ${!M.target ? `<p class="alert warn">اكتب المساحة المطلوبة بالأعلى لتظهر الأشكال المقترحة.</p>` : ""}
+    ${mass && mass.capped ? `<p class="alert warn">المساحة المطلوبة ${fmt(mass.target)} م² أكبر من المسموح ${mass.capped === "coverage" ? `حسب نسبة البناء (${fmt(covMax as number)} م²)` : `داخل الارتدادات (${fmt(mass.used)} م²)`}. الأشكال أدناه بأقصى مساحة مسموحة: <b class="num">${fmt(mass.used)}</b> م².</p>` : ""}
+    ${mass && !mass.ok ? `<p class="alert err">${esc(mass.msg)}</p>` : ""}
+    ${mass && mass.ok ? `<div class="sect"><h3>الأشكال المقترحة <span class="eyebrow">${mass.options.length} خيارات</span></h3>
+      <div class="masses">${mass.options.map(o => `<label class="mass ${cur && cur.id === o.id ? "on" : ""}"><input type="radio" name="mass" value="${o.id}" ${cur && cur.id === o.id ? "checked" : ""}>${thumb(o)}
+        <span><b>${esc(o.title)}</b><small>${esc(o.desc)}</small>
+        <em class="num">${o.rect ? `${fmt(o.width)} × ${fmt(o.depth)} م · ` : `عمق ${fmt(o.depth)} م · `}${fmt(o.area)} م²</em></span></label>`).join("")}</div></div>
+      ${cur ? `<div class="stats">
+        <div class="stat hero wide"><b>${fmt(cur.area)}</b><span>مساحة الطابق م²${A ? ` · نسبة البناء ${fmt(cur.area / A * 100, 1)}%` : ""}</span></div>
+        <div class="stat"><b>${fmt(cur.width)}</b><span>${cur.rect ? "عرض الواجهة م" : "أقصى عرض م"}</span></div>
+        <div class="stat"><b>${fmt(cur.depth)}</b><span>العمق م</span></div>
+        <div class="stat wide"><b>${fmt(cur.frontGap)}</b><span>بعد واجهة المبنى عن الشارع م (على خط الارتداد الأمامي)</span></div>
+      </div>
+      <p class="chip ok big"><i></i>تم التحقق: المبنى لا يتجاوز أي ارتداد</p>
+      ${P.rules.maxFloors ? `<p class="note">مع ${P.rules.maxFloors} طوابق بنفس المساحة: مجموع البناء ≈ <b class="num">${fmt(cur.area * P.rules.maxFloors)}</b> م².</p>` : ""}` : ""}` : ""}
+    <div class="row"><button class="btn primary" data-a="export">${icon.download}تصدير DXF مع المبنى</button></div>
+    <p class="note">المبنى في طبقة BUILDING بنفس الإحداثيات الحقيقية. هذه دراسة أولية؛ المخطط الرسمي للترخيص يعدّه مهندس مرخّص.</p>`;
   }
 
   function renderAll() {
@@ -343,7 +400,9 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
       if (!s && optional) return commit(ops.setRules(P, { [k]: null } as any));
       if (!(v >= 0) || (k === "miterLimit" && v < 1) || (k === "coverage" && v > 100)) { toast(k === "coverage" ? "النسبة بين 0 و 100" : k === "miterLimit" ? "حد التقاطع 1 أو أكثر" : "اكتب رقماً صحيحاً"); t.value = (P.rules as any)[k] ?? ""; return; }
       commit(ops.setRules(P, { [k]: v } as any));
-    } else if (t.name === "join") commit(ops.setRules(P, { join: t.value }));
+    } else if (D.mass === "target") { const sv = t.value.trim(); if (!sv) return commit(ops.setMassing(P, { target: null })); const v = readNum(sv); if (!(v > 0)) { toast("اكتب المساحة بالمتر المربع"); t.value = ops.massingOf(P).target ?? ""; return; } commit(ops.setMassing(P, { target: v, choice: null })); }
+    else if (t.name === "mass") commit(ops.setMassing(P, { choice: t.value }));
+    else if (t.name === "join") commit(ops.setRules(P, { join: t.value }));
     else if (t.id === "profSel" && t.value) { const pr = listProfiles().find(p => p.id === t.value); if (pr) { commit(ops.setRules(P, { ...pr.rules })); toast(`طُبّق نظام «${pr.rules.profileName}»`); } }
   });
   pbody.addEventListener("keydown", (e: any) => { if (e.key === "Enter" && e.target.matches("input")) e.target.blur(); });
@@ -419,7 +478,7 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
   });
   async function doExport() {
     if (!P.parcel.vertices.length) return toast("لا توجد حدود لتصديرها بعد");
-    try { toast(await exportDXF(P, info, zone), 4000); }
+    try { toast(await exportDXF(P, info, zone, chosen()), 4000); }
     catch (e: any) { toast(e && e.code === "declined" ? "أُلغي الحفظ" : "تعذّر حفظ الملف" + (e && e.message ? ": " + e.message : "")); }
   }
 

@@ -53,6 +53,24 @@ try:
         check("لا تجاوز" in pg.locator(".chip.big").inner_text(), f"{label}: شارة التحقق المستقل")
         check(len(pg.locator("ul.explain li").all()) >= 4, f"{label}: شرح مبسط للنتيجة")
         pg.screenshot(path=f"{OUT}/{label}-result.png")
+        # 4ب) المرحلة 2: مساحة البناء والأشكال المقترحة
+        pg.click("[data-go=building]"); pg.wait_for_timeout(150)
+        pg.fill("[data-mass=target]", "150"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(400)
+        n_opts = pg.locator(".mass").count()
+        check(n_opts >= 3, f"{label}: أشكال مبنى مقترحة لمساحة 150 م²", n_opts)
+        check(pg.locator(".stat.hero b").inner_text() == "150.00", f"{label}: مساحة الطابق المختار 150.00", pg.locator(".stat.hero b").inner_text())
+        check("24.00 × 6.25" in pg.locator(".mass").first.inner_text(), f"{label}: الخيار الأول يملأ العرض 24.00 × 6.25", pg.locator(".mass em").first.inner_text())
+        check("لا يتجاوز" in pg.locator(".chip.big").inner_text(), f"{label}: شارة تحقق المبنى")
+        pg.locator(".mass").nth(2).click(); pg.wait_for_timeout(250)
+        check(pg.locator(".mass").nth(2).get_attribute("class").endswith("on"), f"{label}: اختيار شكل آخر")
+        pg.screenshot(path=f"{OUT}/{label}-building.png")
+        if label == "desktop":
+            with pg.expect_download() as dl: pg.click("#pbody [data-a=export]")
+            txt = open(dl.value.path(), encoding="utf-8").read()
+            check("BUILDING" in txt, "desktop: طبقة المبنى في ملف DXF")
+        pg.fill("[data-mass=target]", "400"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(400)
+        check("أكبر من المسموح" in pg.locator("#pbody").inner_text() and pg.locator(".stat.hero b").inner_text() == "180.00", f"{label}: 400 م² تُقص إلى 180 حسب نسبة البناء")
+        pg.fill("[data-mass=target]", "150"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(300)
         # 5) أرض زاوية
         pg.click("[data-step=street]"); pg.wait_for_timeout(150); click_edge(pg, 1)
         types = [pg.locator(f"[data-etype='{i}']").input_value() for i in range(4)]

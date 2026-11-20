@@ -224,3 +224,14 @@ ul.explain li.err b { background: rgba(255, 107, 107, .18); color: var(--danger)
 ul.explain li.info b { color: var(--side); }
 @media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1fr) 420px; } }
 @media (max-width: 860px) { .panel { grid-template-rows: auto 1fr; } .steps .st span { display: none; } .steps .st.now span { display: inline; } }
+
+/* ---------- المرحلة 2: أشكال المبنى ---------- */
+.masses { display: grid; gap: 8px; }
+.mass { display: grid; grid-template-columns: auto 64px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-radius: var(--r-m); border: 1px solid var(--ink-3); background: var(--ink-2); cursor: pointer; }
+.mass.on { border-color: var(--brass); background: rgba(214, 169, 86, .07); }
+.mass input { accent-color: var(--brass); }
+.mass svg { width: 64px; height: 64px; background: var(--ink-0); border-radius: 8px; }
+.mass span { display: grid; gap: 3px; min-width: 0; }
+.mass small { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+.mass em { font-style: normal; font: 600 13px var(--f-mono); color: var(--brass-2); direction: ltr; text-align: right; }
+input.input.big { height: 48px; font-size: 20px; }

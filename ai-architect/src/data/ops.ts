@@ -52,3 +52,7 @@ export function resetAutoTypes(p: Project) { const q = clone(p); q.edges.forEach
 export function setRules(p: Project, patch: Partial<Rules>) { const q = clone(p); q.rules = { ...q.rules, ...patch }; return done(q); }
 export function rename(p: Project, name: string) { const q = clone(p); q.name = name; return done(q); }
 export function setMeta(p: Project, patch: Partial<Project["meta"]>) { const q = clone(p); q.meta = { ...q.meta, ...patch }; return done(q); }
+/** بيانات المرحلة 2: مساحة الطابق المطلوبة والشكل المختار */
+export interface MassingStage { target: number | null; choice: string | null }
+export const massingOf = (p: Project): MassingStage => ({ target: null, choice: null, ...((p.stages as any).massing || {}) });
+export function setMassing(p: Project, patch: Partial<MassingStage>) { const q = clone(p); (q.stages as any).massing = { ...massingOf(q), ...patch }; q.updatedAt = Date.now(); return q; }

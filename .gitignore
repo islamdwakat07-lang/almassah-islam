@@ -4,3 +4,6 @@ app/build/
 local.properties
 *.iml
 .idea/
+
+# AI Architect: يُبنى في GitHub Actions
+app/src/main/assets/ai-architect/

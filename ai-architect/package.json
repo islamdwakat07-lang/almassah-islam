@@ -1,0 +1,20 @@
+{
+  "name": "ai-architect",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "clipper2-js": "^1.2.4",
+    "polygon-clipping": "^0.15.7",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

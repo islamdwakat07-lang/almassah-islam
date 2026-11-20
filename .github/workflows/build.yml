@@ -19,6 +19,19 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # AI Architect: إذا فشل أي اختبار للمحرك الهندسي أو ملفات DXF يتوقف البناء ولا يُنشر APK
+      - name: AI Architect – tests and build
+        working-directory: ai-architect
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm test
+          npm run build
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"

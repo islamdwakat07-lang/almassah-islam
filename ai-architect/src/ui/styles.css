@@ -235,3 +235,6 @@ ul.explain li.info b { color: var(--side); }
 .mass small { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 .mass em { font-style: normal; font: 600 13px var(--f-mono); color: var(--brass-2); direction: ltr; text-align: right; }
 input.input.big { height: 48px; font-size: 20px; }
+.excls { display: flex; flex-wrap: wrap; gap: 6px; }
+.excls .chip { height: auto; padding: 4px 4px 4px 10px; gap: 6px; }
+.excls .icon-btn { width: 30px; height: 30px; }

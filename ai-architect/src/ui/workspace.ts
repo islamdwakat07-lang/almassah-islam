@@ -7,7 +7,7 @@ import { buildableZone, ZoneResult } from "../engine/setbacks";
 import { verifyZone } from "../engine/verify";
 import { explain, Explanation } from "../engine/explain";
 import { countStreets } from "../engine/classify";
-import { generateMassing, MassResult, MassOption } from "../engine/massing";
+import { generateMassing, MassResult, MassOption, checkBuilding, effectiveParts } from "../engine/massing";
 import { parseDXF, UNIT_NAMES } from "../io/dxf-read";
 import { parseCoords } from "../io/coords";
 import { exportDXF } from "../io/export";
@@ -27,6 +27,9 @@ const STEPS: Array<[Step, string]> = [["land", "الأرض"], ["street", "الش
 export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
   let P = project, info: ParcelInfo | null = null, zone: ZoneResult | null = null, ex: Explanation | null = null, ver: any = null;
   let mass: MassResult | null = null, massKey = "";
+  // أدوات المبنى اليدوية: تحريك الأضلاع والرؤوس، رسم المبنى، رسم منطقة ممنوعة
+  let bmode: null | "edit" | "draw" | "excl" = null, draft: Pt[] = [], liveRing: Pt[] | null = null, bsel = -1;
+  let custom: MassOption | null = null, customChk: { ok: boolean; reason: string } | null = null, liveChk: { ok: boolean; reason: string } | null = null;
   let sel: { kind: "vertex" | "edge"; i: number } | null = null, cursor: Pt | null = null;
   let tool: "select" | "draw" | "pan" = P.parcel.closed ? "select" : "draw", showAngles = false;
   let step: Step = !P.parcel.closed ? "land" : !P.streets.length ? "street" : "result";
@@ -80,10 +83,19 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     // المرحلة 2: أشكال المبنى (تُعاد فقط إذا تغيّر ما يؤثر عليها)
     const M = ops.massingOf(P), A = info && info.area || 0;
     const covMax = P.rules.coverage != null ? A * P.rules.coverage / 100 : null;
-    const key = JSON.stringify([r, effectiveSetbacks(P), P.streets, P.rules.join, P.rules.miterLimit, covMax, M.target]);
-    if (key !== massKey) { massKey = key; mass = zone && zone.ok && M.target ? generateMassing({ parcel: r, zone, fronts: P.streets, setbacks: effectiveSetbacks(P), target: M.target, coverageMax: covMax }) : null; }
+    const key = JSON.stringify([r, effectiveSetbacks(P), P.streets, P.rules.join, P.rules.miterLimit, covMax, M.target, M.exclusions]);
+    if (key !== massKey) { massKey = key; mass = zone && zone.ok && M.target ? generateMassing({ parcel: r, zone, fronts: P.streets, setbacks: effectiveSetbacks(P), target: M.target, coverageMax: covMax, exclusions: M.exclusions }) : null; }
+    custom = null; customChk = null;
+    if (M.custom && M.custom.length >= 3 && zone && zone.ok) {
+      const ring = M.custom as Pt[], b = bbox(ring);
+      customChk = checkBuilding(r, zone, ring, M.exclusions);
+      custom = { id: "custom", kind: "custom", front: P.streets[0] ?? 0, title: "مبنى معدّل يدوياً", desc: "", ring, area: ringAreaOf(ring), width: b.w, depth: b.h, frontGap: NaN, rect: false, verified: customChk.ok };
+    }
   }
-  const chosen = (): MassOption | null => { if (!mass || !mass.options.length) return null; const c = ops.massingOf(P).choice; return mass.options.find(o => o.id === c) || mass.options[0]; };
+  const ringAreaOf = (q: Pt[]) => { let a = 0; for (let i = 0; i < q.length; i++) { const u = q[i], v = q[(i + 1) % q.length]; a += (u[0] - q[0][0]) * (v[1] - q[0][1]) - (v[0] - q[0][0]) * (u[1] - q[0][1]); } return Math.abs(a) / 2; };
+  const proposed = (): MassOption | null => { if (!mass || !mass.options.length) return null; const c = ops.massingOf(P).choice; return mass.options.find(o => o.id === c) || mass.options[0]; };
+  const chosen = (): MassOption | null => custom || proposed();
+  const zoneParts = () => (zone && zone.ok ? effectiveParts(zone, ops.massingOf(P).exclusions as Pt[][]) : []);
   function commit(next: Project, record = true) {
     if (!next || next === P) return;
     if (record) hist.push(P);
@@ -154,18 +166,37 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     const path = (ring: Pt[]) => "M" + ring.map(p => T(p[0], p[1]).map(v => v.toFixed(2)).join(" ")).join("L") + "Z";
     if (n >= 3 && P.parcel.closed) out.push(`<path d="${path(r)}" fill="rgba(243,234,216,.035)"/>`);
     if (zone && zone.parts.length) out.push(`<path d="${zone.parts.map(pt => [pt.outer, ...pt.holes].map(path).join("")).join("")}" fill="var(--zone-fill)" fill-rule="evenodd" stroke="var(--zone)" stroke-width="1.6" stroke-dasharray="7 5"/>`);
-    const B = step === "building" ? chosen() : null;
+    if (step === "building") ops.massingOf(P).exclusions.forEach((x, k) => {
+      const q = x as Pt[]; out.push(`<path d="${path(q)}" fill="url(#hatch)" stroke="var(--danger)" stroke-width="1.6"/>`);
+      const c = q.reduce((acc, p) => [acc[0] + p[0] / q.length, acc[1] + p[1] / q.length], [0, 0]) as Pt, cs = T(...c);
+      out.push(label(cs[0], cs[1], "ممنوع " + (k + 1), "var(--danger)", 0, 11));
+    });
+    const B0 = step === "building" ? chosen() : null, Bring = liveRing || (B0 && B0.ring), bad = liveRing ? !!liveChk && !liveChk.ok : !!(B0 && B0.kind === "custom" && !B0.verified);
+    const B = B0 && Bring ? { ...B0, ring: Bring, area: ringAreaOf(Bring) } : null;
     if (B) {
-      out.push(`<path d="${path(B.ring)}" fill="rgba(214,169,86,.28)" stroke="var(--brass-2)" stroke-width="2.4" stroke-linejoin="round"/>`);
-      const bn = B.ring.length;
+      out.push(`<path d="${path(B.ring)}" fill="${bad ? "rgba(255,107,107,.25)" : "rgba(214,169,86,.28)"}" stroke="${bad ? "var(--danger)" : "var(--brass-2)"}" stroke-width="2.4" stroke-linejoin="round"/>`);
+      const bn = B.ring.length, editing = bmode === "edit";
       for (let i = 0; i < bn; i++) {
-        if (!B.rect && bn > 6) break;
-        const A1 = B.ring[i], A2 = B.ring[(i + 1) % bn], a = T(...A1), b = T(...A2), L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 40 || (B.rect && i > 1)) continue;
+        if (!B.rect && bn > 10 && !editing) break;
+        const A1 = B.ring[i], A2 = B.ring[(i + 1) % bn], a = T(...A1), b = T(...A2), L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 40 || (B.rect && i > 1 && !editing)) continue;
         let ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
-        out.push(label((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, fmt(dist(A1, A2)), "var(--brass-2)", ang, 11));
+        let mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+        if (editing) { const cc = B.ring.reduce((acc, p) => [acc[0] + p[0] / bn, acc[1] + p[1] / bn], [0, 0]) as Pt, cs0 = T(...cc), dx = mx - cs0[0], dy = my - cs0[1], dd = Math.hypot(dx, dy) || 1; mx += dx / dd * 20; my += dy / dd * 20; }
+        out.push(label(mx, my, fmt(dist(A1, A2)), "var(--brass-2)", ang, 11));
       }
       const c = B.ring.reduce((acc, p) => [acc[0] + p[0] / bn, acc[1] + p[1] / bn], [0, 0]) as Pt, cs = T(...c);
-      out.push(label(cs[0], cs[1], fmt(B.area) + " م²", "var(--text)", 0, 13));
+      out.push(label(cs[0], cs[1], fmt(B.area) + " م²", bad ? "var(--danger)" : "var(--text)", 0, 13));
+      if (editing) B.ring.forEach((p, i) => {
+        const s1 = T(...p), s2 = T(...B.ring[(i + 1) % bn]), m = [(s1[0] + s2[0]) / 2, (s1[1] + s2[1]) / 2], on = bsel === i;
+        out.push(`<rect x="${m[0] - 7}" y="${m[1] - 7}" width="14" height="14" rx="3" fill="${on ? "var(--brass)" : "var(--ink-1)"}" stroke="var(--brass-2)" stroke-width="2"/>`);
+        out.push(`<circle cx="${s1[0]}" cy="${s1[1]}" r="7" fill="var(--brass)" stroke="var(--ink-0)" stroke-width="2"/>`);
+      });
+    }
+    if (step === "building" && (bmode === "draw" || bmode === "excl") && draft.length) {
+      const col = bmode === "excl" ? "var(--danger)" : "var(--brass-2)", pts = cursor ? [...draft, cursor] : draft;
+      out.push(`<path d="M${pts.map(p => T(...p).map(v => v.toFixed(1)).join(" ")).join("L")}" fill="none" stroke="${col}" stroke-width="2" stroke-dasharray="6 4"/>`);
+      draft.forEach((p, i) => { const q = T(...p); out.push(`<circle cx="${q[0]}" cy="${q[1]}" r="${i === 0 && draft.length >= 3 ? 9 : 5}" fill="${i === 0 && draft.length >= 3 ? "none" : col}" stroke="${col}" stroke-width="2"/>`); });
+      if (cursor) { const a = draft[draft.length - 1], q1 = T(...a), q2 = T(...cursor); out.push(label((q1[0] + q2[0]) / 2, (q1[1] + q2[1]) / 2 - 12, fmt(dist(a, cursor)), col)); }
     }
     const cross = new Set((info && info.issues[0] && info.issues[0].pairs ? info.issues[0].pairs.flat() : []) as number[]);
     for (let i = 0; i < (P.parcel.closed ? n : n - 1); i++) {
@@ -214,6 +245,7 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
         `<text x="${s[0] + 9}" y="${s[1] - 9}" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)" font-weight="600">${i + 1}</text></g>`);
     });
     out.push(`<g transform="translate(${W - 32},${56})" opacity=".8"><path d="M0 -16 L6 6 L0 2 L-6 6Z" fill="var(--parcel)"/><text y="20" font-size="11" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono, monospace">N</text></g>`);
+    out.unshift(`<defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="rgba(255,107,107,.10)"/><line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,107,107,.55)" stroke-width="2"/></pattern></defs>`);
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = out.join("");
     const sb = niceStep(vp.s, 90);
     $("#scale", root).innerHTML = `<span style="display:inline-block;width:${(sb * vp.s).toFixed(0)}px;height:6px;border:1.5px solid var(--muted);border-top:0;vertical-align:middle;margin-inline-end:8px"></span>${sb >= 1 ? sb + " m" : (sb * 100).toFixed(0) + " cm"}`;
@@ -340,6 +372,28 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="${pth(r)}" fill="none" stroke="var(--parcel)" stroke-width="1.2"/>${zone ? zone.parts.map(pt => `<path d="${pth(pt.outer)}" fill="none" stroke="var(--zone)" stroke-width="1" stroke-dasharray="2 2"/>`).join("") : ""}
       ${P.streets.map(i => `<path d="M${X(r[i])}L${X(r[(i + 1) % r.length])}" stroke="var(--front)" stroke-width="3" stroke-opacity=".5"/>`).join("")}<path d="${pth(o.ring)}" fill="rgba(214,169,86,.45)" stroke="var(--brass-2)" stroke-width="1.2"/></svg>`;
   }
+  function manualHtml(A: number) {
+    const M = ops.massingOf(P), cur = chosen(), on = (m: string) => (bmode === m ? "primary" : "");
+    const ring = cur ? cur.ring : null, n = ring ? ring.length : 0;
+    return `<div class="sect"><h3>تعديل يدوي مثل الأوتوكاد</h3>
+      <p class="note">حرّك أضلاع المبنى ورؤوسه بإصبعك، أو ارسم المبنى بنفسك، أو ارسم منطقة لا تريد البناء فيها (شجرة، بئر، بناء قديم، ممر…) فتبتعد عنها الأشكال المقترحة.</p>
+      <div class="row">
+        <button class="btn ${on("edit")}" data-a="bedit" ${cur ? "" : "disabled"}>✋ حرّك أضلاع المبنى</button>
+        <button class="btn ${on("draw")}" data-a="bdraw">✏️ ارسم المبنى بنفسك</button>
+        <button class="btn ${on("excl")}" data-a="bexcl">⛔ ارسم منطقة ممنوعة</button>
+      </div>
+      ${custom ? `<div class="stats">
+        <div class="stat hero wide"><b>${fmt(custom.area)}</b><span>مساحة المبنى المعدّل م²${A ? ` · نسبة البناء ${fmt(custom.area / A * 100, 1)}%` : ""}</span></div></div>
+        <p class="chip ${customChk && customChk.ok ? "ok" : "err"} big"><i></i>${customChk && customChk.ok ? "تم التحقق: المبنى لا يتجاوز أي ارتداد" : "انتبه: " + esc(customChk ? customChk.reason : "")}</p>
+        ${mass && mass.used && custom.area > mass.used + 0.01 && mass.capped === "coverage" ? `<p class="alert warn">المساحة أكبر من المسموح حسب نسبة البناء (${fmt(mass.used)} م²).</p>` : ""}
+        <button class="btn ghost" data-a="breset">↺ رجوع للأشكال المقترحة</button>` : ""}
+      ${bmode === "edit" && ring ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الضلع</th><th>الطول</th><th>حرّكه للخارج (+) أو للداخل (−)</th></tr></thead><tbody>
+        ${ring.map((p, i) => `<tr class="${bsel === i ? "sel" : ""}" data-row-b="${i}"><td><span class="idx">${i + 1}</span></td><td class="num">${fmt(dist(p, ring[(i + 1) % n]))}</td>
+          <td><input class="input num" inputmode="decimal" data-boff="${i}" placeholder="مثلاً 0.50 أو −1"></td></tr>`).join("")}</tbody></table></div>
+        <p class="note">اسحب المربع في منتصف الضلع ليتحرك الضلع موازياً لنفسه، أو اسحب الدائرة لتحريك الرأس. أو اكتب المسافة بالضبط في الجدول.</p>` : ""}
+      ${M.exclusions.length ? `<div class="excls">${M.exclusions.map((x, k) => `<span class="chip warn">⛔ منطقة ممنوعة ${k + 1} · <span class="num">${fmt(ringAreaOf(x as Pt[]))}</span> م² <button class="icon-btn" data-delx="${k}" aria-label="حذف المنطقة الممنوعة ${k + 1}">${icon.trash}</button></span>`).join("")}</div>` : ""}
+    </div>`;
+  }
   function buildingStep() {
     const M = ops.massingOf(P), A = info && info.area || 0, cur = chosen();
     const covMax = P.rules.coverage != null ? A * P.rules.coverage / 100 : null;
@@ -356,14 +410,15 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
       <div class="masses">${mass.options.map(o => `<label class="mass ${cur && cur.id === o.id ? "on" : ""}"><input type="radio" name="mass" value="${o.id}" ${cur && cur.id === o.id ? "checked" : ""}>${thumb(o)}
         <span><b>${esc(o.title)}</b><small>${esc(o.desc)}</small>
         <em class="num">${o.rect ? `${fmt(o.width)} × ${fmt(o.depth)} م · ` : `عمق ${fmt(o.depth)} م · `}${fmt(o.area)} م²</em></span></label>`).join("")}</div></div>
-      ${cur ? `<div class="stats">
+      ${cur && !custom ? `<div class="stats">
         <div class="stat hero wide"><b>${fmt(cur.area)}</b><span>مساحة الطابق م²${A ? ` · نسبة البناء ${fmt(cur.area / A * 100, 1)}%` : ""}</span></div>
         <div class="stat"><b>${fmt(cur.width)}</b><span>${cur.rect ? "عرض الواجهة م" : "أقصى عرض م"}</span></div>
         <div class="stat"><b>${fmt(cur.depth)}</b><span>العمق م</span></div>
         <div class="stat wide"><b>${fmt(cur.frontGap)}</b><span>بعد واجهة المبنى عن الشارع م (على خط الارتداد الأمامي)</span></div>
       </div>
       <p class="chip ok big"><i></i>تم التحقق: المبنى لا يتجاوز أي ارتداد</p>
-      ${P.rules.maxFloors ? `<p class="note">مع ${P.rules.maxFloors} طوابق بنفس المساحة: مجموع البناء ≈ <b class="num">${fmt(cur.area * P.rules.maxFloors)}</b> م².</p>` : ""}` : ""}` : ""}
+      ${P.rules.maxFloors && P.rules.maxFloors > 1 ? `<p class="note">مع ${P.rules.maxFloors} طوابق بنفس المساحة: مجموع البناء ≈ <b class="num">${fmt(cur.area * P.rules.maxFloors)}</b> م².</p>` : ""}` : ""}` : ""}
+    ${zone && zone.ok ? manualHtml(A) : ""}
     <div class="row"><button class="btn primary" data-a="export">${icon.download}تصدير DXF مع المبنى</button></div>
     <p class="note">المبنى في طبقة BUILDING بنفس الإحداثيات الحقيقية. هذه دراسة أولية؛ المخطط الرسمي للترخيص يعدّه مهندس مرخّص.</p>`;
   }
@@ -376,6 +431,13 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
   function renderDrawbar() {
     const db = $("#drawbar", root), n = P.parcel.vertices.length;
     if (step === "street" && P.parcel.closed) { db.hidden = false; db.innerHTML = `<span>اضغط على ضلع الشارع في الرسم</span>`; return; }
+    if (step === "building" && bmode) {
+      db.hidden = false;
+      if (bmode === "edit") { db.innerHTML = `<span>اسحب ▢ لتحريك ضلع · ● لتحريك رأس</span><button class="btn primary" data-a="bdone">تم</button>`; return; }
+      const what = bmode === "excl" ? "المنطقة الممنوعة" : "المبنى", k = draft.length;
+      db.innerHTML = `<span>${k ? `${k} نقاط · اضغط للنقطة التالية` : `اضغط لوضع أول نقطة من ${what}`}</span>${k ? `<button class="btn" data-a="bpop">تراجع</button>` : ""}${k >= 3 ? `<button class="btn primary" data-a="bclose">إغلاق</button>` : ""}<button class="btn ghost" data-a="bdone">إلغاء</button>`;
+      return;
+    }
     if (P.parcel.closed || tool !== "draw") { db.hidden = true; return; }
     db.hidden = false;
     db.innerHTML = `<span>${n ? `${n} ${n === 1 ? "رأس" : n === 2 ? "رأسان" : "رؤوس"} · اضغط لإضافة التالي` : "اضغط على الرسم لوضع أول رأس"}</span>
@@ -401,18 +463,21 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
       if (!(v >= 0) || (k === "miterLimit" && v < 1) || (k === "coverage" && v > 100)) { toast(k === "coverage" ? "النسبة بين 0 و 100" : k === "miterLimit" ? "حد التقاطع 1 أو أكثر" : "اكتب رقماً صحيحاً"); t.value = (P.rules as any)[k] ?? ""; return; }
       commit(ops.setRules(P, { [k]: v } as any));
     } else if (D.mass === "target") { const sv = t.value.trim(); if (!sv) return commit(ops.setMassing(P, { target: null })); const v = readNum(sv); if (!(v > 0)) { toast("اكتب المساحة بالمتر المربع"); t.value = ops.massingOf(P).target ?? ""; return; } commit(ops.setMassing(P, { target: v, choice: null })); }
-    else if (t.name === "mass") commit(ops.setMassing(P, { choice: t.value }));
+    else if (t.name === "mass") commit(ops.setMassing(P, { choice: t.value, custom: null }));
+    else if (D.boff !== undefined) { const v = readNum(t.value.replace("−", "-")); const cur = chosen(); if (!Number.isFinite(v) || !cur) { t.value = ""; return; } bsel = +D.boff; commit(ops.setMassing(P, { custom: moveEdge(cur.ring, +D.boff, v) })); }
     else if (t.name === "join") commit(ops.setRules(P, { join: t.value }));
     else if (t.id === "profSel" && t.value) { const pr = listProfiles().find(p => p.id === t.value); if (pr) { commit(ops.setRules(P, { ...pr.rules })); toast(`طُبّق نظام «${pr.rules.profileName}»`); } }
   });
   pbody.addEventListener("keydown", (e: any) => { if (e.key === "Enter" && e.target.matches("input")) e.target.blur(); });
   pbody.addEventListener("click", (e: any) => {
     const d = e.target.closest("[data-delv]"); if (d) { delVertex(+d.dataset.delv); return; }
+    const dx = e.target.closest("[data-delx]"); if (dx) { const M = ops.massingOf(P); commit(ops.setMassing(P, { exclusions: M.exclusions.filter((_, k) => k !== +dx.dataset.delx) })); return; }
+    const rb = e.target.closest("[data-row-b]"); if (rb && !e.target.closest("input")) { bsel = +rb.dataset.rowB; renderScene(); renderPanel(); }
     const g = e.target.closest("[data-go]"); if (g) { goStep(g.dataset.go); return; }
     const re = e.target.closest("[data-row-e]"); if (re && !e.target.closest("input,select")) { sel = { kind: "edge", i: +re.dataset.rowE }; renderScene(); renderPanel(); }
     const rv = e.target.closest("[data-row-v]"); if (rv && !e.target.closest("input,button")) { sel = { kind: "vertex", i: +rv.dataset.rowV }; renderScene(); renderPanel(); }
   });
-  function goStep(s: Step) { step = s; pending = false; if (document.activeElement && pbody.contains(document.activeElement)) (document.activeElement as any).blur(); if (s !== "land" && tool === "draw" && P.parcel.closed) tool = "select"; renderAll(); pbody.scrollTop = 0; if (panel.classList.contains("min")) setSheet(snaps()[1]); }
+  function goStep(s: Step) { if (s !== "building") { bmode = null; draft = []; } step = s; pending = false; if (document.activeElement && pbody.contains(document.activeElement)) (document.activeElement as any).blur(); if (s !== "land" && tool === "draw" && P.parcel.closed) tool = "select"; renderAll(); pbody.scrollTop = 0; if (panel.classList.contains("min")) setSheet(snaps()[1]); }
   $("#steps", root).addEventListener("click", (e: any) => { const b = e.target.closest("[data-step]"); if (b && !b.disabled) goStep(b.dataset.step); });
 
   /* ---------- الأوامر ---------- */
@@ -435,6 +500,12 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     else if (a === "export") doExport();
     else if (a === "paste") pasteDialog();
     else if (a === "clear") clearDialog();
+    else if (a === "bedit") { bmode = bmode === "edit" ? null : "edit"; draft = []; renderAll(); }
+    else if (a === "bdraw" || a === "bexcl") { const m = a === "bdraw" ? "draw" : "excl"; bmode = bmode === m ? null : m; draft = []; renderAll(); }
+    else if (a === "bdone") { bmode = null; draft = []; liveRing = null; renderAll(); }
+    else if (a === "bpop") { draft.pop(); renderDrawbar(); renderScene(); }
+    else if (a === "bclose") finishDraft();
+    else if (a === "breset") { bmode = null; commit(ops.setMassing(P, { custom: null })); }
     else if (a === "autotypes") commit(ops.resetAutoTypes(P));
     else if (a === "saveprof") { if (!P.rules.profileName || P.rules.profileName === "مخصّص") { toast("اكتب اسم النظام أولاً (مثلاً: بلدية عصيرة – منطقة سكن أ)"); return; } saveProfile(P.rules); toast(`حُفظ نظام «${P.rules.profileName}» لاستخدامه في مشاريع أخرى`); renderPanel(); }
     else if (a === "delprof") { const v = ($("#profSel", root) as any)?.value; if (!v) return toast("اختر النظام من القائمة أولاً"); deleteProfile(v); renderPanel(); toast("حُذف النظام المحفوظ"); }
@@ -482,6 +553,52 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     catch (e: any) { toast(e && e.code === "declined" ? "أُلغي الحفظ" : "تعذّر حفظ الملف" + (e && e.message ? ": " + e.message : "")); }
   }
 
+  /* ---------- هندسة التعديل اليدوي ---------- */
+  const r3 = (v: number) => Math.round(v * 1000) / 1000;
+  /** تحريك ضلع موازياً لنفسه مسافة d (موجب = للخارج)، والضلعان المجاوران يحافظان على اتجاههما (مثل OFFSET/STRETCH) */
+  function moveEdge(ring: Pt[], i: number, d: number): Array<[number, number]> {
+    const n = ring.length, a = ring[i], b = ring[(i + 1) % n], L = dist(a, b) || 1;
+    let nx = (b[1] - a[1]) / L, ny = -(b[0] - a[0]) / L;   // يمين اتجاه الضلع
+    if (ringSigned(ring) < 0) { nx = -nx; ny = -ny; }       // للحلقة عكس عقارب الساعة يمين الضلع = الخارج
+    const a2: Pt = [a[0] + nx * d, a[1] + ny * d], b2: Pt = [b[0] + nx * d, b[1] + ny * d];
+    const inter = (p1: Pt, p2: Pt, q1: Pt, q2: Pt): Pt | null => { const d1 = [p2[0] - p1[0], p2[1] - p1[1]], d2 = [q2[0] - q1[0], q2[1] - q1[1]], den = d1[0] * d2[1] - d1[1] * d2[0]; if (Math.abs(den) < 1e-12) return null; const t = ((q1[0] - p1[0]) * d2[1] - (q1[1] - p1[1]) * d2[0]) / den; return [p1[0] + d1[0] * t, p1[1] + d1[1] * t]; };
+    const out = ring.map(p => [p[0], p[1]] as Pt);
+    out[i] = inter(a2, b2, ring[(i - 1 + n) % n], a) || a2;
+    out[(i + 1) % n] = inter(a2, b2, b, ring[(i + 2) % n]) || b2;
+    return out.map(p => [r3(p[0]), r3(p[1])] as [number, number]);
+  }
+  const ringSigned = (q: Pt[]) => { let s2 = 0; for (let i = 0; i < q.length; i++) { const u = q[i], v = q[(i + 1) % q.length]; s2 += (u[0] - q[0][0]) * (v[1] - q[0][1]) - (v[0] - q[0][0]) * (u[1] - q[0][1]); } return s2; };
+  /** التقاط مثل الأوتوكاد: رؤوس المنطقة الصالحة والأرض والمسودة، ثم أقرب نقطة على خط الارتداد */
+  function snap(px: number, py: number): Pt {
+    const w = vp.toWorld(px, py), lim = 10; let best: Pt | null = null, bd = lim;
+    const pts: Pt[] = [...zoneParts().flatMap(pp => pp.outer), ...(ringOf(P) as Pt[]), ...(draft.length >= 3 ? [draft[0]] : [])];
+    for (const q of pts) { const s2 = vp.toScreen(q[0], q[1]), d = Math.hypot(s2[0] - px, s2[1] - py); if (d < bd) { bd = d; best = q; } }
+    if (best) return [best[0], best[1]];
+    bd = 9;
+    for (const pp of zoneParts()) for (let i = 0; i < pp.outer.length; i++) {
+      const a = vp.toScreen(...pp.outer[i]), b = vp.toScreen(...pp.outer[(i + 1) % pp.outer.length]), c = closestOnSeg([px, py], a, b).p, d = Math.hypot(c[0] - px, c[1] - py);
+      if (d < bd) { bd = d; best = vp.toWorld(c[0], c[1]); }
+    }
+    return best ? best : [r3(w[0]), r3(w[1])];
+  }
+  function finishDraft() {
+    if (draft.length < 3) return toast("ارسم 3 نقاط على الأقل");
+    const pts = draft.map(p => [r3(p[0]), r3(p[1])] as [number, number]), m = bmode;
+    draft = []; bmode = null;
+    if (m === "excl") { const M = ops.massingOf(P); commit(ops.setMassing(P, { exclusions: [...M.exclusions, pts] })); toast("أُضيفت المنطقة الممنوعة؛ الأشكال المقترحة تبتعد عنها الآن"); }
+    else { commit(ops.setMassing(P, { custom: pts })); toast(customChk && customChk.ok ? "المبنى داخل الارتدادات ✓" : "انتبه: " + (customChk ? customChk.reason : ""), 5000); }
+  }
+  function hitBuilding(px: number, py: number): { kind: "bv" | "be"; i: number } | null {
+    const cur = chosen(); if (!cur) return null; const q = cur.ring, n = q.length; let best: any = null, bd = HIT;
+    for (let i = 0; i < n; i++) {
+      const s1 = vp.toScreen(...q[i]), s2 = vp.toScreen(...q[(i + 1) % n]), m = [(s1[0] + s2[0]) / 2, (s1[1] + s2[1]) / 2];
+      const dv = Math.hypot(s1[0] - px, s1[1] - py), de = Math.hypot(m[0] - px, m[1] - py);
+      if (dv < bd) { bd = dv; best = { kind: "bv", i }; }
+      if (de < bd) { bd = de; best = { kind: "be", i }; }
+    }
+    return best;
+  }
+
   /* ---------- اللمس والفأرة ---------- */
   const ptrs = new Map<number, [number, number]>(); let drag: any = null, pinch: any = null;
   const local = (e: PointerEvent | WheelEvent): [number, number] => { const r = svg.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
@@ -495,6 +612,10 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
       const i = +midEl.dataset.mid, r = ringOf(P), m: [number, number] = [(r[i][0] + r[(i + 1) % r.length][0]) / 2, (r[i][1] + r[(i + 1) % r.length][1]) / 2];
       commit(ops.insertVertex(P, i, m[0], m[1])); sel = { kind: "vertex", i: i + 1 }; drag = { kind: "vertex", i: i + 1, start: [px, py], moved: false, recorded: true }; renderAll(); return;
     }
+    if (step === "building" && bmode === "edit" && tool !== "pan") {
+      const h = hitBuilding(px, py), cur = chosen();
+      if (h && cur) { drag = { kind: h.kind, i: h.i, start: [px, py], w0: vp.toWorld(px, py), ring0: cur.ring.map(p => [p[0], p[1]] as Pt), moved: false }; bsel = h.kind === "be" ? h.i : bsel; return; }
+    }
     const v = tool !== "pan" && step === "land" ? hitVertex(px, py) : -1;
     if (tool === "select" && v >= 0) { drag = { kind: "vertex", i: v, start: [px, py], moved: false, recorded: false }; sel = { kind: "vertex", i: v }; renderScene(); return; }
     if (tool === "draw" && v === 0 && P.parcel.vertices.length >= 3) { drag = { kind: "close", start: [px, py], moved: false }; return; }
@@ -504,10 +625,22 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     const [px, py] = local(e); cursor = vp.toWorld(px, py); $("#coords", root).textContent = `X ${fmtCoord(cursor[0])} · Y ${fmtCoord(cursor[1])}`;
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, [px, py]);
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(b[0] - a[0], b[1] - a[1]), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; vp.panBy(m[0] - pinch.m[0], m[1] - pinch.m[1]); vp.zoomAt(m[0], m[1], d / (pinch.d || d)); pinch = { d, m }; renderScene(); return; }
-    if (!drag) { if (tool === "draw" && !P.parcel.closed) renderScene(); return; }
+    if (!drag) { if ((tool === "draw" && !P.parcel.closed) || (step === "building" && draft.length)) { if (step === "building" && draft.length) cursor = snap(px, py); renderScene(); } return; }
     if (!drag.moved && Math.hypot(px - drag.start[0], py - drag.start[1]) > 5) drag.moved = true;
     if (!drag.moved) return;
     if (drag.kind === "pan") { vp.panBy(px - drag.last[0], py - drag.last[1]); drag.last = [px, py]; renderScene(); }
+    else if (drag.kind === "bv" || drag.kind === "be") {
+      if (drag.kind === "bv") { const q = drag.ring0.map((p: Pt) => [p[0], p[1]] as Pt); q[drag.i] = snap(px, py); liveRing = q; }
+      else {
+        const q: Pt[] = drag.ring0, n = q.length, a = q[drag.i], b = q[(drag.i + 1) % n], L = dist(a, b) || 1;
+        let nx = (b[1] - a[1]) / L, ny = -(b[0] - a[0]) / L; if (ringSigned(q) < 0) { nx = -nx; ny = -ny; }
+        const d = Math.round(((cursor[0] - drag.w0[0]) * nx + (cursor[1] - drag.w0[1]) * ny) * 100) / 100;   // بخطوات 1 سم
+        liveRing = moveEdge(q, drag.i, d) as Pt[];
+        $("#drawbar", root).firstElementChild!.textContent = `إزاحة الضلع ${drag.i + 1}: ${d >= 0 ? "+" : ""}${d.toFixed(2)} م`;
+      }
+      if (zone) liveChk = checkBuilding(ringOf(P), zone, liveRing as Pt[], ops.massingOf(P).exclusions as Pt[][]);
+      renderScene();
+    }
     else if (drag.kind === "vertex") { if (!drag.recorded) { hist.push(P); drag.recorded = true; } P = ops.moveVertex(P, drag.i, cursor[0], cursor[1]); compute(); renderScene(); }
   });
   function endPtr(e: PointerEvent) {
@@ -515,9 +648,15 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     if (pinch) { if (ptrs.size < 2) pinch = null; drag = null; return; }
     const d = drag; drag = null; if (!d) return;
     if (d.kind === "vertex") { if (d.moved) ctx.store.save(P); renderAll(); return; }
+    if (d.kind === "bv" || d.kind === "be") { const q = liveRing; liveRing = null; liveChk = null; if (d.moved && q) commit(ops.setMassing(P, { custom: q.map(p => [r3(p[0]), r3(p[1])] as [number, number]) })); else { renderScene(); renderPanel(); } return; }
     if (d.kind === "close") { if (!d.moved) closeIt(); return; }
     if (d.kind === "pan" && !d.moved) {
       if (tool === "draw" && !P.parcel.closed) { const w = vp.toWorld(px, py); commit(ops.addVertex(P, w[0], w[1])); return; }
+      if (step === "building" && (bmode === "draw" || bmode === "excl")) {
+        const w = snap(px, py);
+        if (draft.length >= 3) { const f = vp.toScreen(...draft[0]); if (Math.hypot(f[0] - px, f[1] - py) < 16) { finishDraft(); return; } }
+        draft.push(w); renderDrawbar(); renderScene(); return;
+      }
       const ei = hitEdge(px, py);
       if (step === "street" && ei >= 0) { commit(ops.toggleStreet(P, ei)); sel = { kind: "edge", i: ei }; renderAll(); return; }
       if (tool === "select") { sel = ei >= 0 ? { kind: "edge", i: ei } : null; renderScene(); renderPanel(); }
@@ -533,7 +672,8 @@ export function openWorkspace(root: HTMLElement, project: Project, ctx: any) {
     else if ((e.ctrlKey || e.metaKey) && (k === "y" || (k === "z" && e.shiftKey))) { e.preventDefault(); redo(); }
     else if ((k === "delete" || k === "backspace") && sel && sel.kind === "vertex") { e.preventDefault(); delVertex(sel.i); }
     else if (k === "enter" && tool === "draw") closeIt();
-    else if (k === "escape") { sel = null; renderAll(); }
+    else if (k === "escape") { sel = null; bmode = null; draft = []; renderAll(); }
+    else if (k === "enter" && step === "building" && draft.length >= 3) finishDraft();
   };
   document.addEventListener("keydown", onKey);
   const ro = new ResizeObserver(() => { resize(); renderScene(); }); ro.observe(cw);

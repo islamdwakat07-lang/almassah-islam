@@ -71,6 +71,46 @@ try:
         pg.fill("[data-mass=target]", "400"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(400)
         check("أكبر من المسموح" in pg.locator("#pbody").inner_text() and pg.locator(".stat.hero b").inner_text() == "180.00", f"{label}: 400 م² تُقص إلى 180 حسب نسبة البناء")
         pg.fill("[data-mass=target]", "150"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(300)
+        # 4ج) أدوات يدوية: منطقة ممنوعة، تحريك ضلع، إزاحة بالأرقام، رسم المبنى
+        def W(x, y):   # من إحداثيات الأرض المحلية (0..30، 0..20) إلى الشاشة عبر موضع الرأسين 1 و3
+            a0 = pg.locator("[data-v='0'] circle").first.bounding_box(); a2 = pg.locator("[data-v='2'] circle").first.bounding_box()
+            x0, y0 = a0["x"] + a0["width"] / 2, a0["y"] + a0["height"] / 2; x2, y2 = a2["x"] + a2["width"] / 2, a2["y"] + a2["height"] / 2
+            return x0 + (x2 - x0) * x / 30, y0 + (y2 - y0) * y / 20
+        pg.evaluate("document.querySelector('#panel').style.setProperty('height','112px')") if label == "phone" else None
+        pg.fill("[data-mass=target]", "100"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(300)
+        pg.click("[data-a=bexcl]"); pg.wait_for_timeout(150)
+        for (x, y) in [(3, 5), (15, 5), (15, 16), (3, 16)]: pg.mouse.click(*W(x, y)); pg.wait_for_timeout(80)
+        pg.click("#drawbar [data-a=bclose]"); pg.wait_for_timeout(500)
+        txt = pg.locator(".mass").first.inner_text()
+        check("12.00 × 8.33" in txt, f"{label}: منطقة ممنوعة على اليسار ⇒ الشكل يملأ العرض المتبقي 12.00 × 8.33", txt.split("\n")[-1])
+        check("منطقة ممنوعة 1" in pg.locator("#pbody").inner_text(), f"{label}: المنطقة الممنوعة ظاهرة في القائمة")
+        pg.click("[data-a=bedit]"); pg.wait_for_timeout(200)
+        # الضلع الخلفي للمبنى (y = 5 + 8.33): نسحب منتصفه للخلف 2 م
+        sx, sy = W(21, 5 + 100 / 12); ex_, ey = W(21, 5 + 100 / 12 + 2)
+        pg.mouse.move(sx, sy); pg.mouse.down()
+        for k in range(1, 9): pg.mouse.move(sx + (ex_ - sx) * k / 8, sy + (ey - sy) * k / 8); pg.wait_for_timeout(30)
+        pg.mouse.up(); pg.wait_for_timeout(400)
+        hero = pg.locator(".stat.hero b").last.inner_text()
+        check(abs(float(hero) - 124.0) < 0.6, f"{label}: سحب الضلع الخلفي 2 م ⇒ 12 × 10.33 ≈ 124 م²", hero)
+        check("لا يتجاوز" in pg.locator(".chip.big").last.inner_text(), f"{label}: المبنى المعدّل داخل الارتدادات")
+        rows = pg.locator("[data-boff]").count()
+        # نكتب +5 للضلع الخلفي ⇒ يتجاوز الارتداد الخلفي (عمقه يصبح 15.33 > 11) فيظهر تحذير
+        back = max(range(rows), key=lambda i: 0)  # أي ضلع؛ نختار الذي يعطي تجاوزاً
+        for i in range(rows):
+            pg.fill(f"[data-boff='{i}']", "5"); pg.press(f"[data-boff='{i}']", "Enter"); pg.wait_for_timeout(300)
+            if "انتبه" in pg.locator(".chip.big").last.inner_text(): break
+        check("انتبه" in pg.locator(".chip.big").last.inner_text(), f"{label}: إزاحة 5 م بالأرقام ⇒ تحذير تجاوز بالأحمر", pg.locator(".chip.big").last.inner_text())
+        pg.click("[data-a=undo]"); pg.wait_for_timeout(300)
+        check("لا يتجاوز" in pg.locator(".chip.big").last.inner_text(), f"{label}: التراجع يرجع المبنى السليم")
+        pg.screenshot(path=f"{OUT}/{label}-manual.png")
+        pg.click("#drawbar [data-a=bdone]"); pg.click("[data-a=breset]"); pg.wait_for_timeout(300)
+        pg.click("[data-a=bdraw]")
+        for (x, y) in [(18, 5), (25, 5), (25, 12), (18, 12)]: pg.mouse.click(*W(x, y)); pg.wait_for_timeout(80)
+        pg.mouse.click(*W(18, 5)); pg.wait_for_timeout(400)
+        check(pg.locator(".stat.hero b").last.inner_text() == "49.00", f"{label}: رسم مبنى بالضغط 7 × 7 = 49.00", pg.locator(".stat.hero b").last.inner_text())
+        pg.click("[data-a=breset]"); pg.wait_for_timeout(200); pg.click("[data-delx='0']"); pg.wait_for_timeout(300)
+        pg.evaluate("document.querySelector('#panel').style.removeProperty('height')") if label == "phone" else None
+        pg.fill("[data-mass=target]", "150"); pg.press("[data-mass=target]", "Enter"); pg.wait_for_timeout(300)
         # 5) أرض زاوية
         pg.click("[data-step=street]"); pg.wait_for_timeout(150); click_edge(pg, 1)
         types = [pg.locator(f"[data-etype='{i}']").input_value() for i in range(4)]

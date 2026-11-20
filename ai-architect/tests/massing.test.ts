@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildableZone } from "../src/engine/setbacks";
-import { generateMassing } from "../src/engine/massing";
+import { generateMassing, checkBuilding, streetFaces } from "../src/engine/massing";
 import { checkFootprint } from "../src/engine/verify";
 
 type P = [number, number];
@@ -68,5 +68,33 @@ describe("المرحلة 2: أشكال المبنى", () => {
       }
     }
     expect(shown).toBeGreaterThan(150);
+  });
+
+  it("شارع مقوّس مقسّم لـ 12 ضلعاً قصيراً: اتجاه الواجهة = الوتر، والمستطيل موازٍ له", () => {
+    // الضلع الجنوبي قوس خفيف من (0,0) إلى (24,0) بسهم 0.6 م
+    const arc: P[] = []; for (let k = 0; k <= 12; k++) { const x = 24 * k / 12; arc.push([x, -0.6 * Math.sin(Math.PI * k / 12)]); }
+    const pts: P[] = [...arc, [24, 30], [0, 30]], Rr = shift(pts), fronts = arc.slice(0, -1).map((_, i) => i);
+    const faces = streetFaces(Rr, fronts);
+    expect(faces.length).toBe(1); expect(faces[0].edges.length).toBe(12);
+    expect(Math.abs(faces[0].F.u[1])).toBeLessThan(1e-9);   // الوتر أفقي تماماً
+    const sb = pts.map((_, i) => (i < 12 ? 4 : 2)), { m } = (() => { const z = buildableZone(Rr, sb); return { m: generateMassing({ parcel: Rr, zone: z, fronts, setbacks: sb, target: 150 }) }; })();
+    const f = m.options.find(o => o.kind === "full")!;
+    expect(Math.abs(f.ring[1][1] - f.ring[0][1])).toBeLessThan(1e-6);   // الواجهة أفقية (موازية للوتر)
+    expect(f.area).toBeCloseTo(150, 3);
+  });
+  it("منطقة ممنوعة يرسمها المستخدم: لا يدخلها أي شكل مقترح، وفحص المبنى يرفض الدخول فيها", () => {
+    const sb = [5, 3, 4, 3], z = buildableZone(R, sb), ex: P[][] = [shift([[3, 5], [15, 5], [15, 16], [3, 16]])];   // منع النصف الأيسر
+    const m = generateMassing({ parcel: R, zone: z, fronts: [0], setbacks: sb, target: 100, exclusions: ex });
+    expect(m.ok).toBe(true);
+    for (const o of m.options) { expect(minX(o.ring as P[])).toBeGreaterThanOrEqual(15 - 1e-6); expect(o.area).toBeCloseTo(100, 3); }
+    expect(m.options.find(o => o.kind === "full")!.width).toBeCloseTo(12, 3);
+    expect(checkBuilding(R, z, shift([[10, 6], [20, 6], [20, 12], [10, 12]]), ex).ok).toBe(false);
+    expect(checkBuilding(R, z, shift([[16, 6], [26, 6], [26, 12], [16, 12]]), ex).ok).toBe(true);
+  });
+  it("مبنى مرسوم يدوياً: يرفض التجاوز والأضلاع المتقاطعة", () => {
+    const sb = [5, 3, 4, 3], z = buildableZone(R, sb);
+    expect(checkBuilding(R, z, shift([[3, 5], [27, 5], [27, 16], [3, 16]])).ok).toBe(true);
+    const over = checkBuilding(R, z, shift([[3, 4.9], [27, 4.9], [27, 16], [3, 16]])); expect(over.ok).toBe(false); expect(over.reason).toContain("1–2");
+    expect(checkBuilding(R, z, shift([[5, 6], [20, 12], [20, 6], [5, 12]])).reason).toContain("تتقاطع");
   });
 });

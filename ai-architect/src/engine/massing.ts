@@ -9,11 +9,11 @@
  *  • كل شكل يُفحص أخيراً بالمُحقِّق المستقل (checkFootprint)، وأي شكل فيه تجاوز لا يُعرض أبداً.
  */
 import pc from "polygon-clipping";
-import { cleanRing, frameOf, Pt, Ring, signedArea } from "./geometry";
+import { cleanRing, frameOf, Pt, Ring, signedArea, selfIntersections } from "./geometry";
 import type { ZoneResult } from "./setbacks";
 import { checkFootprint } from "./verify";
 
-export type MassKind = "full" | "fill" | "center" | "right" | "left";
+export type MassKind = "full" | "fill" | "center" | "right" | "left" | "custom";
 export interface MassOption {
   id: string; kind: MassKind; front: number;
   title: string; desc: string;
@@ -76,14 +76,54 @@ class Strip {
   fillArea(t0: number, h: number) { const r = this.fill(t0, h); return r ? ringArea(r) : 0; }
 }
 
-function frameFor(parcel: Ring, edge: number): Frame {
-  const F = frameOf(parcel), i = edge, a = parcel[i];
-  return { a: [a[0], a[1]], u: F.u[i] as Pt, n: F.nin[i] as Pt };
+/**
+ * اتجاه الشارع: أضلاع الشارع المتتالية (مثل قوس مقسّم لعشرات الأضلاع القصيرة) تُجمع في واجهة واحدة
+ * اتجاهها هو الوتر من أول رأس لآخر رأس، بدل أن يُؤخذ اتجاه ضلع قصير واحد من القوس.
+ */
+export interface StreetFace { F: Frame; edges: number[]; len: number; label: string }
+export function streetFaces(parcel: Ring, fronts: number[]): StreetFace[] {
+  const n = parcel.length, Fr = frameOf(parcel), set = new Set(fronts.filter(i => i >= 0 && i < n));
+  if (!set.size) set.add(0);
+  const dir = (i: number) => Math.atan2(Fr.u[i][1], Fr.u[i][0]);
+  const angDiff = (a: number, b: number) => { const d = Math.abs(a - b) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
+  // نبدأ من ضلع شارع ليس قبله ضلع شارع (أو أي ضلع إن كانت كل الأضلاع شوارع)
+  let start = [...set].find(i => !set.has((i - 1 + n) % n)); if (start === undefined) start = [...set][0];
+  const groups: number[][] = []; let cur: number[] = [];
+  for (let k = 0; k < n; k++) {
+    const i = (start + k) % n;
+    if (!set.has(i)) { if (cur.length) groups.push(cur); cur = []; continue; }
+    if (cur.length && angDiff(dir(i), dir(cur[0])) > 30 * Math.PI / 180) { groups.push(cur); cur = []; }
+    cur.push(i);
+  }
+  if (cur.length) groups.push(cur);
+  const faces = groups.map(g => {
+    const a = parcel[g[0]], b = parcel[(g[g.length - 1] + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const u: Pt = [(b[0] - a[0]) / L, (b[1] - a[1]) / L]; let nn: Pt = [-u[1], u[0]];
+    const ni = Fr.nin[g[0]]; if (nn[0] * ni[0] + nn[1] * ni[1] < 0) nn = [u[1], -u[0]];
+    return { F: { a: [a[0], a[1]] as Pt, u, n: nn }, edges: g, len: L, label: `${g[0] + 1}–${(g[g.length - 1] + 1) % n + 1}` };
+  }).filter(f => f.len > 1e-6).sort((p, q) => q.len - p.len);
+  const out = faces.slice(0, 1);
+  for (const f of faces.slice(1)) if (out.length < 2 && angDiff(Math.atan2(f.F.u[1], f.F.u[0]), Math.atan2(out[0].F.u[1], out[0].F.u[0])) > 20 * Math.PI / 180) out.push(f);
+  return out;
+}
+
+/** هل الشكل «منطقي» كمبنى؟ بلا زوايا حادة (أقل من 60°) ولا رؤوس كثيرة ولا تعرجات */
+function niceShape(r: number[][]): boolean {
+  const n = r.length; if (n < 3 || n > 8) return false;
+  let sa = 0; for (let i = 0; i < n; i++) { const a = r[i], b = r[(i + 1) % n]; sa += a[0] * b[1] - b[0] * a[1]; }
+  const sg = sa > 0 ? 1 : -1;
+  for (let i = 0; i < n; i++) {
+    const p = r[(i - 1 + n) % n], c = r[i], q = r[(i + 1) % n];
+    const a1 = Math.atan2(p[1] - c[1], p[0] - c[0]), a2 = Math.atan2(q[1] - c[1], q[0] - c[0]);
+    let ang = (sg > 0 ? a1 - a2 : a2 - a1) * 180 / Math.PI; ang = ((ang % 360) + 360) % 360;
+    if (ang < 60) return false;
+  }
+  return true;
 }
 
 /** أصغر عمق h يحقق g(h) ≥ A بفحص تصاعدي ثم تنصيف. g = أكبر مساحة متاحة بعمق h */
 function solveDepth(g: (h: number) => number, A: number, hMax: number): { h: number; best: number } | null {
-  let prev = 0, best = 0; const step = Math.max(0.05, hMax / 400);
+  let prev = 0, best = 0; const step = Math.max(0.1, hMax / 120);
   for (let h = step; h <= hMax + 1e-9; h += step) {
     const v = g(Math.min(h, hMax)); best = Math.max(best, v);
     if (v >= A) {
@@ -103,6 +143,33 @@ export interface MassingInput {
   setbacks: number[];          // الارتداد الفعلي لكل ضلع
   target: number;              // مساحة البناء المطلوبة للطابق
   coverageMax?: number | null; // أقصى مساحة حسب نسبة البناء
+  exclusions?: Pt[][];         // مناطق رسمها المستخدم يمنع فيها البناء
+}
+
+/** المنطقة الصالحة بعد طرح المناطق الممنوعة التي رسمها المستخدم */
+export function effectiveParts(zone: ZoneResult, exclusions: Pt[][] = []): ZoneResult["parts"] {
+  const ex = exclusions.filter(r => r && r.length >= 3);
+  if (!ex.length) return zone.parts;
+  const o = zone.parts[0]?.outer[0] || [0, 0], L = (r: Pt[]) => close(r.map(p => [p[0] - o[0], p[1] - o[1]] as Pt));
+  const subj = zone.parts.map(p => [L(p.outer), ...p.holes.map(L)]);
+  const res: number[][][][] = (pc as any).difference(subj, ...ex.map(r => [[L(r)]]));
+  const W = (r: number[][]) => r.slice(0, -1).map(p => [p[0] + o[0], p[1] + o[1]] as Pt);
+  return res.filter(poly => pcArea(poly) > 1e-4).map(poly => ({ outer: W(poly[0]), holes: poly.slice(1).map(W) }));
+}
+
+/** فحص مبنى (مقترح أو رسمه المستخدم): داخل الارتدادات، لا يقطع نفسه، ولا يدخل في المناطق الممنوعة */
+export function checkBuilding(parcel: ReadonlyArray<ReadonlyArray<number>>, zone: ZoneResult, ring: Pt[], exclusions: Pt[][] = []): { ok: boolean; reason: string } {
+  if (ring.length >= 4 && selfIntersections(ring).length) return { ok: false, reason: "أضلاع المبنى تتقاطع مع بعضها" };
+  if (ring.length < 3 || ringArea(ring) < 1e-4) return { ok: false, reason: "الشكل صغير جداً" };
+  const c = checkFootprint(parcel, zone, ring);
+  if (!c.ok) { const v = c.verify.violations[0]; return { ok: false, reason: v && v.rule === "outside" ? "جزء من المبنى خارج حدود الأرض" : v && v.edge !== undefined ? `المبنى يتجاوز ارتداد الضلع ${v.edge + 1}–${(v.edge + 1) % parcel.length + 1}` : "المبنى يتجاوز الارتداد عند زاوية" }; }
+  const o = ring[0], L = (r: Pt[]) => close(r.map(p => [p[0] - o[0], p[1] - o[1]] as Pt));
+  for (const ex of exclusions) {
+    if (!ex || ex.length < 3) continue;
+    const it: number[][][][] = (pc as any).intersection([L(ring)], [L(ex)]);
+    if (it.some(poly => pcArea(poly) > 1e-6)) return { ok: false, reason: "المبنى يدخل في منطقة ممنوعة رسمتها" };
+  }
+  return { ok: true, reason: "" };
 }
 
 export function generateMassing(inp: MassingInput): MassResult {
@@ -111,18 +178,34 @@ export function generateMassing(inp: MassingInput): MassResult {
   if (!z || !z.ok || !z.parts.length) { res.msg = "لا توجد منطقة صالحة للبناء بعد."; return res; }
   if (!(inp.target > 0)) { res.msg = "اكتب مساحة البناء المطلوبة."; return res; }
   const parcel = cleanRing(inp.parcel); if (signedArea(parcel) === 0) { res.msg = "حدود الأرض غير صالحة."; return res; }
-  const zoneMax = Math.max(...z.parts.map(p => ringArea(p.outer) - p.holes.reduce((s, h) => s + ringArea(h), 0)));
+  const parts = effectiveParts(z, inp.exclusions);
+  if (!parts.length) { res.msg = "المناطق الممنوعة التي رسمتها تغطي كل المنطقة الصالحة للبناء."; return res; }
+  const zoneMax = Math.max(...parts.map(p => ringArea(p.outer) - p.holes.reduce((s, h) => s + ringArea(h), 0)));
   let A = inp.target;
   if (inp.coverageMax != null && A > inp.coverageMax + AREA_TOL) { A = inp.coverageMax; res.capped = "coverage"; }
   if (A > zoneMax) { A = zoneMax; res.capped = res.capped || "zone"; }
   res.used = A;
-  const fronts = inp.fronts.length ? inp.fronts : [0];
+  const faces = streetFaces(parcel, inp.fronts);
   const opts: MassOption[] = [];
 
-  for (const fe of fronts.slice(0, 2)) {
-    const F = frameFor(parcel, fe), S = new Strip(F, z.parts), t0 = S.tMin + EPS_T, hMax = S.tMax - t0;
-    if (!(hMax > 0)) continue;
-    const tag = fronts.length > 1 ? ` · على الشارع ${fe + 1}–${(fe + 1) % parcel.length + 1}` : "";
+  for (const face of faces) {
+    const F = face.F, fe = face.edges[0], S = new Strip(F, parts), tA = S.tMin + EPS_T;
+    if (!(S.tMax - tA > 0)) continue;
+    // بداية المبنى من جهة الشارع: عادةً أقرب نقطة في المنطقة. لكن إذا كان خط الارتداد الأمامي منحنياً أو مائلاً
+    // (شارع مقوّس) نجرب نقاط بدء عند انكسارات المنطقة ونختار ما يجعل المبنى أقرب ما يكون للشارع (أصغر t0 + العمق)
+    const gFullAt = (t: number) => (h: number) => { const w = S.widest(t, h); return w ? (w[1] - w[0]) * h : 0; };
+    const Aeff = A + 4 * SHRINK * Math.sqrt(A);
+    let t0 = tA, sol = solveDepth(gFullAt(tA), Aeff, S.tMax - tA), bestEnd = sol && Number.isFinite(sol.h) ? tA + sol.h : Infinity;
+    const cands = [...new Set(parts.flatMap(p => p.outer).map(q => toL(F, q)[1]).filter(t => t > tA + 0.02 && t < tA + Math.min(4, S.tMax - tA)).map(t => +t.toFixed(4)))].sort((a, b) => a - b);
+    const step = Math.max(1, Math.ceil(cands.length / 10));
+    for (let k = 0; k < cands.length; k += step) {
+      const t = cands[k] + EPS_T; if (t >= bestEnd) break;
+      const s2 = solveDepth(gFullAt(t), Aeff, S.tMax - t);
+      if (s2 && Number.isFinite(s2.h) && t + s2.h < bestEnd - 0.01) { t0 = t; sol = s2; bestEnd = t + s2.h; }
+      else if (s2 && sol) sol.best = Math.max(sol.best, s2.best);
+    }
+    const hMax = S.tMax - t0;
+    const tag = faces.length > 1 ? ` · على الشارع ${face.label}` : "";
     const gap = t0;   // بعد الواجهة عن خط الشارع
     const mkRect = (kind: MassKind, s0: number, s1: number, h: number, title: string, desc: string) => {
       const q: Pt[] = [[s0 + SHRINK, t0 + SHRINK], [s1 - SHRINK, t0 + SHRINK], [s1 - SHRINK, t0 + h - SHRINK], [s0 + SHRINK, t0 + h - SHRINK]];
@@ -130,8 +213,6 @@ export function generateMassing(inp: MassingInput): MassResult {
     };
 
     // 1) يملأ العرض بين الارتدادات الجانبية، ملاصق للارتداد الأمامي
-    const gFull = (h: number) => { const w = S.widest(t0, h); return w ? (w[1] - w[0]) * h : 0; };
-    const sol = solveDepth(gFull, A + 4 * SHRINK * Math.sqrt(A), hMax);
     res.maxRect = Math.max(res.maxRect, sol ? sol.best : 0);
     if (sol && Number.isFinite(sol.h)) {
       const iv = S.widest(t0, sol.h)!; let h = (A + 1e-6) / (iv[1] - iv[0] - 2 * SHRINK) + 2 * SHRINK; if (h > sol.h) h = sol.h;
@@ -140,13 +221,14 @@ export function generateMassing(inp: MassingInput): MassResult {
     }
 
     // 2) يتبع خطوط الارتداد (للأراضي المائلة): المنطقة ∩ الشريط
-    if (S.fillArea(t0, hMax) >= A - AREA_TOL) {
-      let lo = 0, hi = hMax;
-      for (let k = 0; k < 60 && hi - lo > 1e-7; k++) { const m = (lo + hi) / 2; if (S.fillArea(t0, m) >= A) hi = m; else lo = m; }
-      const r = S.fill(t0, hi);
-      if (r) {
+    if (S.fillArea(tA, S.tMax - tA) >= A - AREA_TOL) {
+      let lo = 0, hi = S.tMax - tA;
+      for (let k = 0; k < 60 && hi - lo > 1e-7; k++) { const m = (lo + hi) / 2; if (S.fillArea(tA, m) >= A) hi = m; else lo = m; }
+      const r = S.fill(tA, hi);
+      const xs0 = r ? r.map(p => p[0]) : [];
+      if (r && niceShape(r) && r.length <= 6 && (Math.max(...xs0) - Math.min(...xs0)) <= 3 * hi) {   // لا شرائط طويلة رفيعة
         const ring = r.map(p => toW(F, p as Pt)), xs = r.map(p => p[0]);
-        opts.push({ id: `fill-${fe}`, kind: "fill", front: fe, title: "يتبع خطوط الارتداد" + tag, desc: "شكل يلتصق بخطوط الارتداد المائلة ويستغل كل سنتيمتر.", ring, area: ringArea(r), width: Math.max(...xs) - Math.min(...xs), depth: hi, frontGap: gap, rect: false, verified: false });
+        opts.push({ id: `fill-${fe}`, kind: "fill", front: fe, title: "يتبع خطوط الارتداد" + tag, desc: "شكل يلتصق بخطوط الارتداد المائلة ويستغل كل سنتيمتر.", ring, area: ringArea(r), width: Math.max(...xs) - Math.min(...xs), depth: hi, frontGap: tA, rect: false, verified: false });
       }
     }
 
@@ -165,7 +247,7 @@ export function generateMassing(inp: MassingInput): MassResult {
   // الفحص المستقل: لا يُعرض أي شكل فيه تجاوز، ونحذف المكرر
   const seen: MassOption[] = [];
   for (const o of opts) {
-    const c = checkFootprint(inp.parcel, z, o.ring); o.verified = c.ok;
+    o.verified = checkBuilding(inp.parcel, z, o.ring, inp.exclusions).ok;
     if (!o.verified) continue;
     if (seen.some(s => s.rect === o.rect && Math.abs(s.area - o.area) < 0.05 && s.ring.length === o.ring.length && s.ring.every((p, k) => Math.hypot(p[0] - o.ring[k][0], p[1] - o.ring[k][1]) < 0.05))) continue;   // نفس الشكل بنفس المكان
     if (o.kind === "fill" && seen.some(s => s.front === o.front && s.kind === "full" && Math.abs(s.area - o.area) < 0.01 && Math.abs(s.depth - o.depth) < 0.01)) continue;

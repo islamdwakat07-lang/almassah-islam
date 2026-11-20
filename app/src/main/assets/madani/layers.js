@@ -89,8 +89,8 @@ function details(layer, a, meta) {
   return out;
 }
 /* عنوان قصير لعنصر */
-function title(layer, a, meta) {
-  a = a || {};
+function title(layer, a, meta) { const t = title0(layer, a || {}, meta); return t == null || t === "" ? layer.n : String(t); }
+function title0(layer, a, meta) {
   switch (layer.k) {
     case "abc": return ABC[a.EZOR] || "—";
     case "state": return STATE[a.type] || "أراضي دولة";
@@ -98,7 +98,7 @@ function title(layer, a, meta) {
     case "block": return `حوض ${a.GUSH_NO}` + (a.GUSHH_OLD ? ` (الأصلي ${String(a.GUSHH_OLD).trim()})` : "") + (a.BLOCK_NAME ? " · " + a.BLOCK_NAME : "");
     case "village": return a.LAND || "—";
     case "council": return COUNCIL[a.MUNICIPAL_DISTR] || "مجلس إقليمي";
-    case "palj": return a.SEET || "—";
+    case "palj": return a.SEET == null ? "—" : (typeof a.SEET === "number" ? "منطقة نفوذ رقم " + a.SEET : String(a.SEET));
     case "juris": return a.name_name || "—";
     case "fire": return a.TITLE ? heb(a.TITLE) : "منطقة " + (a.FIRE_NAME || "");
     case "olive": return heb(a["שם_צו"] || a.MainType || "أمر إغلاق");

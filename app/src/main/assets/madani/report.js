@@ -104,7 +104,7 @@ async function exportReport(an, opts, onStep) {
   rows.push(["__h", restr.length ? "القيود والمخططات الواقعة على " + (isP ? "القطعة" : "الموقع") : "لا توجد قيود أو مخططات من طبقات الإدارة المدنية على " + (isP ? "القطعة" : "الموقع")]);
   restr.forEach(g => g.items.forEach(it => {
     rows.push(["◼" + g.l.k + "|" + g.l.n, it.t + (it.area != null ? "   ·   " + fA(it.area) + "  " + ISO("(" + (it.pct * 100).toFixed(1) + "%)") : "")]);
-    it.d.filter(d => !it.t.includes(String(d[1]))).slice(0, 4).forEach(d => rows.push(["   " + d[0], String(d[1])]));
+    it.d.filter(d => !String(it.t).includes(String(d[1]))).slice(0, 4).forEach(d => rows.push(["   " + d[0], String(d[1])]));
   }));
   if (an.errors.length) rows.push(["ملاحظة", `تعذّر فحص ${an.errors.length} طبقة (تحقق من الإنترنت)`]);
 

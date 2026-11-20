@@ -175,7 +175,7 @@ function resultHtml(an) {
   const isP = !!an.parcel, a = isP ? an.parcel.a : {};
   const c = isP ? (() => { const b = bboxOf({ rings: an.ringsPG }); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; })() : webToPG(an.point);
   const itm = conv("pg", "itm", c);
-  let h = "";
+  let h = `<button class="go pdf" type="button" data-pdf>📄 طباعة تقرير PDF (صورة جوية + تهشير + المعلومات)</button>`;
   if (isP) h += `<div class="big-stat"><div><b>${an.total.toLocaleString("en-US", { maximumFractionDigits: 1 })}</b><span>المساحة م² (من الحدود)</span></div><div><b>${a.GUSH_NO ?? "—"} / ${a.PARCEL ?? "—"}</b><span>الحوض / القطعة</span></div></div>`;
   else h += `<p class="note">${an.inParcel === false ? "المكان غير واقع في قطعة مسجلة بطبقة القطع (قد تكون أرضاً غير مسوّاة)." : ""}</p>`;
   h += `<div class="xyline">PG  X ${c[0].toFixed(2)}  Y ${c[1].toFixed(2)}<br>ITM X ${itm[0].toFixed(2)}  Y ${itm[1].toFixed(2)}</div>`;
@@ -185,10 +185,10 @@ function resultHtml(an) {
   const restr = an.groups.filter(g => !["village", "block", "abc"].includes(g.l.k));
   if (!restr.length) h += `<p class="ok"><b>✓ لا توجد قيود أو مخططات من طبقات الإدارة المدنية على ${isP ? "القطعة" : "هذا المكان"}.</b></p>`;
   restr.forEach(g => { h += `<div class="res"><h4><span class="sw" style="border-color:${g.l.c};background:${g.l.c}33"></span>${esc(g.l.n)}${g.items[0].area != null ? `<em>${(g.items.reduce((s, i) => s + i.pct, 0) * 100).toFixed(1)}%</em>` : ""}</h4>` +
-    g.items.map(it => `<div class="it"><b>${esc(it.t)}${it.area != null ? ` · ${fA(it.area)} (${(it.pct * 100).toFixed(1)}%)` : ""}</b>${it.d.filter(d => !it.t.includes(String(d[1]))).slice(0, 6).map(d => `<small>${esc(d[0])}: ${esc(d[1])}</small>`).join("")}</div>`).join("") + `</div>`; });
+    g.items.map(it => `<div class="it"><b>${esc(it.t)}${it.area != null ? ` · ${fA(it.area)} (${(it.pct * 100).toFixed(1)}%)` : ""}</b>${it.d.filter(d => !String(it.t).includes(String(d[1]))).slice(0, 6).map(d => `<small>${esc(d[0])}: ${esc(d[1])}</small>`).join("")}</div>`).join("") + `</div>`; });
   if (an.errors.length) h += `<p class="msg">تعذّر فحص ${an.errors.length} طبقة: ${esc(an.errors[0])}</p>`;
   h += `<div class="seg" style="margin-top:10px"><label><input type="radio" name="osys" value="pg" checked>شبكة فلسطين</label><label><input type="radio" name="osys" value="itm">شبكة ITM</label></div>
-    <button class="go pdf" id="pdfBtn" type="button">📄 تقرير PDF مع الصورة الجوية</button>
+    <button class="go pdf" type="button" data-pdf>📄 طباعة تقرير PDF (صورة جوية + تهشير + المعلومات)</button>
     <p class="note">المعلومات من موقع الإدارة المدنية «معلومات للجمهور» للاستئناس، وليست وثيقة رسمية. بعض الأسماء تظهر بالعبرية كما هي في المصدر.</p>`;
   return h;
 }
@@ -196,12 +196,12 @@ function show(an) {
   CUR = an; drawResult(an);
   const a = an.parcel ? an.parcel.a : null;
   openSheet(a ? `قطعة ${a.PARCEL ?? ""} · حوض ${a.GUSH_NO ?? ""}` : "معلومات المكان", resultHtml(an));
-  $("#pdfBtn").onclick = async () => {
-    const b = $("#pdfBtn"), old = b.textContent; b.disabled = true;
+  document.querySelectorAll("[data-pdf]").forEach(b => b.onclick = async () => {
+    const old = b.textContent; b.disabled = true;
     try { const sys = (document.querySelector("input[name=osys]:checked") || {}).value; const n = await exportReport(an, { sys }, s => b.textContent = "…" + s); b.textContent = "✓ حُفظ: " + n; setTimeout(() => b.textContent = old, 4000); }
     catch (e) { b.textContent = "تعذّر: " + e.message; setTimeout(() => b.textContent = old, 5000); }
     finally { b.disabled = false; }
-  };
+  });
 }
 
 /* ---------- الفحص ---------- */

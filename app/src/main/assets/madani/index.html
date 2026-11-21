@@ -73,6 +73,12 @@ select:focus,input:focus{outline:2px solid var(--am-gold-500);outline-offset:0}
 .chk{display:flex;align-items:center;gap:10px;padding:8px 2px;font-weight:600}
 .chk input{width:22px;height:22px;accent-color:#17613f;flex:none}
 .note{font-size:12.5px;color:var(--am-muted);margin:6px 0}
+.locBtn{width:30px;height:30px;background:#fff;border:0;cursor:pointer;padding:0;display:grid;place-items:center}
+.locBtn:hover{background:#f4f4f4}.locBtn.busy svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.vlab{background:none;border:0}
+.vlab span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font:700 13px "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 1px 2px #000;pointer-events:none}
+.vlab.isr span{font-size:12px;font-weight:600;color:#e9d5ff}
 </style>
 <script src="../archive.js"></script>
 </head>
@@ -151,6 +157,47 @@ const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
 let base = L.tileLayer(REST + "Orthophotos_WB_2022_15cm_tif_PG1923_05/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 13, maxZoom: 13, attribution: "صورة جوية: جيومولج" }).addTo(map);
 (async () => { try { const tk = window.geoToken ? await geoToken() : ""; if (!tk) return; const nb = L.tileLayer(REST + "Orthophotos_WB_2025_15cm_tif_PG1923/MapServer/tile/{z}/{y}/{x}?token=" + tk, { maxNativeZoom: 12, maxZoom: 13, attribution: "صورة جوية 2025: جيومولج" }); nb.once("tileload", () => { map.removeLayer(base); base = nb; }); nb.addTo(map); } catch (e) {} })();
 const over = L.layerGroup().addTo(map);
+
+
+/* ---------- زر موقعي (تحت + و −) ---------- */
+let meDot = null, meAcc = null;
+const LocCtl = L.Control.extend({ options: { position: "topleft" }, onAdd() {
+  const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), b = L.DomUtil.create("button", "locBtn", box);
+  b.type = "button"; b.id = "fabLoc"; b.title = "موقعي"; b.setAttribute("aria-label", "موقعي");
+  b.innerHTML = '<svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#111" stroke-width="2.4"/><circle cx="11" cy="11" r="3.4" fill="#111"/><path d="M11 0v4M11 18v4M0 11h4M18 11h4" stroke="#111" stroke-width="2.2"/></svg>';
+  L.DomEvent.disableClickPropagation(box); return box; } });
+new LocCtl().addTo(map);
+$("#fabLoc").addEventListener("click", () => {
+  if (!navigator.geolocation) return openSheet("تعذّر تحديد الموقع", '<p class="msg">الجهاز لا يدعم تحديد الموقع.</p>');
+  const b = $("#fabLoc"); b.classList.add("busy"); b.disabled = true;
+  navigator.geolocation.getCurrentPosition(pos => {
+    b.classList.remove("busy"); b.disabled = false;
+    const w = conv("wgs", "web", [pos.coords.longitude, pos.coords.latitude]), ll = pgLL(webToPG(w)), acc = pos.coords.accuracy || 0;
+    if (meDot) map.removeLayer(meDot); if (meAcc) map.removeLayer(meAcc);
+    meAcc = L.circle(ll, { radius: acc, color: "#1a73e8", weight: 1, fillColor: "#1a73e8", fillOpacity: .12, interactive: false }).addTo(map);
+    meDot = L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#1a73e8", fillOpacity: 1, interactive: false }).addTo(map);
+    map.setView(ll, Math.max(map.getZoom(), 11)); $("#hint").style.display = "none";
+    inspectPoint(w);
+  }, err => {
+    b.classList.remove("busy"); b.disabled = false;
+    openSheet("تعذّر تحديد الموقع", `<p class="msg">${err.code === 1 ? "لم يُسمح للتطبيق باستخدام الموقع. اسمح له من إعدادات الجوال." : "شغّل خدمة الموقع (GPS) وحاول مرة أخرى."}</p>`);
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+});
+
+/* ---------- أسماء القرى والبلدات على الخريطة ---------- */
+const names = L.layerGroup();
+const NAMES_MIN_ZOOM = 5;
+(async () => {
+  try {
+    const [p, i] = await Promise.all([query(LBY.namesP, null, "1=1"), query(LBY.namesI, null, "1=1").catch(() => [])]);
+    const add = (f, txt, cls) => { if (!f.g || f.g.x == null || !txt) return; const ll = pgLL(webToPG([f.g.x, f.g.y]));
+      names.addLayer(L.marker(ll, { interactive: false, keyboard: false, icon: L.divIcon({ className: "vlab " + cls, html: "<span>" + esc(txt) + "</span>", iconSize: [0, 0] }) })); };
+    p.forEach(f => add(f, (f.a.settl_name_ar || f.a.arab_name || "").trim(), ""));
+    i.forEach(f => add(f, (f.a.SETTL_NAME_AR || "").trim(), "isr"));
+    const sync = () => { if (map.getZoom() >= NAMES_MIN_ZOOM) { if (!map.hasLayer(names)) names.addTo(map); } else if (map.hasLayer(names)) map.removeLayer(names); };
+    map.on("zoomend", sync); sync();
+  } catch (e) { /* بدون أسماء إذا تعذّر التحميل */ }
+})();
 
 /* ---------- التبويبات ---------- */
 const tabs = { tP: "pP", tX: "pX", tD: "pD" };

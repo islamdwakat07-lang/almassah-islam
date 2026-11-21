@@ -2732,7 +2732,7 @@ function palPath(ctx, cx, cy, h){
   xs.forEach((x, i) => { const X = cx + (x - mx)*s, Y = cy + (ys[i] - my)*s; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
   ctx.closePath();
 }
-// round ink stamp: "المصمم إسلام دويكات" on the upper arc, "حاسب الكواشين" on the lower arc, green map in the centre
+// round ink stamp: "المهندس والمصمم إسلام إسماعيل دويكات" on the upper arc, "حاسب الكواشين" on the lower arc, green map in the centre
 function drawStamp(ctx, cx, cy, R, mkCanvas){
   const INK = "#2B3A8F";
   const arcText = (text, r, top, size, weight, maxSweep) => {
@@ -2764,7 +2764,7 @@ function drawStamp(ctx, cx, cy, R, mkCanvas){
   ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*Math.PI); ctx.stroke();
   ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(cx, cy, R - 9, 0, 2*Math.PI); ctx.stroke();
   ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, R - 52, 0, 2*Math.PI); ctx.stroke();
-  const topSweep = arcText("المصمم إسلام دويكات", R - 31, true, 25, 700, Math.PI * 0.86);
+  const topSweep = arcText("المهندس والمصمم إسلام إسماعيل دويكات", R - 31, true, 25, 700, Math.PI * 0.86);
   const botSweep = arcText("حاسب الكواشين", R - 31, false, 21, 600, Math.PI * 0.62);
   // separator stars on the ring, in the middle of each gap between the two texts
   const star = (x, y, r) => { ctx.beginPath(); for (let k = 0; k < 10; k++){ const rr = k % 2 ? r*0.45 : r, aa = -Math.PI/2 + k*Math.PI/5; ctx.lineTo(x + rr*Math.cos(aa), y + rr*Math.sin(aa)); } ctx.closePath(); ctx.fill(); };

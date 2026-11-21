@@ -49,7 +49,10 @@ function drawStamp(ctx, cx, cy, R) {
   ctx.strokeStyle = GOLD; ctx.lineWidth = R * .025; ctx.beginPath(); ctx.arc(cx, cy, R * .86, 0, 7); ctx.stroke();
   ctx.strokeStyle = GREEN; ctx.lineWidth = R * .02; ctx.beginPath(); ctx.arc(cx, cy, R * .6, 0, 7); ctx.stroke();
   const ringR = R * .73, fs = Math.round(R * .15);
-  arcText(ctx, "المصمم إسلام إسماعيل دويكات", cx, cy, ringR, true, `700 ${fs}px ${AF}`, GREEN_D);
+  // النص العلوي على محيط الختم، والخط يصغر تلقائياً ليتسع بين النجمتين
+  const topT = "المهندس والمصمم إسلام إسماعيل دويكات"; ctx.font = `700 ${fs}px ${AF}`;
+  const maxW = ringR * Math.PI * 0.84, w0 = ctx.measureText(topT).width, fsT = w0 > maxW ? Math.floor(fs * maxW / w0) : fs;
+  arcText(ctx, topT, cx, cy, ringR, true, `700 ${fsT}px ${AF}`, GREEN_D);
   arcText(ctx, "هاتف 0598161862", cx, cy, ringR, false, `700 ${fs}px ${AF}`, GREEN_D);
   // separators
   [0, Math.PI].forEach(a => { ctx.fillStyle = GOLD; const x = cx + ringR * Math.cos(a), y = cy + ringR * Math.sin(a); ctx.beginPath(); for (let i = 0; i < 10; i++) { const rr2 = i % 2 ? R * .03 : R * .075, t = i * Math.PI / 5 - Math.PI / 2; ctx.lineTo(x + rr2 * Math.cos(t), y + rr2 * Math.sin(t)); } ctx.closePath(); ctx.fill(); });

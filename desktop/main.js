@@ -31,6 +31,8 @@ function createWindow() {
     shell.openExternal(url); return { action: "deny" };
   });
   // F5 تحديث، F12 أدوات المطوّر، Alt+← رجوع
+  // زر «رجوع» في الماوس
+  win.on("app-command", (_e, cmd) => { if (cmd === "browser-backward" && win.webContents.navigationHistory.canGoBack()) win.webContents.navigationHistory.goBack(); });
   win.webContents.on("before-input-event", (e, i) => {
     if (i.type !== "keyDown") return;
     if (i.key === "F5") win.webContents.reload();

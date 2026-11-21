@@ -18,3 +18,24 @@ contextBridge.exposeInMainWorld("AndroidBridge", {
   jsReady: () => {},
   isDesktop: true
 });
+
+/* زر «رجوع» للصفحة السابقة داخل كل أداة (على الهاتف يوجد زر الرجوع في الجهاز، أما على الكمبيوتر فلا) */
+function addBack() {
+  const p = location.pathname;
+  if (/\/home\.html$/.test(p) || p === "/" || document.getElementById("pc-back")) return;
+  const go = () => { if (history.length > 1) history.back(); else location.href = "app://local/home.html"; };
+  const home = document.querySelector(".am-bar .am-home");
+  const b = document.createElement("a");
+  b.id = "pc-back"; b.href = "#"; b.title = "رجوع للصفحة السابقة (Alt + ←)";
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 5l7 7-7 7-1.4-1.4L13.2 12 7.6 6.4z"/></svg>رجوع';
+  b.addEventListener("click", e => { e.preventDefault(); go(); });
+  if (home) {
+    b.className = "am-home"; home.parentNode.insertBefore(b, home);
+    home.style.marginInlineStart = "6px";
+  } else {
+    b.style.cssText = "position:fixed;z-index:99999;top:10px;left:10px;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#0c3b26;font:700 14px 'IBM Plex Sans Arabic',Tahoma,sans-serif;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,.3)";
+    document.body.appendChild(b);
+  }
+  const svg = b.querySelector("svg"); svg.style.width = "18px"; svg.style.height = "18px";
+}
+window.addEventListener("DOMContentLoaded", () => { addBack(); setTimeout(addBack, 600); });

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="hebrew">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>الحروف العبرية</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:var(--am-ink)}
+main{max-width:720px;margin:0 auto;padding:10px 12px 70px}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+.am-home{padding:4px 10px!important;font-size:12.5px!important;gap:4px!important}
+.am-home svg{width:14px!important;height:14px!important}
+.he{font-family:"HePrint","Noto Sans Hebrew","Arial Hebrew",sans-serif;direction:rtl;unicode-bidi:isolate}
+.cur{font-family:"HeCursive",cursive;direction:rtl;unicode-bidi:isolate}
+/* رأس التقدم */
+.hero{background:linear-gradient(160deg,#17613f,#0c3b26);color:#f8f2e2;border-radius:20px;padding:14px 16px;box-shadow:0 0 0 1.5px var(--am-gold-500),0 10px 24px -14px rgba(0,0,0,.6);margin-bottom:12px;display:flex;gap:14px;align-items:center}
+.hero .big{font:700 46px/1 "HePrint";color:#f3dc93;background:rgba(255,255,255,.08);border-radius:16px;width:74px;height:74px;display:grid;place-items:center;flex:none}
+.hero b{display:block;font:700 19px var(--am-title);color:#f3dc93}
+.hero small{display:block;font-size:13.5px;opacity:.9}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.15);margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#f3dc93,#c99a2e)}
+/* تبويبات */
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.tabs button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:13px;padding:8px 2px;font:700 13.5px "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.tabs button.on{background:var(--am-btn);color:#f3dc93;border-color:transparent}
+.tabs button b{display:block;font-size:11.5px;font-weight:600;opacity:.85}
+/* شبكة الحروف */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+@media(min-width:560px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.lt{position:relative;border:0;background:#fffdf6;border-radius:16px;padding:8px 4px 7px;box-shadow:inset 0 0 0 1.5px var(--am-line),0 3px 10px -6px rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;gap:0;color:var(--am-ink)}
+.lt .row{display:flex;align-items:baseline;gap:12px;justify-content:center;width:100%}
+.lt .p{font-size:40px;line-height:1.15;font-weight:700;color:#0c3b26}
+.lt .c{font-size:38px;line-height:1.15;color:#8a5a00}
+.lt .ar{font:700 22px "IBM Plex Sans Arabic";color:#b4232c;line-height:1.2}
+.lt small{font-size:12px;color:var(--am-muted)}
+.lt .st{position:absolute;top:5px;left:6px;font-size:13px}
+.lt.k3{box-shadow:inset 0 0 0 2px #2f8a4f}.lt.k1,.lt.k2{box-shadow:inset 0 0 0 2px #e6c35f}
+.legend{display:flex;gap:12px;justify-content:center;font-size:12.5px;color:var(--am-muted);margin:10px 0 2px;flex-wrap:wrap}
+.legend span b{font-weight:700}
+/* صفحة الحرف */
+.card{background:#fffdf6;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--am-line);padding:14px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.duo>div{border-radius:16px;background:linear-gradient(180deg,#fff,#f6efd9);box-shadow:inset 0 0 0 1.5px var(--am-line);text-align:center;padding:8px 4px 6px}
+.duo .g{font-size:110px;line-height:1.15}
+.duo .p .g{font-weight:700;color:#0c3b26}.duo .c .g{color:#8a5a00}
+.duo small{display:block;font-size:12.5px;font-weight:700;color:var(--am-muted)}
+.eq{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0 6px;font:700 20px "IBM Plex Sans Arabic"}
+.eq .a{font-size:44px;color:#b4232c;line-height:1}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px;margin-top:8px}
+.facts dt{color:var(--am-muted);font-weight:700}.facts dd{margin:0}
+.note{background:#f3ead2;border-radius:12px;padding:9px 12px;margin-top:10px;font-size:14.5px}
+.ex{display:flex;align-items:center;gap:12px;margin-top:10px;background:#eef6f0;border-radius:14px;padding:10px 12px}
+.ex .w{font-size:34px;color:#0c3b26}.ex .wc{font-size:32px;color:#8a5a00}
+.ex div{flex:1;font-size:14.5px}
+.fin{margin-top:10px;display:flex;gap:10px;align-items:center;background:#fff4dc;border-radius:12px;padding:8px 12px;font-size:14px}
+.fin .he,.fin .cur{font-size:40px;line-height:1}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.btn{border:0;border-radius:14px;padding:11px 8px;font:700 15.5px "IBM Plex Sans Arabic";background:var(--am-btn);color:#fff;box-shadow:0 0 0 1.5px var(--am-gold-400)}
+.btn.ghost{background:#fffdf6;color:var(--am-green-800);box-shadow:inset 0 0 0 1.5px var(--am-line)}
+.btn.gold{background:linear-gradient(180deg,#f8e7a8,#e6c35f);color:#0c3b26}
+.btn:disabled{opacity:.45}
+.nav{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-top:10px;align-items:center}
+.nav span{font-weight:700;color:var(--am-muted);font-size:14px}
+/* اللوح */
+.seg{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.seg button{border:1.5px solid var(--am-line);background:#fffdf6;border-radius:999px;padding:5px 14px;font:700 14px "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.seg button.on{background:var(--am-btn);color:#fff;border-color:transparent}
+.pad-wrap{max-width:420px;margin:6px auto 0}
+.pad{width:100%;aspect-ratio:1/1;display:block;border-radius:18px;background:#fffef8;box-shadow:inset 0 0 0 1.5px var(--am-line);touch-action:none}
+.score{text-align:center;min-height:52px;font-weight:700;margin-top:6px}.score .stars{font-size:24px;letter-spacing:4px}
+.row3{display:grid;grid-template-columns:auto auto 1fr;gap:8px;margin-top:8px}
+.ib{border:0;width:50px;height:48px;border-radius:14px;background:#f3ead2;font-size:20px}
+.picker{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
+.picker button{flex:none;width:44px;height:48px;border:1.5px solid var(--am-line);background:#fffdf6;border-radius:12px;font-size:26px;color:#0c3b26}
+.picker button.on{background:var(--am-btn);color:#f3dc93;border-color:transparent}
+/* الاختبار */
+.qcard{text-align:center;padding:16px 10px}
+.qcard .ask{font-size:14px;color:var(--am-muted);font-weight:700}
+.qcard .q{font-size:110px;line-height:1.2;color:#0c3b26}
+.qcard .q.cur{color:#8a5a00}.qcard .q.ar{font:700 80px "IBM Plex Sans Arabic";color:#b4232c}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}
+.opts button{border:0;border-radius:16px;padding:10px;background:#fffdf6;box-shadow:inset 0 0 0 1.5px var(--am-line);font:700 30px "IBM Plex Sans Arabic";color:var(--am-ink);min-height:72px}
+.opts button.he{font-size:44px;color:#0c3b26}.opts button.cur{font-size:44px;color:#8a5a00}
+.opts button.ok{background:#e3f3e7;box-shadow:inset 0 0 0 2px #2f8a4f}.opts button.no{background:#fbe5e5;box-shadow:inset 0 0 0 2px #b4232c}
+.qmeta{display:flex;justify-content:space-between;font-size:13.5px;color:var(--am-muted);font-weight:700;margin-bottom:6px}
+.done{text-align:center;padding:20px 10px}.done b{display:block;font:700 26px var(--am-title);color:var(--am-green-800)}
+/* جدول المقارنة */
+table.cmp{width:100%;border-collapse:collapse;background:#fffdf6;border-radius:16px;overflow:hidden;box-shadow:inset 0 0 0 1.5px var(--am-line)}
+.cmp th{background:#0c3b26;color:#f3dc93;font-size:13.5px;padding:8px 4px}
+.cmp td{text-align:center;padding:4px;border-bottom:1px solid #eadfbf}
+.cmp td.p{font-size:30px;color:#0c3b26;font-weight:700}.cmp td.c{font-size:30px;color:#8a5a00}.cmp td.a{font:700 22px "IBM Plex Sans Arabic";color:#b4232c}
+.cmp td.n{font-size:13.5px}
+.cmp tr:nth-child(even) td{background:#faf5e6}
+.hint{font-size:13px;color:var(--am-muted);text-align:center;margin:8px 0}
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;display:none}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><span style="width:40px;height:40px;border-radius:12px;background:linear-gradient(180deg,#fff1b8,#e6c35f);display:grid;place-items:center;font:700 24px HePrint;color:#0c3b26">א</span><b>الحروف العبرية</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main id="app"></main>
+<div id="toast"></div>
+<script>
+"use strict";
+const LETTERS = [
+  {h:'א', name:'אָלֶף', nameAr:'ألِف', sound:'ا / همزة', ar:'ا', note:'حرف صامت يحمل الحركة، مثل الألف عندنا تماماً.', ex:{he:'אָב', tr:'آڤ', ar:'أب', cog:true}},
+  {h:'ב', name:'בֵּית', nameAr:'بيت', sound:'ب / ڤ', ar:'ب', note:'مع نقطة في وسطه (בּ) يُلفظ ب، وبدون نقطة (ב) يُلفظ ڤ مثل V.', ex:{he:'בַּיִת', tr:'بايِت', ar:'بيت', cog:true}},
+  {h:'ג', name:'גִּימֶל', nameAr:'جيمِل', sound:'ج مصرية (G)', ar:'ج', note:'يُلفظ مثل الجيم المصرية في كلمة "جمل" عند المصريين.', ex:{he:'גָּמָל', tr:'جامال', ar:'جمل', cog:true}},
+  {h:'ד', name:'דָּלֶת', nameAr:'داليت', sound:'د', ar:'د', note:'نفس صوت الدال العربية.', ex:{he:'דֶּרֶךְ', tr:'ديريخ', ar:'طريق (درب)', cog:true}},
+  {h:'ה', name:'הֵא', nameAr:'هيه', sound:'هـ', ar:'ه', note:'مثل الهاء. في آخر الكلمة غالباً لا يُلفظ، مثل التاء المربوطة الساكنة.', ex:{he:'הַר', tr:'هار', ar:'جبل'}},
+  {h:'ו', name:'וָו', nameAr:'ڤاڤ', sound:'ڤ / و / أو', ar:'و', note:'حرف ساكن يُلفظ ڤ، وكحرف علة يصبح "و" (וּ) أو "أو" (וֹ).', ex:{he:'וֶרֶד', tr:'ڤيريد', ar:'وردة', cog:true}},
+  {h:'ז', name:'זַיִן', nameAr:'زايِن', sound:'ز', ar:'ز', note:'نفس صوت الزاي.', ex:{he:'זַיִת', tr:'زايِت', ar:'زيتون', cog:true}},
+  {h:'ח', name:'חֵית', nameAr:'حيت', sound:'ح / خ', ar:'ح', note:'أصله الحاء، لكن أغلب الإسرائيليين اليوم يلفظونه خاءً.', ex:{he:'חָלָב', tr:'حالاڤ', ar:'حليب', cog:true}},
+  {h:'ט', name:'טֵית', nameAr:'طيت', sound:'ط (تُلفظ ت)', ar:'ط', note:'أصله الطاء، واليوم يُلفظ تاءً عادية.', ex:{he:'טוֹב', tr:'طوڤ', ar:'جيد (طيّب)', cog:true}},
+  {h:'י', name:'יוֹד', nameAr:'يود', sound:'ي', ar:'ي', note:'أصغر حرف في العبرية، يشبه الفاصلة المرفوعة.', ex:{he:'יוֹם', tr:'يوم', ar:'يوم', cog:true}},
+  {h:'כ', fin:'ך', name:'כַּף', nameAr:'كاف', sound:'ك / خ', ar:'ك', note:'مع نقطة (כּ) = ك، بدون نقطة (כ) = خ. في آخر الكلمة يُكتب ך.', ex:{he:'כֶּלֶב', tr:'كيليڤ', ar:'كلب', cog:true}},
+  {h:'ל', name:'לָמֶד', nameAr:'لاميد', sound:'ل', ar:'ل', note:'الحرف الوحيد الذي يرتفع فوق السطر.', ex:{he:'לֶחֶם', tr:'ليحِم', ar:'خبز', tip:'انتبه: لحم بالعبرية يعني خبز!'}},
+  {h:'מ', fin:'ם', name:'מֵם', nameAr:'ميم', sound:'م', ar:'م', note:'في آخر الكلمة يُكتب ם (مربّع مغلق).', ex:{he:'מַיִם', tr:'مايِم', ar:'ماء', cog:true}},
+  {h:'נ', fin:'ן', name:'נוּן', nameAr:'نون', sound:'ن', ar:'ن', note:'في آخر الكلمة يُكتب ן (خط طويل ينزل تحت السطر).', ex:{he:'נֵר', tr:'نير', ar:'شمعة (من النور)', cog:true}},
+  {h:'ס', name:'סָמֶךְ', nameAr:'ساميخ', sound:'س', ar:'س', note:'دائرة مغلقة، صوتها سين.', ex:{he:'סֵפֶר', tr:'سيفِر', ar:'كتاب (سِفْر)', cog:true}},
+  {h:'ע', name:'עַיִן', nameAr:'عايِن', sound:'ع (تُلفظ أ)', ar:'ع', note:'أصله العين، وأغلب الناس اليوم يلفظونه همزة خفيفة.', ex:{he:'עַיִן', tr:'عايِن', ar:'عين', cog:true}},
+  {h:'פ', fin:'ף', name:'פֵּא', nameAr:'پيه', sound:'پ / ف', ar:'ف', note:'مع نقطة (פּ) = P، بدون نقطة (פ) = ف. في آخر الكلمة ף.', ex:{he:'פֶּה', tr:'پيه', ar:'فم (فَه)', cog:true}},
+  {h:'צ', fin:'ץ', name:'צָדִי', nameAr:'تسادي', sound:'تس', ar:'ص', note:'يقابل الصاد، لكن يُلفظ "تس" مثل آخر كلمة pizza.', ex:{he:'צֵל', tr:'تسيل', ar:'ظل', cog:true}},
+  {h:'ק', name:'קוֹף', nameAr:'كوف', sound:'ق (تُلفظ ك)', ar:'ق', note:'أصله القاف، واليوم يُلفظ كافاً.', ex:{he:'קוֹל', tr:'كول', ar:'صوت (قول)', cog:true}},
+  {h:'ר', name:'רֵישׁ', nameAr:'ريش', sound:'ر (قريبة من غ)', ar:'ر', note:'يلفظها أغلب الإسرائيليين من الحلق، قريبة من الغين.', ex:{he:'רֹאשׁ', tr:'روش', ar:'رأس', cog:true}},
+  {h:'ש', name:'שִׁין', nameAr:'شين', sound:'ش / س', ar:'ش', note:'نقطة على اليمين (שׁ) = ش، نقطة على اليسار (שׂ) = س.', ex:{he:'שֶׁמֶשׁ', tr:'شيميش', ar:'شمس', cog:true}},
+  {h:'ת', name:'תָּו', nameAr:'تاڤ', sound:'ت', ar:'ت', note:'نفس صوت التاء.', ex:{he:'תּוּת', tr:'توت', ar:'توت', cog:true}},
+];
+
+const $ = s => document.querySelector(s), app = $("#app");
+const KEY = "hebrew-letters-v1";
+let S = (() => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } })();
+S.box = S.box || {}; S.due = S.due || {}; S.wr = S.wr || {}; S.tab = S.tab || "all";
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+let tT; function toast(t) { const e = $("#toast"); e.textContent = t; e.style.display = "block"; clearTimeout(tT); tT = setTimeout(() => e.style.display = "none", 1800); }
+/* الحفظ مع الزمن: صناديق مراجعة متباعدة (0 جديد … 3 محفوظ) */
+const DAYS = [0, 1, 3, 7, 16];
+const lvl = h => S.box[h] || 0;
+const dueNow = h => (S.due[h] || 0) <= Date.now();
+function mark(h, ok) {
+  const b = ok ? Math.min(4, lvl(h) + 1) : Math.max(0, lvl(h) - 1);
+  S.box[h] = b; S.due[h] = Date.now() + (ok ? DAYS[b] : 0) * 864e5 + (ok ? 0 : 6e4); save();
+}
+const learned = () => LETTERS.filter(l => lvl(l.h) >= 3).length;
+const toReview = () => LETTERS.filter(l => S.box[l.h] && dueNow(l.h));
+const ALL = LETTERS.flatMap(l => l.fin ? [l, { ...l, h: l.fin, base: l.h, isFin: true }] : [l]);
+const speak = t => { try { const u = new SpeechSynthesisUtterance(t); u.lang = "he-IL"; u.rate = .8; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { toast("النطق غير متوفر على هذا الجهاز"); } };
+const stars = n => "★".repeat(n) + "☆".repeat(3 - n);
+
+/* التنقل بزر الرجوع */
+let stack = [{ v: "home" }];
+function go(v) { stack.push(v); history.pushState({ n: stack.length }, ""); render(); scrollTo(0, 0); }
+addEventListener("popstate", () => { if (stack.length > 1) stack.pop(); render(); });
+window.__back = () => { if (stack.length > 1) { history.back(); return 1; } return 0; };
+
+function hero() {
+  const n = learned(), r = toReview().length;
+  return `<div class="hero"><div class="big">אב</div><div style="flex:1"><b>حفظت ${n} من ${LETTERS.length} حرفاً</b>
+  <small>${r ? `عندك ${r} ${r === 1 ? "حرف" : "أحرف"} للمراجعة اليوم` : "اضغط على أي حرف لتتعلمه، ثم اختبر نفسك كل يوم"}</small>
+  <div class="bar"><i style="width:${Math.round(n * 100 / LETTERS.length)}%"></i></div></div></div>`;
+}
+function tabs() {
+  const T = [["all", "الحروف", "طباعي ويدوي"], ["table", "الجدول", "مقارنة سريعة"], ["quiz", "اختبار", toReview().length ? toReview().length + " للمراجعة" : "احفظ مع الزمن"], ["write", "اكتب", "بإصبعك"]];
+  return `<div class="tabs">${T.map(([k, t, s]) => `<button data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}<b>${s}</b></button>`).join("")}</div>`;
+}
+const V = {};
+V.home = () => {
+  let body = "";
+  if (S.tab === "all") body = `<div class="grid">${LETTERS.map((l, i) => { const k = lvl(l.h);
+      return `<button class="lt k${Math.min(3, k)}" data-l="${i}"><span class="st">${k >= 3 ? "✅" : k ? "⭐" : ""}</span><span class="row"><span class="p he">${l.h}</span><span class="c cur">${l.h}</span></span><span class="ar">${l.ar}</span><small>${l.nameAr}${l.fin ? " · " + l.fin : ""}</small></button>`; }).join("")}</div>
+    <div class="legend"><span><b style="color:#0c3b26">أخضر</b> = طباعي</span><span><b style="color:#8a5a00">بني</b> = يدوي</span><span><b style="color:#b4232c">أحمر</b> = الحرف العربي</span></div>`;
+  else if (S.tab === "table") body = `<table class="cmp"><tr><th>طباعي</th><th>يدوي</th><th>عربي</th><th>الاسم</th><th>النهائي</th></tr>${LETTERS.map((l, i) => `<tr data-l="${i}"><td class="p he">${l.h}</td><td class="c cur">${l.h}</td><td class="a">${l.ar}</td><td class="n">${l.nameAr}<br><span class="he" style="color:#6b7368">${l.name}</span></td><td>${l.fin ? `<span class="he" style="font-size:24px;color:#0c3b26">${l.fin}</span> <span class="cur" style="font-size:24px;color:#8a5a00">${l.fin}</span>` : ""}</td></tr>`).join("")}</table>
+    <p class="hint">العبرية تُكتب من اليمين إلى اليسار مثل العربية، وحروفها لا تتصل ببعض. خمسة حروف لها شكل خاص في آخر الكلمة.</p>`;
+  else if (S.tab === "quiz") body = quizIntro();
+  else if (S.tab === "write") return hero() + tabs() + writePad(S.wi || 0, true);
+  return hero() + tabs() + body;
+};
+V.letter = v => {
+  const i = v.i, l = LETTERS[i];
+  return `<div class="card">
+  <div class="duo"><div class="p"><div class="g he">${l.h}</div><small>طباعي (للقراءة)</small></div><div class="c"><div class="g cur">${l.h}</div><small>يدوي (للكتابة)</small></div></div>
+  <div class="eq"><span class="he" style="font-size:38px;color:#0c3b26">${l.h}</span> = <span class="a">${l.ar}</span></div>
+  <dl class="facts"><dt>الاسم</dt><dd>${l.nameAr} · <span class="he">${l.name}</span></dd><dt>الصوت</dt><dd>${l.sound}</dd></dl>
+  <div class="note">${l.note}</div>
+  ${l.fin ? `<div class="fin">في آخر الكلمة يُكتب: <span class="he" style="color:#0c3b26">${l.fin}</span> <span class="cur" style="color:#8a5a00">${l.fin}</span></div>` : ""}
+  ${l.ex ? `<div class="ex"><span class="w he">${l.ex.he}</span><span class="wc cur">${l.ex.he.replace(/[֑-ׇ]/g, "")}</span><div><b>${l.ex.tr}</b> = ${l.ex.ar}${l.ex.cog ? " <small style='color:#2f8a4f'>(قريبة من العربية)</small>" : ""}${l.ex.tip ? `<br><small>${l.ex.tip}</small>` : ""}</div></div>` : ""}
+  <div class="acts"><button class="btn gold" data-say="${l.name}">🔊 انطق الحرف</button><button class="btn" data-wr="${i}">✍️ اكتبه بيدك</button>
+  <button class="btn ghost" data-know="${l.h}">${lvl(l.h) >= 3 ? "✅ محفوظ" : "✓ حفظته"}</button>${l.ex ? `<button class="btn ghost" data-say="${l.ex.he}">🔊 انطق المثال</button>` : `<span></span>`}</div>
+  <div class="nav"><button class="btn ghost" data-l="${i - 1}" ${i ? "" : "disabled"}>▶ السابق</button><span>${i + 1} / ${LETTERS.length}</span><button class="btn ghost" data-l="${i + 1}" ${i < LETTERS.length - 1 ? "" : "disabled"}>التالي ◀</button></div></div>`;
+};
+/* ---------- الاختبار (مراجعة متباعدة) ---------- */
+let Q = null;
+function quizIntro() {
+  const r = toReview().length, n = learned();
+  return `<div class="card done"><b>اختبر نفسك</b><p>يظهر لك حرف بالطباعي أو اليدوي أو بالعربي، واختر ما يقابله. الحروف التي تخطئ فيها ترجع لك أكثر، والتي تحفظها ترجع بعد أيام حتى تثبت في ذاكرتك.</p>
+  <div class="acts" style="grid-template-columns:1fr"><button class="btn gold" data-qs="mix">ابدأ اختبار 10 أسئلة</button>${r ? `<button class="btn" data-qs="due">راجع ${r} ${r === 1 ? "حرف" : "أحرف"} مستحقة اليوم</button>` : ""}<button class="btn ghost" data-qs="cur">اختبار اليدوي فقط</button></div>
+  <p class="hint">المحفوظ: ${n} من ${LETTERS.length}</p></div>`;
+}
+function startQuiz(kind) {
+  let pool = kind === "due" ? toReview() : LETTERS.slice();
+  if (kind !== "due") pool.sort((a, b) => (lvl(a.h) - lvl(b.h)) || (Math.random() - .5));
+  pool = pool.slice(0, 10).sort(() => Math.random() - .5);
+  const types = kind === "cur" ? ["cur2ar", "ar2cur", "p2cur"] : ["p2ar", "cur2ar", "ar2p", "ar2cur", "p2cur"];
+  Q = { items: pool.map(l => ({ l, t: types[Math.floor(Math.random() * types.length)] })), i: 0, ok: 0 };
+  go({ v: "quiz" });
+}
+V.quiz = () => {
+  if (!Q) return V.home();
+  if (Q.i >= Q.items.length) return `<div class="card done"><b>${Q.ok} من ${Q.items.length} ✨</b><p>${Q.ok === Q.items.length ? "ممتاز! كلها صح" : "الحروف التي أخطأت فيها سترجع لك في المراجعة القادمة"}</p><div class="acts"><button class="btn gold" data-qs="mix">اختبار جديد</button><button class="btn ghost" data-home>رجوع للحروف</button></div></div>`;
+  const it = Q.items[Q.i], l = it.l, [from, to] = it.t.split("2");
+  const others = LETTERS.filter(x => x.h !== l.h).sort(() => Math.random() - .5).slice(0, 3), opts = [l, ...others].sort(() => Math.random() - .5);
+  const cls = { p: "he", cur: "cur", ar: "ar" }, show = x => to === "ar" ? x.ar : x.h, ask = { p: "ما هذا الحرف الطباعي بالعربي؟", cur: "ما هذا الحرف اليدوي؟", ar: to === "cur" ? "اختر شكله باليدوي" : "اختر شكله بالطباعي" }[from];
+  return `<div class="qmeta"><span>سؤال ${Q.i + 1} من ${Q.items.length}</span><span>✓ ${Q.ok}</span></div>
+  <div class="card qcard"><div class="ask">${ask}</div><div class="q ${cls[from]}">${from === "ar" ? l.ar : l.h}</div></div>
+  <div class="opts">${opts.map(o => `<button class="${to === "ar" ? "" : cls[to]}" data-ans="${o.h}">${show(o)}</button>`).join("")}</div>`;
+};
+function answer(btn) {
+  const it = Q.items[Q.i], ok = btn.dataset.ans === it.l.h;
+  document.querySelectorAll("[data-ans]").forEach(b => { b.disabled = true; if (b.dataset.ans === it.l.h) b.classList.add("ok"); });
+  if (!ok) btn.classList.add("no"); else Q.ok++;
+  mark(it.l.h, ok); if (!ok) speak(it.l.name);
+  setTimeout(() => { Q.i++; render(); }, ok ? 650 : 1500);
+}
+/* ---------- لوح الكتابة ---------- */
+let PAD = null;
+function writePad(i, embedded) {
+  const l = LETTERS[i]; PAD = { i, script: PAD && PAD.i === i ? PAD.script : "cursive", glyph: l.h, guide: true };
+  return `<div class="card">${embedded ? `<div class="picker">${LETTERS.map((x, k) => `<button class="he ${k === i ? "on" : ""}" data-wi="${k}">${x.h}</button>`).join("")}</div>` : `<h3 style="margin:0;text-align:center;font:700 18px var(--am-title);color:var(--am-green-800)">اكتب: ${l.nameAr} = ${l.ar}</h3>`}
+  <div class="seg" id="seg"><button data-s="cursive">يدوي</button><button data-s="print">طباعي</button></div>
+  ${l.fin ? `<div class="seg" id="segf"><button data-g="${l.h}" class="on">${l.h} عادي</button><button data-g="${l.fin}">${l.fin} نهائي</button></div>` : ""}
+  <p class="hint" style="margin:2px 0 6px">اكتب الحرف بإصبعك فوق الشكل الباهت، ثم أخفِ الدليل 👁 واكتبه من ذاكرتك.</p>
+  <div class="pad-wrap"><canvas class="pad" id="pad"></canvas></div>
+  <div class="score" id="score"></div>
+  <div class="row3"><button class="ib" id="clr" aria-label="امسح">🧽</button><button class="ib" id="gd" aria-label="الدليل">👁</button><button class="btn" id="chk">تحقّق ✓</button></div></div>`;
+}
+function bindPad() {
+  const cv = $("#pad"); if (!cv) return; const ctx = cv.getContext("2d"), P = PAD; let W = 300, strokes = [], cur = null;
+  const fontFor = sz => (P.script === "cursive" ? `${sz}px HeCursive` : `700 ${sz}px HePrint`);
+  const segB = () => $("#seg").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.s === P.script)); segB();
+  function fit(c, w) { c.font = fontFor(100); const m = c.measureText(P.glyph), asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent, h = asc + desc, wid = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
+    const k = Math.min(w * .62 / h, w * .6 / wid, .62 * w / 60); return { sz: 100 * k, x: w / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2 * k, y: w / 2 + (asc - desc) / 2 * k }; }
+  function glyph(c, w, a, col, sw) { c.save(); c.textAlign = "left"; c.textBaseline = "alphabetic"; c.direction = "ltr"; const f = fit(c, w); c.font = fontFor(f.sz); c.globalAlpha = a;
+    if (sw) { c.strokeStyle = col; c.lineWidth = sw; c.lineJoin = "round"; c.strokeText(P.glyph, f.x, f.y); } c.fillStyle = col; c.fillText(P.glyph, f.x, f.y); c.restore(); }
+  function paint() { ctx.clearRect(0, 0, W, W); ctx.strokeStyle = "#e7dcbc"; ctx.lineWidth = 2; [.28, .7].forEach(y => { ctx.beginPath(); ctx.moveTo(10, W * y); ctx.lineTo(W - 10, W * y); ctx.stroke(); });
+    ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(10, W * .49); ctx.lineTo(W - 10, W * .49); ctx.stroke(); ctx.setLineDash([]);
+    if (P.guide) glyph(ctx, W, .16, "#0c3b26");
+    ctx.strokeStyle = "#1f4fbf"; ctx.lineCap = ctx.lineJoin = "round"; ctx.lineWidth = W / 34;
+    strokes.forEach(s => { ctx.beginPath(); s.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); if (s.length === 1) ctx.lineTo(s[0][0] + .1, s[0][1]); ctx.stroke(); }); }
+  function size() { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; W = r.width; cv.width = W * d; cv.height = W * d; ctx.setTransform(d, 0, 0, d, 0, 0); paint(); }
+  const pt = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); cur = [pt(e)]; strokes.push(cur); $("#score").innerHTML = ""; paint(); };
+  cv.onpointermove = e => { if (!cur) return; cur.push(pt(e)); paint(); };
+  cv.onpointerup = cv.onpointercancel = () => { cur = null; };
+  $("#clr").onclick = () => { strokes = []; $("#score").innerHTML = ""; paint(); };
+  $("#gd").onclick = () => { P.guide = !P.guide; paint(); toast(P.guide ? "الدليل ظاهر" : "الدليل مخفي: اكتبه من ذاكرتك"); };
+  $("#seg").onclick = e => { const b = e.target.closest("button"); if (!b) return; P.script = b.dataset.s; segB(); strokes = []; paint(); };
+  const sf = $("#segf"); if (sf) sf.onclick = e => { const b = e.target.closest("button"); if (!b) return; P.glyph = b.dataset.g; sf.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); strokes = []; paint(); };
+  $("#chk").onclick = () => {
+    if (!strokes.length) return toast("اكتب الحرف أولاً");
+    const N = 96, mk = () => { const c = document.createElement("canvas"); c.width = c.height = N; return c.getContext("2d"); };
+    const g = mk(); glyph(g, N, 1, "#000"); const gd = mk(); glyph(gd, N, 1, "#000", 9);
+    const dU = (c, lw) => { c.strokeStyle = "#000"; c.lineCap = c.lineJoin = "round"; c.lineWidth = lw; const k = N / W; strokes.forEach(s => { c.beginPath(); s.forEach((p, j) => j ? c.lineTo(p[0] * k, p[1] * k) : c.moveTo(p[0] * k, p[1] * k)); if (s.length === 1) c.lineTo(s[0][0] * k + .1, s[0][1] * k); c.stroke(); }); };
+    const u = mk(); dU(u, 3.2); const ud = mk(); dU(ud, 11); const A = c => c.getImageData(0, 0, N, N).data, G = A(g), GD = A(gd), U = A(u), UD = A(ud);
+    let gT = 0, gH = 0, uT = 0, uI = 0; for (let p = 3; p < G.length; p += 4) { if (G[p] > 100) { gT++; if (UD[p] > 60) gH++; } if (U[p] > 100) { uT++; if (GD[p] > 60) uI++; } }
+    const R = gT ? gH / gT : 0, Pr = uT ? uI / uT : 0, F = R + Pr ? 2 * R * Pr / (R + Pr) : 0, n = F >= .72 ? 3 : F >= .52 ? 2 : F >= .32 ? 1 : 0;
+    $("#score").innerHTML = `<div class="stars">${stars(n)}</div><div>${["حاول مرة ثانية، تتبّع الشكل الباهت ببطء", "بداية جيدة! غطِّ الشكل كله", "جيد جداً 👏", "ممتاز! خطّك رائع 🎉"][n]}</div>`;
+    const l = LETTERS[P.i]; if (n >= 2) { S.wr[l.h] = Math.max(S.wr[l.h] || 0, n); if (!P.guide) mark(l.h, true); save(); }
+    if (n === 3 && P.guide) setTimeout(() => toast("جرّب الآن بدون دليل 👁"), 1200);
+  };
+  document.fonts.load(fontFor(40), P.glyph).then(size); onresize = () => { if (cv.isConnected) size(); };
+}
+V.write = v => writePad(v.i, false);
+function render() {
+  const v = stack[stack.length - 1]; app.innerHTML = (V[v.v] || V.home)(v); bindPad();
+}
+app.addEventListener("click", e => {
+  const t = e.target.closest("button,tr"); if (!t) return;
+  const d = t.dataset;
+  if (d.tab) { S.tab = d.tab; save(); render(); }
+  else if (d.l != null) { const i = +d.l; if (i < 0 || i >= LETTERS.length) return; if (stack[stack.length - 1].v === "letter") { stack[stack.length - 1] = { v: "letter", i }; render(); scrollTo(0, 0); } else go({ v: "letter", i }); speak(LETTERS[i].name); }
+  else if (d.say) speak(d.say);
+  else if (d.wr != null) go({ v: "write", i: +d.wr });
+  else if (d.wi != null) { S.wi = +d.wi; save(); render(); }
+  else if (d.know) { const h = d.know; S.box[h] = Math.max(3, lvl(h)); S.due[h] = Date.now() + 3 * 864e5; save(); render(); toast("✓ أُضيف للمحفوظ، وسيرجع لك للمراجعة بعد أيام"); }
+  else if (d.qs) { if (stack[stack.length - 1].v === "quiz") stack.pop(); startQuiz(d.qs); }
+  else if (d.ans) answer(t);
+  else if (d.home != null) { history.back(); }
+});
+render();
+</script>
+</body>
+</html>

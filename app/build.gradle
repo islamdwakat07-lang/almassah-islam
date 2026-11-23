@@ -11,8 +11,8 @@ android {
         applicationId "ps.islam.almassah"
         minSdk 24
         targetSdk 34
-        versionCode 110
-        versionName "11.8"
+        versionCode 111
+        versionName "11.9"
     }
 
     signingConfigs {

@@ -8,7 +8,8 @@ const NICE_SCALES = [200, 250, 500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 400
 const AF = '"IBM Plex Sans Arabic", Tahoma, sans-serif', TF = '"Reem Kufi", "IBM Plex Sans Arabic", Tahoma, sans-serif', MF = '"IBM Plex Mono", monospace';
 
 async function loadImg(url) {
-  const r = await fetch(url); if (!r.ok) throw new Error("img " + r.status);
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);   // خادم متوقف لا يعلّق الطباعة
+  const r = await fetch(url, { signal: ac.signal }).finally(() => clearTimeout(to)); if (!r.ok) throw new Error("img " + r.status);
   const b = await r.blob(); if (!/^image\//.test(b.type)) throw new Error("not image");
   const u = URL.createObjectURL(b);
   return await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = u; });
@@ -192,7 +193,8 @@ async function exportPDF(opts) {
     const exp = (svc, extra, tk, root) => (root || REST) + svc + "/MapServer/export?bbox=" + bbox + "&bboxSR=28191&imageSR=28191&size=" + iw + "," + ih + "&dpi=200&f=image" + extra + (tk ? "&token=" + TK : "");
     const want = {}; LAYERS.forEach(l => { if (st.on[l.id]) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
     const order = [...new Set(LAYERS.map(l => l.svc))].reverse().filter(s => want[s]);
-    const jobs = [loadImg(exp(base.svc, "&format=jpg", base.tk)).catch(() => loadImg(exp("Orthophotos_WB_2022_15cm_tif_PG1923_05", "&format=jpg")).catch(() => null))]
+    const esri = () => window.esriImage ? esriImage([gx0, gy0, gx1, gy1], iw, ih, 28191) : null;
+    const jobs = [(base.esri ? Promise.reject() : loadImg(exp(base.svc, "&format=jpg", base.tk))).catch(() => base.esri ? Promise.reject() : loadImg(exp("Orthophotos_WB_2022_15cm_tif_PG1923_05", "&format=jpg"))).catch(() => esri()).catch(() => null)]
       .concat(order.map(s => loadImg(exp(s, "&format=png32&transparent=true&layers=show:" + want[s].ids.join(","), want[s].cfg.tk, want[s].cfg.base)).catch(() => null)));
     const imgs = await Promise.all(jobs);
 

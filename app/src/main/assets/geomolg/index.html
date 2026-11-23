@@ -146,6 +146,7 @@ select:disabled{opacity:.55}
 <script src="lib/leaflet.js"></script>
 <script src="lib/proj4.js"></script>
 <script src="lib/proj4leaflet.js"></script>
+<script src="../esri-pg.js"></script>
 <script src="../jspdf.umd.min.js"></script>
 <script src="../polygon-clipping.umd.min.js"></script>
 <script>
@@ -171,6 +172,7 @@ const BASES = [
   { id: "2021", name: "صورة 2021 (15 سم)", svc: "Orthophotos_WB_2021_15cm_tif_PG1923", maxZ: 13 },
   { id: "2019", name: "صورة 2019 (25 سم)", svc: "Orthophotos_WB_2019_Aerial_25cm_jpg_PG1923", maxZ: 12 },
   { id: "2015", name: "صورة 2015 (25 سم)", svc: "Orthophotos_WB_2015_Aerial_25cm_jpg_PG1923", maxZ: 12 },
+  { id: "esri", name: "صورة Esri العالمية (احتياطية)", esri: 1 },
   { id: "none", name: "بدون صورة جوية" }
 ];
 // curated overlay layers (service, sub-layer ids, colour for the swatch)
@@ -206,11 +208,17 @@ let baseLayer = null;
 function setBase(id) {
   st.base = id; save();
   if (baseLayer) { map.removeLayer(baseLayer); baseLayer = null; }
-  const b = BASES.find(x => x.id === id); if (!b || !b.svc) return;
+  const b = BASES.find(x => x.id === id);
+  if (b && b.esri) { if (window.EsriPGLayer) baseLayer = new EsriPGLayer({ maxZoom: 13, keepBuffer: 2 }).addTo(map).bringToBack(); return; }
+  if (!b || !b.svc) return;
   baseLayer = L.tileLayer(REST + b.svc + "/MapServer/tile/{z}/{y}/{x}" + (b.tk ? "?token=" + TK : ""), { maxNativeZoom: b.maxZ, maxZoom: 13, tileSize: 256, keepBuffer: 3 });
   let errs = 0;
   let retried = false;
-  baseLayer.on("tileerror", () => { if (b.tk && !retried && errs === 3 && window.geoToken) { retried = true; geoToken(true).then(t => { if (t && t !== TK) { TK = t; setBase(id); } }); } if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
+  // إذا كان خادم صور جيومولج متوقفاً تماماً (لا تصل أي بلاطة): ننتقل لصورة Esri تلقائياً
+  let loads = 0; const me = baseLayer; baseLayer.on("tileload", () => loads++);
+  const toEsri = () => { if (baseLayer !== me || loads) return; msg("msgP", "خادم صور جيومولج لا يستجيب الآن، فعرضنا صورة Esri الجوية بدلاً منها."); setBase("esri"); const sel = $("#base"); if (sel) sel.value = "esri"; st.base = id; save(); };
+  setTimeout(toEsri, 8000);
+  baseLayer.on("tileerror", () => { if (!loads && errs >= 4) toEsri(); if (b.tk && !retried && errs === 3 && window.geoToken) { retried = true; geoToken(true).then(t => { if (t && t !== TK) { TK = t; setBase(id); } }); } if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
   baseLayer.addTo(map).bringToBack();
 }
 

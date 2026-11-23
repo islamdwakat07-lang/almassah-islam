@@ -138,6 +138,7 @@ table.t input{width:100%}
 <div id="toast" hidden></div>
 <script src="../polygon-clipping.umd.min.js"></script>
 <script src="../geotoken.js"></script>
+<script src="../esri-pg.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -418,14 +419,21 @@ async function fetchAerial(box, wpx, hpx) {
   if (src === "custom") return ST.custImg && CUST ? { box: ST.custBox, img: CUST } : null;
   if (src === "none" || !M || !M.sr) return null;
   const s = SVC[src] || SVC["2022"]; let tk = "";
-  if (s[1] && window.geoToken) { try { tk = await geoToken(); } catch (e) {} }
+  if (s[1] && window.geoToken) { try { tk = await Promise.race([geoToken(), new Promise(r => setTimeout(() => r(""), 8000))]); } catch (e) {} }
   // أبعاد الصورة بنفس نسبة المستطيل المطلوب، وإلا يغيّر الخادم الحدود فتنزاح الصورة
   const bw = box[2] - box[0], bh = box[3] - box[1], big = Math.min(4000, Math.max(wpx, hpx)), W = Math.round(bw >= bh ? big : big * bw / bh), H = Math.round(bw >= bh ? big * bh / bw : big);
   const u = "https://orthophotos.geomolg.ps/adaptor/rest/services/" + s[0] + "/MapServer/export?bbox=" + box.map(v => v.toFixed(2)).join(",") + "&bboxSR=" + M.sr + "&imageSR=" + M.sr + "&size=" + W + "," + H + "&f=image&format=jpg" + (tk ? "&token=" + tk : "");
-  const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status);
-  const bl = await r.blob(); if (!/^image\//.test(bl.type) || bl.size < 2000) throw new Error("لم تصل صورة");
-  const img = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(bl); });
-  return { box, img };
+  try {
+    const ac = new AbortController(), to = setTimeout(() => ac.abort(), 12000);
+    const r = await fetch(u, { signal: ac.signal }).finally(() => clearTimeout(to)); if (!r.ok) throw new Error("HTTP " + r.status);
+    const bl = await r.blob(); if (!/^image\//.test(bl.type) || bl.size < 2000) throw new Error("لم تصل صورة");
+    const img = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(bl); });
+    return { box, img };
+  } catch (e) {   // خادم جيومولج متوقف: صورة Esri الجوية بدلاً منها
+    const img = window.esriImage ? await esriImage(box, W, H, M.sr) : null;
+    if (img) return { box, img, esri: true };
+    throw e;
+  }
 }
 let aerTimer = 0;
 function loadAerial() {
@@ -434,7 +442,7 @@ function loadAerial() {
     if (!M) return; const L = layout(1600); if (!L) return;
     const box = L.aerBox; $("aStat").textContent = "…جاري تحميل الصورة";
     if (ST.view === "terrain" && M.sr) loadTerrain(terrainBox()).then(render);
-    try { AER = await fetchAerial(box, L.W, L.H); $("aStat").textContent = AER ? "✓ الصورة محمّلة" : (ST.src === "none" ? "بدون صورة" : "لا صورة"); }
+    try { AER = await fetchAerial(box, L.W, L.H); $("aStat").textContent = AER ? (AER.esri ? "✓ صورة Esri (خادم جيومولج لا يستجيب)" : "✓ الصورة محمّلة") : (ST.src === "none" ? "بدون صورة" : "لا صورة"); }
     catch (e) { AER = null; $("aStat").textContent = "⚠️ تعذّر تحميل الصورة (" + e.message + ")"; }
     render();
   }, 250);

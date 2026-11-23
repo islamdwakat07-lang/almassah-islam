@@ -34,13 +34,14 @@
     const size = Math.round(bw * k) + "," + Math.round(bh * k);
     const load = async (yr) => {
       const s = SVC[yr] || SVC["2022"]; let tk = "";
-      if (s[1] && window.geoToken) { try { tk = await geoToken(); } catch (e) {} }
+      if (s[1] && window.geoToken) { try { tk = await Promise.race([geoToken(), new Promise(r => setTimeout(() => r(""), 8000))]); } catch (e) {} }
       const u = "https://orthophotos.geomolg.ps/adaptor/rest/services/" + s[0] + "/MapServer/export?bbox=" + box.join(",") + "&bboxSR=" + sr + "&imageSR=" + sr + "&size=" + size + "&f=image&format=jpg" + (tk ? "&token=" + tk : "");
-      const r = await fetch(u); if (!r.ok) throw new Error("http"); const bl = await r.blob(); if (!/^image\//.test(bl.type) || bl.size < 2000) throw new Error("img");
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 12000); const r = await fetch(u, { signal: ac.signal }).finally(() => clearTimeout(to)); if (!r.ok) throw new Error("http"); const bl = await r.blob(); if (!/^image\//.test(bl.type) || bl.size < 2000) throw new Error("img");
       return bl;
     };
     const me = AER;
-    load(aerYear).catch(() => load("2022")).then(bl => {
+    const esri = async () => { const [w, h] = size.split(",").map(Number); const bl = window.esriBlob ? await esriBlob(box, w, h, sr) : null; if (!bl) throw new Error("esri"); return bl; };
+    load(aerYear).catch(() => load("2022")).catch(esri).then(bl => {
       if (me !== AER) return;
       const url = URL.createObjectURL(bl), im = new Image();
       im.onload = () => { if (me !== AER) return; AER.url = url; AER.img = im; AER.ready = true; AER.cbs.forEach(f => { try { f(); } catch (e) {} }); AER.cbs = []; };

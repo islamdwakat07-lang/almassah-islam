@@ -8,7 +8,8 @@ const NICE_SCALES = [200, 250, 500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 400
 const AF = '"IBM Plex Sans Arabic", Tahoma, sans-serif', TF = '"Reem Kufi", "IBM Plex Sans Arabic", Tahoma, sans-serif', MF = '"IBM Plex Mono", monospace';
 
 async function loadImg(url) {
-  const r = await fetch(url); if (!r.ok) throw new Error("img " + r.status);
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);   // خادم متوقف لا يعلّق الطباعة
+  const r = await fetch(url, { signal: ac.signal }).finally(() => clearTimeout(to)); if (!r.ok) throw new Error("img " + r.status);
   const b = await r.blob(); if (!/^image\//.test(b.type)) throw new Error("not image");
   const u = URL.createObjectURL(b);
   return await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = u; });

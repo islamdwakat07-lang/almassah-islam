@@ -140,6 +140,7 @@ select:focus,input:focus{outline:2px solid var(--am-gold-500);outline-offset:0}
 <script src="../polygon-clipping.umd.min.js"></script>
 <script src="layers.js"></script>
 <script src="data.js"></script>
+<script src="esri.js"></script>
 <script src="pdfkit.js"></script>
 <script src="report.js"></script>
 <script>
@@ -156,6 +157,11 @@ const map = L.map("map", { crs, maxZoom: 13, minZoom: 1, zoomSnap: 1, attributio
 const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
 let base = L.tileLayer(REST + "Orthophotos_WB_2022_15cm_tif_PG1923_05/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 13, maxZoom: 13, attribution: "صورة جوية: جيومولج" }).addTo(map);
 (async () => { try { const tk = window.geoToken ? await geoToken() : ""; if (!tk) return; const nb = L.tileLayer(REST + "Orthophotos_WB_2025_15cm_tif_PG1923/MapServer/tile/{z}/{y}/{x}?token=" + tk, { maxNativeZoom: 12, maxZoom: 13, attribution: "صورة جوية 2025: جيومولج" }); nb.once("tileload", () => { map.removeLayer(base); base = nb; }); nb.addTo(map); } catch (e) {} })();
+/* إذا توقف خادم صور جيومولج (يحدث أحياناً): ننتقل تلقائياً لصورة Esri الجوية */
+let baseOk = 0, baseBad = 0, esriOn = false;
+function useEsri() { if (esriOn) return; esriOn = true; try { map.removeLayer(base); } catch (e) {} base = new EsriPGLayer({ maxZoom: 13, attribution: "صورة جوية: Esri World Imagery" }).addTo(map); base.bringToBack(); }
+base.on("tileload", () => baseOk++); base.on("tileerror", () => { baseBad++; if (!baseOk && baseBad >= 2) useEsri(); });
+setTimeout(() => { if (!baseOk) useEsri(); }, 7000);
 const over = L.layerGroup().addTo(map);
 
 

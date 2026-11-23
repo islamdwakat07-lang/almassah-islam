@@ -160,8 +160,7 @@ let base = L.tileLayer(REST + "Orthophotos_WB_2022_15cm_tif_PG1923_05/MapServer/
 /* إذا توقف خادم صور جيومولج (يحدث أحياناً): ننتقل تلقائياً لصورة Esri الجوية */
 let baseOk = 0, baseBad = 0, esriOn = false;
 function useEsri() { if (esriOn) return; esriOn = true; try { map.removeLayer(base); } catch (e) {} base = new EsriPGLayer({ maxZoom: 13, attribution: "صورة جوية: Esri World Imagery" }).addTo(map); base.bringToBack(); }
-base.on("tileload", () => baseOk++); base.on("tileerror", () => { baseBad++; if (!baseOk && baseBad >= 2) useEsri(); });
-setTimeout(() => { if (!baseOk) useEsri(); }, 7000);
+base.on("tileload", () => baseOk++); base.on("tileerror", () => { baseBad++; if (!baseOk && baseBad >= 6) useEsri(); });
 const over = L.layerGroup().addTo(map);
 
 

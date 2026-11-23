@@ -71,18 +71,9 @@ function footerM(ctx, W, page, pages) {
   txt(ctx, `تاريخ الإصدار ${ds}  ·  صفحة ${page} من ${pages}`, mm(10), mm(287), `500 ${mm(2.7)}px ${AF}`, "#5d6458", "left");
 }
 async function aerial(bbox, iw, ih) {
-  const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
-  let tk = ""; try { tk = window.geoToken ? await Promise.race([geoToken(), new Promise(r => setTimeout(() => r(""), 8000))]) : ""; } catch (e) {}
-  const exp = (svc, tok) => REST + svc + "/MapServer/export?bbox=" + bbox.join(",") + "&bboxSR=28191&imageSR=28191&size=" + iw + "," + ih + "&dpi=200&format=jpg&f=image" + (tok ? "&token=" + tok : "");
-  const tries = [["Orthophotos_WB_2025_15cm_tif_PG1923", tk, "صورة جيومولج 2025 (15 سم)"], ["Orthophotos_WB_2024_15cm_tif_PG1923", tk, "صورة جيومولج 2024 (15 سم)"], ["Orthophotos_WB_2022_15cm_tif_PG1923_05", "", "صورة جيومولج 2022 (15 سم)"]];
-  for (const [s, t, n] of tries) { if (t === undefined) continue; try { return { im: await loadImg(exp(s, t)), name: n }; } catch (e) {} }
-  try {   // احتياط 1: بلاطات Esri محوّلة لنظام فلسطين (تعمل حتى لو توقف جيومولج)
-    const cv = await esriImage(bbox, iw, ih, 28191); if (cv) return { im: cv, name: "صورة Esri World Imagery" };
-  } catch (e) {}
-  try {   // احتياط 2: صورة Esri العالمية
-    const u = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=" + bbox.join(",") + "&bboxSR=28191&imageSR=28191&size=" + iw + "," + ih + "&format=jpg&f=image";
-    return { im: await loadImg(u), name: "صورة Esri World Imagery" };
-  } catch (e) { return { im: null, name: "تعذّر تحميل الصورة الجوية" }; }
+  // من البلاطات (سريعة): جيومولج 2025 ثم 2022 ثم Esri
+  try { const a = window.aerialImage ? await aerialImage(bbox, iw, ih, 28191, { year: "2025" }) : null; if (a) return { im: a.img, name: a.name }; } catch (e) {}
+  return { im: null, name: "تعذّر تحميل الصورة الجوية" };
 }
 
 async function exportReport(an, opts, onStep) {

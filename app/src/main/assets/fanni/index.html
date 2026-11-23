@@ -418,6 +418,11 @@ async function fetchAerial(box, wpx, hpx) {
   const src = ST.src;
   if (src === "custom") return ST.custImg && CUST ? { box: ST.custBox, img: CUST } : null;
   if (src === "none" || !M || !M.sr) return null;
+  {   // من البلاطات أولاً (سريعة): جيومولج ثم Esri
+    const bw0 = box[2] - box[0], bh0 = box[3] - box[1], big0 = Math.min(4000, Math.max(wpx, hpx));
+    const a = window.aerialImage ? await aerialImage(box, bw0 >= bh0 ? big0 : big0 * bw0 / bh0, bw0 >= bh0 ? big0 * bh0 / bw0 : big0, M.sr, { year: src }).catch(() => null) : null;
+    if (a) return { box, img: a.img, esri: /Esri/.test(a.name) };
+  }
   const s = SVC[src] || SVC["2022"]; let tk = "";
   if (s[1] && window.geoToken) { try { tk = await Promise.race([geoToken(), new Promise(r => setTimeout(() => r(""), 8000))]); } catch (e) {} }
   // أبعاد الصورة بنفس نسبة المستطيل المطلوب، وإلا يغيّر الخادم الحدود فتنزاح الصورة

@@ -41,7 +41,8 @@
     };
     const me = AER;
     const esri = async () => { const [w, h] = size.split(",").map(Number); const bl = window.esriBlob ? await esriBlob(box, w, h, sr) : null; if (!bl) throw new Error("esri"); return bl; };
-    load(aerYear).catch(() => load("2022")).catch(esri).then(bl => {
+    const tiles = async () => { const [w, h] = size.split(",").map(Number); const bl = window.aerialBlob ? await aerialBlob(box, w, h, sr, { year: aerYear }) : null; if (!bl) throw new Error("tiles"); return bl; };
+    tiles().catch(() => load(aerYear)).catch(() => load("2022")).catch(esri).then(bl => {
       if (me !== AER) return;
       const url = URL.createObjectURL(bl), im = new Image();
       im.onload = () => { if (me !== AER) return; AER.url = url; AER.img = im; AER.ready = true; AER.cbs.forEach(f => { try { f(); } catch (e) {} }); AER.cbs = []; };

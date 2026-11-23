@@ -217,8 +217,7 @@ function setBase(id) {
   // إذا كان خادم صور جيومولج متوقفاً تماماً (لا تصل أي بلاطة): ننتقل لصورة Esri تلقائياً
   let loads = 0; const me = baseLayer; baseLayer.on("tileload", () => loads++);
   const toEsri = () => { if (baseLayer !== me || loads) return; msg("msgP", "خادم صور جيومولج لا يستجيب الآن، فعرضنا صورة Esri الجوية بدلاً منها."); setBase("esri"); const sel = $("#base"); if (sel) sel.value = "esri"; st.base = id; save(); };
-  setTimeout(toEsri, 8000);
-  baseLayer.on("tileerror", () => { if (!loads && errs >= 4) toEsri(); if (b.tk && !retried && errs === 3 && window.geoToken) { retried = true; geoToken(true).then(t => { if (t && t !== TK) { TK = t; setBase(id); } }); } if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
+  baseLayer.on("tileerror", () => { if (!loads && errs >= 6) toEsri(); if (b.tk && !retried && errs === 3 && window.geoToken) { retried = true; geoToken(true).then(t => { if (t && t !== TK) { TK = t; setBase(id); } }); } if (++errs === 12 && b.tk) { msg("msgP", "تعذّرت صورة " + b.id + "، تم التحويل إلى صورة 2022."); setBase("2022"); $("#base").value = "2022"; } });
   baseLayer.addTo(map).bringToBack();
 }
 

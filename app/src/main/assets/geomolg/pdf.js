@@ -194,7 +194,7 @@ async function exportPDF(opts) {
     const want = {}; LAYERS.forEach(l => { if (st.on[l.id]) (want[l.svc] = want[l.svc] || { cfg: l, ids: [] }).ids.push(...l.ids); });
     const order = [...new Set(LAYERS.map(l => l.svc))].reverse().filter(s => want[s]);
     const esri = () => window.esriImage ? esriImage([gx0, gy0, gx1, gy1], iw, ih, 28191) : null;
-    const jobs = [(base.esri ? Promise.reject() : loadImg(exp(base.svc, "&format=jpg", base.tk))).catch(() => base.esri ? Promise.reject() : loadImg(exp("Orthophotos_WB_2022_15cm_tif_PG1923_05", "&format=jpg"))).catch(() => esri()).catch(() => null)]
+    const jobs = [(window.aerialImage ? aerialImage([gx0, gy0, gx1, gy1], iw, ih, 28191, { year: base.id }).then(a => a ? a.img : null) : Promise.resolve(null)).catch(() => null)]
       .concat(order.map(s => loadImg(exp(s, "&format=png32&transparent=true&layers=show:" + want[s].ids.join(","), want[s].cfg.tk, want[s].cfg.base)).catch(() => null)));
     const imgs = await Promise.all(jobs);
 

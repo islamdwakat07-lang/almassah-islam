@@ -192,6 +192,10 @@ function parseDXF(txt) {
       }
       const out = []; pts.forEach((p, j) => { out.push(p); const q = pts[j + 1] || (closed ? pts[0] : null); if (q && bul[j]) bulgeArc(p, q, bul[j], out); });
       ents.push({ type: "PL", layer, pts: out, closed });
+    } else if (type === "ARC") {
+      const cx = +get(10, 0), cy = +get(20, 0), r = +get(40, 0); let a0 = +get(50, 0), a1 = +get(51, 0); if (a1 <= a0) a1 += 360;
+      const n = Math.max(2, Math.ceil((a1 - a0) / 6)), pts = []; for (let k = 0; k <= n; k++) { const t = (a0 + (a1 - a0) * k / n) * Math.PI / 180; pts.push([cx + r * Math.cos(t), cy + r * Math.sin(t)]); }
+      if (r > 0) ents.push({ type: "LN", layer, pts });
     } else if (type === "LINE") ents.push({ type: "LN", layer, pts: [[+get(10, 0), +get(20, 0)], [+get(11, 0), +get(21, 0)]] });
     else if (type === "TEXT" || type === "MTEXT") {
       let s = g.filter(x => x[0] === 1 || x[0] === 3).map(x => x[1]).join("").replace(/\\[A-Za-z][^;]*;/g, "").replace(/[{}]/g, "").trim();
@@ -233,6 +237,18 @@ function labelPt(r) {   // أعرض نقطة داخل القسيمة (أبعد �
   return best || c;
 }
 /* حد الأرض من اتحاد القسائم: إن كانت أجزاء منفصلة (طريق بينها) نصل كل جزأين متقابلين بالغلاف المحدب لرؤوسهما المتقابلة */
+/* حواف الطرق المرسومة كخطوط مفتوحة: نوصل القطع المتتابعة (خطوط وأقواس) لترسم كما هي في الملف */
+function edgeLinesOf(lines) {
+  if (!lines.length) return [];
+  const tol = 0.05, segs = lines.filter(l => l.length > 1).map(l => l.slice()), polys = [], used = new Array(segs.length).fill(false), near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < tol;
+  for (let s = 0; s < segs.length; s++) { if (used[s]) continue; used[s] = true; let path = segs[s].slice(), grew = true;
+    while (grew) { grew = false; for (let t = 0; t < segs.length; t++) { if (used[t]) continue; const q = segs[t], a = path[0], z = path[path.length - 1];
+      if (near(z, q[0])) path = path.concat(q.slice(1)); else if (near(z, q[q.length - 1])) path = path.concat(q.slice(0, -1).reverse());
+      else if (near(a, q[q.length - 1])) path = q.slice(0, -1).concat(path); else if (near(a, q[0])) path = q.slice(1).reverse().concat(path); else continue;
+      used[t] = true; grew = true; } }
+    polys.push(path); }
+  return polys.filter(p => p.length > 1);
+}
 function ptSeg(p, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy; let t = l2 ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy); }
 function ptRing(p, r) { let m = Infinity; for (let i = 0; i < r.length; i++) m = Math.min(m, ptSeg(p, r[i], r[(i + 1) % r.length])); return m; }
 function hull(pts) { const P = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
@@ -259,12 +275,13 @@ function dedupe(r, tol = 0.001) { const o = []; let rem = 0; r.forEach(p => { co
 /* ======================= الحالة ======================= */
 let RAW = null;   // ناتج القراءة
 let M = null;     // المخطط المعتمد {boundary, lots:[{ring,no}], roads:[rings], roadsEx:[rings], center:[], checks}
-const ROLE = { boundary: "حدود الأرض", lots: "القسائم", road: "طرق مقترحة", roadEx: "طرق قائمة", axis: "محاور الطرق", ignore: "تجاهل" };
+const ROLE = { boundary: "حدود الأرض", lots: "القسائم", road: "طرق مقترحة", roadEx: "طرق قائمة", roadLine: "حواف طرق (خطوط)", axis: "محاور الطرق", ignore: "تجاهل" };
 function guessRole(name) {
   const n = name.toLowerCase();
   if (/contour|كنتور|label|text|txt|dim|dis|grid|point|nokta|hatch|defpoints|frame|cross|برواز|نص|wall|build|fence|fenc|tree|shajar|cover|circ|elect|pole|well|house|مبن|سور|جدار|شجر/.test(n)) return "ignore";
   if (/bound|حدود|outline|border|parcel_?main|^land/.test(n)) return "boundary";
   if (/axis|center|محور/.test(n)) return "axis";
+  if (/edge|curb|kerb|حاف|حواف|رصيف/.test(n)) return "roadLine";
   if (/exist|قائم|appr|معتمد|old/.test(n)) return "roadEx";
   if (/road|street|طريق|طرق|شارع|شوارع/.test(n)) return "road";
   if (/lot|قسيم|قسائم|نمر|parcel|plot|green|خضراء|public|ifraz|afraz|افراز|إفراز/.test(n)) return "lots";
@@ -360,6 +377,7 @@ function build() {
   const geoT = ST.geo ? (p => geoApply(ST.geo, p)) : (p => p);
   const T = r => r.map(geoT);
   boundary = T(boundary); lots.forEach(l => l.ring = T(l.ring)); Rr.rings = Rr.rings.map(T); Re.rings = Re.rings.map(T);
+  const edges = edgeLinesOf(RAW.ents.filter(e => role(e.layer) === "roadLine" && (e.type === "PL" || e.type === "LN")).map(e => e.pts)).map(l => l.map(geoT));
   const axes = RAW.ents.filter(e => role(e.layer) === "axis" && (e.type === "PL" || e.type === "LN")).map(e => e.pts.map(geoT));
   // الترتيب: الصفوف من الشمال للجنوب ثم من الغرب للشرق
   const sz = lots.length ? Math.sqrt(lots.reduce((t, l) => t + area(l.ring), 0) / lots.length) : 20;
@@ -413,7 +431,7 @@ function build() {
     if (a && axes.length && P) a = a.filter(q => !inRing(q, boundary));   // خارج القطعة فقط (المحور الداخلي مرسوم من الملف)
     if (a && a.length > 1) roadAxes.push(a);
   });
-  M = { boundary, lots, roadMP, exMP, roadDraw, axes, roadAxes, A, sumLots, sumRoad, sumEx, diff, derived };
+  M = { boundary, lots, roadMP, exMP, roadDraw, edges, axes, roadAxes, A, sumLots, sumRoad, sumEx, diff, derived };
   numberVertices();
   $("checks").hidden = false; $("checks").innerHTML = msgs.map(m => `<div>${m}</div>`).join("");
   renderInfo(); renderLotTable(); detectSys(); loadAerial(); center(false); render();
@@ -456,24 +474,9 @@ async function fetchAerial(box, wpx, hpx) {
   {   // من البلاطات أولاً (سريعة): جيومولج ثم Esri
     const bw0 = box[2] - box[0], bh0 = box[3] - box[1], big0 = Math.min(4000, Math.max(wpx, hpx));
     const a = window.aerialImage ? await aerialImage(box, bw0 >= bh0 ? big0 : big0 * bw0 / bh0, bw0 >= bh0 ? big0 * bh0 / bw0 : big0, M.sr, { year: src }).catch(() => null) : null;
-    if (a) return { box, img: a.img, esri: /Esri/.test(a.name) };
+    if (a) return { box, img: a.img, esri: /Esri/.test(a.name), name: a.name };
   }
-  const s = SVC[src] || SVC["2022"]; let tk = "";
-  if (s[1] && window.geoToken) { try { tk = await Promise.race([geoToken(), new Promise(r => setTimeout(() => r(""), 8000))]); } catch (e) {} }
-  // أبعاد الصورة بنفس نسبة المستطيل المطلوب، وإلا يغيّر الخادم الحدود فتنزاح الصورة
-  const bw = box[2] - box[0], bh = box[3] - box[1], big = Math.min(4000, Math.max(wpx, hpx)), W = Math.round(bw >= bh ? big : big * bw / bh), H = Math.round(bw >= bh ? big * bh / bw : big);
-  const u = "https://orthophotos.geomolg.ps/adaptor/rest/services/" + s[0] + "/MapServer/export?bbox=" + box.map(v => v.toFixed(2)).join(",") + "&bboxSR=" + M.sr + "&imageSR=" + M.sr + "&size=" + W + "," + H + "&f=image&format=jpg" + (tk ? "&token=" + tk : "");
-  try {
-    const ac = new AbortController(), to = setTimeout(() => ac.abort(), 12000);
-    const r = await fetch(u, { signal: ac.signal }).finally(() => clearTimeout(to)); if (!r.ok) throw new Error("HTTP " + r.status);
-    const bl = await r.blob(); if (!/^image\//.test(bl.type) || bl.size < 2000) throw new Error("لم تصل صورة");
-    const img = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(bl); });
-    return { box, img };
-  } catch (e) {   // خادم جيومولج متوقف: صورة Esri الجوية بدلاً منها
-    const img = window.esriImage ? await esriImage(box, W, H, M.sr) : null;
-    if (img) return { box, img, esri: true };
-    throw e;
-  }
+  throw new Error("لم تصل صور جيومولج ولا Esri — تأكد من الإنترنت وجرّب «إعادة التحميل» أو اختر سنة أخرى");
 }
 let aerTimer = 0;
 function loadAerial() {
@@ -482,7 +485,7 @@ function loadAerial() {
     if (!M) return; const L = layout(1600); if (!L) return;
     const box = L.aerBox; $("aStat").textContent = "…جاري تحميل الصورة";
     if (ST.view === "terrain" && M.sr) loadTerrain(terrainBox()).then(render);
-    try { AER = await fetchAerial(box, L.W, L.H); $("aStat").textContent = AER ? (AER.esri ? "✓ صورة Esri (خادم جيومولج لا يستجيب)" : "✓ الصورة محمّلة") : (ST.src === "none" ? "بدون صورة" : "لا صورة"); }
+    try { AER = await fetchAerial(box, L.W, L.H); $("aStat").textContent = AER ? (AER.esri ? "✓ صورة Esri (خادم جيومولج لا يستجيب)" : "✓ " + (AER.name || "الصورة محمّلة") + (AER.name && ST.src !== "custom" && !AER.name.includes(ST.src) ? " (سنة " + ST.src + " غير متاحة الآن)" : "")) : (ST.src === "none" ? "بدون صورة" : "لا صورة"); }
     catch (e) { AER = null; $("aStat").textContent = "⚠️ تعذّر تحميل الصورة (" + e.message + ")"; }
     render();
   }, 250);
@@ -588,6 +591,8 @@ function drawSheet(cv, pxW, aer) {
     g.restore();
     g.beginPath(); pg.forEach(r => ring(g, L, openR(r))); g.lineJoin = "round"; g.lineWidth = 0.55 * u; g.strokeStyle = "rgba(255,255,255,.9)"; g.stroke(); g.lineWidth = 0.28 * u; g.strokeStyle = "#8a8f96"; g.stroke();
   });
+  // حواف الطرق كما رُسمت في الملف (خطوط)
+  (M.edges || []).forEach(l => { g.beginPath(); l.forEach((p, i) => g[i ? "lineTo" : "moveTo"](L.X(p[0]), L.Y(p[1]))); g.lineJoin = g.lineCap = "round"; g.lineWidth = 0.85 * u; g.strokeStyle = "rgba(255,255,255,.95)"; g.stroke(); g.lineWidth = 0.45 * u; g.strokeStyle = "#3d4248"; g.stroke(); });
   // الخطوط الوسطية: محاور مرسومة في الملف، أو محور تقريبي للطرق المستطيلة
   g.save(); g.setLineDash([1.2 * u, 0.9 * u]); g.lineWidth = 0.18 * u; g.strokeStyle = "rgba(255,255,255,.85)";
   if (M.roadDraw && M.roadDraw.length) { g.beginPath(); M.roadDraw.forEach(pg => pg.forEach(r => ring(g, L, openR(r)))); g.clip("evenodd"); }   // الخط داخل الإسفلت فقط

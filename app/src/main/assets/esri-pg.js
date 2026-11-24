@@ -21,10 +21,22 @@
   /* مخططات البلاطات: نظامها، أصلها، دقة كل مستوى، ورابط البلاطة */
   const ESRI = { crs: "EPSG:3857", origin: [-HALF, HALF], res: z => 2 * HALF / 256 / Math.pow(2, z), maxZ: 19, url: (z, x, y) => "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/" + z + "/" + y + "/" + x, name: "صورة Esri World Imagery" };
   const gmScheme = (svc, maxZ, tk, name) => ({ crs: "EPSG:28191", origin: [-4839400, 6616800], res: z => GM_RES[z], maxZ, url: (z, x, y) => GM + svc + "/MapServer/tile/" + z + "/" + y + "/" + x + (tk ? "?token=" + tk : ""), name });
+  /* تحميل البلاطات بطابور (6 في نفس الوقت) — المهلة تبدأ عند الطلب الفعلي لا وهي تنتظر دورها،
+     وإلا على شبكة الهاتف البطيئة تنتهي مهلة البلاطات وهي في الطابور فتفشل الصورة كلها */
+  const Q = []; let active = 0;
+  function pump() {
+    while (active < 6 && Q.length) {
+      const { url, res } = Q.shift(); active++;
+      const i = new Image(); i.crossOrigin = "anonymous"; let done = false;
+      const fin = v => { if (done) return; done = true; clearTimeout(t); active--; res(v); pump(); };
+      const t = setTimeout(() => fin(null), 20000);
+      i.onload = () => fin(i); i.onerror = () => fin(null); i.src = url;
+    }
+  }
   function tile(url) {
     if (!cache.has(url)) {
-      cache.set(url, new Promise(res => { const i = new Image(); i.crossOrigin = "anonymous"; const t = setTimeout(() => res(null), 15000);
-        i.onload = () => { clearTimeout(t); res(i); }; i.onerror = () => { clearTimeout(t); res(null); }; i.src = url; }));
+      const pr = new Promise(res => { Q.push({ url, res }); pump(); });
+      cache.set(url, pr); pr.then(v => { if (!v) cache.delete(url); });   // الفاشلة لا تُحفظ، لتُعاد لاحقاً
       if (cache.size > 700) cache.delete(cache.keys().next().value);
     }
     return cache.get(url);
@@ -47,7 +59,7 @@
       tm = 256 * S.res(z);
       tx0 = Math.floor((Math.min(...xs) - ox0) / tm); tx1 = Math.floor((Math.max(...xs) - ox0) / tm);
       ty0 = Math.floor((oy0 - Math.max(...ys)) / tm); ty1 = Math.floor((oy0 - Math.min(...ys)) / tm);
-      if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) <= 140 || z <= 0) break;
+      if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) <= (S.max || 60) || z <= 0) break;
     }
     const s = tm / 256, jobs = [];
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) jobs.push(tile(S.url(z, tx, ty)).then(im => ({ im, tx, ty })));

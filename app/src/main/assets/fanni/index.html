@@ -167,7 +167,7 @@ function parseDXF(txt) {
     const r = d / (2 * Math.sin(th / 2)), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, h = r * Math.cos(th / 2);
     const nx = -(b[1] - a[1]) / d, ny = (b[0] - a[0]) / d, cx = mx + nx * h, cy = my + ny * h;
     const a0 = Math.atan2(a[1] - cy, a[0] - cx), n = Math.max(2, Math.ceil(Math.abs(th) / 0.15));
-    for (let k = 1; k < n; k++) { const t = a0 + th * k / n; out.push([cx + Math.abs(r) * Math.cos(t) * Math.sign(r), cy + Math.abs(r) * Math.sin(t) * Math.sign(r)]); }
+    for (let k = 1; k < n; k++) { const t = a0 + th * k / n; out.push([cx + Math.abs(r) * Math.cos(t), cy + Math.abs(r) * Math.sin(t)]); }
   };
   while (i < pairs.length) {
     const [c, v] = pairs[i];
@@ -232,6 +232,28 @@ function labelPt(r) {   // أعرض نقطة داخل القسيمة (أبعد �
   for (let i = 1; i < 12; i++) for (let j = 1; j < 12; j++) { const p = [bb[0] + (bb[2] - bb[0]) * i / 12, bb[1] + (bb[3] - bb[1]) * j / 12]; if (!inRing(p, r)) continue; const d = dEdge(p) - Math.hypot(p[0] - c[0], p[1] - c[1]) * 0.15; if (d > bd) { bd = d; best = p; } }
   return best || c;
 }
+/* حد الأرض من اتحاد القسائم: إن كانت أجزاء منفصلة (طريق بينها) نصل كل جزأين متقابلين بالغلاف المحدب لرؤوسهما المتقابلة */
+function ptSeg(p, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy; let t = l2 ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy); }
+function ptRing(p, r) { let m = Infinity; for (let i = 0; i < r.length; i++) m = Math.min(m, ptSeg(p, r[i], r[(i + 1) % r.length])); return m; }
+function hull(pts) { const P = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const p of P) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of P.reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1)); }
+function deriveBoundary(rings) {
+  const P = PC(); rings = rings.filter(r => area(r) > 1); if (!rings.length) return null;
+  let mp; try { mp = P.union(...rings.map(r => [closeR(r)])); } catch (e) { return null; }
+  let bridged = false;
+  for (let it = 0; it < 30 && mp.length > 1; it++) {
+    const O = mp.map(pg => openR(pg[0])); let bi = 0, bj = 1, bd = Infinity;
+    for (let i = 0; i < O.length; i++) for (let j = i + 1; j < O.length; j++) { let d = Infinity; O[i].forEach(p => d = Math.min(d, ptRing(p, O[j]))); O[j].forEach(p => d = Math.min(d, ptRing(p, O[i]))); if (d < bd) { bd = d; bi = i; bj = j; } }
+    if (bd > 60) break;   // أجزاء بعيدة جداً: ليست أرضاً واحدة
+    const lim = bd * 1.3 + 2, near = [...O[bi].filter(p => ptRing(p, O[bj]) <= lim), ...O[bj].filter(p => ptRing(p, O[bi]) <= lim)];
+    if (near.length < 3) break;
+    try { mp = P.union(mp, [closeR(hull(near))]); bridged = true; } catch (e) { break; }
+  }
+  const pg = mp.slice().sort((a, b) => area(openR(b[0])) - area(openR(a[0])))[0];
+  return { ring: openR(pg[0]), bridged, parts: mp.length };
+}
 function dedupe(r, tol = 0.001) { const o = []; let rem = 0; r.forEach(p => { const l = o[o.length - 1]; if (l && Math.hypot(l[0] - p[0], l[1] - p[1]) < tol) { rem++; return; } o.push(p); }); while (o.length > 2 && Math.hypot(o[0][0] - o[o.length - 1][0], o[0][1] - o[o.length - 1][1]) < tol) { o.pop(); rem++; } return { r: o, rem }; }
 
 /* ======================= الحالة ======================= */
@@ -253,6 +275,11 @@ function loadDXFText(txt, name) {
   if (!R.ents.length) { toast("الملف لا يحتوي عناصر (قد يكون DXF ثنائي أو DWG)"); return; }
   RAW = { ...R, name };
   ST.roles = {}; R.layers.forEach(l => { ST.roles[l] = guessRole(l); }); ST.rolesV = 2;
+  // إن لم تحوِ طبقات «القسائم» أي مضلع مغلق: الطبقة صاحبة أكثر مضلعات مغلقة تصير القسائم
+  { const cnt = {}; R.ents.forEach(e => { if (e.type !== "PL" || e.pts.length < 3) return; const a = e.pts[0], b = e.pts[e.pts.length - 1]; if ((e.closed || Math.hypot(a[0] - b[0], a[1] - b[1]) < 0.01) && area(e.pts) > 5) cnt[e.layer] = (cnt[e.layer] || 0) + 1; });
+    const lotsHave = Object.keys(cnt).some(l => ST.roles[l] === "lots");
+    const best = Object.entries(cnt).filter(([l]) => !/hatch|text|dim|frame|cover|wall|build|برواز|نص/i.test(l)).sort((a, b) => b[1] - a[1])[0];
+    if (!lotsHave && best && best[1] >= 2) { ST.roles[best[0]] = "lots"; setTimeout(() => toast(`اعتبرت طبقة «${best[0]}» هي القسائم (فيها ${best[1]} مضلع مغلق) — غيّرها من القائمة إن لزم`), 400); } }
   // إذا لم توجد طبقة حدود: أكبر مضلع مغلق يصير حدوداً
   if (!Object.values(ST.roles).includes("boundary")) ST.boundaryAuto = true;
   ST.off = [0, 0]; ST.geo = null; ST.owners = {}; ST.roadOf = {}; ST.colors = {};
@@ -299,20 +326,28 @@ function build() {
       if (e.type === "PL") {
         let p = e.pts.slice(); const first = p[0], last = p[p.length - 1];
         const closedGeom = p.length > 2 && Math.hypot(first[0] - last[0], first[1] - last[1]) < 0.01;
-        if (e.closed || closedGeom) { const d = dedupe(p); if (d.rem) msgs.push(`<span class="warn">حُذفت ${d.rem} نقطة مكررة من بوليلاين على طبقة ${esc(e.layer)}.</span>`); if (d.r.length > 2) out.push(d.r); }
+        if (e.closed || closedGeom) { const d = dedupe(p); if (d.rem > (closedGeom && !e.closed ? 1 : 0)) msgs.push(`<span class="warn">حُذفت ${d.rem} نقطة مكررة من بوليلاين على طبقة ${esc(e.layer)}.</span>`); if (d.r.length > 2) out.push(d.r); }
         else open.push(e);
       } else if (e.type === "LN") open.push(e);
     });
     // خطوط وبوليلاين مفتوحة: نحاول وصلها حلقات
     const segs = []; open.forEach(e => { for (let k = 0; k + 1 < e.pts.length; k++) segs.push({ pts: [e.pts[k], e.pts[k + 1]] }); });
-    const loops = chainLines(segs); loops.forEach(r => out.push(dedupe(r).r));
+    const loops = chainLines(segs), nClosed = out.length, P = PC();
+    loops.forEach(r => { r = dedupe(r).r; if (area(r) <= 1) return;
+      // حلقة من خطوط مفتوحة تتداخل مع بوليلاين مغلق موجود: خطوط مساعدة، لا تُعتبر مضلعاً جديداً
+      if (P && nClosed) { try { const ov = out.slice(0, nClosed).some(q => mpArea(P.intersection([closeR(r)], [closeR(q)])) > 0.5); if (ov) return; } catch (e) {} }
+      out.push(r); });
     const leftover = open.length && !loops.length;
-    return { rings: out.filter(r => area(r) > 0.01), openCount: open.length, leftover };
+    return { rings: out.filter(r => area(r) > (rl === "lots" ? 5 : 1)), openCount: open.length, leftover };
   };
   let B = ringsOf("boundary"), Lr = ringsOf("lots"), Rr = ringsOf("road"), Re = ringsOf("roadEx");
   let boundary = null;
   if (B.rings.length) boundary = B.rings.sort((a, b) => area(b) - area(a))[0];
-  else { const all = [...Lr.rings, ...Rr.rings, ...Re.rings].sort((a, b) => area(b) - area(a)); if (all.length) { boundary = all[0]; Lr.rings = Lr.rings.filter(r => r !== boundary); Rr.rings = Rr.rings.filter(r => r !== boundary); Re.rings = Re.rings.filter(r => r !== boundary); msgs.push('<span class="warn">لم تُحدد طبقة الحدود، فاعتُمد أكبر مضلع مغلق حدوداً للأرض.</span>'); } }
+  else if (Lr.rings.length && PC()) {   // الحد الكلي غير مغلق: نستنتجه من القسائم (والطرق) مع سدّ الفراغ بينها
+    const dv = deriveBoundary([...Lr.rings, ...Rr.rings, ...Re.rings]);
+    if (dv) { boundary = dv.ring; msgs.push(`<span class="warn">⚠️ ما لقيت حد كلي مغلق للأرض${B.openCount ? " (خطوط الحدود فيها فتحات أو متجاوزة)" : ""}، فاستنتجت الحد من محيط القسائم${dv.bridged ? " مع سد الفراغ (الطريق) بينها" : ""}. راجع مساحة الأرض، وللدقة الكاملة ارسم الحد الكلي بوليلاين مغلق واحد.</span>`); }
+  }
+  if (!boundary) { const all = [...Lr.rings, ...Rr.rings, ...Re.rings].sort((a, b) => area(b) - area(a)); if (all.length) { boundary = all[0]; Lr.rings = Lr.rings.filter(r => r !== boundary); Rr.rings = Rr.rings.filter(r => r !== boundary); Re.rings = Re.rings.filter(r => r !== boundary); msgs.push('<span class="warn">لم تُحدد طبقة الحدود، فاعتُمد أكبر مضلع مغلق حدوداً للأرض.</span>'); } }
   if (!boundary) { $("checks").hidden = false; $("checks").innerHTML = '<span class="bad">لم أجد أي مضلع مغلق يصلح حدوداً للأرض.</span>'; M = null; render(); return; }
   if (B.openCount && B.leftover) msgs.push('<span class="bad">حدود الأرض فيها خطوط غير مغلقة.</span>');
   if (Lr.openCount && Lr.leftover) msgs.push(`<span class="bad">في طبقة القسائم ${Lr.openCount} خط/بوليلاين غير مغلق لم يمكن وصله بحلقة.</span>`);
@@ -320,8 +355,8 @@ function build() {
   let lots = Lr.rings.filter(r => Math.abs(area(r) - area(boundary)) > 0.01);
   if (!lots.length) msgs.push('<span class="bad">ما لقيت قسائم: اختار من القائمة فوق الطبقة اللي فيها النمر المفرزة (بوليلاين مغلق لكل نمرة) وخليها «القسائم».</span>');
   // ترقيم القسائم: نص رقمي داخل القسيمة إن وجد
-  const texts = RAW.ents.filter(e => e.type === "TX" && /^\d{1,4}$/.test(e.s));
-  lots = lots.map(r => { const t = texts.find(x => inRing(x.p, r)); return { ring: r, txt: t ? +t.s : null }; });
+  const texts = RAW.ents.filter(e => e.type === "TX" && /^\d{1,4}$/.test(e.s) && !/number|point|pnt|pt\b|نقط|dim|مسافات|ابعاد|أبعاد/i.test(e.layer || ""));
+  lots = lots.map(r => { const c0 = centroid(r), t = texts.filter(x => inRing(x.p, r) && !r.some(v => Math.hypot(v[0] - x.p[0], v[1] - x.p[1]) < 3)).sort((a, b) => Math.hypot(a.p[0] - c0[0], a.p[1] - c0[1]) - Math.hypot(b.p[0] - c0[0], b.p[1] - c0[1]))[0]; return { ring: r, txt: t ? +t.s : null }; });
   const geoT = ST.geo ? (p => geoApply(ST.geo, p)) : (p => p);
   const T = r => r.map(geoT);
   boundary = T(boundary); lots.forEach(l => l.ring = T(l.ring)); Rr.rings = Rr.rings.map(T); Re.rings = Re.rings.map(T);

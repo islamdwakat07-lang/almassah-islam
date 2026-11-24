@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="compass">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>البوصلة والقبلة</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}
+html[data-tool] body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#f8f2e2;background:radial-gradient(120% 80% at 50% 30%,#17613f 0%,#0c3b26 55%,#06251a 100%) fixed!important;min-height:100vh}
+main{max-width:520px;margin:0 auto;padding:10px 14px 40px;color:#f8f2e2}
+button{font-family:inherit;cursor:pointer}
+.am-home{padding:4px 10px!important;font-size:12.5px!important;gap:4px!important}
+.am-home svg{width:14px!important;height:14px!important}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}
+.tabs button{border:1.5px solid rgba(243,220,147,.5);background:rgba(255,255,255,.06);color:#f3dc93;border-radius:14px;padding:10px;font:700 16px "IBM Plex Sans Arabic"}
+.tabs button.on{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#0c3b26;border-color:transparent}
+.read{text-align:center;margin:4px 0 6px}
+.read b{display:block;font:700 48px/1.1 "IBM Plex Sans Arabic";color:#fff;direction:ltr}
+.read span{font-size:16px;color:#f3dc93;font-weight:700}
+.dial-wrap{position:relative;width:min(88vw,420px);aspect-ratio:1/1;margin:6px auto 0}
+.dial-wrap svg{width:100%;height:100%;display:block}
+.lubber{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:26px solid #e53935;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));z-index:2}
+.ok-glow{position:absolute;inset:-10px;border-radius:50%;box-shadow:0 0 0 0 rgba(76,217,100,0);transition:box-shadow .3s}
+.ok-glow.on{box-shadow:0 0 0 6px rgba(76,217,100,.75),0 0 40px 10px rgba(76,217,100,.45)}
+.info{margin-top:14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(243,220,147,.35);border-radius:16px;padding:10px 14px;font-size:14.5px}
+.info div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed rgba(243,220,147,.2)}
+.info div:last-child{border:0}
+.info b{color:#f3dc93;direction:ltr}
+.msg{margin-top:12px;text-align:center;font-size:14px;color:#f3dc93;background:rgba(0,0,0,.2);border-radius:12px;padding:8px 10px}
+.btn{display:block;width:100%;margin-top:10px;border:0;border-radius:14px;padding:11px;font:700 15.5px "IBM Plex Sans Arabic";background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#0c3b26}
+.btn.ghost{background:rgba(255,255,255,.08);color:#f3dc93;box-shadow:inset 0 0 0 1.5px rgba(243,220,147,.45)}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><span style="width:40px;height:40px;border-radius:50%;background:linear-gradient(180deg,#fff1b8,#e6c35f);display:grid;place-items:center;font-size:24px">🧭</span><b>البوصلة والقبلة</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <div class="tabs"><button id="tN" class="on">🧭 الشمال</button><button id="tQ">🕋 القبلة</button></div>
+  <div class="read"><b id="deg">—</b><span id="dir">حرّك الهاتف قليلاً</span></div>
+  <div class="dial-wrap"><div class="ok-glow" id="glow"></div><div class="lubber"></div>
+    <svg viewBox="-210 -210 420 420" aria-hidden="true">
+      <defs>
+        <radialGradient id="face" cx="0" cy="-40" r="260" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1d7a50"/><stop offset=".7" stop-color="#0c3b26"/><stop offset="1" stop-color="#06251a"/></radialGradient>
+        <linearGradient id="gold" x1="0" y1="-1" x2="0" y2="1"><stop offset="0" stop-color="#fff3c2"/><stop offset=".4" stop-color="#e6c35f"/><stop offset=".8" stop-color="#a9781c"/><stop offset="1" stop-color="#f3dc93"/></linearGradient>
+      </defs>
+      <circle r="205" fill="url(#gold)"/><circle r="194" fill="url(#face)"/><circle r="186" fill="none" stroke="rgba(243,220,147,.5)" stroke-width="1.5"/>
+      <g id="rose"></g>
+      <circle r="10" fill="url(#gold)" stroke="#5a3d08" stroke-width="2"/>
+    </svg>
+  </div>
+  <div class="msg" id="msg">لدقة أفضل: أبعد الهاتف عن الحديد والمغناطيس، وحرّكه على شكل 8 إذا كانت القراءة غير ثابتة.</div>
+  <div class="info" id="info"></div>
+  <button class="btn" id="bStart" hidden>تشغيل البوصلة</button>
+  <button class="btn ghost" id="bLoc">📍 تحديث موقعي (لحساب القبلة)</button>
+</main>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const KAABA = [21.422487, 39.826206], DECL = 5.2;   // الانحراف المغناطيسي في فلسطين تقريباً (شرقاً)
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI, norm = a => (a % 360 + 360) % 360;
+let mode = "N", heading = null, loc = null, qibla = null, dist = null, lastBuzz = 0;
+try { loc = JSON.parse(localStorage.getItem("compass-loc") || "null"); } catch (e) {}
+if (!loc) loc = { lat: 32.2405, lon: 35.2705, place: "عصيرة الشمالية (افتراضي)" };
+/* القرص: الشمال والاتجاهات والدرجات وعلامة الكعبة */
+function buildRose() {
+  let h = "";
+  for (let a = 0; a < 360; a += 5) {
+    const big = a % 30 === 0, mid = a % 10 === 0, r1 = 184, r2 = big ? 162 : mid ? 170 : 176;
+    h += `<line x1="0" y1="${-r1}" x2="0" y2="${-r2}" transform="rotate(${a})" stroke="${big ? "#f3dc93" : "rgba(243,220,147,.6)"}" stroke-width="${big ? 3 : 1.5}"/>`;
+    if (big && a % 90) h += `<text transform="rotate(${a}) translate(0 -142)" text-anchor="middle" dominant-baseline="middle" fill="#e7efe1" font-size="15" font-weight="700" font-family="IBM Plex Sans Arabic">${a}</text>`;
+  }
+  [["N", 0, "#e53935"], ["E", 90, "#f3dc93"], ["S", 180, "#f3dc93"], ["W", 270, "#f3dc93"]].forEach(([t, a, c]) => h += `<text transform="rotate(${a}) translate(0 -138)" text-anchor="middle" dominant-baseline="middle" fill="${c}" font-size="30" font-weight="800" font-family="IBM Plex Sans Arabic">${t}</text>`);
+  // نجمة الاتجاهات
+  h += `<g opacity=".9">${[0, 90, 180, 270].map(a => `<path transform="rotate(${a})" d="M0 -118 L14 -14 L0 0z" fill="#f3dc93"/><path transform="rotate(${a})" d="M0 -118 L-14 -14 L0 0z" fill="#b8861f"/>`).join("")}${[45, 135, 225, 315].map(a => `<path transform="rotate(${a})" d="M0 -78 L9 -9 L0 0z" fill="#e6c35f" opacity=".75"/><path transform="rotate(${a})" d="M0 -78 L-9 -9 L0 0z" fill="#8a6514" opacity=".75"/>`).join("")}</g>`;
+  // إبرة الشمال الحمراء
+  h += `<path d="M0 -128 L12 0 L-12 0z" fill="#e53935"/><path d="M0 128 L12 0 L-12 0z" fill="#e8e1cc"/>`;
+  // علامة القبلة
+  if (qibla != null) h += `<g transform="rotate(${qibla})" id="qmark"><line x1="0" y1="-30" x2="0" y2="-150" stroke="#4cd964" stroke-width="4" stroke-dasharray="8 6" opacity="${mode === "Q" ? 1 : .35}"/><g transform="translate(0 -172)"><rect x="-15" y="-15" width="30" height="30" rx="3" fill="#111" stroke="#e6c35f" stroke-width="2.5"/><rect x="-15" y="-7" width="30" height="5" fill="#e6c35f"/></g></g>`;
+  $("#rose").innerHTML = h;
+}
+function computeQibla() {
+  const f1 = rad(loc.lat), f2 = rad(KAABA[0]), dl = rad(KAABA[1] - loc.lon);
+  qibla = norm(deg(Math.atan2(Math.sin(dl), Math.cos(f1) * Math.tan(f2) - Math.sin(f1) * Math.cos(dl))));
+  const a = Math.sin((f2 - f1) / 2) ** 2 + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) ** 2; dist = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  buildRose(); info();
+}
+const DIRS = ["شمال", "شمال شرق", "شرق", "جنوب شرق", "جنوب", "جنوب غرب", "غرب", "شمال غرب"];
+function info() {
+  $("#info").innerHTML = `<div><span>الموقع</span><b style="direction:rtl">${loc.place || (loc.lat.toFixed(4) + "، " + loc.lon.toFixed(4))}</b></div>
+  <div><span>اتجاه القبلة من الشمال</span><b>${qibla != null ? qibla.toFixed(1) + "°" : "—"}</b></div>
+  <div><span>المسافة إلى مكة المكرمة</span><b>${dist ? Math.round(dist).toLocaleString("en-US") + " كم" : "—"}</b></div>
+  <div><span>الشمال المعروض</span><b style="direction:rtl">الشمال الجغرافي (مصحّح ${DECL}°)</b></div>`;
+}
+function update() {
+  if (heading == null) return;
+  $("#rose").setAttribute("transform", `rotate(${(-heading).toFixed(1)})`); $("#bStart").hidden = true;
+  if (mode === "N") { $("#deg").textContent = Math.round(heading) + "°"; $("#dir").textContent = "الهاتف يتجه نحو: " + DIRS[Math.round(heading / 45) % 8]; $("#glow").classList.toggle("on", Math.min(heading, 360 - heading) < 3); }
+  else {
+    let d = norm(qibla - heading); if (d > 180) d -= 360; const ok = Math.abs(d) < 3;
+    $("#deg").textContent = ok ? "✓ القبلة" : Math.abs(Math.round(d)) + "°";
+    $("#dir").textContent = ok ? "أنت متجه نحو القبلة" : d > 0 ? "استدر يميناً ⟳" : "استدر يساراً ⟲";
+    $("#glow").classList.toggle("on", ok);
+    if (ok && Date.now() - lastBuzz > 2500) { lastBuzz = Date.now(); try { navigator.vibrate && navigator.vibrate(120); } catch (e) {} }
+  }
+}
+/* حسّاس الاتجاه */
+let smooth = null;
+function onOri(e) {
+  let h = null;
+  if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
+  else if (e.absolute && e.alpha != null) h = 360 - e.alpha;
+  if (h == null) return;
+  const so = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+  h = norm(h + so + DECL);
+  if (smooth == null) smooth = h; else { let d = h - smooth; if (d > 180) d -= 360; if (d < -180) d += 360; smooth = norm(smooth + d * 0.25); }
+  heading = smooth; update(); $("#msg").hidden = false;
+}
+let gotAbs = false;
+function startSensor() {
+  const go = () => {
+    window.addEventListener("deviceorientationabsolute", e => { gotAbs = true; onOri(e); }, true);
+    window.addEventListener("deviceorientation", e => { if (!gotAbs) onOri(e); }, true);
+    setTimeout(() => { if (heading == null) $("#dir").textContent = "لم يصل حسّاس البوصلة. جرّب تحريك الهاتف، أو هاتفك لا يحتوي حسّاس مغناطيسي"; }, 4000);
+  };
+  go();
+  // بعض الأجهزة تطلب إذناً للحسّاس: نُظهر الزر فقط إن لم تصل قراءات
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") setTimeout(() => { if (heading == null) { $("#bStart").hidden = false; $("#bStart").onclick = () => DeviceOrientationEvent.requestPermission().then(r => { if (r === "granted") $("#bStart").hidden = true; }).catch(() => {}); } }, 1500);
+}
+function locate(manual) {
+  if (!navigator.geolocation) { if (manual) $("#msg").textContent = "تحديد الموقع غير متاح"; return; }
+  if (manual) $("#msg").textContent = "…جاري تحديد موقعك";
+  navigator.geolocation.getCurrentPosition(p => {
+    loc = { lat: p.coords.latitude, lon: p.coords.longitude, place: "موقعي الحالي" }; try { localStorage.setItem("compass-loc", JSON.stringify(loc)); } catch (e) {}
+    computeQibla(); update(); if (manual) $("#msg").textContent = "✓ تم تحديد موقعك وحساب القبلة";
+  }, () => { if (manual) $("#msg").textContent = "تعذّر تحديد الموقع، فالقبلة محسوبة من آخر موقع معروف"; }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 600000 });
+}
+function setMode(m) { mode = m; $("#tN").classList.toggle("on", m === "N"); $("#tQ").classList.toggle("on", m === "Q"); try { localStorage.setItem("compass-mode", m); } catch (e) {} buildRose(); update(); if (heading == null) $("#deg").textContent = m === "Q" ? (qibla.toFixed(1) + "°") : "—"; }
+$("#tN").onclick = () => setMode("N"); $("#tQ").onclick = () => setMode("Q"); $("#bLoc").onclick = () => locate(true);
+computeQibla();
+let m0 = "N"; try { m0 = new URLSearchParams(location.search).get("m") || localStorage.getItem("compass-mode") || "N"; } catch (e) {}
+setMode(m0 === "Q" ? "Q" : "N");
+startSensor(); locate(false);
+</script>
+</body>
+</html>

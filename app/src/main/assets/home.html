@@ -95,6 +95,8 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
   .deskproj .dp small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.cmp-hit{border-radius:50%;animation:cmpPulse 2.6s ease-in-out 3}
+@keyframes cmpPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,225,130,0)}50%{box-shadow:0 0 18px 6px rgba(255,225,130,.55)}}
 </style>
 <script src="archive.js"></script>
 <script src="fullbackup.js"></script>
@@ -103,6 +105,7 @@ body.open .sheet-bg{opacity:1;pointer-events:auto}
 <div class="screen">
 <aside class="side">
   <div class="ui"><img src="img/ui-p1f.jpg" alt="المهندس إسلام دويكات: أدوات المساحة في تطبيق واحد">
+    <a class="hit cmp-hit" href="compass/index.html" aria-label="البوصلة والقبلة" style="left:87.4%;top:2.5%;width:10.6%;height:24%"></a>
     <button class="hit" type="button" data-sheet="projects" aria-label="مشاريعي" style="left:80.03%;top:76.0%;width:15.01%;height:22.5%"></button>
     <a class="hit" href="cad/index.html" aria-label="أوتوكاد" style="left:65.01%;top:76.0%;width:15.01%;height:22.5%"></a>
     <a class="hit" href="quran/index.html" aria-label="المصحف الشريف" style="left:50.00%;top:76.0%;width:15.01%;height:22.5%"></a>

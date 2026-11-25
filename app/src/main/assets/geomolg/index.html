@@ -490,7 +490,8 @@ function parcelBox() {
     ${row("مركز القطعة ITM", "X " + c[0].toFixed(2) + "   Y " + c[1].toFixed(2))}
     </table>${LAST_ID.length ? "" : '<p class="msg" style="color:var(--am-muted)">…جاري جلب الحوض الطبيعي والمنطقة</p>'}
     <div class="pBtns"><button class="go" type="button" id="toGov">🗺️ افتح القطعة على GOV إسلام</button>
-    <button class="go sec" type="button" id="cpITM">📋 نسخ إحداثيات الرؤوس ITM</button></div><p class="msg" id="pMsg2"></p></div>`;
+    <button class="go sec" type="button" id="cpITM">📋 نسخ إحداثيات الرؤوس ITM</button>
+    <a class="go" style="text-decoration:none;display:block;text-align:center" href="../go/index.html?x=${c[0].toFixed(1)}&y=${c[1].toFixed(1)}&name=${encodeURIComponent([plot && "قطعة " + plot, blk && "حوض " + blk, vil].filter(Boolean).join(" – "))}">🚗 خذني لهاي القطعة (الطريق)</a></div><p class="msg" id="pMsg2"></p></div>`;
 }
 function govOpen() {
   const r = ringOf(curParcel && curParcel.geom); if (r.length < 3) return;

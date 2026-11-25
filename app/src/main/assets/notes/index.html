@@ -160,6 +160,8 @@ button{font-family:inherit;cursor:pointer}
     <div class="in"><input id="nWork"><button class="mic" type="button" data-mic="nWork">🎤</button></div>
     <label class="fl">📞 رقم الهاتف</label>
     <div class="in"><input id="nPhone" inputmode="tel" dir="ltr" style="text-align:left"><button class="mic" type="button" data-mic="nPhone">🎤</button><a class="lnk" id="nCall">📞</a><a class="lnk" id="nWa">💬</a></div>
+    <label class="fl">📍 موقع الشغلة</label>
+    <div class="in" id="nLoc"></div>
     <label class="fl">🗓️ اليوم</label>
     <div class="days" id="nDays"><button class="dayb" type="button" data-d="0">اليوم</button><button class="dayb" type="button" data-d="1">غداً</button><button class="dayb" type="button" data-d="2">بعد غد</button><button class="dayb" type="button" data-d="">بدون</button></div>
     <div class="in"><input id="nDate" type="date"><input id="nTime" type="time" style="max-width:40%"></div>
@@ -282,9 +284,17 @@ function contact() { const p = $("#nPhone").value.replace(/[^\d+]/g, ""), w = p.
 function openNote(j) {
   nJob = j; $("#nT").textContent = "📝 " + (j.name || "ملاحظات");
   $("#nName").value = j.name || ""; $("#nWork").value = j.work || ""; $("#nPhone").value = j.phone || ""; $("#nDate").value = j.date || ""; $("#nTime").value = j.time || ""; $("#nNote").value = j.note || "";
-  setDay(null); contact(); drawSt(); $("#noteSheet").classList.remove("hidden");
+  setDay(null); contact(); drawSt(); drawLoc(); $("#noteSheet").classList.remove("hidden");
 }
 $("#nPhone").addEventListener("input", contact);
+/* موقع الشغلة: يُحدَّد في «الطريق إلى الموقع» ويرجع محفوظاً مع الشغلة */
+$("#nLoc").addEventListener("click", () => { if (!nJob) return; Object.assign(nJob, { name: $("#nName").value.trim(), work: $("#nWork").value.trim(), phone: $("#nPhone").value.trim(), date: $("#nDate").value, time: $("#nTime").value, note: $("#nNote").value.trim() }); save(); });
+function drawLoc() {
+  const j = nJob, nm = encodeURIComponent((j.name || "") + (j.work ? " – " + j.work : "")), back = `&job=${encodeURIComponent(j.id)}&name=${nm}`;
+  $("#nLoc").innerHTML = j.loc
+    ? `<a class="lnk" style="flex:1;width:auto;font:700 15px 'IBM Plex Sans Arabic';background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff" href="../go/index.html?lat=${j.loc.lat}&lon=${j.loc.lon}${back}">🧭 الطريق للشغلة</a><a class="lnk" style="flex:none;width:auto;padding:0 12px;font:700 14px 'IBM Plex Sans Arabic'" href="../go/index.html?pick=1${back}">✏️ غيّر</a>`
+    : `<a class="lnk" style="flex:1;width:auto;font:700 15px 'IBM Plex Sans Arabic'" href="../go/index.html?pick=1${back}">📍 حدّد موقع الشغلة</a>`;
+}
 function drawSt() { $("#nSt").innerHTML = STS.map(([k, t]) => `<button class="dayb${nJob.s === k ? " on" : ""}" type="button" data-st="${k}">${t}</button>`).join(""); }
 $("#nSt").addEventListener("click", async e => { const b = e.target.closest("[data-st]"); if (!b || !nJob) return; await setStatus(nJob, b.dataset.st); drawSt(); });
 $("#nDays").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (!b) return; setDay(b.dataset.d); $("#nDate").value = b.dataset.d === "" ? "" : ymd(new Date(Date.now() + 864e5 * +b.dataset.d)); if (b.dataset.d === "") $("#nTime").value = ""; });

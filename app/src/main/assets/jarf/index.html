@@ -189,7 +189,7 @@ td.v{font-family:var(--font-num);direction:ltr;text-align:left;white-space:nowra
         <div class="legend"><span>طمم <span class="num" id="lg-fill"></span></span><span class="bar"></span><span>حفر <span class="num" id="lg-cut"></span></span></div>
         <p class="probe" id="probe">المس الخريطة لمعرفة الارتفاع قبل الجرف وبعده عند أي نقطة.</p>
       </div>
-      <div><button class="btn secondary" id="copy" type="button">نسخ النتائج</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="b3d" type="button">🧊 مجسم ثلاثي الأبعاد</button><button class="btn secondary" id="copy" type="button">نسخ النتائج</button></div>
     </section>
   </main>
 
@@ -268,6 +268,8 @@ td.v{font-family:var(--font-num);direction:ltr;text-align:left;white-space:nowra
 </div>
 
 <script src="delaunator.min.js"></script>
+<script src="three.min.js"></script>
+<script src="view3d.js"></script>
 <script>
 /*CORE-START*/
 const Core=(function(){
@@ -666,6 +668,7 @@ function run(){
   },30);
 }
 
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='b3d'&&last)Jarf3D.open(last);});
 function show(r){
   $('results').hidden=false;
   $('t-cut').textContent=fmt(r.cut);$('t-fill').textContent=fmt(r.fill);

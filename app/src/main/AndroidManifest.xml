@@ -27,7 +27,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:largeHeap="true"
-        android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        android:theme="@style/AppTheme">
 
         <meta-data android:name="app.developer" android:value="Islam Dweikat - إسلام دويكات" />
         <meta-data android:name="app.developer.phone" android:value="0598161862" />

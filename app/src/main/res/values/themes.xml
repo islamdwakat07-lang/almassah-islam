@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- شريط الهاتف العلوي والسفلي بلون التطبيق (أخضر داكن) -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:statusBarColor">#0C3B26</item>
+        <item name="android:navigationBarColor">#062B1A</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:colorAccent">#C99A2E</item>
+    </style>
+</resources>

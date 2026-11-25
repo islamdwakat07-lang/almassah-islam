@@ -18,6 +18,9 @@ button,input,select{font-family:inherit}
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
 .tabs button{border:1.5px solid var(--am-line);background:#fff;color:var(--am-green-800);border-radius:12px;padding:8px 2px;font:700 13.5px "IBM Plex Sans Arabic";line-height:1.3}
 .tabs button.on{background:var(--am-btn);color:#fff;border-color:var(--am-gold-500)}
+.sys{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:4px}
+.sys button{border:1.5px solid var(--am-line);background:#fff;color:var(--am-green-800);border-radius:10px;padding:7px 2px;font:700 12.5px "IBM Plex Sans Arabic";line-height:1.25}
+.sys button.on{background:var(--am-gold-grad);color:#4a2e00;border-color:var(--am-gold-500)}
 .tabs button span{display:block;font-size:19px}
 label{display:block;font-size:13px;color:var(--am-muted);margin:6px 0 3px;font-weight:700}
 input,select{width:100%;border:1.5px solid var(--am-line);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff;color:var(--am-ink)}
@@ -87,14 +90,21 @@ input:focus,select:focus{outline:none;border-color:var(--am-gold-500);box-shadow
     </div>
 
     <div id="t-xy" hidden>
+      <label>نظام الإحداثيات</label>
+      <div class="sys" id="sys">
+        <button data-s="itm">إسرائيلي ITM</button>
+        <button data-s="pg">فلسطيني 1923</button>
+        <button data-s="wgs">عرض / طول</button>
+        <button data-s="auto">تلقائي</button>
+      </div>
       <div class="row">
-        <div><label for="x">X (أو خط الطول / العرض)</label><input id="x" inputmode="decimal" placeholder="178360"></div>
-        <div><label for="y">Y</label><input id="y" inputmode="decimal" placeholder="182050"></div>
+        <div><label for="x" id="lx">X</label><input id="x" inputmode="decimal"></div>
+        <div><label for="y" id="ly">Y</label><input id="y" inputmode="decimal"></div>
       </div>
       <label for="paste">أو الصق رابط موقع / رسالة واتساب فيها موقع</label>
       <input id="paste" placeholder="https://maps.google.com/?q=32.2,35.2 …" dir="ltr">
       <button class="btn" id="goXY">🔎 حدّد النقطة</button>
-      <p class="hint">بيعرف لحاله النظام: فلسطيني قديم (1923)، إسرائيلي ITM، أو خط عرض/طول.</p>
+      <p class="hint" id="sysHint"></p>
     </div>
 
     <div id="t-map" hidden><p class="hint" style="margin:0 0 6px">اضغط على الخريطة تحت على مكان الشغلة بالضبط.</p></div>
@@ -291,6 +301,16 @@ $("#goParcel").onclick = async () => {
   finally { $("#goParcel").disabled = false; $("#goParcel").textContent = "🔎 دوّر على القطعة"; }
 };
 
+/* نظام الإحداثيات المختار */
+const SYSINFO = { itm: ["X (شرق)", "Y (شمال)", "228360", "682050", "الإسرائيلي الجديد ITM (زي GovMap): X حوالي 150000–270000 و Y حوالي 550000–800000."],
+  pg: ["X (شرق)", "Y (شمال)", "178360", "182050", "الفلسطيني القديم 1923 (زي جيومولج والمخططات القديمة): X و Y حوالي 100000–250000."],
+  wgs: ["خط العرض (Lat)", "خط الطول (Lon)", "32.2321", "35.2989", "خط العرض والطول (زي جوجل والـ GPS): مثلاً 32.2321 و 35.2989."],
+  auto: ["X", "Y", "", "", "بيعرف لحاله النظام من حجم الأرقام: فلسطيني 1923، إسرائيلي ITM، أو عرض/طول."] };
+let SYSM = st.sys || "auto";
+function setSys(m) { SYSM = m; st.sys = m; save(); const I = SYSINFO[m]; $("#lx").textContent = I[0]; $("#ly").textContent = I[1]; $("#x").placeholder = I[2]; $("#y").placeholder = I[3]; $("#sysHint").textContent = I[4]; document.querySelectorAll("#sys button").forEach(b => b.classList.toggle("on", b.dataset.s === m)); }
+document.querySelectorAll("#sys button").forEach(b => b.onclick = () => setSys(b.dataset.s));
+setSys(SYSM);
+
 /* إحداثيات أو رابط */
 function parseLink(s) {
   s = digits(s); let m = s.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/[?&](?:q|ll|query|destination|daddr)=(?:loc:)?(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i) || s.match(/(-?\d{1,2}\.\d{3,})\s*[,،\s]\s*(-?\d{1,3}\.\d{3,})/);
@@ -302,12 +322,15 @@ $("#goXY").onclick = () => {
   if (pl) { const ll = parseLink(pl); if (!ll) return msg("ما عرفت أقرأ الموقع من هالرابط. إذا رابط مختصر (goo.gl) افتحه أول بجوجل وانسخ الإحداثيات."); return setDest(ll[0], ll[1], "موقع من رابط", { exact: true }); }
   let x = +digits($("#x").value), y = +digits($("#y").value);
   if (!isFinite(x) || !isFinite(y) || !x || !y) return msg("اكتب X و Y");
-  if (Math.abs(x) <= 90 && Math.abs(y) <= 180) { let lat = x, lon = y; if (lat > 33.5) [lat, lon] = [lon, lat]; return setDest(lat, lon, "نقطة بخط العرض والطول", { exact: true }); }
+  if (SYSM === "wgs" || (SYSM === "auto" && Math.abs(x) <= 90 && Math.abs(y) <= 180)) {
+    if (Math.abs(x) > 90 || Math.abs(y) > 180) return msg("خط العرض والطول بيكونوا أرقام زي 32.23 و 35.27"); let lat = x, lon = y; if (lat > 33.5) [lat, lon] = [lon, lat]; return setDest(lat, lon, "نقطة بخط العرض والطول", { exact: true }); }
   let sys = "EPSG:28191", label = "فلسطين 1923";
-  if (y > 400000 && y < 900000) { sys = "EPSG:2039"; label = "ITM"; }
-  else if (x > 400000 && x < 900000 && y < 400000) { [x, y] = [y, x]; sys = "EPSG:2039"; label = "ITM"; }
+  if (SYSM === "itm") { if (x > 400000 && y < 400000) [x, y] = [y, x]; sys = "EPSG:2039"; label = "إسرائيلي ITM"; }
+  else if (SYSM === "pg") { sys = "EPSG:28191"; }
+  else if (y > 400000 && y < 900000) { sys = "EPSG:2039"; label = "إسرائيلي ITM"; }
+  else if (x > 400000 && x < 900000 && y < 400000) { [x, y] = [y, x]; sys = "EPSG:2039"; label = "إسرائيلي ITM"; }
   const [lat, lon] = toLL(sys, x, y);
-  if (lat < 29 || lat > 33.6 || lon < 34 || lon > 36) return msg("هالإحداثيات طالعة برا البلاد — تأكد من X و Y");
+  if (lat < 29 || lat > 33.6 || lon < 34 || lon > 36) return msg(SYSM === "itm" ? "هالأرقام مش إسرائيلي ITM (الـ Y بالإسرائيلي بيكون حوالي 600000–700000) — يمكن فلسطيني؟" : SYSM === "pg" ? "هالأرقام مش فلسطيني 1923 — يمكن إسرائيلي ITM؟" : "هالإحداثيات طالعة برا البلاد — تأكد من X و Y");
   setDest(lat, lon, `نقطة (${label}) ${x.toFixed(0)} / ${y.toFixed(0)}`, { exact: true });
 };
 

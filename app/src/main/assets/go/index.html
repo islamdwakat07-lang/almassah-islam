@@ -41,6 +41,12 @@ input:focus,select:focus{outline:none;border-color:var(--am-gold-500);box-shadow
 .facts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
 .facts div{background:#f6efdb;border-radius:10px;padding:6px 10px;font-size:13px}.facts b{display:block;font-size:16px;color:var(--am-green-800)}
 .nav2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.via{margin-top:12px;background:#f6efdb;border-radius:14px;padding:10px 12px}
+.via .vh b{display:block;color:var(--am-green-800)}.via .vh small{display:block;color:var(--am-muted);font-size:12.5px;line-height:1.5}
+.vrow{display:flex;align-items:center;gap:6px;margin-top:6px;background:#fff;border:1.5px solid var(--am-line);border-radius:10px;padding:5px 8px}
+.vrow .k{flex:none;width:24px;height:24px;border-radius:50%;background:var(--am-btn);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.vrow span{flex:1;font-weight:700}.vrow button{flex:none;border:0;background:none;font-size:16px;padding:2px 6px;cursor:pointer}
+.vadd{display:flex;gap:6px;margin-top:8px}.vadd input{flex:1;padding:8px 10px}.vadd button{flex:none;border:0;border-radius:10px;padding:0 14px;font:700 15px "IBM Plex Sans Arabic";background:var(--am-btn);color:#fff}
 .places .p{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--am-line)}
 .places .p:last-child{border:0}
 .places .p .n{flex:1;min-width:0}.places .p .n b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.places .p .n small{color:var(--am-muted)}
@@ -69,7 +75,7 @@ input:focus,select:focus{outline:none;border-color:var(--am-gold-500);box-shadow
     <div id="t-town">
       <label for="town">اسم البلدة أو المكان</label>
       <input id="town" list="towns" placeholder="مثلاً: قلقيلية، يعبد، عزون، دوار جنين…" autocomplete="off">
-      <datalist id="towns"></datalist>
+      <datalist id="towns"></datalist><datalist id="viaList"></datalist>
       <label for="gov0">المحافظة (تساعد إذا في بلدتين بنفس الاسم)</label>
       <select id="gov0"><option value="">—</option></select>
       <button class="btn" id="goTown">🔎 جهّز الطريق</button>
@@ -118,6 +124,11 @@ input:focus,select:focus{outline:none;border-color:var(--am-gold-500);box-shadow
   <section class="card" id="res" hidden>
     <div class="dest"><div class="ic">📍</div><div style="flex:1;min-width:0"><b id="dName">—</b><small id="dLL"></small><small id="dPG"></small></div></div>
     <div class="facts"><div>المسافة من مكانك (خط مستقيم)<b id="dDist">—</b></div><div>تقريباً بالسيارة<b id="dTime">—</b></div></div>
+    <div class="via">
+      <div class="vh"><b>🛣️ مرّ من (طريق فلسطيني بتعرفه)</b><small>زيد لحد 3 بلدات بدك تمر فيها بالترتيب، وجوجل بيلزم فيها بدل الشوارع الالتفافية والحواجز.</small></div>
+      <div id="vias"></div>
+      <div class="vadd"><input id="viaIn" list="viaList" placeholder="مثلاً: جيت، عزون، دير شرف…"><button type="button" id="viaAdd">+ زيد</button></div>
+    </div>
     <a class="btn big" id="bGoogle">🧭 ابدأ الطريق — خرائط جوجل</a>
     <div class="nav2">
       <a class="btn gold" id="bWaze">🚙 Waze</a>
@@ -125,7 +136,8 @@ input:focus,select:focus{outline:none;border-color:var(--am-gold-500);box-shadow
     </div>
     <button class="btn gold" id="bJob" hidden>✅ اعتمده موقعاً لشغلة: <span id="jobN"></span></button>
     <button class="btn light" id="bSave">⭐ احفظ الموقع</button>
-    <div class="warn">⚠️ <b>انتبه للحواجز والشوارع الممنوعة:</b> خرائط جوجل وWaze ما بتعرف دايماً وين الحاجز مسكّر أو الشارع ممنوع علينا. قبل ما تطلع شوف الطريق اللي بيقترحه، واسأل إذا في حاجز عليه. في Waze في خيار «تجنّب المناطق الخطرة/المقيّدة» من الإعدادات.</div>
+    <a class="btn light" id="bCp">🚧 حالة الحواجز الآن</a>
+    <div class="warn">⚠️ <b>انتبه:</b> جوجل وWaze ما بيعرفوا الشوارع الممنوعة علينا ولا الحاجز إذا مسكّر. عشان هيك: حط «مرّ من» البلدات اللي بتعرف طريقها، وقبل ما تطلع شوف «حالة الحواجز الآن». وWaze ما بيقبل «مرّ من» — بيروح على الوجهة مباشرة.</div>
   </section>
 
   <section class="card places" id="placesCard">
@@ -193,7 +205,7 @@ function locate() {
 /* ---------- الوجهة ---------- */
 function hav(a, b) { const R = 6371, r = d => d * Math.PI / 180, dl = r(b[0] - a[0]), dn = r(b[1] - a[1]); const h = Math.sin(dl / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
 function setDest(lat, lon, name, o) {
-  o = o || {}; dest = { lat, lon, name, q: o.q || null, exact: !!o.exact };
+  o = o || {}; dest = { lat, lon, name, q: o.q || null, exact: !!o.exact, via: (o.via || []).slice() };
   st.last = dest; save(); msg("");
   if (!dest.exact) { if (destM) { map.removeLayer(destM); destM = null; } }
   else if (destM) destM.setLatLng([lat, lon]); else destM = L.marker([lat, lon], { icon: pinIcon, interactive: false }).addTo(map);
@@ -212,7 +224,9 @@ function refresh() {
   if (line) { map.removeLayer(line); line = null; }
   if (me && exact) line = L.polyline([me, [lat, lon]], { color: "#ffd54a", weight: 3, dashArray: "6 8", interactive: false }).addTo(map);
   const target = exact ? `${lat.toFixed(6)},${lon.toFixed(6)}` : q;
-  $("#bGoogle").href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(target) + "&travelmode=driving";
+  const V = (dest.via || []).map(v => v.ll || v.q);
+  $("#bGoogle").href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(target) + (V.length ? "&waypoints=" + encodeURIComponent(V.join("|")) : "") + "&travelmode=driving";
+  drawVias();
   $("#bWaze").href = exact ? `https://waze.com/ul?ll=${lat.toFixed(6)},${lon.toFixed(6)}&navigate=yes` : "https://waze.com/ul?q=" + encodeURIComponent(q) + "&navigate=yes";
   const link = exact ? `https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}` : "https://maps.google.com/?q=" + encodeURIComponent(q);
   $("#bJob").hidden = !(JOB && exact);
@@ -334,17 +348,45 @@ $("#goXY").onclick = () => {
   setDest(lat, lon, `نقطة (${label}) ${x.toFixed(0)} / ${y.toFixed(0)}`, { exact: true });
 };
 
+/* ---------- «مرّ من»: نقاط عبور بالترتيب (بلدات بالاسم أو من مواقعي) ---------- */
+function drawVias() {
+  const V = (dest && dest.via) || [];
+  $("#vias").innerHTML = V.map((v, i) => `<div class="vrow"><span class="k">${i + 1}</span><span>${esc(v.name)}</span>${i ? `<button data-up="${i}" title="قدّم">▲</button>` : ""}<button data-vdel="${i}" title="شيل">✕</button></div>`).join("");
+  $("#vias").querySelectorAll("[data-vdel]").forEach(b => b.onclick = () => { dest.via.splice(+b.dataset.vdel, 1); st.last = dest; save(); refresh(); });
+  $("#vias").querySelectorAll("[data-up]").forEach(b => b.onclick = () => { const i = +b.dataset.up; [dest.via[i - 1], dest.via[i]] = [dest.via[i], dest.via[i - 1]]; st.last = dest; save(); refresh(); });
+}
+$("#viaAdd").onclick = () => {
+  const t = $("#viaIn").value.trim(); if (!t || !dest) return;
+  if ((dest.via || []).length >= 3) return toast("خرائط جوجل على التلفون بتقبل 3 نقاط عبور بس");
+  const pl = st.places.find(p => p.name === t && p.exact), ll = parseLink(t);
+  const v = pl ? { name: t, ll: pl.lat.toFixed(6) + "," + pl.lon.toFixed(6) } : ll ? { name: t, ll: ll[0].toFixed(6) + "," + ll[1].toFixed(6) } : { name: t, q: t + "، فلسطين" };
+  dest.via = [...(dest.via || []), v]; st.last = dest; save(); $("#viaIn").value = ""; refresh();
+};
+$("#viaIn").addEventListener("keydown", e => { if (e.key === "Enter") $("#viaAdd").click(); });
+/* حالة الحواجز: رابط مجموعة/قناة بيتابعها (واتساب، تلغرام، فيسبوك…) */
+$("#bCp").onclick = e => {
+  if (st.cpLink) return;   // الرابط محفوظ: يفتح عادي
+  e.preventDefault();
+  const v = prompt("الصق رابط المجموعة أو القناة اللي بتتابع فيها أحوال الطرق والحواجز (واتساب، تلغرام، فيسبوك…). بينحفظ، وكل مرة بتضغط الزر بيفتحها:", "");
+  if (!v) return; const m = v.match(/https?:\/\/\S+/); if (!m) return toast("هاد مش رابط");
+  st.cpLink = m[0]; save(); cpBtn(); location.href = st.cpLink;
+};
+function cpBtn() { const b = $("#bCp"); if (st.cpLink) { b.href = st.cpLink; b.innerHTML = '🚧 حالة الحواجز الآن <small style="font-weight:400;opacity:.7" id="cpEdit">(تغيير)</small>'; } else { b.removeAttribute("href"); b.textContent = "🚧 حالة الحواجز الآن — حط رابط مجموعتك"; } }
+document.addEventListener("click", e => { if (e.target.id === "cpEdit") { e.preventDefault(); e.stopPropagation(); st.cpLink = ""; save(); cpBtn(); $("#bCp").click(); } }, true);
+cpBtn();
+
 /* ---------- المواقع المحفوظة ---------- */
 function drawPlaces() {
+  $("#viaList").innerHTML = [...new Set([...st.places.filter(p => p.exact).map(p => p.name), ...Object.values(GOVS).flat()])].map(t => `<option value="${esc(t)}">`).join("");
   const P = st.places;
-  $("#places").innerHTML = P.length ? P.map((p, i) => `<div class="p"><div class="n"><b>${esc(p.name)}</b><small>${p.exact ? p.lat.toFixed(5) + ", " + p.lon.toFixed(5) : esc(p.q || "")}${p.at ? " · " + new Date(p.at).toLocaleDateString("ar-EG") : ""}</small></div><button data-go="${i}">🧭 روح</button><button class="x" data-del="${i}">✕</button></div>`).join("")
+  $("#places").innerHTML = P.length ? P.map((p, i) => `<div class="p"><div class="n"><b>${esc(p.name)}</b><small>${p.exact ? p.lat.toFixed(5) + ", " + p.lon.toFixed(5) : esc(p.q || "")}${p.via && p.via.length ? " · 🛣️ عبر " + esc(p.via.map(v => v.name).join("، ")) : ""}${p.at ? " · " + new Date(p.at).toLocaleDateString("ar-EG") : ""}</small></div><button data-go="${i}">🧭 روح</button><button class="x" data-del="${i}">✕</button></div>`).join("")
     : '<p class="hint" style="margin:0">لسا ما حفظت مواقع. بعد ما تحدد مكان الشغلة اضغط «⭐ احفظ الموقع» وسمّيه باسم الزبون — بتلاقيه هون كل ما بدك ترجعله.</p>';
-  $("#places").querySelectorAll("[data-go]").forEach(b => b.onclick = () => { const p = st.places[+b.dataset.go]; setDest(p.lat, p.lon, p.name, { exact: p.exact, q: p.q }); });
+  $("#places").querySelectorAll("[data-go]").forEach(b => b.onclick = () => { const p = st.places[+b.dataset.go]; setDest(p.lat, p.lon, p.name, { exact: p.exact, q: p.q, via: p.via }); });
   $("#places").querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const i = +b.dataset.del; if (!confirm("حذف «" + st.places[i].name + "»؟")) return; st.places.splice(i, 1); save(); drawPlaces(); });
 }
 $("#bSave").onclick = () => {
   if (!dest) return; const n = prompt("اسم الموقع (مثلاً اسم الزبون والشغلة):", UQ.get("name") || dest.name); if (n == null) return;
-  st.places.unshift({ name: n.trim() || dest.name, lat: dest.lat, lon: dest.lon, exact: dest.exact, q: dest.q, at: Date.now() }); st.places = st.places.slice(0, 100); save(); drawPlaces(); toast("⭐ انحفظ الموقع");
+  st.places.unshift({ name: n.trim() || dest.name, lat: dest.lat, lon: dest.lon, exact: dest.exact, q: dest.q, via: dest.via || [], at: Date.now() }); st.places = st.places.slice(0, 100); save(); drawPlaces(); toast("⭐ انحفظ الموقع");
 };
 
 /* ---------- ربط بشغلة من «دفتر العمل» ---------- */
@@ -364,7 +406,7 @@ $("#bJob").onclick = () => {
   const u = new URLSearchParams(location.search);
   if (u.get("lat") && u.get("lon")) { setDest(+u.get("lat"), +u.get("lon"), u.get("name") || "موقع الشغلة", { exact: true, scroll: false }); $("#bJob").hidden = true; $("#jobBan").hidden = true; }
   else if (u.get("x") && u.get("y")) { const x = +u.get("x"), y = +u.get("y"), sys = y > 400000 ? "EPSG:2039" : "EPSG:28191", ll = toLL(sys, x, y); setDest(ll[0], ll[1], u.get("name") || "موقع الشغلة", { exact: true, scroll: false }); }
-  else if (st.last && !UQ.get("pick")) setDest(st.last.lat, st.last.lon, st.last.name, { exact: st.last.exact, q: st.last.q, scroll: false, fit: st.last.exact });
+  else if (st.last && !UQ.get("pick")) setDest(st.last.lat, st.last.lon, st.last.name, { exact: st.last.exact, q: st.last.q, via: st.last.via, scroll: false, fit: st.last.exact });
   locate();
 })();
 </script>

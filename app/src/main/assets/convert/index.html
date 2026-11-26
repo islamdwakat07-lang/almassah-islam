@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-tool="convert">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>تحويل صيغة</title>
+<link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../theme.css">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;min-height:100vh;font:15px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;color:#1d2a22}
+main{max-width:600px;margin:0 auto;padding:12px 14px 50px}
+.am-home{padding:4px 10px!important;font-size:12.5px!important;gap:4px!important}.am-home svg{width:14px!important;height:14px!important}
+.card{background:#fffcf3;border:1.5px solid #e2cf98;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 8px 18px -14px rgba(8,42,27,.5),inset 0 1px 0 #fff}
+h2{margin:0 0 6px;font:700 19px "Reem Kufi","IBM Plex Sans Arabic";color:#0c3b26;display:flex;align-items:center;gap:8px}
+.muted{color:#5d6458;font-size:13px;margin:0 0 8px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;border:1.5px solid #e2cf98;border-radius:16px;padding:14px 8px;background:#fff;cursor:pointer;color:#0c3b26;text-decoration:none;font:700 15px "IBM Plex Sans Arabic";box-shadow:0 6px 14px -12px rgba(8,42,27,.6)}
+.tool .i{font-size:30px;line-height:1.1}.tool small{font-weight:400;color:#5d6458;font-size:12px;line-height:1.4}
+.tool.on{background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;border-color:#e6c35f}.tool.on small{color:#e8e1c8}
+.pick{display:block;text-align:center;border:2px dashed #c99a2e;border-radius:16px;padding:20px 10px;background:#fffaf0;cursor:pointer;color:#0c3b26;font-weight:700;font-size:16.5px}
+.pick input{display:none}
+label.l{display:block;font-size:13px;color:#5d6458;margin:8px 0 3px;font-weight:700}
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{flex:1;min-width:70px;border:1.5px solid #e2cf98;background:#fff;color:#0c3b26;border-radius:10px;padding:7px 4px;font:700 13.5px "IBM Plex Sans Arabic";cursor:pointer}
+.seg button.on{background:linear-gradient(180deg,#fff1b8,#e6c35f);color:#4a2e00;border-color:#c99a2e}
+input[type=text]{width:100%;border:1.5px solid #e2cf98;border-radius:12px;padding:9px 11px;font:15px "IBM Plex Sans Arabic";background:#fff}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:12px;margin-top:12px;font:700 16px "IBM Plex Sans Arabic";background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff6d6;box-shadow:0 0 0 1px #e6c35f,0 6px 12px -6px rgba(8,42,27,.6);cursor:pointer}
+.btn:disabled{opacity:.5}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:10px}
+.th{position:relative;border:2px solid #e2cf98;border-radius:10px;background:#fff;padding:4px;text-align:center;font-size:12px;cursor:pointer;user-select:none}
+.th img,.th canvas{width:100%;height:110px;object-fit:contain;display:block;background:#f5f1e6;border-radius:6px}
+.th.off{opacity:.35}.th.sel{border-color:#17613f}
+.th .n{position:absolute;top:6px;right:6px;background:#0c3b26;color:#fff;border-radius:99px;min-width:22px;padding:0 6px;font-weight:700}
+.th .ctl{display:flex;justify-content:center;gap:2px;margin-top:3px}
+.th .ctl button{border:0;background:#f3ead2;border-radius:7px;padding:2px 6px;font-size:13px;cursor:pointer}
+.bar{height:6px;border-radius:99px;background:#f3ead2;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c99a2e,#17613f);transition:width .2s}
+.st{font-size:13.5px;font-weight:700;margin-top:6px;color:#8a6514}.st.ok{color:#1e6b4a}.st.bad{color:#b91c1c}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px}
+.lnk{border:0;background:none;color:#17613f;font:700 13px "IBM Plex Sans Arabic";cursor:pointer;text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="am-bar"><span class="am-title"><span style="width:40px;height:40px;border-radius:10px;background:linear-gradient(180deg,#fff1b8,#e6c35f);display:grid;place-items:center;font-size:22px">🔄</span><b>تحويل صيغة</b></span><a class="am-home" href="../home.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11h2.7v9.5h5.3v-6h3v6h5.3V11h2.7z"/></svg>الرئيسية</a></div>
+<div class="am-spacer" aria-hidden="true"></div>
+<main>
+  <section class="card">
+    <div class="tools">
+      <button class="tool" data-t="pdf2img"><span class="i">📄➜🖼️</span>PDF إلى صور<small>كل صفحة صورة JPG أو PNG</small></button>
+      <button class="tool" data-t="img2pdf"><span class="i">🖼️➜📄</span>صور إلى PDF<small>صورة أو أكثر بملف واحد</small></button>
+      <button class="tool" data-t="imgfmt"><span class="i">🔁</span>تغيير صيغة صورة<small>JPG · PNG · WEBP وتصغير الحجم</small></button>
+      <a class="tool" href="../dwg/index.html"><span class="i">📐</span>DWG إلى DXF<small>ملفات أوتوكاد</small></a>
+    </div>
+  </section>
+
+  <!-- PDF → صور -->
+  <section class="card" id="t-pdf2img" hidden>
+    <h2>📄 PDF إلى صور</h2>
+    <label class="pick">📂 اختر ملف PDF<input type="file" id="pdfIn" accept="application/pdf,.pdf"></label>
+    <div id="pdfOpts" hidden>
+      <label class="l">الصيغة</label>
+      <div class="seg" id="pFmt"><button data-v="jpeg">JPG</button><button data-v="png">PNG</button><button data-v="webp">WEBP</button></div>
+      <label class="l">الدقة</label>
+      <div class="seg" id="pDpi"><button data-v="100">عادية (للواتساب)</button><button data-v="200">عالية</button><button data-v="300">عالية جداً (للطباعة)</button></div>
+      <div class="row"><span class="muted" style="margin:0" id="pSel"></span><span><button class="lnk" id="pAll">الكل</button> · <button class="lnk" id="pNone">ولا شي</button></span></div>
+      <p class="muted" style="margin:2px 0 0">اضغط على الصفحة لتشيلها أو ترجعها.</p>
+      <div class="thumbs" id="pThumbs"></div>
+      <label class="l">طريقة الحفظ (لأكثر من صفحة)</label>
+      <div class="seg" id="pOut"><button data-v="zip">ملف ZIP فيه كل الصور</button><button data-v="each">صور منفصلة (للواتساب)</button><button data-v="long">صورة طويلة وحدة</button></div>
+      <button class="btn" id="pGo">🖼️ حوّل لصور</button>
+      <div class="bar" id="pBar" hidden><i></i></div><div class="st" id="pSt"></div>
+    </div>
+  </section>
+
+  <!-- صور → PDF -->
+  <section class="card" id="t-img2pdf" hidden>
+    <h2>🖼️ صور إلى PDF</h2>
+    <label class="pick">📂 اختر صورة أو أكثر<input type="file" id="imgIn" accept="image/*" multiple></label>
+    <div id="iOpts" hidden>
+      <p class="muted" style="margin:8px 0 0">رتّب الصفحات بالأسهم، ولفّ الصورة بـ ⟳ إذا كانت مايلة.</p>
+      <div class="thumbs" id="iThumbs"></div>
+      <label class="pick" style="padding:10px;margin-top:8px;font-size:14.5px">➕ زيد صور<input type="file" id="imgMore" accept="image/*" multiple></label>
+      <label class="l">حجم الصفحة</label>
+      <div class="seg" id="iSize"><button data-v="a4">A4</button><button data-v="a3">A3</button><button data-v="fit">بحجم الصورة</button></div>
+      <label class="l">الهوامش</label>
+      <div class="seg" id="iMar"><button data-v="0">بدون</button><button data-v="8">صغيرة</button><button data-v="18">عادية</button></div>
+      <label class="l">الجودة والحجم</label>
+      <div class="seg" id="iQ"><button data-v="s">ملف صغير</button><button data-v="m">متوسط</button><button data-v="h">جودة عالية</button></div>
+      <label class="l">اسم الملف</label>
+      <input type="text" id="iName" placeholder="مثلاً: أوراق قطعة 45">
+      <button class="btn" id="iGo">📄 اعمل PDF</button>
+      <div class="bar" id="iBar" hidden><i></i></div><div class="st" id="iSt"></div>
+    </div>
+  </section>
+
+  <!-- تغيير صيغة صورة -->
+  <section class="card" id="t-imgfmt" hidden>
+    <h2>🔁 تغيير صيغة صورة</h2>
+    <label class="pick">📂 اختر صورة أو أكثر<input type="file" id="fIn" accept="image/*" multiple></label>
+    <div id="fOpts" hidden>
+      <div class="thumbs" id="fThumbs"></div>
+      <label class="l">الصيغة الجديدة</label>
+      <div class="seg" id="fFmt"><button data-v="jpeg">JPG</button><button data-v="png">PNG</button><button data-v="webp">WEBP</button></div>
+      <label class="l">المقاس</label>
+      <div class="seg" id="fMax"><button data-v="0">نفس المقاس</button><button data-v="2500">كبير</button><button data-v="1600">متوسط</button><button data-v="1000">صغير</button></div>
+      <label class="l">الجودة (لـ JPG و WEBP)</label>
+      <div class="seg" id="fQ"><button data-v="0.95">عالية</button><button data-v="0.85">عادية</button><button data-v="0.7">ملف صغير</button></div>
+      <button class="btn" id="fGo">🔁 حوّل</button>
+      <div class="bar" id="fBar" hidden><i></i></div><div class="st" id="fSt"></div>
+    </div>
+  </section>
+</main>
+<script src="../pdf.min.js"></script>
+<script src="../jspdf.umd.min.js"></script>
+<script src="../ifraz/lib/jszip/3.10.1/jszip.min.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const KEY = "convert-v1";
+let st = { tab: "pdf2img", pFmt: "jpeg", pDpi: "200", pOut: "zip", iSize: "a4", iMar: "8", iQ: "m", fFmt: "jpeg", fMax: "0", fQ: "0.85" };
+try { Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+const EXT = { jpeg: "jpg", png: "png", webp: "webp" };
+const baseName = n => String(n || "ملف").replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]/g, "-").trim() || "ملف";
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function setBar(id, f) { const b = $(id); b.hidden = f == null; if (f != null) b.firstElementChild.style.width = Math.round(f * 100) + "%"; }
+function stat(id, t, cls) { const e = $(id); e.textContent = t || ""; e.className = "st" + (cls ? " " + cls : ""); }
+
+/* ---------- التبويبات والأزرار المقسّمة ---------- */
+function tab(t) { st.tab = t; save(); document.querySelectorAll(".tool[data-t]").forEach(b => b.classList.toggle("on", b.dataset.t === t)); ["pdf2img", "img2pdf", "imgfmt"].forEach(k => $("#t-" + k).hidden = k !== t); }
+document.querySelectorAll(".tool[data-t]").forEach(b => b.onclick = () => tab(b.dataset.t));
+function seg(id, key) { const el = $(id); const draw = () => el.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === String(st[key]))); el.querySelectorAll("button").forEach(b => b.onclick = () => { st[key] = b.dataset.v; save(); draw(); }); draw(); }
+[["#pFmt", "pFmt"], ["#pDpi", "pDpi"], ["#pOut", "pOut"], ["#iSize", "iSize"], ["#iMar", "iMar"], ["#iQ", "iQ"], ["#fFmt", "fFmt"], ["#fMax", "fMax"], ["#fQ", "fQ"]].forEach(a => seg(...a));
+tab(st.tab);
+
+/* ---------- الحفظ (التنزيلات + مشاركة على الجوال) ---------- */
+const b64 = blob => new Promise((ok, no) => { const f = new FileReader(); f.onload = () => ok(String(f.result).split(",")[1] || ""); f.onerror = no; f.readAsDataURL(blob); });
+async function saveBlob(blob, name, mime) {
+  const A = window.AndroidBridge;
+  if (A && A.saveBegin) {
+    if (!A.saveBegin(name, mime)) throw new Error("تعذّر إنشاء الملف");
+    const CH = 3 * 1024 * 1024;
+    for (let o = 0; o < blob.size; o += CH) if (!A.saveChunk(await b64(blob.slice(o, o + CH)))) throw new Error("تعذّرت الكتابة (المساحة ممتلئة؟)");
+    A.saveEnd(name); return;
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+const toBlob = (c, type, q) => new Promise(r => c.toBlob(r, "image/" + type, q));
+function flatten(c, type) {   // JPG ما بيدعم الشفافية: خلفية بيضاء
+  if (type !== "jpeg") return c; const o = document.createElement("canvas"); o.width = c.width; o.height = c.height; const g = o.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, o.width, o.height); g.drawImage(c, 0, 0); return o;
+}
+
+/* =================== PDF → صور =================== */
+const pdfjs = window.pdfjsLib; if (pdfjs) pdfjs.GlobalWorkerOptions.workerSrc = "../pdf.worker.min.js";
+let PDF = null, pdfName = "", pages = [];
+$("#pdfIn").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  stat("#pSt", "…جاري فتح الملف"); $("#pdfOpts").hidden = false; $("#pThumbs").innerHTML = "";
+  try { PDF = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise; }
+  catch (err) { stat("#pSt", /password/i.test(err && err.name + err.message) ? "الملف محمي بكلمة سر" : "هذا مش ملف PDF سليم", "bad"); PDF = null; return; }
+  pdfName = baseName(f.name); pages = Array.from({ length: PDF.numPages }, (_, i) => ({ n: i + 1, on: true }));
+  stat("#pSt", ""); drawPages();
+  for (const p of pages) {   // مصغّرات
+    try { const pg = await PDF.getPage(p.n), vp = pg.getViewport({ scale: 1 }), s = 180 / Math.max(vp.width, vp.height), v = pg.getViewport({ scale: s }), c = document.createElement("canvas"); c.width = v.width; c.height = v.height;
+      await pg.render({ canvasContext: c.getContext("2d"), viewport: v }).promise; const box = $("#pThumbs").querySelector(`[data-n="${p.n}"] .cv`); if (box) { box.replaceWith(c); } p.thumb = c; } catch (e2) {}
+  }
+};
+function drawPages() {
+  $("#pThumbs").innerHTML = pages.map(p => `<div class="th${p.on ? " sel" : " off"}" data-n="${p.n}"><span class="n">${p.n}</span><div class="cv" style="height:110px;background:#f5f1e6;border-radius:6px"></div></div>`).join("");
+  pages.forEach(p => { if (p.thumb) { const box = $("#pThumbs").querySelector(`[data-n="${p.n}"] .cv`); if (box) box.replaceWith(p.thumb); } });
+  $("#pThumbs").querySelectorAll(".th").forEach(t => t.onclick = () => { const p = pages[+t.dataset.n - 1]; p.on = !p.on; t.classList.toggle("off", !p.on); t.classList.toggle("sel", p.on); selInfo(); });
+  selInfo();
+}
+function selInfo() { const n = pages.filter(p => p.on).length; $("#pSel").textContent = `${PDF ? PDF.numPages : 0} صفحة · مختار ${n}`; }
+$("#pAll").onclick = () => { pages.forEach(p => p.on = true); drawPages(); };
+$("#pNone").onclick = () => { pages.forEach(p => p.on = false); drawPages(); };
+async function renderPage(n, dpi) {
+  const pg = await PDF.getPage(n), vp0 = pg.getViewport({ scale: 1 });
+  let sc = dpi / 72; const MAXPX = 4200 * 4200 * 1.2; if (vp0.width * vp0.height * sc * sc > MAXPX) sc = Math.sqrt(MAXPX / (vp0.width * vp0.height));
+  const vp = pg.getViewport({ scale: sc }), c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  await pg.render({ canvasContext: g, viewport: vp }).promise; return c;
+}
+$("#pGo").onclick = async () => {
+  if (!PDF) return; const sel = pages.filter(p => p.on).map(p => p.n); if (!sel.length) return stat("#pSt", "اختار صفحة وحدة على الأقل", "bad");
+  const fmt = st.pFmt, ext = EXT[fmt], dpi = +st.pDpi, q = fmt === "png" ? undefined : 0.9, mime = "image/" + fmt;
+  $("#pGo").disabled = true; setBar("#pBar", 0);
+  try {
+    if (sel.length === 1) { stat("#pSt", "…جاري التحويل"); const c = await renderPage(sel[0], dpi); setBar("#pBar", .8); await saveBlob(await toBlob(flatten(c, fmt), fmt, q), `${pdfName} - صفحة ${sel[0]}.${ext}`, mime); }
+    else if (st.pOut === "long") {
+      const cs = []; for (let i = 0; i < sel.length; i++) { stat("#pSt", `…صفحة ${i + 1} من ${sel.length}`); cs.push(await renderPage(sel[i], Math.min(dpi, 150))); setBar("#pBar", (i + 1) / sel.length * .85); await sleep(10); }
+      const W = Math.max(...cs.map(c => c.width)), gap = 12; let H = cs.reduce((t, c) => t + c.height * W / c.width, 0) + gap * (cs.length - 1); let k = 1;
+      if (H > 30000 || W * H > 1.2e8) { k = Math.min(30000 / H, Math.sqrt(1.2e8 / (W * H))); }
+      const o = document.createElement("canvas"); o.width = Math.round(W * k); o.height = Math.round(H * k); const g = o.getContext("2d"); g.fillStyle = "#ddd"; g.fillRect(0, 0, o.width, o.height);
+      let y = 0; cs.forEach(c => { const h = c.height * W / c.width * k; g.drawImage(c, 0, y, o.width, h); y += h + gap * k; });
+      stat("#pSt", "…جاري الحفظ"); await saveBlob(await toBlob(flatten(o, fmt), fmt, q), `${pdfName} - كل الصفحات.${ext}`, mime);
+    } else if (st.pOut === "each") {
+      const A = window.AndroidBridge, B = A && A.batchBegin; if (B) A.batchBegin();
+      try { for (let i = 0; i < sel.length; i++) { stat("#pSt", `…صفحة ${i + 1} من ${sel.length}`); const c = await renderPage(sel[i], dpi); await saveBlob(await toBlob(flatten(c, fmt), fmt, q), `${pdfName} - صفحة ${sel[i]}.${ext}`, mime); setBar("#pBar", (i + 1) / sel.length); await sleep(B ? 10 : 400); } }
+      finally { if (B) A.batchEnd(mime); }
+    } else {
+      const zip = new JSZip();
+      for (let i = 0; i < sel.length; i++) { stat("#pSt", `…صفحة ${i + 1} من ${sel.length}`); const c = await renderPage(sel[i], dpi); zip.file(`${pdfName} - صفحة ${String(sel[i]).padStart(2, "0")}.${ext}`, await toBlob(flatten(c, fmt), fmt, q)); setBar("#pBar", (i + 1) / sel.length * .9); await sleep(10); }
+      stat("#pSt", "…جاري تجهيز ZIP"); await saveBlob(await zip.generateAsync({ type: "blob", compression: "STORE" }), `${pdfName} - صور.zip`, "application/zip");
+    }
+    setBar("#pBar", 1); stat("#pSt", `✓ تم: ${sel.length} صفحة — انحفظت بالتنزيلات`, "ok");
+  } catch (e) { stat("#pSt", "تعذّر التحويل: " + (e.message || e), "bad"); }
+  finally { $("#pGo").disabled = false; setTimeout(() => setBar("#pBar", null), 1500); }
+};
+
+/* =================== صور → PDF =================== */
+let imgs = [];   // {file, url, rot}
+function loadImg(src) { return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("صورة غير مدعومة")); i.src = src; }); }
+function addImgs(files) { [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name)).forEach(f => imgs.push({ file: f, url: URL.createObjectURL(f), rot: 0 })); if (!$("#iName").value && imgs[0]) $("#iName").value = baseName(imgs[0].file.name); drawImgs(); }
+$("#imgIn").onchange = e => { imgs.forEach(x => URL.revokeObjectURL(x.url)); imgs = []; addImgs(e.target.files); e.target.value = ""; };
+$("#imgMore").onchange = e => { addImgs(e.target.files); e.target.value = ""; };
+function drawImgs() {
+  $("#iOpts").hidden = !imgs.length;
+  $("#iThumbs").innerHTML = imgs.map((x, i) => `<div class="th sel" data-i="${i}"><span class="n">${i + 1}</span><img src="${x.url}" style="transform:rotate(${x.rot}deg)${x.rot % 180 ? " scale(.72)" : ""}"><div class="ctl">${i ? '<button data-a="up">▶</button>' : ""}<button data-a="rot">⟳</button>${i < imgs.length - 1 ? '<button data-a="dn">◀</button>' : ""}<button data-a="del">✕</button></div></div>`).join("");
+  $("#iThumbs").querySelectorAll("[data-a]").forEach(b => b.onclick = e => { e.stopPropagation(); const i = +b.closest(".th").dataset.i, a = b.dataset.a;
+    if (a === "up") [imgs[i - 1], imgs[i]] = [imgs[i], imgs[i - 1]]; else if (a === "dn") [imgs[i + 1], imgs[i]] = [imgs[i], imgs[i + 1]]; else if (a === "rot") imgs[i].rot = (imgs[i].rot + 90) % 360; else { URL.revokeObjectURL(imgs[i].url); imgs.splice(i, 1); }
+    drawImgs(); });
+  stat("#iSt", imgs.length ? `${imgs.length} صورة` : "");
+}
+function rotCanvas(im, rot, maxSide) {
+  let w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, maxSide / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k);
+  const c = document.createElement("canvas"), sw = rot % 180 ? h : w, sh = rot % 180 ? w : h; c.width = sw; c.height = sh;
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, sw, sh); g.translate(sw / 2, sh / 2); g.rotate(rot * Math.PI / 180); g.drawImage(im, -w / 2, -h / 2, w, h); return c;
+}
+$("#iGo").onclick = async () => {
+  if (!imgs.length) return; $("#iGo").disabled = true; setBar("#iBar", 0);
+  const Q = { s: [1400, 0.72], m: [2200, 0.82], h: [3500, 0.92] }[st.iQ], mar = +st.iMar;
+  try {
+    const { jsPDF } = window.jspdf; let doc = null;
+    for (let i = 0; i < imgs.length; i++) {
+      stat("#iSt", `…صورة ${i + 1} من ${imgs.length}`);
+      const im = await loadImg(imgs[i].url), c = rotCanvas(im, imgs[i].rot, Q[0]), land = c.width > c.height;
+      let pw, ph;
+      if (st.iSize === "fit") { pw = c.width / 150 * 25.4 + 2 * mar; ph = c.height / 150 * 25.4 + 2 * mar; }   // بالمليمتر (150 نقطة/إنش)
+      else { const [a, b] = st.iSize === "a3" ? [297, 420] : [210, 297]; [pw, ph] = land ? [b, a] : [a, b]; }
+      const orient = pw > ph ? "l" : "p";
+      if (!doc) doc = new jsPDF({ unit: "mm", format: [pw, ph], orientation: orient, compress: true }); else doc.addPage([pw, ph], orient);
+      const aw = pw - 2 * mar, ah = ph - 2 * mar, s = Math.min(aw / c.width, ah / c.height), w = c.width * s, h = c.height * s;
+      doc.addImage(c.toDataURL("image/jpeg", Q[1]), "JPEG", (pw - w) / 2, (ph - h) / 2, w, h, undefined, "FAST");
+      setBar("#iBar", (i + 1) / imgs.length * .9); await sleep(10);
+    }
+    stat("#iSt", "…جاري الحفظ");
+    const name = baseName($("#iName").value || "صور") + ".pdf";
+    await saveBlob(doc.output("blob"), name, "application/pdf");
+    setBar("#iBar", 1); stat("#iSt", `✓ تم: ${imgs.length} صفحة بملف «${name}» — انحفظ بالتنزيلات`, "ok");
+  } catch (e) { stat("#iSt", "تعذّر عمل PDF: " + (e.message || e), "bad"); }
+  finally { $("#iGo").disabled = false; setTimeout(() => setBar("#iBar", null), 1500); }
+};
+
+/* =================== تغيير صيغة صورة =================== */
+let fimgs = [];
+$("#fIn").onchange = e => { fimgs.forEach(x => URL.revokeObjectURL(x.url)); fimgs = [...e.target.files].map(f => ({ file: f, url: URL.createObjectURL(f) })); e.target.value = "";
+  $("#fOpts").hidden = !fimgs.length; $("#fThumbs").innerHTML = fimgs.map((x, i) => `<div class="th sel"><span class="n">${i + 1}</span><img src="${x.url}"><small>${(x.file.size / 1024 < 1024 ? Math.round(x.file.size / 1024) + " KB" : (x.file.size / 1048576).toFixed(1) + " MB")}</small></div>`).join(""); stat("#fSt", ""); };
+$("#fGo").onclick = async () => {
+  if (!fimgs.length) return; $("#fGo").disabled = true; setBar("#fBar", 0);
+  const fmt = st.fFmt, ext = EXT[fmt], max = +st.fMax || 1e9, q = fmt === "png" ? undefined : +st.fQ;
+  try {
+    const outs = []; let before = 0, after = 0;
+    for (let i = 0; i < fimgs.length; i++) {
+      stat("#fSt", `…صورة ${i + 1} من ${fimgs.length}`);
+      const im = await loadImg(fimgs[i].url), c = flatten(rotCanvas(im, 0, max), fmt), bl = await toBlob(c, fmt, q);
+      if (!bl || (fmt === "webp" && bl.type !== "image/webp")) throw new Error("الجوال ما بيدعم هالصيغة");
+      outs.push([baseName(fimgs[i].file.name) + "." + ext, bl]); before += fimgs[i].file.size; after += bl.size; setBar("#fBar", (i + 1) / fimgs.length * .9); await sleep(10);
+    }
+    if (outs.length === 1) await saveBlob(outs[0][1], outs[0][0], "image/" + fmt);
+    else if (window.AndroidBridge && AndroidBridge.batchBegin) { AndroidBridge.batchBegin(); try { for (const [n, b] of outs) await saveBlob(b, n, "image/" + fmt); } finally { AndroidBridge.batchEnd("image/" + fmt); } }
+    else { const zip = new JSZip(), seen = {}; outs.forEach(([n, b]) => { let nn = n; if (seen[n]) nn = n.replace(/(\.\w+)$/, ` (${++seen[n]})$1`); else seen[n] = 1; zip.file(nn, b); }); await saveBlob(await zip.generateAsync({ type: "blob", compression: "STORE" }), `صور ${ext.toUpperCase()}.zip`, "application/zip"); }
+    const kb = n => n < 1048576 ? Math.round(n / 1024) + " KB" : (n / 1048576).toFixed(1) + " MB";
+    setBar("#fBar", 1); stat("#fSt", `✓ تم: ${outs.length} صورة · الحجم ${kb(before)} ← ${kb(after)}`, "ok");
+  } catch (e) { stat("#fSt", "تعذّر التحويل: " + (e.message || e), "bad"); }
+  finally { $("#fGo").disabled = false; setTimeout(() => setBar("#fBar", null), 1500); }
+};
+</script>
+</body>
+</html>

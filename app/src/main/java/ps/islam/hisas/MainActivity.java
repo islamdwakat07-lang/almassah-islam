@@ -361,6 +361,7 @@ public class MainActivity extends Activity {
     private OutputStream bkOut;
     private Uri bkUri;
     private String bkMime;
+    private java.util.ArrayList<Uri> batch = null;   // عدة ملفات تُشارك مرة وحدة
 
     private void bkClose() {
         try { if (bkOut != null) bkOut.close(); } catch (Exception ignored) { }
@@ -598,8 +599,27 @@ public class MainActivity extends Activity {
         public void saveEnd(String name) {
             bkClose();
             if (bkUri == null) return;
-            toast("حُفظت النسخة في التنزيلات: " + name);
+            if (batch != null) { batch.add(bkUri); bkUri = null; return; }
+            toast("حُفظ في التنزيلات: " + name);
             share(bkUri, bkMime == null ? "application/octet-stream" : bkMime);
+        }
+
+        @JavascriptInterface
+        public void batchBegin() { batch = new java.util.ArrayList<>(); }
+
+        @JavascriptInterface
+        public void batchEnd(final String mime) {
+            final java.util.ArrayList<Uri> list = batch; batch = null;
+            if (list == null || list.isEmpty()) return;
+            toast("حُفظت " + list.size() + " ملفات في التنزيلات");
+            if (list.size() == 1) { share(list.get(0), mime); return; }
+            runOnUiThread(() -> {
+                Intent s = new Intent(Intent.ACTION_SEND_MULTIPLE);
+                s.setType(mime);
+                s.putParcelableArrayListExtra(Intent.EXTRA_STREAM, list);
+                s.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                try { startActivity(Intent.createChooser(s, "مشاركة الملفات")); } catch (Exception ignored) { }
+            });
         }
 
         @JavascriptInterface

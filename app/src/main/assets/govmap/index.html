@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GOV إسلام</title>
 <link rel="stylesheet" href="../ifraz/fonts.css">
+<link rel="stylesheet" href="../geomolg/lib/leaflet.css">
 <link rel="stylesheet" href="../theme.css">
 <style>
 *{box-sizing:border-box}
@@ -46,6 +47,13 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
 .chk{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--am-ink);font-size:15px;padding:4px 0}
 .chk input{width:20px;height:20px;accent-color:#0f5a37;flex:none}
 .pset{display:grid;gap:10px;margin-top:10px}
+.mapcard{padding:10px}
+.mapcard h2{display:flex;align-items:center;gap:6px;margin:2px 4px 8px}
+#map{height:58vh;min-height:320px;border-radius:14px;border:1.5px solid var(--am-line);overflow:hidden;z-index:1;background:#2a3a30}
+.mhint{font-size:13px;color:var(--am-muted);margin:6px 4px 0}
+.mrow{display:flex;gap:6px;margin-top:8px}
+.locBtn{width:34px;height:34px;border:0;background:#fff;font-size:18px;cursor:pointer}
+.pinlab{background:rgba(12,59,38,.9);color:#fff;border-radius:8px;padding:2px 7px;font:700 12px "IBM Plex Mono",monospace;white-space:nowrap;transform:translate(-50%,-150%);display:inline-block;direction:ltr;box-shadow:0 0 0 1.5px #e6c35f}
 </style>
 <script src="../archive.js"></script>
 </head>
@@ -70,6 +78,13 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
     <p class="msg" id="msg" role="status"></p>
   </section>
 
+
+  <section class="card mapcard">
+    <h2>🛰️ الخارطة الجوية</h2>
+    <div id="map"></div>
+    <p class="mhint">حرّكها بإصبع وكبّر بإصبعين. اضغط على أي مكان بيتعبّى X و Y (ITM) تحت لحاله.</p>
+    <div class="mrow"><button class="sm" id="mGov" type="button">🗺️ افتح هالنقطة على GovMap</button></div>
+  </section>
 
   <section class="card" id="prCard">
     <details id="prBox" open>
@@ -107,7 +122,11 @@ h2{font:700 18px var(--am-title);color:var(--am-green-800);margin:0 0 8px}
     <p class="note">اضغط على نقطة لإعادة عرضها. تُحفظ آخر 20 نقطة على هذا الجهاز.</p>
   </section>
 </main>
+<script src="../geomolg/lib/leaflet.js"></script>
 <script src="../geomolg/lib/proj4.js"></script>
+<script src="../geomolg/lib/proj4leaflet.js"></script>
+<script src="../geotoken.js"></script>
+<script src="../esri-pg.js"></script>
 <script src="../jspdf.umd.min.js"></script>
 <script src="../geomolg/pdf.js"></script>
 <script>
@@ -335,6 +354,41 @@ window.govPrintImg = async function (d) {
 document.querySelectorAll('input[name=psys]').forEach(r => r.addEventListener("change", prRead));
 prApply();
 if (st.hist[0]) { $("#x").value = st.hist[0].x; $("#y").value = st.hist[0].y; }
+
+/* ---------- الخارطة الجوية داخل الصفحة (صور جيومولج بنظام فلسطين، وEsri إذا توقف جيومولج) ---------- */
+(function () {
+  if (!window.L || !L.Proj) return;
+  const PGd = "+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.722,94.7824,340.894,-8.001,-4.42,-11.821,1 +units=m +no_defs";
+  const RES = [529.1677250021168, 264.5838625010584, 132.2919312505292, 66.1459656252646, 33.0729828126323, 16.933367200067735, 8.466683600033868, 4.233341800016934, 2.116670900008467, 1.0583354500042335, 0.5291677250021167, 0.26458386250105836, 0.13229193125052918, 0.06614596562526459];
+  const crs = new L.Proj.CRS("EPSG:28191", PGd, { origin: [-4839400, 6616800], resolutions: RES });
+  const itmLL = (x, y) => { const p = proj4("EPSG:2039", "EPSG:4326", [x, y]); return L.latLng(p[1], p[0]); };
+  const llITM = ll => proj4("EPSG:4326", "EPSG:2039", [ll.lng, ll.lat]);
+  const map = L.map("map", { crs, maxZoom: 13, minZoom: 1, zoomSnap: 1, attributionControl: false }).setView(itmLL(220000, 665000), 3);
+  const REST = "https://orthophotos.geomolg.ps/adaptor/rest/services/";
+  let base = L.tileLayer(REST + "Orthophotos_WB_2022_15cm_tif_PG1923_05/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 13, maxZoom: 13 }).addTo(map);
+  (async () => { try { const tk = window.geoToken ? await geoToken() : ""; if (!tk) return; const nb = L.tileLayer(REST + "Orthophotos_WB_2025_15cm_tif_PG1923/MapServer/tile/{z}/{y}/{x}?token=" + tk, { maxNativeZoom: 12, maxZoom: 13 }); nb.once("tileload", () => { if (!esriOn) { map.removeLayer(base); base = nb; } }); nb.addTo(map); } catch (e) {} })();
+  let ok = 0, bad = 0, esriOn = false;
+  base.on("tileload", () => ok++); base.on("tileerror", () => { bad++; if (!ok && bad >= 6 && !esriOn && window.EsriPGLayer) { esriOn = true; try { map.removeLayer(base); } catch (e) {} base = new EsriPGLayer({ maxZoom: 13 }).addTo(map); base.bringToBack(); } });
+  const pin = L.marker(itmLL(220000, 665000), { icon: L.divIcon({ className: "", html: '<div style="font-size:34px;line-height:1;transform:translate(-50%,-100%);filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))">📍</div>', iconSize: [0, 0] }) });
+  const lab = L.marker(itmLL(220000, 665000), { interactive: false, icon: L.divIcon({ className: "", html: "", iconSize: [0, 0] }) });
+  function put(x, y, fly) {
+    const ll = itmLL(x, y); pin.setLatLng(ll).addTo(map); lab.setLatLng(ll).setIcon(L.divIcon({ className: "", html: `<span class="pinlab">X ${Math.round(x)}  Y ${Math.round(y)}</span>`, iconSize: [0, 0] })).addTo(map);
+    if (fly) map.setView(ll, Math.max(map.getZoom(), 11));
+  }
+  function fromInputs(fly) { const x = parseFloat(toDigits($("#x").value)), y = parseFloat(toDigits($("#y").value)); if (x >= 100000 && x <= 300000 && y >= 350000 && y <= 820000) { put(x, y, fly); return true; } return false; }
+  map.on("click", e => { const p = llITM(e.latlng), x = Math.round(p[0] * 100) / 100, y = Math.round(p[1] * 100) / 100; $("#x").value = x; $("#y").value = y; msg(""); put(x, y, false); });
+  ["#x", "#y"].forEach(s => $(s).addEventListener("change", () => fromInputs(true)));
+  $("#go").addEventListener("click", () => fromInputs(true), true);
+  $("#hist").addEventListener("click", () => setTimeout(() => fromInputs(true), 50));
+  $("#mGov").addEventListener("click", () => { if (!$("#x").value) { msg("اضغط على الخارطة أو اكتب X و Y أول."); return; } $("#go").click(); });
+  // موقعي
+  const Loc = L.Control.extend({ options: { position: "topleft" }, onAdd() { const box = L.DomUtil.create("div", "leaflet-bar leaflet-control"), b = L.DomUtil.create("button", "locBtn", box); b.type = "button"; b.textContent = "📍"; b.title = "موقعي";
+    b.onclick = () => navigator.geolocation && navigator.geolocation.getCurrentPosition(p => { const ll = L.latLng(p.coords.latitude, p.coords.longitude); L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#1a73e8", fillOpacity: 1, interactive: false }).addTo(map); map.setView(ll, 12); }, () => msg("ما قدرت أجيب موقعك."), { enableHighAccuracy: true, timeout: 15000 });
+    L.DomEvent.disableClickPropagation(box); return box; } });
+  new Loc().addTo(map);
+  if (!fromInputs(true)) { const h = (st.hist || [])[0]; if (h) put(h.x, h.y, true); }
+  setTimeout(() => map.invalidateSize(), 300);
+})();
 </script>
 </body>
 </html>

@@ -157,8 +157,8 @@ button{font-family:inherit;cursor:pointer}
 .ph img{display:block;width:100%;height:64px;object-fit:cover;border-radius:8px;margin-bottom:2px}
 .ph .add{display:grid;place-items:center;height:64px;font-size:22px}
 .ph.has{border-style:solid;border-color:#17613f;color:#17613f}
-.ph .sh{display:flex;gap:3px;margin-top:3px}.ph .sh button{flex:1;border:0;border-radius:7px;padding:4px 0;font:700 10.5px "IBM Plex Sans Arabic";background:#25d366;color:#fff}.ph .sh button[data-sh=pdf]{background:#0c3b26}
-.allpdf{margin-top:6px;border:0;border-radius:10px;padding:7px 10px;font:700 13px "IBM Plex Sans Arabic";background:#25d366;color:#fff}
+.ph .sh{display:flex;gap:3px;margin-top:3px}.ph .sh button{flex:1;border:0;border-radius:7px;padding:4px 0;font:700 10.5px "IBM Plex Sans Arabic";background:#17613f;color:#fff}.ph .sh button[data-sh=pdf]{background:#0c3b26}
+.allpdf{margin-top:6px;border:0;border-radius:10px;padding:7px 10px;font:700 13px "IBM Plex Sans Arabic";background:#17613f;color:#fff}
 .tabs .t-new.on{background:#1e6fd9}.tabs .t-doing.on{background:#d32f2f}.tabs .t-paid.on{background:#1b1b1b}
 .tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 .viewer{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.92);display:flex;flex-direction:column}
@@ -220,7 +220,7 @@ button{font-family:inherit;cursor:pointer}
   </div>
 </div>
 
-<div class="viewer hidden" id="viewer"><div class="vt" id="vT"></div><img id="vImg" alt=""><div class="vb"><button type="button" id="vRep">🔄 استبدال</button><button type="button" id="vWa" style="background:#25d366">🖼️ واتساب</button><button type="button" id="vPdf" style="background:#0c3b26">📄 PDF واتساب</button><button type="button" id="vShare">📤 حفظ ومشاركة</button><button type="button" id="vDel">🗑 حذف</button><button type="button" id="vX">✕ إغلاق</button></div></div>
+<div class="viewer hidden" id="viewer"><div class="vt" id="vT"></div><img id="vImg" alt=""><div class="vb"><button type="button" id="vRep">🔄 استبدال</button><button type="button" id="vWa" style="background:#17613f">📤 إرسال الصورة</button><button type="button" id="vPdf" style="background:#0c3b26">📄 إرسال PDF</button><button type="button" id="vShare">💾 حفظ بالتنزيلات</button><button type="button" id="vDel">🗑 حذف</button><button type="button" id="vX">✕ إغلاق</button></div></div>
 <input type="file" id="phIn" accept="image/*" hidden>
 <div class="toast" id="toast"></div>
 <script>
@@ -287,7 +287,7 @@ function renderWork() {
       <div class="top"><div class="who"><span class="nm">${esc(j.name || "—")}</span>${j.noticeNo ? `<span class="no">📢 إخطار رقم ${esc(j.noticeNo)}</span>` : ""}${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${j.phone ? `<a class="tel" href="tel:${esc(j.phone.replace(/[^\d+]/g, ""))}">📞 ${esc(j.phone)}</a>` : ""}${d}${lm}</div>
       <div class="fwrap"><input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المبلغ ₪" data-fee><small>المطلوب</small></div>
       <button class="ib" type="button" data-note title="التفاصيل والملاحظات">📝</button></div>
-      ${phs ? `<div class="phs">${phs}</div>` : ""}${Object.keys(j.ph || {}).filter(k => j.ph[k]).length > 1 ? `<button type="button" class="allpdf" data-allpdf>📄 كل الصور بملف PDF واحد ← واتساب</button>` : ""}
+      ${phs ? `<div class="phs">${phs}</div>` : ""}${Object.keys(j.ph || {}).filter(k => j.ph[k]).length > 1 ? `<button type="button" class="allpdf" data-allpdf>📄 إرسال كل الصور بملف PDF واحد</button>` : ""}
       <div class="lights">${STS.map(([k, t]) => `<button type="button" class="lt l-${k}${j.s === k ? " on" : ""}" data-s="${k}"><i></i>${t}</button>`).join("")}
         ${j.book === "ishaar" ? `<button type="button" class="lt sk${j.struck ? " on" : ""}" data-strike title="شطب الإخطار عند الانتهاء">✂️ ${j.struck ? "مشطوب" : "شطب"}</button>` : ""}
         <button type="button" class="lt ar" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩ إرجاع" : "🗄 أرشيف"}</button></div></div>`;
@@ -419,7 +419,7 @@ async function phUrl(id) { if (PH.url[id]) return PH.url[id]; const r = await ph
 function phChip(j, k, t) {
   const id = j && j.ph && j.ph[k];
   if (id) { if (!PH.url[id]) phUrl(id).then(u => { if (u) document.querySelectorAll(`img[data-pid="${id}"]`).forEach(im => im.src = u); });
-    return `<div class="ph has" data-ph="${k}"><img data-pid="${id}" src="${PH.url[id] || ""}" alt="">${esc(t)}<div class="sh"><button type="button" data-sh="img" title="إرسال الصورة لواتساب">🖼️ واتس</button><button type="button" data-sh="pdf" title="إرسال PDF لواتساب">📄 PDF</button></div></div>`; }
+    return `<div class="ph has" data-ph="${k}"><img data-pid="${id}" src="${PH.url[id] || ""}" alt="">${esc(t)}<div class="sh"><button type="button" data-sh="img" title="إرسال الصورة">📤 صورة</button><button type="button" data-sh="pdf" title="إرسال PDF">📄 PDF</button></div></div>`; }
   return `<div class="ph" data-ph="${k}"><span class="add">📷</span>${esc(t)}</div>`;
 }
 let phFor = null;
@@ -434,12 +434,12 @@ $("#phIn").addEventListener("change", async e => {
   if (old && PH.url[old]) { URL.revokeObjectURL(PH.url[old]); delete PH.url[old]; }
   j.ph = j.ph || {}; j.ph[k] = id; save(); render(); if (!$("#noteSheet").classList.contains("hidden") && nJob === j) drawBook(); if (!$("#viewer").classList.contains("hidden")) closeViewer(); toast("📷 انحفظت الصورة");
 });
-/* إرسال الصور لواتساب: صورة كما هي، أو PDF (صفحة A4 لكل صورة) */
+/* إرسال الصور (قائمة المشاركة العادية): صورة كما هي، أو PDF (صفحة A4 لكل صورة) */
 const blob64 = b => new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.readAsDataURL(b); });
 const phTitle = (j, k) => (BK(j.book)[4].find(x => x[0] === k) || [k, "صورة"])[1];
 const fileBase = j => [j.name || "صورة", j.noticeNo ? "إخطار " + j.noticeNo : ""].filter(Boolean).join(" - ").replace(/[\\/:*?"<>|]/g, "-");
 function shareOut(name, b64, mime) {
-  if (window.AndroidBridge && AndroidBridge.shareTo) { AndroidBridge.shareTo(name, b64, mime, "com.whatsapp"); return; }
+  if (window.AndroidBridge && AndroidBridge.shareTo) { AndroidBridge.shareTo(name, b64, mime, ""); return; }
   if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, b64, mime); return; }
   const a = document.createElement("a"); a.href = "data:" + mime + ";base64," + b64; a.download = name; a.click();
 }

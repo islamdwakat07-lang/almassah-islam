@@ -618,7 +618,7 @@ public class MainActivity extends Activity {
                     s.setType(mime);
                     s.putExtra(Intent.EXTRA_STREAM, uri);
                     s.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    for (String p : new String[]{pkg, "com.whatsapp.w4b"}) {
+                    for (String p : (pkg == null || pkg.isEmpty()) ? new String[0] : new String[]{pkg, "com.whatsapp".equals(pkg) ? "com.whatsapp.w4b" : ""}) {
                         if (p == null || p.isEmpty()) continue;
                         try { s.setPackage(p); startActivity(s); return; } catch (Exception ignored) { }
                     }

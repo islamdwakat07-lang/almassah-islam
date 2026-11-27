@@ -604,6 +604,32 @@ public class MainActivity extends Activity {
             share(bkUri, bkMime == null ? "application/octet-stream" : bkMime);
         }
 
+        /* مشاركة ملف مباشرة لواتساب (أو واتساب للأعمال)، وإن لم يوجد فقائمة المشاركة */
+        @JavascriptInterface
+        public void shareTo(String name, String base64, String mime, String pkg) {
+            try {
+                File dir = new File(getCacheDir(), "share");
+                dir.mkdirs();
+                File f = new File(dir, name.replaceAll("[\\\\/:*?\"<>|]", "-"));
+                try (FileOutputStream os = new FileOutputStream(f)) { os.write(Base64.decode(base64, Base64.DEFAULT)); }
+                final Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", f);
+                runOnUiThread(() -> {
+                    Intent s = new Intent(Intent.ACTION_SEND);
+                    s.setType(mime);
+                    s.putExtra(Intent.EXTRA_STREAM, uri);
+                    s.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    for (String p : new String[]{pkg, "com.whatsapp.w4b"}) {
+                        if (p == null || p.isEmpty()) continue;
+                        try { s.setPackage(p); startActivity(s); return; } catch (Exception ignored) { }
+                    }
+                    s.setPackage(null);
+                    try { startActivity(Intent.createChooser(s, "مشاركة")); } catch (Exception ignored) { }
+                });
+            } catch (Exception e) {
+                toast("تعذّرت المشاركة");
+            }
+        }
+
         @JavascriptInterface
         public void batchBegin() { batch = new java.util.ArrayList<>(); }
 

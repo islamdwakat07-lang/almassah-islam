@@ -153,10 +153,12 @@ button{font-family:inherit;cursor:pointer}
 .r .no{display:block;font-size:13.5px;font-weight:700;color:#7a1f1f}
 .r .tel{display:inline-block;font-size:13px;color:#17613f;text-decoration:none;font-weight:700;direction:ltr}
 .phs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.ph{flex:none;width:96px;border:1.5px dashed #c99a2e;border-radius:11px;background:#fffaf0;padding:3px;text-align:center;font:700 11px/1.3 "IBM Plex Sans Arabic";color:#8a6514;cursor:pointer}
+.ph{flex:none;width:104px;border:1.5px dashed #c99a2e;border-radius:11px;background:#fffaf0;padding:3px;text-align:center;font:700 11px/1.3 "IBM Plex Sans Arabic";color:#8a6514;cursor:pointer}
 .ph img{display:block;width:100%;height:64px;object-fit:cover;border-radius:8px;margin-bottom:2px}
 .ph .add{display:grid;place-items:center;height:64px;font-size:22px}
 .ph.has{border-style:solid;border-color:#17613f;color:#17613f}
+.ph .sh{display:flex;gap:3px;margin-top:3px}.ph .sh button{flex:1;border:0;border-radius:7px;padding:4px 0;font:700 10.5px "IBM Plex Sans Arabic";background:#25d366;color:#fff}.ph .sh button[data-sh=pdf]{background:#0c3b26}
+.allpdf{margin-top:6px;border:0;border-radius:10px;padding:7px 10px;font:700 13px "IBM Plex Sans Arabic";background:#25d366;color:#fff}
 .tabs .t-new.on{background:#1e6fd9}.tabs .t-doing.on{background:#d32f2f}.tabs .t-paid.on{background:#1b1b1b}
 .tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 .viewer{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.92);display:flex;flex-direction:column}
@@ -218,7 +220,7 @@ button{font-family:inherit;cursor:pointer}
   </div>
 </div>
 
-<div class="viewer hidden" id="viewer"><div class="vt" id="vT"></div><img id="vImg" alt=""><div class="vb"><button type="button" id="vRep">🔄 استبدال</button><button type="button" id="vShare">📤 مشاركة</button><button type="button" id="vDel">🗑 حذف</button><button type="button" id="vX">✕ إغلاق</button></div></div>
+<div class="viewer hidden" id="viewer"><div class="vt" id="vT"></div><img id="vImg" alt=""><div class="vb"><button type="button" id="vRep">🔄 استبدال</button><button type="button" id="vWa" style="background:#25d366">🖼️ واتساب</button><button type="button" id="vPdf" style="background:#0c3b26">📄 PDF واتساب</button><button type="button" id="vShare">📤 حفظ ومشاركة</button><button type="button" id="vDel">🗑 حذف</button><button type="button" id="vX">✕ إغلاق</button></div></div>
 <input type="file" id="phIn" accept="image/*" hidden>
 <div class="toast" id="toast"></div>
 <script>
@@ -230,7 +232,7 @@ const KEY = "jobs-v1";
 let jobs = []; try { jobs = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) {}
 /* الدفاتر: [المفتاح، الاسم، الأيقونة، تصنيفه بالسجل المالي، الصور] */
 const BOOKS = [
-  ["ishaar", "الإخطارات", "📢", "license", [["notice", "صورة الإخطار"], ["req", "وصول طلب الترخيص"]]],
+  ["ishaar", "الإخطارات", "📢", "license", [["notice", "صورة الإخطار"], ["req", "وصول طلب الترخيص"], ["rcpt", "ورقة الاستلام"]]],
   ["tafsili", "المشروع التفصيلي", "🏗️", "detailed", [["receipt", "ورقة استلام التفصيلي"]]],
   ["objection", "الاعتراضات والمصادرة", "⚖️", "objection", []],
   ["renew", "التسجيل المجدد", "📑", "renew", []],
@@ -285,7 +287,7 @@ function renderWork() {
       <div class="top"><div class="who"><span class="nm">${esc(j.name || "—")}</span>${j.noticeNo ? `<span class="no">📢 إخطار رقم ${esc(j.noticeNo)}</span>` : ""}${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${j.phone ? `<a class="tel" href="tel:${esc(j.phone.replace(/[^\d+]/g, ""))}">📞 ${esc(j.phone)}</a>` : ""}${d}${lm}</div>
       <div class="fwrap"><input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المبلغ ₪" data-fee><small>المطلوب</small></div>
       <button class="ib" type="button" data-note title="التفاصيل والملاحظات">📝</button></div>
-      ${phs ? `<div class="phs">${phs}</div>` : ""}
+      ${phs ? `<div class="phs">${phs}</div>` : ""}${Object.keys(j.ph || {}).filter(k => j.ph[k]).length > 1 ? `<button type="button" class="allpdf" data-allpdf>📄 كل الصور بملف PDF واحد ← واتساب</button>` : ""}
       <div class="lights">${STS.map(([k, t]) => `<button type="button" class="lt l-${k}${j.s === k ? " on" : ""}" data-s="${k}"><i></i>${t}</button>`).join("")}
         ${j.book === "ishaar" ? `<button type="button" class="lt sk${j.struck ? " on" : ""}" data-strike title="شطب الإخطار عند الانتهاء">✂️ ${j.struck ? "مشطوب" : "شطب"}</button>` : ""}
         <button type="button" class="lt ar" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩ إرجاع" : "🗄 أرشيف"}</button></div></div>`;
@@ -300,6 +302,8 @@ $("#qAdd").addEventListener("click", () => {
 $("#wRows").addEventListener("click", e => {
   const r = e.target.closest("[data-id]"); if (!r) return; const j = jobs.find(x => x.id === r.dataset.id);
   const sb = e.target.closest("[data-s]"); if (sb) { setStatus(j, sb.dataset.s); return; }
+  else if (e.target.closest("[data-sh]")) { sendPh(j, [e.target.closest("[data-ph]").dataset.ph], e.target.closest("[data-sh]").dataset.sh); }
+  else if (e.target.closest("[data-allpdf]")) { sendPh(j, BK(j.book)[4].map(x => x[0]).filter(k => j.ph && j.ph[k]), "pdf"); }
   else if (e.target.closest("[data-ph]")) { const k = e.target.closest("[data-ph]").dataset.ph; if (j.ph && j.ph[k]) openViewer(j, k); else pickPhoto(j, k); }
   else if (e.target.closest("[data-strike]")) { j.struck = !j.struck; save(); render(); toast(j.struck ? "✂️ انشطب الإخطار" : "رجع الإخطار"); }
   else if (e.target.closest("[data-arch]")) { j.arch = !j.arch; save(); render(); toast(j.arch ? "🗄 نُقل إلى الأرشيف" : "↩ أُرجع من الأرشيف"); }
@@ -362,7 +366,7 @@ let nBook = "private";
 function drawBook() { $("#nBook").innerHTML = BOOKS.map(([k, t, ic]) => `<button class="dayb${nBook === k ? " on" : ""}" type="button" data-bk="${k}">${ic} ${t}</button>`).join(""); $("#nNoBox").hidden = nBook !== "ishaar";
   const ph = BK(nBook)[4]; $("#nPhBox").hidden = !ph.length; $("#nPhs").innerHTML = ph.map(([k, t]) => phChip(nJob, k, t)).join(""); }
 $("#nBook").addEventListener("click", e => { const b = e.target.closest("[data-bk]"); if (b) { nBook = b.dataset.bk; drawBook(); } });
-$("#nPhs").addEventListener("click", e => { const b = e.target.closest("[data-ph]"); if (!b || !nJob) return; const k = b.dataset.ph; if (nJob.ph && nJob.ph[k]) openViewer(nJob, k); else pickPhoto(nJob, k); });
+$("#nPhs").addEventListener("click", e => { const b = e.target.closest("[data-ph]"); if (!b || !nJob) return; const sh = e.target.closest("[data-sh]"); if (sh) { sendPh(nJob, [b.dataset.ph], sh.dataset.sh); return; } const k = b.dataset.ph; if (nJob.ph && nJob.ph[k]) openViewer(nJob, k); else pickPhoto(nJob, k); });
 function drawSt() { $("#nSt").innerHTML = STS.map(([k, t]) => `<button class="dayb${nJob.s === k ? " on" : ""}" type="button" data-st="${k}">${t}</button>`).join(""); }
 $("#nSt").addEventListener("click", async e => { const b = e.target.closest("[data-st]"); if (!b || !nJob) return; await setStatus(nJob, b.dataset.st); drawSt(); });
 $("#nDays").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (!b) return; setDay(b.dataset.d); $("#nDate").value = b.dataset.d === "" ? "" : ymd(new Date(Date.now() + 864e5 * +b.dataset.d)); if (b.dataset.d === "") $("#nTime").value = ""; });
@@ -415,7 +419,7 @@ async function phUrl(id) { if (PH.url[id]) return PH.url[id]; const r = await ph
 function phChip(j, k, t) {
   const id = j && j.ph && j.ph[k];
   if (id) { if (!PH.url[id]) phUrl(id).then(u => { if (u) document.querySelectorAll(`img[data-pid="${id}"]`).forEach(im => im.src = u); });
-    return `<div class="ph has" data-ph="${k}"><img data-pid="${id}" src="${PH.url[id] || ""}" alt="">${esc(t)}</div>`; }
+    return `<div class="ph has" data-ph="${k}"><img data-pid="${id}" src="${PH.url[id] || ""}" alt="">${esc(t)}<div class="sh"><button type="button" data-sh="img" title="إرسال الصورة لواتساب">🖼️ واتس</button><button type="button" data-sh="pdf" title="إرسال PDF لواتساب">📄 PDF</button></div></div>`; }
   return `<div class="ph" data-ph="${k}"><span class="add">📷</span>${esc(t)}</div>`;
 }
 let phFor = null;
@@ -430,10 +434,39 @@ $("#phIn").addEventListener("change", async e => {
   if (old && PH.url[old]) { URL.revokeObjectURL(PH.url[old]); delete PH.url[old]; }
   j.ph = j.ph || {}; j.ph[k] = id; save(); render(); if (!$("#noteSheet").classList.contains("hidden") && nJob === j) drawBook(); if (!$("#viewer").classList.contains("hidden")) closeViewer(); toast("📷 انحفظت الصورة");
 });
+/* إرسال الصور لواتساب: صورة كما هي، أو PDF (صفحة A4 لكل صورة) */
+const blob64 = b => new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.readAsDataURL(b); });
+const phTitle = (j, k) => (BK(j.book)[4].find(x => x[0] === k) || [k, "صورة"])[1];
+const fileBase = j => [j.name || "صورة", j.noticeNo ? "إخطار " + j.noticeNo : ""].filter(Boolean).join(" - ").replace(/[\\/:*?"<>|]/g, "-");
+function shareOut(name, b64, mime) {
+  if (window.AndroidBridge && AndroidBridge.shareTo) { AndroidBridge.shareTo(name, b64, mime, "com.whatsapp"); return; }
+  if (window.AndroidBridge && AndroidBridge.saveFile) { AndroidBridge.saveFile(name, b64, mime); return; }
+  const a = document.createElement("a"); a.href = "data:" + mime + ";base64," + b64; a.download = name; a.click();
+}
+async function sendPh(j, keys, kind) {
+  const recs = []; for (const k of keys) { const r = await phGet(j.ph[k]); if (r && r.blob) recs.push([k, r.blob]); }
+  if (!recs.length) return toast("ما في صور");
+  if (kind === "img") { const [k, b] = recs[0]; return shareOut(fileBase(j) + " - " + phTitle(j, k) + ".jpg", await blob64(b), "image/jpeg"); }
+  toast("…جاري تجهيز PDF");
+  if (!window.jspdf) await new Promise(ok => { const sc = document.createElement("script"); sc.src = "../jspdf.umd.min.js"; sc.onload = sc.onerror = ok; document.head.appendChild(sc); });
+  if (!window.jspdf) return toast("تعذّر تجهيز PDF");
+  let doc = null;
+  for (const [k, b] of recs) {
+    const u = URL.createObjectURL(b), im = await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = u; }); if (!im) continue;
+    const land = im.naturalWidth > im.naturalHeight, pw = land ? 297 : 210, ph = land ? 210 : 297, m = 8, s = Math.min((pw - 2 * m) / im.naturalWidth, (ph - 2 * m) / im.naturalHeight), w = im.naturalWidth * s, h = im.naturalHeight * s;
+    if (!doc) doc = new jspdf.jsPDF({ unit: "mm", format: "a4", orientation: land ? "l" : "p", compress: true }); else doc.addPage("a4", land ? "l" : "p");
+    const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext("2d").drawImage(im, 0, 0); URL.revokeObjectURL(u);
+    doc.addImage(c.toDataURL("image/jpeg", 0.85), "JPEG", (pw - w) / 2, (ph - h) / 2, w, h, undefined, "FAST");
+  }
+  if (!doc) return toast("تعذّر تجهيز PDF");
+  shareOut(fileBase(j) + (recs.length === 1 ? " - " + phTitle(j, recs[0][0]) : "") + ".pdf", await blob64(doc.output("blob")), "application/pdf");
+}
 let vw = null;
 async function openViewer(j, k) { vw = { j, k }; const t = (BK(j.book)[4].find(x => x[0] === k) || [k, "صورة"])[1]; $("#vT").textContent = t + " – " + (j.name || ""); $("#vImg").src = await phUrl(j.ph[k]) || ""; $("#viewer").classList.remove("hidden"); }
 function closeViewer() { $("#viewer").classList.add("hidden"); vw = null; }
 $("#vX").onclick = closeViewer;
+$("#vWa").onclick = () => { if (vw) sendPh(vw.j, [vw.k], "img"); };
+$("#vPdf").onclick = () => { if (vw) sendPh(vw.j, [vw.k], "pdf"); };
 $("#vRep").onclick = () => { if (vw) pickPhoto(vw.j, vw.k); };
 $("#vDel").onclick = async () => { if (!vw) return; if (!confirm("حذف الصورة؟")) return; const { j, k } = vw, id = j.ph[k]; await phTx("readwrite", st => st.delete(id)); delete j.ph[k]; save(); closeViewer(); render(); if (!$("#noteSheet").classList.contains("hidden") && nJob === j) drawBook(); toast("انحذفت الصورة"); };
 $("#vShare").onclick = async () => { if (!vw) return; const r = await phGet(vw.j.ph[vw.k]); if (!r) return; const name = ((vw.j.name || "صورة") + " - " + $("#vT").textContent.split(" – ")[0]).replace(/[\\/:*?"<>|]/g, "-") + ".jpg";

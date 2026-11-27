@@ -5,7 +5,7 @@
    الاسترجاع يقبل أيضاً نسخة «أوراق المواطنين» القديمة (.awraq) ونسخة الأرشيف (.json). */
 (function () {
   "use strict";
-  const KNOWN_DBS = ["awraq-almuwatinin", "segl-aslam", "almassah-archive"];
+  const KNOWN_DBS = ["awraq-almuwatinin", "segl-aslam", "almassah-archive", "work-photos"];
   const AWRQ_SCHEMA = { "awraq-almuwatinin": { v: 1, stores: { citizens: "id", pages: "id" } }, "segl-aslam": { v: 1, stores: { customers: "id", notes: "id" } } };
   const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const b64 = blob => new Promise((res, rej) => { const f = new FileReader(); f.onload = () => res(String(f.result).split(",")[1] || ""); f.onerror = rej; f.readAsDataURL(blob); });

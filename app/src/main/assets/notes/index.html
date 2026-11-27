@@ -8,9 +8,9 @@
 <link rel="stylesheet" href="../theme.css">
 <style>
 *{box-sizing:border-box}
-body{margin:0;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;background:#f8f2e2;color:var(--am-ink)}
+body{margin:0;min-height:100vh;font:16px/1.6 "IBM Plex Sans Arabic",Tahoma,sans-serif;background:#f8f2e2;color:var(--am-ink)}
 main{max-width:640px;margin:0 auto;padding:10px 12px 40px}
-.hidden{display:none!important}
+.hidden,[hidden]{display:none!important}
 button{font-family:inherit;cursor:pointer}
 .am-home{padding:4px 10px!important;font-size:12.5px!important;gap:4px!important}
 .am-home svg{width:14px!important;height:14px!important}
@@ -130,6 +130,40 @@ button{font-family:inherit;cursor:pointer}
 .dnav button{flex:none;border:0;border-radius:12px;width:44px;height:44px;background:#f3ead2;font-size:18px;color:#0c3b26}
 .dnav input{flex:1;font:600 16px "IBM Plex Sans Arabic";padding:10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;text-align:center}
 .h4{font:700 15px var(--am-title);color:var(--am-green-800);margin:12px 2px 2px}
+/* الدفاتر */
+.books{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;margin:0 -2px;scrollbar-width:none}
+.books::-webkit-scrollbar{display:none}
+.books button{flex:none;display:flex;flex-direction:column;align-items:center;gap:0;min-width:86px;border:1.5px solid var(--am-line);background:#fffdf6;border-radius:14px;padding:6px 8px;font:700 12.5px/1.35 "IBM Plex Sans Arabic";color:var(--am-green-800)}
+.books button i{font-style:normal;font-size:21px}
+.books button b{font-size:11px;background:#f3ead2;border-radius:99px;padding:0 7px;margin-top:2px;color:#6b5a3e}
+.books button.on{background:linear-gradient(160deg,#17613f,#0c3b26);color:#f3dc93;border-color:var(--am-gold-400);box-shadow:0 4px 12px -6px rgba(8,42,27,.7)}
+.books button.on b{background:#f3dc93;color:#0c3b26}
+.bookT{font:700 18px var(--am-title);color:var(--am-green-800);margin:2px 4px 6px;display:flex;align-items:center;gap:6px}
+/* أضواء الحالة */
+.lights{display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.lt{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--am-line);background:#fffdf6;border-radius:999px;padding:4px 10px 4px 8px;font:700 12.5px "IBM Plex Sans Arabic";color:#8a8f86}
+.lt i{width:13px;height:13px;border-radius:50%;background:var(--c);opacity:.3;flex:none}
+.lt.on{color:#fff;background:var(--c);border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent),0 0 12px -2px var(--c)}
+.lt.on i{opacity:1;background:#fff;box-shadow:0 0 6px #fff}
+.lt.l-new{--c:#1e6fd9}.lt.l-doing{--c:#d32f2f}.lt.l-paid{--c:#1b1b1b}
+.lt.ar{--c:#6b5a3e;margin-inline-start:auto}.lt.sk{--c:#7a1f1f}
+.lt.ar i,.lt.sk i{display:none}
+.r.struck .nm,.r.struck .wk,.r.struck .no{text-decoration:line-through;text-decoration-thickness:2px;color:#9a9a92}
+.r.struck{background:#f6f2e6}
+.r .no{display:block;font-size:13.5px;font-weight:700;color:#7a1f1f}
+.r .tel{display:inline-block;font-size:13px;color:#17613f;text-decoration:none;font-weight:700;direction:ltr}
+.phs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.ph{flex:none;width:96px;border:1.5px dashed #c99a2e;border-radius:11px;background:#fffaf0;padding:3px;text-align:center;font:700 11px/1.3 "IBM Plex Sans Arabic";color:#8a6514;cursor:pointer}
+.ph img{display:block;width:100%;height:64px;object-fit:cover;border-radius:8px;margin-bottom:2px}
+.ph .add{display:grid;place-items:center;height:64px;font-size:22px}
+.ph.has{border-style:solid;border-color:#17613f;color:#17613f}
+.tabs .t-new.on{background:#1e6fd9}.tabs .t-doing.on{background:#d32f2f}.tabs .t-paid.on{background:#1b1b1b}
+.tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.viewer{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.92);display:flex;flex-direction:column}
+.viewer img{flex:1;min-height:0;width:100%;object-fit:contain}
+.viewer .vb{display:flex;gap:6px;padding:10px 10px calc(12px + env(safe-area-inset-bottom,0px));flex-wrap:wrap}
+.viewer .vb button{flex:1;border:0;border-radius:12px;padding:10px 6px;font:700 14.5px "IBM Plex Sans Arabic";background:#2a2a2a;color:#fff}
+.viewer .vt{color:#f3dc93;font:700 15px "IBM Plex Sans Arabic";padding:calc(10px + env(safe-area-inset-top,0px)) 14px 6px}
 .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#0c3b26;color:#fff6d6;padding:9px 18px;border-radius:999px;font-size:15px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 </style>
@@ -139,9 +173,12 @@ button{font-family:inherit;cursor:pointer}
 <div class="am-spacer" aria-hidden="true"></div>
 <main>
   <section id="vWork">
+    <div class="books" id="books"></div>
     <div class="quick">
       <div class="qrow"><input id="qName" placeholder="اسم صاحب العمل"><button class="mic" type="button" data-mic="qName">🎤</button></div>
-      <div class="qrow"><input id="qWork" placeholder="نوع العمل (ترخيص، إخراج قيد، تفصيلي…)"><button class="mic" type="button" data-mic="qWork">🎤</button></div>
+      <div class="qrow" id="qNoRow"><input id="qNo" inputmode="numeric" dir="ltr" placeholder="رقم الإخطار" style="text-align:left"><button class="mic" type="button" data-mic="qNo">🎤</button></div>
+      <div class="qrow"><input id="qWork" placeholder="وصف العمل (اختياري)"><button class="mic" type="button" data-mic="qWork">🎤</button></div>
+      <div class="qrow"><input id="qPhone" inputmode="tel" dir="ltr" placeholder="رقم الهاتف" style="text-align:left"><button class="mic" type="button" data-mic="qPhone">🎤</button></div>
       <div class="qrow"><input id="qFee" inputmode="decimal" dir="ltr" placeholder="المبلغ المطلوب ₪" style="text-align:left"><button class="mic" type="button" data-mic="qFee">🎤</button><button class="plus" type="button" id="qAdd">＋ أضف</button></div>
     </div>
     <div class="tabs" id="wSub"></div>
@@ -156,8 +193,15 @@ button{font-family:inherit;cursor:pointer}
     <h3><span id="nT">ملاحظات</span><button class="x" type="button" data-close="noteSheet">✕</button></h3>
     <label class="fl">👤 الاسم</label>
     <div class="in"><input id="nName"><button class="mic" type="button" data-mic="nName">🎤</button></div>
-    <label class="fl">🛠️ نوع العمل</label>
+    <label class="fl">📚 الدفتر</label>
+    <div class="days" id="nBook"></div>
+    <div id="nNoBox"><label class="fl">📢 رقم الإخطار</label>
+    <div class="in"><input id="nNo" inputmode="numeric" dir="ltr" style="text-align:left"><button class="mic" type="button" data-mic="nNo">🎤</button></div></div>
+    <div id="nPhBox"><label class="fl">📷 الصور</label><div class="phs" id="nPhs"></div></div>
+    <label class="fl">🛠️ وصف العمل</label>
     <div class="in"><input id="nWork"><button class="mic" type="button" data-mic="nWork">🎤</button></div>
+    <label class="fl">💰 المبلغ المطلوب ₪</label>
+    <div class="in"><input id="nFee" inputmode="decimal" dir="ltr" style="text-align:left"><button class="mic" type="button" data-mic="nFee">🎤</button></div>
     <label class="fl">📞 رقم الهاتف</label>
     <div class="in"><input id="nPhone" inputmode="tel" dir="ltr" style="text-align:left"><button class="mic" type="button" data-mic="nPhone">🎤</button><a class="lnk" id="nCall">📞</a><a class="lnk" id="nWa">💬</a></div>
     <label class="fl">📍 موقع الشغلة</label>
@@ -174,6 +218,8 @@ button{font-family:inherit;cursor:pointer}
   </div>
 </div>
 
+<div class="viewer hidden" id="viewer"><div class="vt" id="vT"></div><img id="vImg" alt=""><div class="vb"><button type="button" id="vRep">🔄 استبدال</button><button type="button" id="vShare">📤 مشاركة</button><button type="button" id="vDel">🗑 حذف</button><button type="button" id="vX">✕ إغلاق</button></div></div>
+<input type="file" id="phIn" accept="image/*" hidden>
 <div class="toast" id="toast"></div>
 <script>
 "use strict";
@@ -182,9 +228,18 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&am
 const toast = t => { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1800); };
 const KEY = "jobs-v1";
 let jobs = []; try { jobs = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) {}
-jobs.forEach(j => { if (j.done == null) j.done = j.s === "done"; if (!["new", "doing", "done", "paid"].includes(j.s)) j.s = j.done ? "done" : "new"; });   // من النسخة السابقة
-const NEXT = { new: ["doing", "▶ بدء العمل"], doing: ["done", "✓ انتهى العمل"], done: ["paid", "💰 سُلّم واستُلم المبلغ"] };
-const STS = [["new", "جديد"], ["doing", "قيد العمل"], ["done", "انتهى العمل"], ["paid", "سُلّم واستُلم المبلغ"]], SORD = { doing: 0, new: 1, done: 2, paid: 3 };
+/* الدفاتر: [المفتاح، الاسم، الأيقونة، تصنيفه بالسجل المالي، الصور] */
+const BOOKS = [
+  ["ishaar", "الإخطارات", "📢", "license", [["notice", "صورة الإخطار"], ["req", "وصول طلب الترخيص"]]],
+  ["tafsili", "المشروع التفصيلي", "🏗️", "detailed", [["receipt", "ورقة استلام التفصيلي"]]],
+  ["objection", "الاعتراضات والمصادرة", "⚖️", "objection", []],
+  ["renew", "التسجيل المجدد", "📑", "renew", []],
+  ["private", "العمل الخاص", "🛠️", "private", []]];
+const BK = k => BOOKS.find(b => b[0] === k) || BOOKS[4];
+const catOf = w => /ترخيص|إخطار|اخطار/.test(w) ? "license" : /تفصيل/.test(w) ? "detailed" : /قيد/.test(w) ? "extract" : /مجدد/.test(w) ? "renew" : /اعتراض|مصادر|مخطط عام|مخططات عامة/.test(w) ? "objection" : "private";
+const bookOfWork = w => ({ license: "ishaar", detailed: "tafsili", objection: "objection", renew: "renew" })[catOf(w || "")] || "private";
+jobs.forEach(j => { if (j.s === "done") j.s = "doing"; if (!["new", "doing", "paid"].includes(j.s)) j.s = "new"; if (!j.book) j.book = bookOfWork(j.work); j.ph = j.ph || {}; });   // من النسخة السابقة
+const STS = [["new", "جديد"], ["doing", "قيد العمل"], ["paid", "تم التسليم والاستلام"]], SORD = { doing: 0, new: 1, paid: 2 };
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(jobs)); } catch (e) {} };
 const pad = n => String(n).padStart(2, "0");
 const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -204,41 +259,49 @@ function dayName(d) { if (!d) return ""; const t = ymd(new Date()), y = ymd(new 
 
 /* ---------- ترتيب العمل: كل عمل بسطر ---------- */
 /* خانات فوق الأسماء: كل خانة تعرض أعمال حالتها فقط */
-let wSub = "doing"; try { wSub = localStorage.getItem("work-tab") || "doing"; } catch (e) {}
+let wSub = "doing", book = "ishaar"; try { wSub = localStorage.getItem("work-tab") || "doing"; if (!STS.some(x => x[0] === wSub) && wSub !== "arch") wSub = "doing"; book = localStorage.getItem("work-book") || "ishaar"; } catch (e) {}
+$("#books").addEventListener("click", e => { const b = e.target.closest("[data-b]"); if (!b) return; book = b.dataset.b; try { localStorage.setItem("work-book", book); } catch (x) {} render(); });
 $("#wSub").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (!b) return; setTab(b.dataset.w); });
 function setTab(w) { wSub = w; try { localStorage.setItem("work-tab", w); } catch (e) {} render(); }
 function render() {
-  const act = jobs.filter(j => !j.finOnly && !j.arch), cnt = k => act.filter(j => j.s === k).length, na = jobs.filter(j => j.arch && !j.finOnly).length;
+  $("#books").innerHTML = BOOKS.map(([k, t, ic]) => `<button type="button" data-b="${k}" class="${book === k ? "on" : ""}"><i>${ic}</i>${t}<b>${jobs.filter(j => !j.finOnly && !j.arch && j.book === k && j.s !== "paid").length}</b></button>`).join("");
+  const B = BK(book); $("#qNoRow").hidden = book !== "ishaar"; $("#qName").placeholder = "اسم صاحب " + (book === "ishaar" ? "الإخطار" : "العمل");
+  const act = jobs.filter(j => !j.finOnly && !j.arch && j.book === book), cnt = k => act.filter(j => j.s === k).length, na = jobs.filter(j => j.arch && !j.finOnly && j.book === book).length;
   $("#wSub").innerHTML = STS.map(([k, t]) => `<button type="button" data-w="${k}" class="t-${k}${wSub === k ? " on" : ""}">${t}<b>${cnt(k)}</b></button>`).join("") + `<button type="button" data-w="arch" class="t-arch${wSub === "arch" ? " on" : ""}">🗄 الأرشيف<b>${na}</b></button>`;
   renderWork();
 }
 function renderWork() {
   const arch = wSub === "arch";
-  let list = jobs.filter(j => !j.finOnly && !!j.arch === arch && (arch || j.s === wSub));
-  list.sort((a, b) => SORD[a.s] - SORD[b.s] || ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")) || a.t - b.t);
-  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : wSub === "new" ? "لا أعمال جديدة. اكتب الاسم ونوع العمل والمبلغ فوق (أو بصوتك) واضغط «أضف»." : "لا يوجد أعمال في «" + STS.find(x => x[0] === wSub)[1] + "»."}</div>`; return; }
+  let list = jobs.filter(j => !j.finOnly && j.book === book && !!j.arch === arch && (arch || j.s === wSub));
+  list.sort((a, b) => (a.struck ? 1 : 0) - (b.struck ? 1 : 0) || SORD[a.s] - SORD[b.s] || ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")) || a.t - b.t);
+  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : wSub === "new" ? "لا يوجد جديد بـ«" + BK(book)[1] + "». اكتب الاسم والهاتف والمبلغ فوق (أو بصوتك) واضغط «أضف»." : "لا يوجد أعمال في «" + STS.find(x => x[0] === wSub)[1] + "»."}</div>`; return; }
   const today = ymd(new Date());
   $("#wRows").innerHTML = list.map(j => {
     const d = j.date ? `<span class="day${j.date < today && SORD[j.s] < 2 ? " late" : ""}">🗓️ ${esc(dayName(j.date))}${j.time ? " " + esc(j.time) : ""}</span>` : "";
     const r = lgOfJob(j); let lm = "";
     if (r && N(r.due)) { const rem = N(r.due) - N(r.paid); lm = rem > 0 ? `<span class="lgm bad">💰 واصل ${M(N(r.paid))} · متبقي ${M(rem)} ₪</span>` : `<span class="lgm ok">💰 مدفوع كاملاً ✓</span>`; }
-    return `<div class="r s-${j.s}" data-id="${j.id}">
-      <div class="top"><div class="who"><span class="nm">${esc(j.name || "—")}</span>${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${d}${lm}</div>
+    const phs = BK(j.book)[4].map(([k, t]) => phChip(j, k, t)).join("");
+    return `<div class="r s-${j.s}${j.struck ? " struck" : ""}" data-id="${j.id}">
+      <div class="top"><div class="who"><span class="nm">${esc(j.name || "—")}</span>${j.noticeNo ? `<span class="no">📢 إخطار رقم ${esc(j.noticeNo)}</span>` : ""}${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${j.phone ? `<a class="tel" href="tel:${esc(j.phone.replace(/[^\d+]/g, ""))}">📞 ${esc(j.phone)}</a>` : ""}${d}${lm}</div>
       <div class="fwrap"><input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المبلغ ₪" data-fee><small>المطلوب</small></div>
-      <button class="ib" type="button" data-note title="التفاصيل والملاحظات">📝</button>
-      <button class="ib" type="button" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩" : "🗄"}</button></div>
-      ${NEXT[j.s] ? `<button type="button" class="nx nx-${NEXT[j.s][0]}" data-s="${NEXT[j.s][0]}">${NEXT[j.s][1]}</button>` : ""}</div>`;
+      <button class="ib" type="button" data-note title="التفاصيل والملاحظات">📝</button></div>
+      ${phs ? `<div class="phs">${phs}</div>` : ""}
+      <div class="lights">${STS.map(([k, t]) => `<button type="button" class="lt l-${k}${j.s === k ? " on" : ""}" data-s="${k}"><i></i>${t}</button>`).join("")}
+        ${j.book === "ishaar" ? `<button type="button" class="lt sk${j.struck ? " on" : ""}" data-strike title="شطب الإخطار عند الانتهاء">✂️ ${j.struck ? "مشطوب" : "شطب"}</button>` : ""}
+        <button type="button" class="lt ar" data-arch title="${arch ? "إرجاع من الأرشيف" : "أرشفة"}">${arch ? "↩ إرجاع" : "🗄 أرشيف"}</button></div></div>`;
   }).join("");
 }
 $("#qAdd").addEventListener("click", () => {
-  const name = $("#qName").value.trim(), work = $("#qWork").value.trim(); if (!name && !work) { toast("اكتب الاسم أو نوع العمل"); return; }
-  const fee = $("#qFee").value.trim(), j = { id: newId(), t: Date.now(), name, work, fee, s: "new", done: false, cur: "ils" }; jobs.push(j); save();
+  const name = $("#qName").value.trim(), work = $("#qWork").value.trim(), no = book === "ishaar" ? $("#qNo").value.trim() : ""; if (!name && !work && !no) { toast("اكتب الاسم"); return; }
+  const fee = $("#qFee").value.trim(), j = { id: newId(), t: Date.now(), book, name, work, noticeNo: no, phone: $("#qPhone").value.trim(), fee, s: "new", done: false, cur: "ils", ph: {} }; jobs.push(j); save();
   if (N(fee)) syncLedger(j).then(ok => { render(); if (ok) toast("أُضيف، والمبلغ رحل للسجل المالي"); });
-  $("#qName").value = ""; $("#qWork").value = ""; $("#qFee").value = ""; setTab("new"); toast("أُضيف إلى «جديد»");
+  ["#qName", "#qWork", "#qFee", "#qNo", "#qPhone"].forEach(x => $(x).value = ""); setTab("new"); toast("أُضيف إلى «جديد» بـ" + BK(book)[1]);
 });
 $("#wRows").addEventListener("click", e => {
   const r = e.target.closest("[data-id]"); if (!r) return; const j = jobs.find(x => x.id === r.dataset.id);
   const sb = e.target.closest("[data-s]"); if (sb) { setStatus(j, sb.dataset.s); return; }
+  else if (e.target.closest("[data-ph]")) { const k = e.target.closest("[data-ph]").dataset.ph; if (j.ph && j.ph[k]) openViewer(j, k); else pickPhoto(j, k); }
+  else if (e.target.closest("[data-strike]")) { j.struck = !j.struck; save(); render(); toast(j.struck ? "✂️ انشطب الإخطار" : "رجع الإخطار"); }
   else if (e.target.closest("[data-arch]")) { j.arch = !j.arch; save(); render(); toast(j.arch ? "🗄 نُقل إلى الأرشيف" : "↩ أُرجع من الأرشيف"); }
   else if (e.target.closest("[data-note]")) openNote(j);
 });
@@ -255,15 +318,15 @@ function lgLoad() { return new Promise(res => { try { const r = indexedDB.open("
 function lgPut(rec) { return new Promise(res => { if (!LG.db) return res(false); try { const tx = LG.db.transaction("customers", "readwrite"); tx.objectStore("customers").put(rec);
   tx.oncomplete = () => { const i = LG.recs.findIndex(x => x.id === rec.id); if (i >= 0) LG.recs[i] = rec; else LG.recs.push(rec); res(true); }; tx.onerror = () => res(false); } catch (e) { res(false); } }); }
 const lgOfJob = j => LG.recs.find(r => r.jobId === j.id) || (j.lgId && LG.recs.find(r => r.id === j.lgId));
-const catOf = w => /ترخيص/.test(w) ? "license" : /تفصيل/.test(w) ? "detailed" : /قيد/.test(w) ? "extract" : /مجدد/.test(w) ? "renew" : /اعتراض|مخطط عام|مخططات عامة/.test(w) ? "objection" : "private";
 const paysOf = r => Array.isArray(r.pays) ? r.pays.slice() : (N(r.paid) > 0 ? [{ a: String(N(r.paid)), d: r.date || "" }] : []);
 /* المبلغ المطلوب هنا = المبلغ المطلوب في السجل المالي (ينشئ المعاملة أو يحدّثها، ولا يمس الدفعات والتوزيع) */
 async function syncLedger(j) {
   if (!LG.db) await lgLoad(); if (!LG.db) return false;
   let r = lgOfJob(j); if (!r && !N(j.fee)) return false;
   if (!r) r = LG.recs.find(x => !x.archived && !x.jobId && nn(x.name) && nn(x.name) === nn(j.name) && (!N(x.due) || N(x.due) === N(j.fee)));
-  const rec = r ? { ...r } : { id: "job-" + j.id, category: catOf(j.work || ""), created: Date.now(), currency: "شيكل", date: ymd(new Date(j.t || Date.now())), pays: [], paid: "0", notes: "" };
-  rec.jobId = j.id; rec.name = j.name || rec.name || "بدون اسم"; if (j.phone) rec.phone = j.phone; rec.due = String(N(j.fee)); if (!rec.notes && j.work) rec.notes = j.work;
+  const rec = r ? { ...r } : { id: "job-" + j.id, category: BK(j.book)[3], created: Date.now(), currency: "شيكل", date: ymd(new Date(j.t || Date.now())), pays: [], paid: "0", notes: "" };
+  if (String(rec.id).startsWith("job-") || !r) rec.category = BK(j.book)[3];
+  rec.jobId = j.id; rec.name = j.name || rec.name || "بدون اسم"; if (j.phone) rec.phone = j.phone; rec.due = String(N(j.fee)); if (!rec.notes && (j.work || j.noticeNo)) rec.notes = [j.noticeNo ? "إخطار رقم " + j.noticeNo : "", j.work].filter(Boolean).join(" – ");
   j.lgId = rec.id; save(); return lgPut(rec);
 }
 /* الحالة: «سُلّم واستُلم المبلغ» يسجّل دفعة بالمتبقي في السجل المالي (وتُلغى لو رجعت عن الحالة) */
@@ -271,7 +334,7 @@ async function setStatus(j, st) {
   const was = j.s; if (was === st) return; j.s = st; j.done = st === "done" || st === "paid"; j.doneAt = j.done ? (j.doneAt || Date.now()) : null; save(); render();
   if (!LG.db) await lgLoad(); const r = lgOfJob(j);
   if (st === "paid" && r) { const rem = N(r.due) - N(r.paid); if (rem > 0) { const p = { a: String(rem), d: ymd(new Date()), auto: j.id }, pays = paysOf(r).concat(p);
-      await lgPut({ ...r, pays, paid: String(pays.reduce((t, x) => t + N(x.a), 0)) }); j.autoPay = 1; save(); render(); toast(`✓ سُلّم العمل، وسُجّل استلام ${M(rem)} ₪ بالسجل المالي`); return; } }
+      await lgPut({ ...r, pays, paid: String(pays.reduce((t, x) => t + N(x.a), 0)) }); j.autoPay = 1; save(); render(); toast(`✓ تم التسليم، وسُجّل استلام ${M(rem)} ₪ بالسجل المالي`); return; } }
   if (was === "paid" && j.autoPay && r) { const pays = paysOf(r).filter(x => x.auto !== j.id); await lgPut({ ...r, pays, paid: String(pays.reduce((t, x) => t + N(x.a), 0)) }); j.autoPay = 0; save(); render(); toast("أُلغيت دفعة الاستلام من السجل المالي"); return; }
   toast("نُقل إلى «" + STS.find(x => x[0] === st)[1] + "»");
 }
@@ -283,7 +346,7 @@ function setDay(d) { document.querySelectorAll("#nDays .dayb").forEach(b => b.cl
 function contact() { const p = $("#nPhone").value.replace(/[^\d+]/g, ""), w = p.startsWith("0") ? "970" + p.slice(1) : p.replace(/^\+/, ""); $("#nCall").href = p ? "tel:" + p : "#"; $("#nWa").href = p ? "https://wa.me/" + w : "#"; $("#nCall").style.opacity = $("#nWa").style.opacity = p ? 1 : .4; }
 function openNote(j) {
   nJob = j; $("#nT").textContent = "📝 " + (j.name || "ملاحظات");
-  $("#nName").value = j.name || ""; $("#nWork").value = j.work || ""; $("#nPhone").value = j.phone || ""; $("#nDate").value = j.date || ""; $("#nTime").value = j.time || ""; $("#nNote").value = j.note || "";
+  $("#nName").value = j.name || ""; $("#nWork").value = j.work || ""; $("#nNo").value = j.noticeNo || ""; $("#nFee").value = j.fee || ""; nBook = j.book; drawBook(); $("#nPhone").value = j.phone || ""; $("#nDate").value = j.date || ""; $("#nTime").value = j.time || ""; $("#nNote").value = j.note || "";
   setDay(null); contact(); drawSt(); drawLoc(); $("#noteSheet").classList.remove("hidden");
 }
 $("#nPhone").addEventListener("input", contact);
@@ -295,18 +358,24 @@ function drawLoc() {
     ? `<a class="lnk" style="flex:1;width:auto;font:700 15px 'IBM Plex Sans Arabic';background:linear-gradient(180deg,#1b7049,#0c3b26);color:#fff" href="../go/index.html?lat=${j.loc.lat}&lon=${j.loc.lon}${back}">🧭 الطريق للشغلة</a><a class="lnk" style="flex:none;width:auto;padding:0 12px;font:700 14px 'IBM Plex Sans Arabic'" href="../go/index.html?pick=1${back}">✏️ غيّر</a>`
     : `<a class="lnk" style="flex:1;width:auto;font:700 15px 'IBM Plex Sans Arabic'" href="../go/index.html?pick=1${back}">📍 حدّد موقع الشغلة</a>`;
 }
+let nBook = "private";
+function drawBook() { $("#nBook").innerHTML = BOOKS.map(([k, t, ic]) => `<button class="dayb${nBook === k ? " on" : ""}" type="button" data-bk="${k}">${ic} ${t}</button>`).join(""); $("#nNoBox").hidden = nBook !== "ishaar";
+  const ph = BK(nBook)[4]; $("#nPhBox").hidden = !ph.length; $("#nPhs").innerHTML = ph.map(([k, t]) => phChip(nJob, k, t)).join(""); }
+$("#nBook").addEventListener("click", e => { const b = e.target.closest("[data-bk]"); if (b) { nBook = b.dataset.bk; drawBook(); } });
+$("#nPhs").addEventListener("click", e => { const b = e.target.closest("[data-ph]"); if (!b || !nJob) return; const k = b.dataset.ph; if (nJob.ph && nJob.ph[k]) openViewer(nJob, k); else pickPhoto(nJob, k); });
 function drawSt() { $("#nSt").innerHTML = STS.map(([k, t]) => `<button class="dayb${nJob.s === k ? " on" : ""}" type="button" data-st="${k}">${t}</button>`).join(""); }
 $("#nSt").addEventListener("click", async e => { const b = e.target.closest("[data-st]"); if (!b || !nJob) return; await setStatus(nJob, b.dataset.st); drawSt(); });
 $("#nDays").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (!b) return; setDay(b.dataset.d); $("#nDate").value = b.dataset.d === "" ? "" : ymd(new Date(Date.now() + 864e5 * +b.dataset.d)); if (b.dataset.d === "") $("#nTime").value = ""; });
 $("#nSave").addEventListener("click", () => {
-  Object.assign(nJob, { name: $("#nName").value.trim(), work: $("#nWork").value.trim(), phone: $("#nPhone").value.trim(), date: $("#nDate").value, time: $("#nTime").value, note: $("#nNote").value.trim() });
-  save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُفظ"); if (lgOfJob(nJob)) syncLedger(nJob).then(() => render());
+  const feeCh = (nJob.fee || "") !== $("#nFee").value.trim(), bookCh = nJob.book !== nBook;
+  Object.assign(nJob, { name: $("#nName").value.trim(), work: $("#nWork").value.trim(), noticeNo: $("#nNo").value.trim(), fee: $("#nFee").value.trim(), book: nBook, phone: $("#nPhone").value.trim(), date: $("#nDate").value, time: $("#nTime").value, note: $("#nNote").value.trim() });
+  save(); $("#noteSheet").classList.add("hidden"); if (bookCh) { book = nBook; try { localStorage.setItem("work-book", book); } catch (e) {} } render(); toast("حُفظ"); if (lgOfJob(nJob) || (feeCh && N(nJob.fee))) syncLedger(nJob).then(() => render());
 });
 let delAsk = 0;
-$("#nDel").addEventListener("click", () => { if (Date.now() - delAsk > 3000) { delAsk = Date.now(); toast("اضغط مرة ثانية للحذف النهائي"); return; } jobs = jobs.filter(x => x !== nJob); save(); $("#noteSheet").classList.add("hidden"); render(); toast("حُذف"); });
+$("#nDel").addEventListener("click", () => { if (Date.now() - delAsk > 3000) { delAsk = Date.now(); toast("اضغط مرة ثانية للحذف النهائي"); return; } const gone = nJob; jobs = jobs.filter(x => x !== gone); save(); Object.values(gone.ph || {}).forEach(id => phTx("readwrite", st => st.delete(id))); $("#noteSheet").classList.add("hidden"); render(); toast("حُذف"); });
 
 /* ---------- إغلاق الصفحات الداخلية ---------- */
-const SHEETS = ["noteSheet"];
+const SHEETS = ["viewer", "noteSheet"];
 document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => $("#" + b.dataset.close).classList.add("hidden")));
 SHEETS.forEach(id => $("#" + id).addEventListener("click", e => { if (e.target.id === id) e.target.classList.add("hidden"); }));
 window.__back = () => { for (const id of SHEETS) if (!$("#" + id).classList.contains("hidden")) { $("#" + id).classList.add("hidden"); return 1; } return 0; };
@@ -322,20 +391,54 @@ function listen(cb) {
   const r = new R(); r.lang = "ar-JO"; r.onresult = e => cb(e.results[0][0].transcript); r.onerror = () => cb(null, "error"); r.start();
 }
 const AR_NUM = { "صفر": "0", "واحد": "1", "اثنين": "2", "اثنان": "2", "ثلاثة": "3", "ثلاث": "3", "اربعة": "4", "أربعة": "4", "خمسة": "5", "خمس": "5", "ستة": "6", "ست": "6", "سبعة": "7", "سبع": "7", "ثمانية": "8", "ثمان": "8", "تسعة": "9", "تسع": "9" };
-const NUMF = new Set(["nPhone", "qFee"]);
+const NUMF = new Set(["nPhone", "qFee", "qPhone", "qNo", "nNo", "nFee"]);
 function micTo(b, f, numeric) {
   b.classList.add("on");
   listen((text, err) => {
     b.classList.remove("on");
     if (text == null) { if (err === "unavailable") toast("الإدخال الصوتي غير متوفر على هذا الجوال"); return; }
     if (numeric) {
-      const ph = f.id === "nPhone", digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(ph ? /[^\d+]/g : /[^\d.]/g, "");
+      const ph = /Phone/.test(f.id), digits = text.split(/\s+/).map(w => AR_NUM[w] || w).join("").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(ph ? /[^\d+]/g : /[^\d.]/g, "");
       if (digits) f.value = digits; else toast("لم أسمع أرقاماً، حاول مرة ثانية");
     } else f.value = (f.value && f.tagName === "TEXTAREA" ? f.value + " " : "") + text.trim();
     f.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
 document.querySelectorAll("[data-mic]").forEach(b => b.addEventListener("click", () => micTo(b, $("#" + b.dataset.mic), NUMF.has(b.dataset.mic))));
+
+/* ---------- الصور (IndexedDB «work-photos»: الصورة نفسها، والشغلة تحفظ رقمها فقط) ---------- */
+const PH = { db: null, url: {} };
+function phDb() { return PH.db ? Promise.resolve(PH.db) : new Promise(res => { try { const r = indexedDB.open("work-photos", 1); r.onupgradeneeded = () => r.result.createObjectStore("p", { keyPath: "id" }); r.onsuccess = () => { PH.db = r.result; res(PH.db); }; r.onerror = () => res(null); } catch (e) { res(null); } }); }
+const phTx = (mode, fn) => phDb().then(db => new Promise(res => { if (!db) return res(null); const t = db.transaction("p", mode), st = t.objectStore("p"), q = fn(st); t.oncomplete = () => res(q && q.result); t.onerror = () => res(null); }));
+const phGet = id => phTx("readonly", st => st.get(id));
+async function phUrl(id) { if (PH.url[id]) return PH.url[id]; const r = await phGet(id); if (!r || !r.blob) return null; return PH.url[id] = URL.createObjectURL(r.blob); }
+function phChip(j, k, t) {
+  const id = j && j.ph && j.ph[k];
+  if (id) { if (!PH.url[id]) phUrl(id).then(u => { if (u) document.querySelectorAll(`img[data-pid="${id}"]`).forEach(im => im.src = u); });
+    return `<div class="ph has" data-ph="${k}"><img data-pid="${id}" src="${PH.url[id] || ""}" alt="">${esc(t)}</div>`; }
+  return `<div class="ph" data-ph="${k}"><span class="add">📷</span>${esc(t)}</div>`;
+}
+let phFor = null;
+function pickPhoto(j, k) { phFor = { j, k }; $("#phIn").value = ""; $("#phIn").click(); }
+function shrink(file) { return new Promise((ok, no) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { const k = Math.min(1, 2000 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+  c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => b ? ok(b) : no(new Error("تعذّر")), "image/jpeg", 0.85); }; im.onerror = () => { URL.revokeObjectURL(u); ok(file); }; im.src = u; }); }
+$("#phIn").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f || !phFor) return; const { j, k } = phFor; phFor = null;
+  const blob = await shrink(f), id = "ph-" + newId(), old = j.ph && j.ph[k];
+  const ok = await phTx("readwrite", st => { st.put({ id, blob, t: Date.now(), job: j.id, kind: k }); if (old) st.delete(old); return null; });
+  if (ok === null && !PH.db) { toast("تعذّر حفظ الصورة"); return; }
+  if (old && PH.url[old]) { URL.revokeObjectURL(PH.url[old]); delete PH.url[old]; }
+  j.ph = j.ph || {}; j.ph[k] = id; save(); render(); if (!$("#noteSheet").classList.contains("hidden") && nJob === j) drawBook(); if (!$("#viewer").classList.contains("hidden")) closeViewer(); toast("📷 انحفظت الصورة");
+});
+let vw = null;
+async function openViewer(j, k) { vw = { j, k }; const t = (BK(j.book)[4].find(x => x[0] === k) || [k, "صورة"])[1]; $("#vT").textContent = t + " – " + (j.name || ""); $("#vImg").src = await phUrl(j.ph[k]) || ""; $("#viewer").classList.remove("hidden"); }
+function closeViewer() { $("#viewer").classList.add("hidden"); vw = null; }
+$("#vX").onclick = closeViewer;
+$("#vRep").onclick = () => { if (vw) pickPhoto(vw.j, vw.k); };
+$("#vDel").onclick = async () => { if (!vw) return; if (!confirm("حذف الصورة؟")) return; const { j, k } = vw, id = j.ph[k]; await phTx("readwrite", st => st.delete(id)); delete j.ph[k]; save(); closeViewer(); render(); if (!$("#noteSheet").classList.contains("hidden") && nJob === j) drawBook(); toast("انحذفت الصورة"); };
+$("#vShare").onclick = async () => { if (!vw) return; const r = await phGet(vw.j.ph[vw.k]); if (!r) return; const name = ((vw.j.name || "صورة") + " - " + $("#vT").textContent.split(" – ")[0]).replace(/[\\/:*?"<>|]/g, "-") + ".jpg";
+  if (window.AndroidBridge && AndroidBridge.saveFile) { const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.readAsDataURL(r.blob); }); AndroidBridge.saveFile(name, b64, "image/jpeg"); }
+  else { const a = document.createElement("a"); a.href = PH.url[vw.j.ph[vw.k]]; a.download = name; a.click(); } };
 render();
 </script>
 </body>

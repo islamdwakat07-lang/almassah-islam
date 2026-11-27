@@ -130,6 +130,15 @@ button{font-family:inherit;cursor:pointer}
 .dnav button{flex:none;border:0;border-radius:12px;width:44px;height:44px;background:#f3ead2;font-size:18px;color:#0c3b26}
 .dnav input{flex:1;font:600 16px "IBM Plex Sans Arabic";padding:10px;border:1.5px solid var(--am-line);border-radius:12px;background:#fffdf6;text-align:center}
 .h4{font:700 15px var(--am-title);color:var(--am-green-800);margin:12px 2px 2px}
+/* الإجمالي لكل الدفاتر */
+.allbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:8px;padding:8px;border-radius:16px;background:linear-gradient(160deg,#17613f,#0c3b26);box-shadow:0 0 0 1.5px var(--am-gold-400),0 6px 14px -8px rgba(8,42,27,.7)}
+.allbar .ah{grid-column:1/-1;color:#f3dc93;font:700 13.5px "IBM Plex Sans Arabic";display:flex;align-items:center;gap:6px;margin:-2px 2px 0}
+.allbar button{border:0;border-radius:12px;padding:6px 2px;background:rgba(255,255,255,.08);color:#fff;font:700 12px/1.3 "IBM Plex Sans Arabic";display:flex;flex-direction:column;align-items:center;gap:1px}
+.allbar button i{width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.allbar button b{font-size:18px;color:#f3dc93}
+.allbar button.on{background:#f3dc93;color:#0c3b26}.allbar button.on b{color:#0c3b26}
+.allbar .a-new{--c:#4c9bff}.allbar .a-doing{--c:#ff4d4d}.allbar .a-paid{--c:#000;}.allbar .a-paid i{background:#111;box-shadow:0 0 0 2px #fff}.allbar .a-arch{--c:#c9a26a}
+.bk{display:inline-block;font-size:11.5px;font-weight:700;background:#f3ead2;color:#6b5a3e;border-radius:99px;padding:0 8px;margin-bottom:2px}
 /* الدفاتر */
 .books{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;margin:0 -2px;scrollbar-width:none}
 .books::-webkit-scrollbar{display:none}
@@ -175,8 +184,9 @@ button{font-family:inherit;cursor:pointer}
 <div class="am-spacer" aria-hidden="true"></div>
 <main>
   <section id="vWork">
+    <div class="allbar" id="allbar"></div>
     <div class="books" id="books"></div>
-    <div class="quick">
+    <div class="quick" id="quick">
       <div class="qrow"><input id="qName" placeholder="اسم صاحب العمل"><button class="mic" type="button" data-mic="qName">🎤</button></div>
       <div class="qrow" id="qNoRow"><input id="qNo" inputmode="numeric" dir="ltr" placeholder="رقم الإخطار" style="text-align:left"><button class="mic" type="button" data-mic="qNo">🎤</button></div>
       <div class="qrow"><input id="qWork" placeholder="وصف العمل (اختياري)"><button class="mic" type="button" data-mic="qWork">🎤</button></div>
@@ -265,18 +275,23 @@ let wSub = "doing", book = "ishaar"; try { wSub = localStorage.getItem("work-tab
 $("#books").addEventListener("click", e => { const b = e.target.closest("[data-b]"); if (!b) return; book = b.dataset.b; try { localStorage.setItem("work-book", book); } catch (x) {} render(); });
 $("#wSub").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (!b) return; setTab(b.dataset.w); });
 function setTab(w) { wSub = w; try { localStorage.setItem("work-tab", w); } catch (e) {} render(); }
+$("#allbar").addEventListener("click", e => { const b = e.target.closest("[data-a]"); if (!b) return; book = "all"; wSub = b.dataset.a; try { localStorage.setItem("work-book", book); localStorage.setItem("work-tab", wSub); } catch (x) {} render(); });
+const inBook = j => book === "all" || j.book === book;
 function render() {
+  const all = jobs.filter(j => !j.finOnly), ac = k => all.filter(j => !j.arch && j.s === k).length;
+  $("#allbar").innerHTML = `<div class="ah">📚 كل الدفاتر</div>` + STS.map(([k, t]) => `<button type="button" data-a="${k}" class="a-${k}${book === "all" && wSub === k ? " on" : ""}"><i></i>${t}<b>${ac(k)}</b></button>`).join("") + `<button type="button" data-a="arch" class="a-arch${book === "all" && wSub === "arch" ? " on" : ""}">🗄 الأرشيف<b>${all.filter(j => j.arch).length}</b></button>`;
+  $("#quick").hidden = $("#wSub").hidden = book === "all";
   $("#books").innerHTML = BOOKS.map(([k, t, ic]) => `<button type="button" data-b="${k}" class="${book === k ? "on" : ""}"><i>${ic}</i>${t}<b>${jobs.filter(j => !j.finOnly && !j.arch && j.book === k && j.s !== "paid").length}</b></button>`).join("");
   const B = BK(book); $("#qNoRow").hidden = book !== "ishaar"; $("#qName").placeholder = "اسم صاحب " + (book === "ishaar" ? "الإخطار" : "العمل");
-  const act = jobs.filter(j => !j.finOnly && !j.arch && j.book === book), cnt = k => act.filter(j => j.s === k).length, na = jobs.filter(j => j.arch && !j.finOnly && j.book === book).length;
+  const act = jobs.filter(j => !j.finOnly && !j.arch && inBook(j)), cnt = k => act.filter(j => j.s === k).length, na = jobs.filter(j => j.arch && !j.finOnly && inBook(j)).length;
   $("#wSub").innerHTML = STS.map(([k, t]) => `<button type="button" data-w="${k}" class="t-${k}${wSub === k ? " on" : ""}">${t}<b>${cnt(k)}</b></button>`).join("") + `<button type="button" data-w="arch" class="t-arch${wSub === "arch" ? " on" : ""}">🗄 الأرشيف<b>${na}</b></button>`;
   renderWork();
 }
 function renderWork() {
   const arch = wSub === "arch";
-  let list = jobs.filter(j => !j.finOnly && j.book === book && !!j.arch === arch && (arch || j.s === wSub));
+  let list = jobs.filter(j => !j.finOnly && inBook(j) && !!j.arch === arch && (arch || j.s === wSub));
   list.sort((a, b) => (a.struck ? 1 : 0) - (b.struck ? 1 : 0) || SORD[a.s] - SORD[b.s] || ((a.date || "9999") + (a.time || "")).localeCompare((b.date || "9999") + (b.time || "")) || a.t - b.t);
-  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : wSub === "new" ? "لا يوجد جديد بـ«" + BK(book)[1] + "». اكتب الاسم والهاتف والمبلغ فوق (أو بصوتك) واضغط «أضف»." : "لا يوجد أعمال في «" + STS.find(x => x[0] === wSub)[1] + "»."}</div>`; return; }
+  if (!list.length) { $("#wRows").innerHTML = `<div class="empty">${arch ? "الأرشيف فارغ." : wSub === "new" && book === "all" ? "لا يوجد أعمال جديدة بأي دفتر." : wSub === "new" ? "لا يوجد جديد بـ«" + BK(book)[1] + "». اكتب الاسم والهاتف والمبلغ فوق (أو بصوتك) واضغط «أضف»." : "لا يوجد أعمال في «" + STS.find(x => x[0] === wSub)[1] + "»."}</div>`; return; }
   const today = ymd(new Date());
   $("#wRows").innerHTML = list.map(j => {
     const d = j.date ? `<span class="day${j.date < today && SORD[j.s] < 2 ? " late" : ""}">🗓️ ${esc(dayName(j.date))}${j.time ? " " + esc(j.time) : ""}</span>` : "";
@@ -284,7 +299,7 @@ function renderWork() {
     if (r && N(r.due)) { const rem = N(r.due) - N(r.paid); lm = rem > 0 ? `<span class="lgm bad">💰 واصل ${M(N(r.paid))} · متبقي ${M(rem)} ₪</span>` : `<span class="lgm ok">💰 مدفوع كاملاً ✓</span>`; }
     const phs = BK(j.book)[4].map(([k, t]) => phChip(j, k, t)).join("");
     return `<div class="r s-${j.s}${j.struck ? " struck" : ""}" data-id="${j.id}">
-      <div class="top"><div class="who"><span class="nm">${esc(j.name || "—")}</span>${j.noticeNo ? `<span class="no">📢 إخطار رقم ${esc(j.noticeNo)}</span>` : ""}${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${j.phone ? `<a class="tel" href="tel:${esc(j.phone.replace(/[^\d+]/g, ""))}">📞 ${esc(j.phone)}</a>` : ""}${d}${lm}</div>
+      <div class="top"><div class="who">${book === "all" ? `<span class="bk">${BK(j.book)[2]} ${BK(j.book)[1]}</span>` : ""}<span class="nm">${esc(j.name || "—")}</span>${j.noticeNo ? `<span class="no">📢 إخطار رقم ${esc(j.noticeNo)}</span>` : ""}${j.work ? `<span class="wk">${esc(j.work)}</span>` : ""}${j.phone ? `<a class="tel" href="tel:${esc(j.phone.replace(/[^\d+]/g, ""))}">📞 ${esc(j.phone)}</a>` : ""}${d}${lm}</div>
       <div class="fwrap"><input class="fee" inputmode="decimal" value="${esc(j.fee || "")}" placeholder="المبلغ ₪" data-fee><small>المطلوب</small></div>
       <button class="ib" type="button" data-note title="التفاصيل والملاحظات">📝</button></div>
       ${phs ? `<div class="phs">${phs}</div>` : ""}${Object.keys(j.ph || {}).filter(k => j.ph[k]).length > 1 ? `<button type="button" class="allpdf" data-allpdf>📄 إرسال كل الصور بملف PDF واحد</button>` : ""}
